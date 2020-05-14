@@ -1,0 +1,35 @@
+# Default values for auth-backend.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 2
+env:
+ddenv: production
+
+image:
+  repository: registry.misakey.dev/misakey/backend/api
+  tag:
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5000
+
+ingress:
+  enabled: false
+
+resources:
+  limits:
+   cpu: 400m
+   memory: 1024Mi
+  requests:
+   cpu: 100m
+   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+config:

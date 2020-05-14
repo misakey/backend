@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Deployment chart for the Misakey API
+name: api
+version: 0.1.0 # Chart version
