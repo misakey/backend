@@ -1,0 +1,59 @@
+# ORY Hydra Configuration
+
+hydra:
+  config:
+    log:
+      level: debug
+      format: json
+
+    serve:
+      public:
+        port: 4444
+
+        access_log:
+          disable_for_health: true
+
+        cors:
+          enabled: true
+          allowed_origins:
+            - https://admin.preprod.misakey.dev
+            - https://www.preprod.misakey.dev
+          allowed_methods:
+            - GET
+          allowed_headers:
+            - Authorization
+            - Content-Type
+          exposed_headers:
+            - Content-Type
+          allow_credentials: true
+          max_age: 10
+          debug: true
+
+      admin:
+        port: 4445
+
+        access_log:
+          disable_for_health: true
+
+    oidc:
+      subject_identifiers:
+        enabled:
+          - pairwise
+          - public
+
+    urls:
+      self:
+        issuer: https://auth.preprod.misakey.dev/_
+        public: https://auth.preprod.misakey.dev/_
+      login: https://api.preprod.misakey.dev/login
+      consent: https://api.preprod.misakey.dev/consent
+
+    strategies:
+      access_token: opaque
+
+    ttl:
+      login_consent_request: 1h
+      access_token: 1h
+      refresh_token: 720h
+      id_token: 1h
+      auth_code: 10m
