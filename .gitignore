@@ -1,0 +1,28 @@
+# Golang files
+*.test
+*.out
+/go.mod
+/go.sum
+
+# Storage files
+db/db
+DS_Store
+docs/.DS_Store
+
+# Devtools
+.envrc
+.vscode
+.venv
+
+# vendoring
+vendor
+db/vendor
+
+# Swap
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+tags

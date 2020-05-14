@@ -1,0 +1,7 @@
+# Binary
+/api
+/bin
+
+# production config
+/config/config-preprod.yaml
+/config/config-production.yaml
