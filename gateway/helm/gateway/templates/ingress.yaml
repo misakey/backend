@@ -1,0 +1,34 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "nginx.fullname" . -}}
+{{- $ingressPath := .Values.ingress.path -}}
+{{- $dns := .Values.dns -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    app: {{ template "nginx.name" . }}
+    chart: {{ template "nginx.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+{{- with .Values.ingress.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  tls:
+    - hosts:
+{{- range .Values.subdomains }}
+      - {{ . }}.{{ $dns }}
+{{- end }}
+      secretName: letsencrypt
+  rules:
+{{- range .Values.subdomains }}
+    - host: {{ . }}.{{ $dns }}
+      http:
+        paths:
+          - backend:
+              serviceName: {{ $fullName }}
+              servicePort: http
+{{- end }}
+{{- end }}

@@ -1,0 +1,56 @@
+stages:
+  - init
+  - dep
+  - test
+  - docs
+  - build
+
+variables:
+
+after_script:
+  - date
+
+.only-branches:
+  only:
+    refs:
+      - merge_requests
+      - schedules
+      - tags
+      - web
+      - master
+
+.only-branches-without-tags:
+  only:
+    refs:
+      - merge_requests
+      - schedules
+      - web
+      - master
+
+.only-master:
+  only:
+    refs:
+      - master
+
+.only-tags:
+  only:
+    refs:
+      - tags
+
+.except-wip:
+  except:
+    variables:
+      - $CI_COMMIT_MESSAGE && $CI_COMMIT_MESSAGE =~ /^wip:/
+
+.only-master-and-manual:
+  only:
+    refs:
+      - tags
+      - master
+      - schedules
+      - web
+
+include:
+  - api/.gitlab-ci.yml
+  - gateway/.gitlab-ci.yml
+    # - docs-host/.gitlab-ci.yml
