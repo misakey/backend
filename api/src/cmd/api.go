@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 	"github.com/rs/zerolog/log"
-	echopprof "github.com/sevenNt/echo-pprof"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/bubble"
-	mecho "gitlab.misakey.dev/misakey/msk-sdk-go/echo"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/db"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/echorouter"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/generic"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk"
 )
 
 var cfgFile string
@@ -43,24 +43,30 @@ func initService() {
 
 	// add error needles to auto handle some specific errors on layers we use everywhere
 	bubble.AddNeedle(bubble.PSQLNeedle{})
-	bubble.AddNeedle(bubble.ValidatorNeedle{})
-	bubble.AddNeedle(bubble.EchoNeedle{})
+	bubble.AddNeedle(sdk.OzzoNeedle{})
+	bubble.AddNeedle(sdk.EchoNeedle{})
 	bubble.Lock()
 
 	initDefaultConfig()
 
-	// init echo framework with compressed HTTP responses, custom logger format and custom validator
-	e := echo.New()
-	e.Use(mecho.NewZerologLogger())
-	e.Use(mecho.NewLogger())
-	e.Use(middleware.Recover())
-	echopprof.Wrap(e)
+	// init echo router using sdk call
+	e := echorouter.New()
+	e.HideBanner = true
 
-	genericPresenter := generic.NewGenericEcho()
+	// init db connections
+	dbConn, err := db.NewPSQLConn(
+		os.Getenv("DATABASE_URL"),
+		viper.GetInt("sql.max_open_connections"),
+		viper.GetInt("sql.max_idle_connections"),
+		viper.GetDuration("sql.conn_max_lifetime"),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not connect to db")
+	}
 
-	// Bind generic routes
-	generic := e.Group("")
-	generic.GET("/version", genericPresenter.GetVersion)
+	// init modules
+	generic.InitModule(e)
+	sso.InitModule(e, dbConn)
 
 	// finally launch the echo server
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", viper.GetInt("server.port"))))
@@ -68,7 +74,14 @@ func initService() {
 
 func initDefaultConfig() {
 	// always look for the configuration file in the /etc folder
+	viper.SetConfigName("api")
 	viper.AddConfigPath("/etc/")
+
+	// defaults
+	viper.SetDefault("server.port", 8080)
+	viper.SetDefault("sql.max_open_connections", 50)
+	viper.SetDefault("sql.max_idle_connections", 2)
+	viper.SetDefault("sql.conn_max_lifetime", "0m")
 
 	// try reading in a config
 	err := viper.ReadInConfig()

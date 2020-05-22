@@ -1,0 +1,8 @@
+[psql]
+  dbname = "api"
+  host   = "localhost"
+  port   = 5500
+  user   = "misakey"
+  pass   = "secret"
+  sslmode = "disable"
+  blacklist = ["goose_db_version"]

@@ -96,9 +96,9 @@ urls:
     public: https://auth.misakey.com.local/_
 
   # Sets the login endpoint of the User Login flow. Defaults to an internal fallback URL.
-  login: https://api.misakey.com.local/login
+  login: https://api.misakey.com.local/auth/login
   # Sets the consent endpoint of the User Consent flow. Defaults to an internal fallback URL.
-  consent: https://api.misakey.com.local/consent
+  consent: https://api.misakey.com.local/auth/consent
 
 strategies:
   access_token: opaque

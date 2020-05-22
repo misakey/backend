@@ -51,6 +51,6 @@ after_script:
       - web
 
 include:
-  - api/.gitlab-ci.yml
-  - gateway/.gitlab-ci.yml
+    - api/.gitlab-ci.yml
+    # - gateway/.gitlab-ci.yml
     # - docs-host/.gitlab-ci.yml

@@ -3,7 +3,7 @@ package generic
 import (
 	"net/http"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 // genericEcho provides Echo Handler functions interacting with generic operations
@@ -11,7 +11,7 @@ type genericEcho struct {
 }
 
 // NewGenericEcho is genericEcho constructor
-func NewGenericEcho() *genericEcho {
+func newGenericEcho() *genericEcho {
 	return &genericEcho{}
 }
 

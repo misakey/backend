@@ -45,8 +45,8 @@ hydra:
       self:
         issuer: https://auth.preprod.misakey.dev/_
         public: https://auth.preprod.misakey.dev/_
-      login: https://api.preprod.misakey.dev/login
-      consent: https://api.preprod.misakey.dev/consent
+      login: https://api.preprod.misakey.dev/auth/login
+      consent: https://api.preprod.misakey.dev/auth/consent
 
     strategies:
       access_token: opaque

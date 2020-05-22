@@ -45,8 +45,8 @@ hydra:
       self:
         issuer: https://auth.misakey.com/_
         public: https://auth.misakey.com/_
-      login: https://api.misakey.com/login
-      consent: https://api.misakey.com/consent
+      login: https://api.misakey.com/auth/login
+      consent: https://api.misakey.com/auth/consent
 
     strategies:
       access_token: opaque

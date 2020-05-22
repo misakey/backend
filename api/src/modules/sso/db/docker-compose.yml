@@ -1,0 +1,28 @@
+version: '2.1'
+
+services:
+  api_migrate:
+    build:
+      context: ../../../..
+      dockerfile: Dockerfile
+    depends_on:
+      api_db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://misakey:secret@api_db:5432/api?sslmode=disable
+      - ENV=development
+    command: "migrate --goose=up"
+  api_db:
+    image: postgres:11.4
+    ports:
+      - 127.0.0.1:5500:5432
+    environment:
+      - POSTGRES_USER=misakey
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=api
+      - PGPASSWORD=secret # used for healthcheck
+    command: ["postgres", "-c", "log_statement=all"]
+    healthcheck:
+      test: "pg_isready --host=localhost --username=misakey --dbname=api"
+      interval: 5s
+      retries: 10
