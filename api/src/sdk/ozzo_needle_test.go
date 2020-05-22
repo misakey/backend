@@ -42,5 +42,5 @@ func TestOzzoExplode(t *testing.T) {
 	assert.Equalf(t, merror.DVMalformed, string(mErr.Details["password_tag"]), "length test")
 	assert.Equalf(t, merror.DVMalformed, string(mErr.Details["enum_tag"]), "enum test")
 	assert.Equalf(t, merror.DVMalformed, string(mErr.Details["u"]), "slice of uuid test")
-	assert.Equalf(t, merror.DVInvalid, string(mErr.Details["email"]), "email test")
+	assert.Equalf(t, merror.DVMalformed, string(mErr.Details["email"]), "email test")
 }

@@ -294,7 +294,7 @@ func (q identifierQuery) One(ctx context.Context, exec boil.ContextExecutor) (*I
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "sqlboiler: failed to execute a one query for identifier")
+		return nil, errors.Wrap(err, "model: failed to execute a one query for identifier")
 	}
 
 	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
@@ -310,7 +310,7 @@ func (q identifierQuery) All(ctx context.Context, exec boil.ContextExecutor) (Id
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "sqlboiler: failed to assign all query results to Identifier slice")
+		return nil, errors.Wrap(err, "model: failed to assign all query results to Identifier slice")
 	}
 
 	if len(identifierAfterSelectHooks) != 0 {
@@ -333,7 +333,7 @@ func (q identifierQuery) Count(ctx context.Context, exec boil.ContextExecutor) (
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to count identifier rows")
+		return 0, errors.Wrap(err, "model: failed to count identifier rows")
 	}
 
 	return count, nil
@@ -349,7 +349,7 @@ func (q identifierQuery) Exists(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "sqlboiler: failed to check if identifier exists")
+		return false, errors.Wrap(err, "model: failed to check if identifier exists")
 	}
 
 	return count > 0, nil
@@ -550,7 +550,7 @@ func FindIdentifier(ctx context.Context, exec boil.ContextExecutor, iD string, s
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "sqlboiler: unable to select from identifier")
+		return nil, errors.Wrap(err, "model: unable to select from identifier")
 	}
 
 	return identifierObj, nil
@@ -560,7 +560,7 @@ func FindIdentifier(ctx context.Context, exec boil.ContextExecutor, iD string, s
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
 func (o *Identifier) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
-		return errors.New("sqlboiler: no identifier provided for insertion")
+		return errors.New("model: no identifier provided for insertion")
 	}
 
 	var err error
@@ -623,7 +623,7 @@ func (o *Identifier) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "sqlboiler: unable to insert into identifier")
+		return errors.Wrap(err, "model: unable to insert into identifier")
 	}
 
 	if !cached {
@@ -658,7 +658,7 @@ func (o *Identifier) Update(ctx context.Context, exec boil.ContextExecutor, colu
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return 0, errors.New("sqlboiler: unable to update identifier, could not build whitelist")
+			return 0, errors.New("model: unable to update identifier, could not build whitelist")
 		}
 
 		cache.query = fmt.Sprintf("UPDATE \"identifier\" SET %s WHERE %s",
@@ -681,12 +681,12 @@ func (o *Identifier) Update(ctx context.Context, exec boil.ContextExecutor, colu
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to update identifier row")
+		return 0, errors.Wrap(err, "model: unable to update identifier row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by update for identifier")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by update for identifier")
 	}
 
 	if !cached {
@@ -704,12 +704,12 @@ func (q identifierQuery) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to update all for identifier")
+		return 0, errors.Wrap(err, "model: unable to update all for identifier")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to retrieve rows affected for identifier")
+		return 0, errors.Wrap(err, "model: unable to retrieve rows affected for identifier")
 	}
 
 	return rowsAff, nil
@@ -723,7 +723,7 @@ func (o IdentifierSlice) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 	}
 
 	if len(cols) == 0 {
-		return 0, errors.New("sqlboiler: update all requires at least one column argument")
+		return 0, errors.New("model: update all requires at least one column argument")
 	}
 
 	colNames := make([]string, len(cols))
@@ -753,12 +753,12 @@ func (o IdentifierSlice) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to update all in identifier slice")
+		return 0, errors.Wrap(err, "model: unable to update all in identifier slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to retrieve rows affected all in update all identifier")
+		return 0, errors.Wrap(err, "model: unable to retrieve rows affected all in update all identifier")
 	}
 	return rowsAff, nil
 }
@@ -767,7 +767,7 @@ func (o IdentifierSlice) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
 func (o *Identifier) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
-		return errors.New("sqlboiler: no identifier provided for upsert")
+		return errors.New("model: no identifier provided for upsert")
 	}
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
@@ -823,7 +823,7 @@ func (o *Identifier) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 		)
 
 		if updateOnConflict && len(update) == 0 {
-			return errors.New("sqlboiler: unable to upsert identifier, could not build update column list")
+			return errors.New("model: unable to upsert identifier, could not build update column list")
 		}
 
 		conflict := conflictColumns
@@ -852,11 +852,11 @@ func (o *Identifier) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 		returns = queries.PtrsFromMapping(value, cache.retMapping)
 	}
 
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, cache.query)
-		fmt.Fprintln(writer, vals)
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, cache.query)
+		fmt.Fprintln(boil.DebugWriter, vals)
 	}
+
 	if len(cache.retMapping) != 0 {
 		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
@@ -866,7 +866,7 @@ func (o *Identifier) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "sqlboiler: unable to upsert identifier")
+		return errors.Wrap(err, "model: unable to upsert identifier")
 	}
 
 	if !cached {
@@ -882,7 +882,7 @@ func (o *Identifier) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 // Delete will match against the primary key column to find the record to delete.
 func (o *Identifier) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return 0, errors.New("sqlboiler: no Identifier provided for delete")
+		return 0, errors.New("model: no Identifier provided for delete")
 	}
 
 	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
@@ -899,12 +899,12 @@ func (o *Identifier) Delete(ctx context.Context, exec boil.ContextExecutor) (int
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to delete from identifier")
+		return 0, errors.Wrap(err, "model: unable to delete from identifier")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by delete for identifier")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by delete for identifier")
 	}
 
 	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
@@ -917,19 +917,19 @@ func (o *Identifier) Delete(ctx context.Context, exec boil.ContextExecutor) (int
 // DeleteAll deletes all matching rows.
 func (q identifierQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
-		return 0, errors.New("sqlboiler: no identifierQuery provided for delete all")
+		return 0, errors.New("model: no identifierQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to delete all from identifier")
+		return 0, errors.Wrap(err, "model: unable to delete all from identifier")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for identifier")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by deleteall for identifier")
 	}
 
 	return rowsAff, nil
@@ -965,12 +965,12 @@ func (o IdentifierSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to delete all from identifier slice")
+		return 0, errors.Wrap(err, "model: unable to delete all from identifier slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for identifier")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by deleteall for identifier")
 	}
 
 	if len(identifierAfterDeleteHooks) != 0 {
@@ -1017,7 +1017,7 @@ func (o *IdentifierSlice) ReloadAll(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "sqlboiler: unable to reload all in IdentifierSlice")
+		return errors.Wrap(err, "model: unable to reload all in IdentifierSlice")
 	}
 
 	*o = slice
@@ -1039,7 +1039,7 @@ func IdentifierExists(ctx context.Context, exec boil.ContextExecutor, iD string)
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "sqlboiler: unable to check if identifier exists")
+		return false, errors.Wrap(err, "model: unable to check if identifier exists")
 	}
 
 	return exists, nil

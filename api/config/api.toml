@@ -2,14 +2,18 @@
   port = 5000
 
 [authflow]
-  # frontend location where to redirect to ask for user to authenticate
+  # frontend location to ask for user to authenticate
   login_page_url = "https://misakey.com.local/auth/login"
-  # frontend location where to redirect to ask for user to consent
+  # frontend location to ask for user to consent
   consent_page_url = "https://misakey.com.local/auth/consent"
   # auth hydra endpoint
   auth_url = "https://auth.misakey.com.local/_/oauth2/auth"
+  # redirect uri used in the auth flow to retrieve final tokens using code - configured on hydra
+  code_redirect_url = "https://api.misakey.com.local/auth/callback"
+  # the url when the user's agent is redirect after the tokens obtention
+  token_redirect_url = "https://misakey.com.local/callback"
   # token hydra endpoint
-  token_url = "https://auth.misakey.com.local/_/oauth2/token"
+  hydra_token_url = "https://auth.misakey.com.local/_/oauth2/token"
   # id of misakey app sso client
   self_client_id = "c001d00d-5ecc-beef-ca4e-b00b1e54a111"
   # application base64 encoded JWK: https://tools.ietf.org/html/rfc7517

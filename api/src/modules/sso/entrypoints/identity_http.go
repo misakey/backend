@@ -16,33 +16,24 @@ func NewIdentityHTTP(service application.SSOService) IdentityHTTP {
 	return IdentityHTTP{service: service}
 }
 
-func (entrypoint *IdentityHTTP) AssertIdentity(ctx echo.Context) error {
-	cmd := application.IdentityProofAssertion{}
+// Handles PUT /identities/authable - retrieve authable identity information
+func (entrypoint IdentityHTTP) RequireAuthableIdentity(ctx echo.Context) error {
+	cmd := application.IdentityAuthableCmd{}
 	if err := ctx.Bind(&cmd); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
-	}
-
-	cmd.IdentityID = ctx.Param("id")
-	if err := entrypoint.service.ConfirmIdentity(ctx.Request().Context(), cmd.IdentityProof); err != nil {
-		return merror.Transform(err).Describe("could not validate identity proof")
-	}
-	return ctx.NoContent(http.StatusNoContent)
-}
-
-func (entrypoint *IdentityHTTP) CreateIdentity(ctx echo.Context) error {
-	cmd := application.CreateIdentityCommand{}
-	if err := ctx.Bind(&cmd); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
 	}
 
 	if err := cmd.Validate(); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
 	}
 
-	result, err := entrypoint.service.CreateIdentity(ctx.Request().Context(), cmd)
+	identity, err := entrypoint.service.RequireIdentityAuthable(ctx.Request().Context(), cmd)
 	if err != nil {
-		return merror.Transform(err).Describef("could not create identity").From(merror.OriBody)
+		return merror.Transform(err).Describe("could not require authable identity").From(merror.OriBody)
 	}
 
-	return ctx.JSON(http.StatusCreated, result)
+	if identity.LoginInfo.ACRValues == nil {
+		identity.LoginInfo.ACRValues = []string{}
+	}
+	return ctx.JSON(http.StatusOK, identity)
 }

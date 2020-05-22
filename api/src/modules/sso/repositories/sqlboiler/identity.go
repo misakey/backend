@@ -25,7 +25,7 @@ import (
 // Identity is an object representing the database table.
 type Identity struct {
 	ID            string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	AccountID     string      `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
+	AccountID     null.String `boil:"account_id" json:"account_id,omitempty" toml:"account_id" yaml:"account_id,omitempty"`
 	IdentifierID  string      `boil:"identifier_id" json:"identifier_id" toml:"identifier_id" yaml:"identifier_id"`
 	IsAuthable    bool        `boil:"is_authable" json:"is_authable" toml:"is_authable" yaml:"is_authable"`
 	DisplayName   string      `boil:"display_name" json:"display_name" toml:"display_name" yaml:"display_name"`
@@ -59,15 +59,6 @@ var IdentityColumns = struct {
 
 // Generated where
 
-type whereHelperbool struct{ field string }
-
-func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-
 type whereHelpernull_String struct{ field string }
 
 func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
@@ -91,9 +82,18 @@ func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
 var IdentityWhere = struct {
 	ID            whereHelperstring
-	AccountID     whereHelperstring
+	AccountID     whereHelpernull_String
 	IdentifierID  whereHelperstring
 	IsAuthable    whereHelperbool
 	DisplayName   whereHelperstring
@@ -102,7 +102,7 @@ var IdentityWhere = struct {
 	Confirmed     whereHelperbool
 }{
 	ID:            whereHelperstring{field: "\"identity\".\"id\""},
-	AccountID:     whereHelperstring{field: "\"identity\".\"account_id\""},
+	AccountID:     whereHelpernull_String{field: "\"identity\".\"account_id\""},
 	IdentifierID:  whereHelperstring{field: "\"identity\".\"identifier_id\""},
 	IsAuthable:    whereHelperbool{field: "\"identity\".\"is_authable\""},
 	DisplayName:   whereHelperstring{field: "\"identity\".\"display_name\""},
@@ -355,7 +355,7 @@ func (q identityQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Ide
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "sqlboiler: failed to execute a one query for identity")
+		return nil, errors.Wrap(err, "model: failed to execute a one query for identity")
 	}
 
 	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
@@ -371,7 +371,7 @@ func (q identityQuery) All(ctx context.Context, exec boil.ContextExecutor) (Iden
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "sqlboiler: failed to assign all query results to Identity slice")
+		return nil, errors.Wrap(err, "model: failed to assign all query results to Identity slice")
 	}
 
 	if len(identityAfterSelectHooks) != 0 {
@@ -394,7 +394,7 @@ func (q identityQuery) Count(ctx context.Context, exec boil.ContextExecutor) (in
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to count identity rows")
+		return 0, errors.Wrap(err, "model: failed to count identity rows")
 	}
 
 	return count, nil
@@ -410,7 +410,7 @@ func (q identityQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (b
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "sqlboiler: failed to check if identity exists")
+		return false, errors.Wrap(err, "model: failed to check if identity exists")
 	}
 
 	return count > 0, nil
@@ -461,7 +461,9 @@ func (identityL) LoadAccount(ctx context.Context, e boil.ContextExecutor, singul
 		if object.R == nil {
 			object.R = &identityR{}
 		}
-		args = append(args, object.AccountID)
+		if !queries.IsNil(object.AccountID) {
+			args = append(args, object.AccountID)
+		}
 
 	} else {
 	Outer:
@@ -471,12 +473,14 @@ func (identityL) LoadAccount(ctx context.Context, e boil.ContextExecutor, singul
 			}
 
 			for _, a := range args {
-				if a == obj.AccountID {
+				if queries.Equal(a, obj.AccountID) {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.AccountID)
+			if !queries.IsNil(obj.AccountID) {
+				args = append(args, obj.AccountID)
+			}
 
 		}
 	}
@@ -531,7 +535,7 @@ func (identityL) LoadAccount(ctx context.Context, e boil.ContextExecutor, singul
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.AccountID == foreign.ID {
+			if queries.Equal(local.AccountID, foreign.ID) {
 				local.R.Account = foreign
 				if foreign.R == nil {
 					foreign.R = &accountR{}
@@ -673,7 +677,7 @@ func (o *Identity) SetAccount(ctx context.Context, exec boil.ContextExecutor, in
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.AccountID = related.ID
+	queries.Assign(&o.AccountID, related.ID)
 	if o.R == nil {
 		o.R = &identityR{
 			Account: related,
@@ -690,6 +694,37 @@ func (o *Identity) SetAccount(ctx context.Context, exec boil.ContextExecutor, in
 		related.R.Identities = append(related.R.Identities, o)
 	}
 
+	return nil
+}
+
+// RemoveAccount relationship.
+// Sets o.R.Account to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *Identity) RemoveAccount(ctx context.Context, exec boil.ContextExecutor, related *Account) error {
+	var err error
+
+	queries.SetScanner(&o.AccountID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("account_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.R.Account = nil
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.Identities {
+		if queries.Equal(o.AccountID, ri.AccountID) {
+			continue
+		}
+
+		ln := len(related.R.Identities)
+		if ln > 1 && i < ln-1 {
+			related.R.Identities[i] = related.R.Identities[ln-1]
+		}
+		related.R.Identities = related.R.Identities[:ln-1]
+		break
+	}
 	return nil
 }
 
@@ -766,7 +801,7 @@ func FindIdentity(ctx context.Context, exec boil.ContextExecutor, iD string, sel
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "sqlboiler: unable to select from identity")
+		return nil, errors.Wrap(err, "model: unable to select from identity")
 	}
 
 	return identityObj, nil
@@ -776,7 +811,7 @@ func FindIdentity(ctx context.Context, exec boil.ContextExecutor, iD string, sel
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
 func (o *Identity) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
-		return errors.New("sqlboiler: no identity provided for insertion")
+		return errors.New("model: no identity provided for insertion")
 	}
 
 	var err error
@@ -839,7 +874,7 @@ func (o *Identity) Insert(ctx context.Context, exec boil.ContextExecutor, column
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "sqlboiler: unable to insert into identity")
+		return errors.Wrap(err, "model: unable to insert into identity")
 	}
 
 	if !cached {
@@ -874,7 +909,7 @@ func (o *Identity) Update(ctx context.Context, exec boil.ContextExecutor, column
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return 0, errors.New("sqlboiler: unable to update identity, could not build whitelist")
+			return 0, errors.New("model: unable to update identity, could not build whitelist")
 		}
 
 		cache.query = fmt.Sprintf("UPDATE \"identity\" SET %s WHERE %s",
@@ -897,12 +932,12 @@ func (o *Identity) Update(ctx context.Context, exec boil.ContextExecutor, column
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to update identity row")
+		return 0, errors.Wrap(err, "model: unable to update identity row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by update for identity")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by update for identity")
 	}
 
 	if !cached {
@@ -920,12 +955,12 @@ func (q identityQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to update all for identity")
+		return 0, errors.Wrap(err, "model: unable to update all for identity")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to retrieve rows affected for identity")
+		return 0, errors.Wrap(err, "model: unable to retrieve rows affected for identity")
 	}
 
 	return rowsAff, nil
@@ -939,7 +974,7 @@ func (o IdentitySlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 	}
 
 	if len(cols) == 0 {
-		return 0, errors.New("sqlboiler: update all requires at least one column argument")
+		return 0, errors.New("model: update all requires at least one column argument")
 	}
 
 	colNames := make([]string, len(cols))
@@ -969,12 +1004,12 @@ func (o IdentitySlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to update all in identity slice")
+		return 0, errors.Wrap(err, "model: unable to update all in identity slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to retrieve rows affected all in update all identity")
+		return 0, errors.Wrap(err, "model: unable to retrieve rows affected all in update all identity")
 	}
 	return rowsAff, nil
 }
@@ -983,7 +1018,7 @@ func (o IdentitySlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
 func (o *Identity) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
-		return errors.New("sqlboiler: no identity provided for upsert")
+		return errors.New("model: no identity provided for upsert")
 	}
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
@@ -1039,7 +1074,7 @@ func (o *Identity) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 		)
 
 		if updateOnConflict && len(update) == 0 {
-			return errors.New("sqlboiler: unable to upsert identity, could not build update column list")
+			return errors.New("model: unable to upsert identity, could not build update column list")
 		}
 
 		conflict := conflictColumns
@@ -1068,11 +1103,11 @@ func (o *Identity) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 		returns = queries.PtrsFromMapping(value, cache.retMapping)
 	}
 
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, cache.query)
-		fmt.Fprintln(writer, vals)
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, cache.query)
+		fmt.Fprintln(boil.DebugWriter, vals)
 	}
+
 	if len(cache.retMapping) != 0 {
 		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
@@ -1082,7 +1117,7 @@ func (o *Identity) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "sqlboiler: unable to upsert identity")
+		return errors.Wrap(err, "model: unable to upsert identity")
 	}
 
 	if !cached {
@@ -1098,7 +1133,7 @@ func (o *Identity) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 // Delete will match against the primary key column to find the record to delete.
 func (o *Identity) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return 0, errors.New("sqlboiler: no Identity provided for delete")
+		return 0, errors.New("model: no Identity provided for delete")
 	}
 
 	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
@@ -1115,12 +1150,12 @@ func (o *Identity) Delete(ctx context.Context, exec boil.ContextExecutor) (int64
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to delete from identity")
+		return 0, errors.Wrap(err, "model: unable to delete from identity")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by delete for identity")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by delete for identity")
 	}
 
 	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
@@ -1133,19 +1168,19 @@ func (o *Identity) Delete(ctx context.Context, exec boil.ContextExecutor) (int64
 // DeleteAll deletes all matching rows.
 func (q identityQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
-		return 0, errors.New("sqlboiler: no identityQuery provided for delete all")
+		return 0, errors.New("model: no identityQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to delete all from identity")
+		return 0, errors.Wrap(err, "model: unable to delete all from identity")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for identity")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by deleteall for identity")
 	}
 
 	return rowsAff, nil
@@ -1181,12 +1216,12 @@ func (o IdentitySlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor)
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to delete all from identity slice")
+		return 0, errors.Wrap(err, "model: unable to delete all from identity slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for identity")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by deleteall for identity")
 	}
 
 	if len(identityAfterDeleteHooks) != 0 {
@@ -1233,7 +1268,7 @@ func (o *IdentitySlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "sqlboiler: unable to reload all in IdentitySlice")
+		return errors.Wrap(err, "model: unable to reload all in IdentitySlice")
 	}
 
 	*o = slice
@@ -1255,7 +1290,7 @@ func IdentityExists(ctx context.Context, exec boil.ContextExecutor, iD string) (
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "sqlboiler: unable to check if identity exists")
+		return false, errors.Wrap(err, "model: unable to check if identity exists")
 	}
 
 	return exists, nil

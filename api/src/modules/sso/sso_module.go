@@ -6,23 +6,25 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/oauth"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/oidc"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/rester/http"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/account"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authentication"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
 )
 
 func InitModule(router *echo.Echo, dbConn *sql.DB) {
+	// TODO12: check mandatory configuration / hide secrets
 	// init self authenticator for hydra rester
 	selfAuth, err := oidc.NewClient(
 		viper.GetString("authflow.self_client_id"),
-		viper.GetString("authflow.token_url"),
+		viper.GetString("authflow.hydra_token_url"),
 		viper.GetString("authflow.self_encoded_jwk"),
 	)
 	if err != nil {
@@ -48,32 +50,39 @@ func InitModule(router *echo.Echo, dbConn *sql.DB) {
 	accountRepo := repositories.NewAccountSQLBoiler(dbConn)
 	identifierRepo := repositories.NewIdentifierSQLBoiler(dbConn)
 	identityRepo := repositories.NewIdentitySQLBoiler(dbConn)
-	identityProofRepo := repositories.NewIdentityProofMemory()
+	// TODO13: make it persistent with sql boiler
+	authnStepRepo := repositories.NewAuthenticationStepMemory()
 	hydraRepo := repositories.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
 
 	// init services
 	accountService := account.NewAccountService(accountRepo)
 	identifierService := identifier.NewIdentifierService(identifierRepo)
-	identityService := identity.NewIdentityService(identityRepo, identityProofRepo)
+	identityService := identity.NewIdentityService(identityRepo)
+	authFlowService := authflow.NewAuthFlowService(
+		hydraRepo,
+		viper.GetString("authflow.login_page_url"),
+		viper.GetString("authflow.consent_page_url"),
+	)
+	authenticationService := authentication.NewService(authnStepRepo)
 	ssoService := application.NewSSOService(
 		accountService,
 		identityService,
 		identifierService,
+		authFlowService,
+		authenticationService,
 	)
-	authFlowService := authflow.NewHandler(hydraRepo, viper.GetString("authflow.login_page_url"))
+	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(
+		viper.GetString("authflow.self_client_id"),
+		viper.GetString("authflow.auth_url"),
+		viper.GetString("authflow.code_redirect_url"),
+		publicHydraFORM,
+		viper.GetString("authflow.hydra_token_url"),
+		viper.GetString("authflow.token_redirect_url"),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("oauth authorization code flow")
+	}
 
-	// init presenters
-	accountHTTP := entrypoints.NewAccountHTTP(ssoService)
-	identityHTTP := entrypoints.NewIdentityHTTP(ssoService)
-	authFlowHTTP := entrypoints.NewAuthFlowHTTP(authFlowService)
-
-	authRoutes := router.Group("/auth")
-	authRoutes.GET("/login", authFlowHTTP.InitLogin)
-
-	accountRoutes := router.Group("/accounts")
-	accountRoutes.POST("", accountHTTP.Create)
-
-	identityRoutes := router.Group("/identities")
-	identityRoutes.POST("/:id/assertions", identityHTTP.AssertIdentity)
-	identityRoutes.POST("/identities", identityHTTP.CreateIdentity)
+	// bind all routes to the router
+	initRoutes(router, ssoService, *oauthCodeFlow)
 }

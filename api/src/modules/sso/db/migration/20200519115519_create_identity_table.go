@@ -2,6 +2,7 @@ package migration
 
 import (
 	"database/sql"
+
 	"github.com/pressly/goose"
 )
 
@@ -12,13 +13,13 @@ func init() {
 func upCreateIdentityTable(tx *sql.Tx) error {
 	_, err := tx.Exec(`CREATE TABLE identity(
 		  id UUID PRIMARY KEY,
-		  account_id UUID NOT NULL REFERENCES account,
-		  identifier_id UUID NOT NULL REFERENCES identifier,
-	      is_authable BOOLEAN NOT NULL,
-		  display_name VARCHAR(255) NOT NULL,
-		  notifications VARCHAR(32) NOT NULL DEFAULT 'minimal',
-		  avatar_url VARCHAR(255),
-		  confirmed BOOLEAN NOT NULL DEFAULT False
+			account_id UUID REFERENCES account,
+			identifier_id UUID NOT NULL REFERENCES identifier,
+			is_authable BOOLEAN NOT NULL,
+			display_name VARCHAR(255) NOT NULL,
+			notifications VARCHAR(32) NOT NULL DEFAULT 'minimal',
+			avatar_url VARCHAR(255),
+			confirmed BOOLEAN NOT NULL DEFAULT False
 	);`)
 	if err != nil {
 		return err

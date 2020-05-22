@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -36,16 +35,35 @@ func (repo *IdentifierSQLBoiler) Create(ctx context.Context, identifier *domain.
 	sqlIdentifier := sqlboiler.Identifier{
 		ID:    identifier.ID,
 		Value: identifier.Value,
-		Kind:  identifier.Kind,
+		Kind:  string(identifier.Kind),
 	}
 
-	fmt.Println(sqlIdentifier)
 	return sqlIdentifier.Insert(ctx, repo.db, boil.Infer())
 }
 
-func (repo *IdentifierSQLBoiler) GetByKindValue(ctx context.Context, kind string, value string) (domain.Identifier, error) {
+func (repo *IdentifierSQLBoiler) Get(ctx context.Context, id string) (domain.Identifier, error) {
 	mods := []qm.QueryMod{
-		sqlboiler.IdentifierWhere.Kind.EQ(kind),
+		sqlboiler.IdentifierWhere.ID.EQ(id),
+	}
+
+	identifier, err := sqlboiler.Identifiers(mods...).One(ctx, repo.db)
+	if err == sql.ErrNoRows {
+		return domain.Identifier{}, merror.NotFound().Detail("id", merror.DVNotFound)
+	}
+	if err != nil {
+		return domain.Identifier{}, err
+	}
+
+	return domain.Identifier{
+		ID:    identifier.ID,
+		Value: identifier.Value,
+		Kind:  domain.IdentifierKind(identifier.Kind),
+	}, nil
+}
+
+func (repo *IdentifierSQLBoiler) GetByKindValue(ctx context.Context, kind domain.IdentifierKind, value string) (domain.Identifier, error) {
+	mods := []qm.QueryMod{
+		sqlboiler.IdentifierWhere.Kind.EQ(string(kind)),
 		sqlboiler.IdentifierWhere.Value.EQ(value),
 	}
 
@@ -60,6 +78,6 @@ func (repo *IdentifierSQLBoiler) GetByKindValue(ctx context.Context, kind string
 	return domain.Identifier{
 		ID:    identifier.ID,
 		Value: identifier.Value,
-		Kind:  identifier.Kind,
+		Kind:  domain.IdentifierKind(identifier.Kind),
 	}, nil
 }

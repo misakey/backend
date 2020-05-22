@@ -10,7 +10,8 @@ import (
 
 type identifierRepo interface {
 	Create(context.Context, *domain.Identifier) error
-	GetByKindValue(context.Context, string, string) (domain.Identifier, error)
+	Get(context.Context, string) (domain.Identifier, error)
+	GetByKindValue(context.Context, domain.IdentifierKind, string) (domain.Identifier, error)
 }
 
 type IdentifierService struct {
@@ -25,7 +26,11 @@ func NewIdentifierService(
 	}
 }
 
-func (ids IdentifierService) EnsureIdentifierExistence(ctx context.Context, identifier *domain.Identifier) error {
+func (ids IdentifierService) Get(ctx context.Context, id string) (domain.Identifier, error) {
+	return ids.identifiers.Get(ctx, id)
+}
+
+func (ids IdentifierService) RequireIdentifier(ctx context.Context, identifier *domain.Identifier) error {
 	existing, err := ids.identifiers.GetByKindValue(ctx, identifier.Kind, identifier.Value)
 	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
 		return err

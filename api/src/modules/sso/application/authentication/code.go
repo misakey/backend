@@ -1,4 +1,4 @@
-package identity
+package authentication
 
 import (
 	"crypto/rand"
@@ -23,15 +23,14 @@ func generateCodeMetadata() (ret json.RawMessage, err error) {
 	b := make([]byte, codeSize)
 	n, err := io.ReadAtLeast(rand.Reader, b, codeSize)
 	if err != nil {
-		return ret, merror.Transform(err).Describe("generate confirmation code")
+		return ret, merror.Transform(err).Describe("generate code")
 	}
 	if n != codeSize {
-		return ret, fmt.Errorf("generate confirmation code: read less than the wished size: %d vs %d", n, codeSize)
+		return ret, fmt.Errorf("generate code: read less than the wished size: %d vs %d", n, codeSize)
 	}
 	for i := 0; i < len(b); i++ {
 		b[i] = table[int(b[i])%len(table)]
 	}
-	fmt.Println("Generated Code: ", string(b))
 	data, err := json.Marshal(codeMetadata{Code: string(b)})
 	if err != nil {
 		return ret, err

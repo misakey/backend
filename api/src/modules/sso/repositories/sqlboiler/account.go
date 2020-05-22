@@ -305,7 +305,7 @@ func (q accountQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Acco
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "sqlboiler: failed to execute a one query for account")
+		return nil, errors.Wrap(err, "model: failed to execute a one query for account")
 	}
 
 	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
@@ -321,7 +321,7 @@ func (q accountQuery) All(ctx context.Context, exec boil.ContextExecutor) (Accou
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "sqlboiler: failed to assign all query results to Account slice")
+		return nil, errors.Wrap(err, "model: failed to assign all query results to Account slice")
 	}
 
 	if len(accountAfterSelectHooks) != 0 {
@@ -344,7 +344,7 @@ func (q accountQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to count account rows")
+		return 0, errors.Wrap(err, "model: failed to count account rows")
 	}
 
 	return count, nil
@@ -360,7 +360,7 @@ func (q accountQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bo
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "sqlboiler: failed to check if account exists")
+		return false, errors.Wrap(err, "model: failed to check if account exists")
 	}
 
 	return count > 0, nil
@@ -413,7 +413,7 @@ func (accountL) LoadIdentities(ctx context.Context, e boil.ContextExecutor, sing
 			}
 
 			for _, a := range args {
-				if a == obj.ID {
+				if queries.Equal(a, obj.ID) {
 					continue Outer
 				}
 			}
@@ -468,7 +468,7 @@ func (accountL) LoadIdentities(ctx context.Context, e boil.ContextExecutor, sing
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.AccountID {
+			if queries.Equal(local.ID, foreign.AccountID) {
 				local.R.Identities = append(local.R.Identities, foreign)
 				if foreign.R == nil {
 					foreign.R = &identityR{}
@@ -490,7 +490,7 @@ func (o *Account) AddIdentities(ctx context.Context, exec boil.ContextExecutor, 
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.AccountID = o.ID
+			queries.Assign(&rel.AccountID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -511,7 +511,7 @@ func (o *Account) AddIdentities(ctx context.Context, exec boil.ContextExecutor, 
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.AccountID = o.ID
+			queries.Assign(&rel.AccountID, o.ID)
 		}
 	}
 
@@ -532,6 +532,76 @@ func (o *Account) AddIdentities(ctx context.Context, exec boil.ContextExecutor, 
 			rel.R.Account = o
 		}
 	}
+	return nil
+}
+
+// SetIdentities removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Account's Identities accordingly.
+// Replaces o.R.Identities with related.
+// Sets related.R.Account's Identities accordingly.
+func (o *Account) SetIdentities(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Identity) error {
+	query := "update \"identity\" set \"account_id\" = null where \"account_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.Identities {
+			queries.SetScanner(&rel.AccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Account = nil
+		}
+
+		o.R.Identities = nil
+	}
+	return o.AddIdentities(ctx, exec, insert, related...)
+}
+
+// RemoveIdentities relationships from objects passed in.
+// Removes related items from R.Identities (uses pointer comparison, removal does not keep order)
+// Sets related.R.Account.
+func (o *Account) RemoveIdentities(ctx context.Context, exec boil.ContextExecutor, related ...*Identity) error {
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.AccountID, nil)
+		if rel.R != nil {
+			rel.R.Account = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Identities {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Identities)
+			if ln > 1 && i < ln-1 {
+				o.R.Identities[i] = o.R.Identities[ln-1]
+			}
+			o.R.Identities = o.R.Identities[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 
@@ -561,7 +631,7 @@ func FindAccount(ctx context.Context, exec boil.ContextExecutor, iD string, sele
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "sqlboiler: unable to select from account")
+		return nil, errors.Wrap(err, "model: unable to select from account")
 	}
 
 	return accountObj, nil
@@ -571,7 +641,7 @@ func FindAccount(ctx context.Context, exec boil.ContextExecutor, iD string, sele
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
 func (o *Account) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
-		return errors.New("sqlboiler: no account provided for insertion")
+		return errors.New("model: no account provided for insertion")
 	}
 
 	var err error
@@ -634,7 +704,7 @@ func (o *Account) Insert(ctx context.Context, exec boil.ContextExecutor, columns
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "sqlboiler: unable to insert into account")
+		return errors.Wrap(err, "model: unable to insert into account")
 	}
 
 	if !cached {
@@ -669,7 +739,7 @@ func (o *Account) Update(ctx context.Context, exec boil.ContextExecutor, columns
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return 0, errors.New("sqlboiler: unable to update account, could not build whitelist")
+			return 0, errors.New("model: unable to update account, could not build whitelist")
 		}
 
 		cache.query = fmt.Sprintf("UPDATE \"account\" SET %s WHERE %s",
@@ -692,12 +762,12 @@ func (o *Account) Update(ctx context.Context, exec boil.ContextExecutor, columns
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to update account row")
+		return 0, errors.Wrap(err, "model: unable to update account row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by update for account")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by update for account")
 	}
 
 	if !cached {
@@ -715,12 +785,12 @@ func (q accountQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, 
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to update all for account")
+		return 0, errors.Wrap(err, "model: unable to update all for account")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to retrieve rows affected for account")
+		return 0, errors.Wrap(err, "model: unable to retrieve rows affected for account")
 	}
 
 	return rowsAff, nil
@@ -734,7 +804,7 @@ func (o AccountSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	if len(cols) == 0 {
-		return 0, errors.New("sqlboiler: update all requires at least one column argument")
+		return 0, errors.New("model: update all requires at least one column argument")
 	}
 
 	colNames := make([]string, len(cols))
@@ -764,12 +834,12 @@ func (o AccountSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, 
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to update all in account slice")
+		return 0, errors.Wrap(err, "model: unable to update all in account slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to retrieve rows affected all in update all account")
+		return 0, errors.Wrap(err, "model: unable to retrieve rows affected all in update all account")
 	}
 	return rowsAff, nil
 }
@@ -778,7 +848,7 @@ func (o AccountSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, 
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
 func (o *Account) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
-		return errors.New("sqlboiler: no account provided for upsert")
+		return errors.New("model: no account provided for upsert")
 	}
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
@@ -834,7 +904,7 @@ func (o *Account) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 		)
 
 		if updateOnConflict && len(update) == 0 {
-			return errors.New("sqlboiler: unable to upsert account, could not build update column list")
+			return errors.New("model: unable to upsert account, could not build update column list")
 		}
 
 		conflict := conflictColumns
@@ -863,11 +933,11 @@ func (o *Account) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 		returns = queries.PtrsFromMapping(value, cache.retMapping)
 	}
 
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, cache.query)
-		fmt.Fprintln(writer, vals)
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, cache.query)
+		fmt.Fprintln(boil.DebugWriter, vals)
 	}
+
 	if len(cache.retMapping) != 0 {
 		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
@@ -877,7 +947,7 @@ func (o *Account) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "sqlboiler: unable to upsert account")
+		return errors.Wrap(err, "model: unable to upsert account")
 	}
 
 	if !cached {
@@ -893,7 +963,7 @@ func (o *Account) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 // Delete will match against the primary key column to find the record to delete.
 func (o *Account) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return 0, errors.New("sqlboiler: no Account provided for delete")
+		return 0, errors.New("model: no Account provided for delete")
 	}
 
 	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
@@ -910,12 +980,12 @@ func (o *Account) Delete(ctx context.Context, exec boil.ContextExecutor) (int64,
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to delete from account")
+		return 0, errors.Wrap(err, "model: unable to delete from account")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by delete for account")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by delete for account")
 	}
 
 	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
@@ -928,19 +998,19 @@ func (o *Account) Delete(ctx context.Context, exec boil.ContextExecutor) (int64,
 // DeleteAll deletes all matching rows.
 func (q accountQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
-		return 0, errors.New("sqlboiler: no accountQuery provided for delete all")
+		return 0, errors.New("model: no accountQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to delete all from account")
+		return 0, errors.Wrap(err, "model: unable to delete all from account")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for account")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by deleteall for account")
 	}
 
 	return rowsAff, nil
@@ -976,12 +1046,12 @@ func (o AccountSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) 
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to delete all from account slice")
+		return 0, errors.Wrap(err, "model: unable to delete all from account slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for account")
+		return 0, errors.Wrap(err, "model: failed to get rows affected by deleteall for account")
 	}
 
 	if len(accountAfterDeleteHooks) != 0 {
@@ -1028,7 +1098,7 @@ func (o *AccountSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "sqlboiler: unable to reload all in AccountSlice")
+		return errors.Wrap(err, "model: unable to reload all in AccountSlice")
 	}
 
 	*o = slice
@@ -1050,7 +1120,7 @@ func AccountExists(ctx context.Context, exec boil.ContextExecutor, iD string) (b
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "sqlboiler: unable to check if account exists")
+		return false, errors.Wrap(err, "model: unable to check if account exists")
 	}
 
 	return exists, nil

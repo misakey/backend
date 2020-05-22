@@ -8,7 +8,7 @@ import (
 
 type accountRepo interface {
 	Create(context.Context, *domain.Account) error
-	Get(context.Context, string) (*domain.Account, error)
+	Get(context.Context, string) (domain.Account, error)
 }
 
 type AccountService struct {
@@ -27,6 +27,6 @@ func (acs AccountService) Create(ctx context.Context, account *domain.Account) e
 	return acs.accounts.Create(ctx, account)
 }
 
-func (acs AccountService) Get(ctx context.Context, id string) (*domain.Account, error) {
+func (acs AccountService) Get(ctx context.Context, id string) (domain.Account, error) {
 	return acs.accounts.Get(ctx, id)
 }

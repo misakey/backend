@@ -25,11 +25,10 @@ func init() {
 	cobra.OnInitialize()
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
 	RootCmd.PersistentFlags().StringVar(&goose, "goose", "up", "goose command")
-	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 var RootCmd = &cobra.Command{
-	Use:   "auth",
+	Use:   "api",
 	Short: "Run the API",
 	Long:  "This service is responsible for managing all the Misakey backend API",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -84,8 +83,7 @@ func initDefaultConfig() {
 	viper.SetDefault("sql.conn_max_lifetime", "0m")
 
 	// try reading in a config
-	err := viper.ReadInConfig()
-	if err != nil {
+	if err := viper.ReadInConfig(); err != nil {
 		log.Fatal().Err(err).Msg("could not read configuration")
 	}
 }

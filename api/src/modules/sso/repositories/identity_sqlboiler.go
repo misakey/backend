@@ -5,8 +5,8 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
-	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
@@ -31,6 +31,10 @@ func (repo *IdentitySQLBoiler) Create(ctx context.Context, identity *domain.Iden
 	}
 
 	identity.ID = id.String()
+	// default value is minimal
+	if identity.Notifications == "" {
+		identity.Notifications = "minimal"
+	}
 
 	// convert domain to sql model
 	sqlIdentity := sqlboiler.Identity{
@@ -40,11 +44,31 @@ func (repo *IdentitySQLBoiler) Create(ctx context.Context, identity *domain.Iden
 		IsAuthable:    identity.IsAuthable,
 		DisplayName:   identity.DisplayName,
 		Notifications: identity.Notifications,
-		AvatarURL:     null.StringFrom(identity.AvatarURL),
+		AvatarURL:     identity.AvatarURL,
 		Confirmed:     identity.Confirmed,
 	}
 
 	return sqlIdentity.Insert(ctx, repo.db, boil.Infer())
+}
+
+func (repo *IdentitySQLBoiler) Get(ctx context.Context, identityID string) (ret domain.Identity, err error) {
+	identity, err := sqlboiler.FindIdentity(ctx, repo.db, identityID)
+	if err == sql.ErrNoRows {
+		return ret, merror.NotFound().Detail("id", merror.DVNotFound)
+	}
+	if err != nil {
+		return ret, err
+	}
+	ret.ID = identity.ID
+	ret.AccountID = identity.AccountID
+	ret.IdentifierID = identity.IdentifierID
+	ret.IsAuthable = identity.IsAuthable
+	ret.DisplayName = identity.DisplayName
+	ret.Notifications = identity.Notifications
+	ret.AvatarURL = identity.AvatarURL
+	ret.Confirmed = identity.Confirmed
+	return ret, nil
+
 }
 
 func (repo *IdentitySQLBoiler) Confirm(ctx context.Context, identityID string) error {
@@ -65,4 +89,37 @@ func (repo *IdentitySQLBoiler) Confirm(ctx context.Context, identityID string) e
 	}
 
 	return nil
+}
+
+func (repo *IdentitySQLBoiler) List(ctx context.Context, filters domain.IdentityFilters) ([]*domain.Identity, error) {
+	mods := []qm.QueryMod{}
+	if filters.IdentifierID.Valid {
+		mods = append(mods, sqlboiler.IdentityWhere.IdentifierID.EQ(filters.IdentifierID.String))
+	}
+	if filters.IsAuthable.Valid {
+		mods = append(mods, sqlboiler.IdentityWhere.IsAuthable.EQ(filters.IsAuthable.Bool))
+	}
+
+	identityRecords, err := sqlboiler.Identities(mods...).All(ctx, repo.db)
+	domainIdentities := make([]*domain.Identity, len(identityRecords))
+	if err == sql.ErrNoRows {
+		return domainIdentities, nil
+	}
+	if err != nil {
+		return domainIdentities, err
+	}
+
+	for i, record := range identityRecords {
+		domainIdentities[i] = &domain.Identity{
+			ID:            record.ID,
+			AccountID:     record.AccountID,
+			IdentifierID:  record.IdentifierID,
+			IsAuthable:    record.IsAuthable,
+			DisplayName:   record.DisplayName,
+			Notifications: record.Notifications,
+			AvatarURL:     record.AvatarURL,
+			Confirmed:     record.Confirmed,
+		}
+	}
+	return domainIdentities, nil
 }

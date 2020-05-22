@@ -1,9 +1,6 @@
 package sdk
 
 import (
-	"fmt"
-	"reflect"
-
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
@@ -16,7 +13,6 @@ func (n OzzoNeedle) Explode(err error) error {
 	// try to consider error cause as validator error to understand deeper the error
 	valErrs, ok := merror.Cause(err).(v.Errors)
 	if !ok {
-		fmt.Println(reflect.TypeOf(merror.Cause(err)))
 		return nil
 	}
 

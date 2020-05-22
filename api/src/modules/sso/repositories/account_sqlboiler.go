@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -37,19 +38,20 @@ func (repo AccountSQLBoiler) Create(ctx context.Context, account *domain.Account
 		Password: account.Password,
 	}
 
+	fmt.Println(sqlAccount)
 	return sqlAccount.Insert(ctx, repo.db, boil.Infer())
 }
 
-func (repo AccountSQLBoiler) Get(ctx context.Context, accountID string) (*domain.Account, error) {
+func (repo AccountSQLBoiler) Get(ctx context.Context, accountID string) (ret domain.Account, err error) {
 	account, err := sqlboiler.FindAccount(ctx, repo.db, accountID)
 	if err == sql.ErrNoRows {
-		return nil, merror.NotFound().Detail("id", merror.DVNotFound)
+		return ret, merror.NotFound().Detail("id", merror.DVNotFound)
 	}
 	if err != nil {
-		return nil, err
+		return ret, err
 	}
 
-	return &domain.Account{
-		ID: account.ID,
-	}, nil
+	ret.ID = account.ID
+	ret.HasPassword = (len(account.Password) != 0)
+	return ret, nil
 }
