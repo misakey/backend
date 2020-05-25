@@ -1,0 +1,24 @@
+{{/* Inspiration: https://discourse.gohugo.io/t/making-highlight-shortcode-indentation-aware-for-code-blocks-within-list/18462/2
+   and: https://github.com/gohugoio/hugo/issues/247#issuecomment-510148900 */}}
+{{- $content := .Get 0 | readFile -}}
+{{- $indent := .Get 1 | default 0 -}}
+{{- $firstLineIndent := .Get 2 | default false -}}
+{{- $include_invocations := findRE `{{ include \S+ \d+ }}` $content -}}
+{{- range $i, $invocation := $include_invocations -}}
+  {{- $splitted := split $invocation " " -}}
+  {{- $included := index $splitted 2 -}}
+  {{- $inclusion_source := $included | readFile -}}
+  {{- $inclusion_indentation := index $splitted 3 -}}
+  {{- $inclusion_indented_newline := printf "\n%s" (" " | strings.Repeat $inclusion_indentation) -}}
+  {{- $inclusion := replaceRE "\n" $inclusion_indented_newline $inclusion_source -}}
+  {{- $content = replaceRE $invocation $inclusion $content -}}
+{{- end -}}
+{{- $lines := (split $content "\n") -}}
+{{- $num_lines := (len $lines) -}}
+{{- range $i, $line := $lines -}}
+  {{- if or (gt $i 0) $firstLineIndent -}}
+    {{- " " | strings.Repeat $indent -}}
+  {{- end -}}
+  {{ $line | safeHTML }}
+  {{- if (lt $i (sub $num_lines 1)) -}}{{ "\n" }}{{- end -}}
+{{- end -}}
