@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/volatiletech/sqlboiler/types"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
@@ -19,7 +20,7 @@ type codeMetadata struct {
 }
 
 // generateCodeMetadata cryptographically: a code with secure pseudorandom number generated.
-func generateCodeMetadata() (ret json.RawMessage, err error) {
+func generateCodeMetadata() (ret types.JSON, err error) {
 	b := make([]byte, codeSize)
 	n, err := io.ReadAtLeast(rand.Reader, b, codeSize)
 	if err != nil {
@@ -38,7 +39,7 @@ func generateCodeMetadata() (ret json.RawMessage, err error) {
 	return ret, ret.UnmarshalJSON(data)
 }
 
-func toCodeMetadata(msg json.RawMessage) (ret codeMetadata, err error) {
+func toCodeMetadata(msg types.JSON) (ret codeMetadata, err error) {
 	msgJSON, err := msg.MarshalJSON()
 	if err != nil {
 		return ret, err

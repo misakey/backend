@@ -4,11 +4,13 @@
 package sqlboiler
 
 var TableNames = struct {
-	Account    string
-	Identifier string
-	Identity   string
+	Account            string
+	AuthenticationStep string
+	Identifier         string
+	Identity           string
 }{
-	Account:    "account",
-	Identifier: "identifier",
-	Identity:   "identity",
+	Account:            "account",
+	AuthenticationStep: "authentication_step",
+	Identifier:         "identifier",
+	Identity:           "identity",
 }

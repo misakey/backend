@@ -1,3 +1,9 @@
+no-tests = true
+no-hooks = true
+pkgname = "sqlboiler"
+output = "sqlboiler"
+wipe = true
+
 [psql]
   dbname = "api"
   host   = "localhost"

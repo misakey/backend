@@ -110,10 +110,8 @@ The request doesn't require an authorization header.
 
 _JSON Body:_
 
-| field             | type   | description       |
-| :---              | :---   | :---              |
-| _login_challenge_ | string | **required**. can be found in preivous redirect URL |
-| _value_           | string | **required**. the identifier value the end-user entered in the dedicated input text |
+- `login_challenge` (string): can be found in preivous redirect URL.
+- `value` (string): the identifier value the end-user entered in the dedicated input text.
 
 ### Success Response
 
@@ -147,19 +145,17 @@ _Code:_
   }
 ```
 
-| field           | type             | description       |
-| :---            | :---             | :---              |
-| _id_            | uuid string      | unique identity id |
-| _account_id_    | uuid string      | **nullable**. linked account identifier |
-| _is_authable_   | boolean          | either the identity can be used to performed to authenticate the end-user |
-| _display_name_  | string           | a customizable display name |
-| _notifications_ | string           | configuration of notificatons: _minimal_, _moderate_ or _frequent_ |
-| _avatar_url_    | string           | **nullable**. web address of the end-user avatar file |
-| _confirmed_     | boolean          | either the identity has been proven |
-| _client_id_     | uuid string      | client_id parameter received during the auth flow init |
-| _scope_         | array of strings | **can be empty**. current auth flow's scope |
-| _acr_values_    | array of strings | **can be empty**. current auth flow's acr_values |
-| _login_hint_    | string           | **can be empty**. current auth flow's login_hint |
+- `id` (uuid string): unique identity id.
+- `account_id` (uuid string) (nullable): linked account identifier.
+- `is_authable` (boolean): either the identity can be used to performed to authenticate the end-user.
+- `display_name` (string): a customizable display name.
+- `notifications` (string) (one of: _minimal_, _moderate_ or _frequent_): the configuration of notificatons.
+- `avatar_url` (string) (nullable): the web address of the end-user avatar file.
+- `confirmed` (boolean): either the identity has been proven.
+- `client_id` (uuid string): client_id parameter received during the auth flow init.
+- `scope` (array of strings) (can be empty): the current auth flow's scope.
+- `acr_values` (array of strings) (can be empty): the current auth flow's acr_values.
+- `login_hint` (string) (can be empty): the current auth flow's login_hint.
 
 ____
 # Perform a authentication step in the login flow
@@ -189,12 +185,10 @@ The request doesn't require an authorization header.
 
 _JSON Body:_
 
-| field             | type        | description       |
-| :---              | :---        | :---              |
-| _login_challenge_ | string      | **required**. can be found in preivous redirect URL |
-| _identity_id_     | uuid string | **required**. the authable identity id |
-| _method_name      | string      | **required**. the authentication method used: _emailed_code_. |
-| _metadata_        | json object | **required**. metadata containing the emailed code value |
+- `login_challenge` (string): can be found in preivous redirect URL.
+- `identity_id` (uuid string): the authable identity id.
+- `method_nam` (string) (one of: _emailed_code_): the authentication method used.
+- `metadata` (json object): metadata containing the emailed code value.
 
 ### Success Response
 
@@ -212,11 +206,9 @@ _JSON Body:_
 }
 ```
 
-| field           | type             | description                                  |
-| :---            | :---             | :---                                         |
-| _redirect_to_   | string           | URL the user's agent should be redirected to |
+- `redirect_to` (string): the URL the user's agent should be redirected to.
 
-### Noticeable Error Responses
+### Notable Error Responses
 
 On errors, some information should be displayed to the end-user.
 
@@ -226,13 +218,13 @@ This error occurs when the code received in metadata does not match any stored c
 
 _Code:_
 ```bash
-  HTTP 403 OK
+  HTTP 403 FORBIDDEN
 ```
 
 _JSON Body:_
 ```json
 {
-     "code": "foribdden",
+     "code": "forbidden",
      "origin": "body",
      "details": {
        "code": "invalid",
@@ -247,13 +239,13 @@ to use it is expired.
 
 _Code:_
 ```bash
-  HTTP 403 OK
+  HTTP 403 FORBIDDEN
 ```
 
 _JSON Body:_
 ```json
 {
-     "code": "foribdden",
+     "code": "forbidden",
      "origin": "body",
      "details": {
        "code": "expired",

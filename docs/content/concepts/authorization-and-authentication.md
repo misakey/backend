@@ -49,7 +49,7 @@ certified by the [Open ID foundation][].
 To generate a token for a user, **only the authorization code flow using a
 confidential client** is possible.
 
-The exchange of the code against the final tokens need [client authentication][],
+The exchange of the code against the final tokens needs [client authentication][],
 the `private_key_jwt` method only can be used.
 
 ### 3.2. Token
@@ -159,7 +159,7 @@ are different way/path to prove a user identity.
 The system follows, as an example, [Level of Assurance][] paper to consider
 how an authentication method is secure.
 
-**What kind of authentication method sjould be used ?**
+**What kind of authentication method should be used ?**
 
 The kind of authentication method for a given `acr` is today known by both auth server & the user interfaces.
 
@@ -183,7 +183,7 @@ In order to trigger it:
 - The identifier kind shall be: `email`.
 - The secret kind shall be: `emailed_code`.
 
-The user must complete the authentication by sending thee received code in a short time window.
+The user must complete the authentication by sending the received code in a short time window.
 The user must wait some timee between two codes generation/sending.
 
 Used alone, its final corresponding `acr` is 1.

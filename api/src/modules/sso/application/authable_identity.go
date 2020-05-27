@@ -96,7 +96,7 @@ func (sso SSOService) RequireIdentityAuthable(ctx context.Context, cmd IdentityA
 
 	// 4. if the identity has no linked account, we automatically init a emailed code authentication step
 	if view.Identity.AccountID.IsZero() {
-		if err := sso.authenticationService.CreateEmailedCode(view.Identity.ID); err != nil {
+		if err := sso.authenticationService.CreateEmailedCode(ctx, view.Identity.ID); err != nil {
 			return view, err
 		}
 	}

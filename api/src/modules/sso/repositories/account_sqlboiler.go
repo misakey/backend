@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -38,7 +37,6 @@ func (repo AccountSQLBoiler) Create(ctx context.Context, account *domain.Account
 		Password: account.Password,
 	}
 
-	fmt.Println(sqlAccount)
 	return sqlAccount.Insert(ctx, repo.db, boil.Infer())
 }
 

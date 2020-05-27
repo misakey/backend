@@ -50,8 +50,7 @@ func InitModule(router *echo.Echo, dbConn *sql.DB) {
 	accountRepo := repositories.NewAccountSQLBoiler(dbConn)
 	identifierRepo := repositories.NewIdentifierSQLBoiler(dbConn)
 	identityRepo := repositories.NewIdentitySQLBoiler(dbConn)
-	// TODO13: make it persistent with sql boiler
-	authnStepRepo := repositories.NewAuthenticationStepMemory()
+	authnStepRepo := repositories.NewAuthenticationStepSQLBoiler(dbConn)
 	hydraRepo := repositories.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
 
 	// init services

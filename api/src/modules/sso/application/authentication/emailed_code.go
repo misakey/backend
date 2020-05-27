@@ -1,18 +1,19 @@
 package authentication
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/types"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 // CreateEmailedCode authentication step
-func (as *Service) CreateEmailedCode(identityID string) error {
+func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) error {
 	// TODO10: limit the creation of emailed code in time (one every 5 minutes)
 	codeMetadata, err := generateCodeMetadata()
 	if err != nil {
@@ -24,12 +25,12 @@ func (as *Service) CreateEmailedCode(identityID string) error {
 		MethodName: authentication.EmailedCodeMethod,
 		Metadata:   codeMetadata,
 
-		InitiatedAt: time.Now(),
+		CreatedAt: time.Now(),
 
 		Complete:   false,
 		CompleteAt: null.Time{},
 	}
-	if err := as.steps.Create(&flow); err != nil {
+	if err := as.steps.Create(ctx, &flow); err != nil {
 		return err
 	}
 
@@ -38,7 +39,7 @@ func (as *Service) CreateEmailedCode(identityID string) error {
 	return nil
 }
 
-func (as *Service) assertEmailedCode(currentStep authentication.Step, inputMetadata json.RawMessage) error {
+func (as *Service) assertEmailedCode(currentStep authentication.Step, inputMetadata types.JSON) error {
 	// transform metadata into code metadata structure
 	input, err := toCodeMetadata(inputMetadata)
 	if err != nil {
@@ -48,7 +49,7 @@ func (as *Service) assertEmailedCode(currentStep authentication.Step, inputMetad
 	stored, err := toCodeMetadata(currentStep.Metadata)
 	if err != nil {
 		return merror.Forbidden().
-			Describef("could not convert step %s as emailed code: %v", currentStep.ID, err.Error()).
+			Describef("could not convert step %d as emailed code: %v", currentStep.ID, err.Error()).
 			Detail("stored_code", merror.DVMalformed)
 	}
 
@@ -58,7 +59,7 @@ func (as *Service) assertEmailedCode(currentStep authentication.Step, inputMetad
 	}
 
 	// check stored code is not expired
-	if time.Now().After(currentStep.InitiatedAt.Add(5 * time.Minute)) {
+	if time.Now().After(currentStep.CreatedAt.Add(5 * time.Minute)) {
 		return merror.Forbidden().From(merror.OriBody).Detail("code", merror.DVExpired)
 	}
 

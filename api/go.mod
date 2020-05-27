@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
 	github.com/benbjohnson/clock v1.0.2 // indirect
+	github.com/ericlagergren/decimal v0.0.0-20191206042408-88212e6cfca9 // indirect
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect

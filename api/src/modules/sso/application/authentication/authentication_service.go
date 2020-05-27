@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
@@ -14,8 +13,8 @@ type Service struct {
 }
 
 type stepRepo interface {
-	Create(*authentication.Step) error
-	Update(context.Context, *authentication.Step) error
+	Create(ctx context.Context, step *authentication.Step) error
+	CompleteAt(ctx context.Context, stepID int, completeTime time.Time) error
 	Last(ctx context.Context, identityID string, methodName authentication.Method) (authentication.Step, error)
 }
 
@@ -50,8 +49,7 @@ func (as *Service) AssertStep(ctx context.Context, assertion authentication.Step
 
 	// complete the authentication step - update the entity
 	currentStep.Complete = true
-	currentStep.CompleteAt = null.TimeFrom(time.Now())
-	if err := as.steps.Update(ctx, &currentStep); err != nil {
+	if err := as.steps.CompleteAt(ctx, currentStep.ID, time.Now()); err != nil {
 		return err
 	}
 

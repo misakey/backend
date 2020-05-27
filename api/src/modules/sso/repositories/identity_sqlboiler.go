@@ -54,7 +54,7 @@ func (repo *IdentitySQLBoiler) Create(ctx context.Context, identity *domain.Iden
 func (repo *IdentitySQLBoiler) Get(ctx context.Context, identityID string) (ret domain.Identity, err error) {
 	identity, err := sqlboiler.FindIdentity(ctx, repo.db, identityID)
 	if err == sql.ErrNoRows {
-		return ret, merror.NotFound().Detail("id", merror.DVNotFound)
+		return ret, merror.NotFound().Describe(err.Error()).Detail("id", merror.DVNotFound)
 	}
 	if err != nil {
 		return ret, err

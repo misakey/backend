@@ -95,8 +95,6 @@ type (
 	// AccountSlice is an alias for a slice of pointers to Account.
 	// This should generally be used opposed to []Account.
 	AccountSlice []*Account
-	// AccountHook is the signature for custom Account hook methods
-	AccountHook func(context.Context, boil.ContextExecutor, *Account) error
 
 	accountQuery struct {
 		*queries.Query
@@ -124,176 +122,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var accountBeforeInsertHooks []AccountHook
-var accountBeforeUpdateHooks []AccountHook
-var accountBeforeDeleteHooks []AccountHook
-var accountBeforeUpsertHooks []AccountHook
-
-var accountAfterInsertHooks []AccountHook
-var accountAfterSelectHooks []AccountHook
-var accountAfterUpdateHooks []AccountHook
-var accountAfterDeleteHooks []AccountHook
-var accountAfterUpsertHooks []AccountHook
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *Account) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range accountBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *Account) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range accountBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *Account) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range accountBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *Account) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range accountBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *Account) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range accountAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *Account) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range accountAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *Account) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range accountAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *Account) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range accountAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *Account) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range accountAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddAccountHook registers your hook function for all future operations.
-func AddAccountHook(hookPoint boil.HookPoint, accountHook AccountHook) {
-	switch hookPoint {
-	case boil.BeforeInsertHook:
-		accountBeforeInsertHooks = append(accountBeforeInsertHooks, accountHook)
-	case boil.BeforeUpdateHook:
-		accountBeforeUpdateHooks = append(accountBeforeUpdateHooks, accountHook)
-	case boil.BeforeDeleteHook:
-		accountBeforeDeleteHooks = append(accountBeforeDeleteHooks, accountHook)
-	case boil.BeforeUpsertHook:
-		accountBeforeUpsertHooks = append(accountBeforeUpsertHooks, accountHook)
-	case boil.AfterInsertHook:
-		accountAfterInsertHooks = append(accountAfterInsertHooks, accountHook)
-	case boil.AfterSelectHook:
-		accountAfterSelectHooks = append(accountAfterSelectHooks, accountHook)
-	case boil.AfterUpdateHook:
-		accountAfterUpdateHooks = append(accountAfterUpdateHooks, accountHook)
-	case boil.AfterDeleteHook:
-		accountAfterDeleteHooks = append(accountAfterDeleteHooks, accountHook)
-	case boil.AfterUpsertHook:
-		accountAfterUpsertHooks = append(accountAfterUpsertHooks, accountHook)
-	}
-}
-
 // One returns a single account record from the query.
 func (q accountQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Account, error) {
 	o := &Account{}
@@ -305,11 +133,7 @@ func (q accountQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Acco
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: failed to execute a one query for account")
-	}
-
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
+		return nil, errors.Wrap(err, "sqlboiler: failed to execute a one query for account")
 	}
 
 	return o, nil
@@ -321,15 +145,7 @@ func (q accountQuery) All(ctx context.Context, exec boil.ContextExecutor) (Accou
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "model: failed to assign all query results to Account slice")
-	}
-
-	if len(accountAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
+		return nil, errors.Wrap(err, "sqlboiler: failed to assign all query results to Account slice")
 	}
 
 	return o, nil
@@ -344,7 +160,7 @@ func (q accountQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to count account rows")
+		return 0, errors.Wrap(err, "sqlboiler: failed to count account rows")
 	}
 
 	return count, nil
@@ -360,7 +176,7 @@ func (q accountQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bo
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "model: failed to check if account exists")
+		return false, errors.Wrap(err, "sqlboiler: failed to check if account exists")
 	}
 
 	return count > 0, nil
@@ -448,13 +264,6 @@ func (accountL) LoadIdentities(ctx context.Context, e boil.ContextExecutor, sing
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for identity")
 	}
 
-	if len(identityAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.Identities = resultSlice
 		for _, foreign := range resultSlice {
@@ -631,7 +440,7 @@ func FindAccount(ctx context.Context, exec boil.ContextExecutor, iD string, sele
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "model: unable to select from account")
+		return nil, errors.Wrap(err, "sqlboiler: unable to select from account")
 	}
 
 	return accountObj, nil
@@ -641,14 +450,10 @@ func FindAccount(ctx context.Context, exec boil.ContextExecutor, iD string, sele
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
 func (o *Account) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
-		return errors.New("model: no account provided for insertion")
+		return errors.New("sqlboiler: no account provided for insertion")
 	}
 
 	var err error
-
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
 
 	nzDefaults := queries.NonZeroDefaultSet(accountColumnsWithDefault, o)
 
@@ -704,7 +509,7 @@ func (o *Account) Insert(ctx context.Context, exec boil.ContextExecutor, columns
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "model: unable to insert into account")
+		return errors.Wrap(err, "sqlboiler: unable to insert into account")
 	}
 
 	if !cached {
@@ -713,7 +518,7 @@ func (o *Account) Insert(ctx context.Context, exec boil.ContextExecutor, columns
 		accountInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the Account.
@@ -721,9 +526,6 @@ func (o *Account) Insert(ctx context.Context, exec boil.ContextExecutor, columns
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *Account) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	accountUpdateCacheMut.RLock()
 	cache, cached := accountUpdateCache[key]
@@ -739,7 +541,7 @@ func (o *Account) Update(ctx context.Context, exec boil.ContextExecutor, columns
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return 0, errors.New("model: unable to update account, could not build whitelist")
+			return 0, errors.New("sqlboiler: unable to update account, could not build whitelist")
 		}
 
 		cache.query = fmt.Sprintf("UPDATE \"account\" SET %s WHERE %s",
@@ -762,12 +564,12 @@ func (o *Account) Update(ctx context.Context, exec boil.ContextExecutor, columns
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: unable to update account row")
+		return 0, errors.Wrap(err, "sqlboiler: unable to update account row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to get rows affected by update for account")
+		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by update for account")
 	}
 
 	if !cached {
@@ -776,7 +578,7 @@ func (o *Account) Update(ctx context.Context, exec boil.ContextExecutor, columns
 		accountUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -785,12 +587,12 @@ func (q accountQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, 
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: unable to update all for account")
+		return 0, errors.Wrap(err, "sqlboiler: unable to update all for account")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "model: unable to retrieve rows affected for account")
+		return 0, errors.Wrap(err, "sqlboiler: unable to retrieve rows affected for account")
 	}
 
 	return rowsAff, nil
@@ -804,7 +606,7 @@ func (o AccountSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	if len(cols) == 0 {
-		return 0, errors.New("model: update all requires at least one column argument")
+		return 0, errors.New("sqlboiler: update all requires at least one column argument")
 	}
 
 	colNames := make([]string, len(cols))
@@ -834,12 +636,12 @@ func (o AccountSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, 
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: unable to update all in account slice")
+		return 0, errors.Wrap(err, "sqlboiler: unable to update all in account slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "model: unable to retrieve rows affected all in update all account")
+		return 0, errors.Wrap(err, "sqlboiler: unable to retrieve rows affected all in update all account")
 	}
 	return rowsAff, nil
 }
@@ -848,11 +650,7 @@ func (o AccountSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, 
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
 func (o *Account) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
-		return errors.New("model: no account provided for upsert")
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
+		return errors.New("sqlboiler: no account provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(accountColumnsWithDefault, o)
@@ -904,7 +702,7 @@ func (o *Account) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 		)
 
 		if updateOnConflict && len(update) == 0 {
-			return errors.New("model: unable to upsert account, could not build update column list")
+			return errors.New("sqlboiler: unable to upsert account, could not build update column list")
 		}
 
 		conflict := conflictColumns
@@ -947,7 +745,7 @@ func (o *Account) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "model: unable to upsert account")
+		return errors.Wrap(err, "sqlboiler: unable to upsert account")
 	}
 
 	if !cached {
@@ -956,18 +754,14 @@ func (o *Account) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 		accountUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single Account record with an executor.
 // Delete will match against the primary key column to find the record to delete.
 func (o *Account) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return 0, errors.New("model: no Account provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
+		return 0, errors.New("sqlboiler: no Account provided for delete")
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), accountPrimaryKeyMapping)
@@ -980,16 +774,12 @@ func (o *Account) Delete(ctx context.Context, exec boil.ContextExecutor) (int64,
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: unable to delete from account")
+		return 0, errors.Wrap(err, "sqlboiler: unable to delete from account")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to get rows affected by delete for account")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by delete for account")
 	}
 
 	return rowsAff, nil
@@ -998,19 +788,19 @@ func (o *Account) Delete(ctx context.Context, exec boil.ContextExecutor) (int64,
 // DeleteAll deletes all matching rows.
 func (q accountQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
-		return 0, errors.New("model: no accountQuery provided for delete all")
+		return 0, errors.New("sqlboiler: no accountQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: unable to delete all from account")
+		return 0, errors.Wrap(err, "sqlboiler: unable to delete all from account")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to get rows affected by deleteall for account")
+		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for account")
 	}
 
 	return rowsAff, nil
@@ -1020,14 +810,6 @@ func (q accountQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) 
 func (o AccountSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if len(o) == 0 {
 		return 0, nil
-	}
-
-	if len(accountBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	var args []interface{}
@@ -1046,20 +828,12 @@ func (o AccountSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) 
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "model: unable to delete all from account slice")
+		return 0, errors.Wrap(err, "sqlboiler: unable to delete all from account slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "model: failed to get rows affected by deleteall for account")
-	}
-
-	if len(accountAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
+		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for account")
 	}
 
 	return rowsAff, nil
@@ -1098,7 +872,7 @@ func (o *AccountSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "model: unable to reload all in AccountSlice")
+		return errors.Wrap(err, "sqlboiler: unable to reload all in AccountSlice")
 	}
 
 	*o = slice
@@ -1120,7 +894,7 @@ func AccountExists(ctx context.Context, exec boil.ContextExecutor, iD string) (b
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "model: unable to check if account exists")
+		return false, errors.Wrap(err, "sqlboiler: unable to check if account exists")
 	}
 
 	return exists, nil
