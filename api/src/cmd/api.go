@@ -12,6 +12,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/echorouter"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/generic"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk"
@@ -66,6 +67,7 @@ func initService() {
 	// init modules
 	generic.InitModule(e)
 	sso.InitModule(e, dbConn)
+	boxes.InitModule(e, dbConn)
 
 	// finally launch the echo server
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", viper.GetInt("server.port"))))

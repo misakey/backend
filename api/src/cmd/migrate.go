@@ -7,7 +7,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/msk-sdk-go/migration"
 
-	_ "gitlab.misakey.dev/misakey/backend/api/src/modules/sso/db/migration"
+	_ "gitlab.misakey.dev/misakey/backend/api/src/db/migration"
 )
 
 var migrateCmd = &cobra.Command{

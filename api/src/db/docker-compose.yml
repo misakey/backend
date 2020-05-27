@@ -3,7 +3,7 @@ version: '2.1'
 services:
   api_migrate:
     build:
-      context: ../../../..
+      context: ../../
       dockerfile: Dockerfile
     depends_on:
       api_db:
