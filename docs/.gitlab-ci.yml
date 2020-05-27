@@ -1,0 +1,26 @@
+.only-docs:
+  only:
+    changes:
+      - ".gitlab-ci.yml"
+      - "docs/**/*"
+
+variables:
+  DOCUMENTATION_URL: "https://misakey.pages.misakey.dev/backend/"
+
+pages:
+  image:
+    name: klakegg/hugo:latest
+    entrypoint: [""]
+  extends:
+    - .only-master-and-manual
+    - .only-docs
+  stage: build
+  tags:
+    - misakey_docker
+  script:
+    - echo "Will deploy documentation on $DOCUMENTATION_URL"
+    - hugo -s docs --baseURL "$DOCUMENTATION_URL"
+    - cp -r docs/public public
+  artifacts:
+    paths:
+      - public

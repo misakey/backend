@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>API Documentation</title>
-    <link rel="stylesheet" href="/main.css">
+    <link rel="stylesheet" href="{{ .Site.BaseURL }}/main.css">
   </head>
   <body>
     {{ block "h1" .}}
-    <p><a href="/">Home</a></p>
+    <p><a href="{{ .Site.BaseURL }}">Home</a></p>
     <h1>{{ .Title }}</h1>
     {{ end }}
     {{ block "main" . }}
