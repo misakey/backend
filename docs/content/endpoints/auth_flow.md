@@ -127,7 +127,7 @@ _Code:_
     "identity": {
         "id": "4a98b5a1-1c08-46c9-8f26-18d54cbed30a",
         "account_id": null,
-        "identifer_id": "53515d02-642a-4043-a943-bb11c0bdc6a5",
+        "identifier_id": "53515d02-642a-4043-a943-bb11c0bdc6a5",
         "is_authable": true,
         "display_name": "auth@test.com",
         "notifications": "minimal",
@@ -158,7 +158,7 @@ _Code:_
 - `login_hint` (string) (can be empty): the current auth flow's login_hint.
 
 ____
-# Perform a authentication step in the login flow
+# Perform an authentication step in the login flow
 
 The next step to authentication the end-user is to let them enter some information
 assuring they own the identity. This is called an **authentication step**.
@@ -174,7 +174,7 @@ even for our most secure flows.
 {
   "login_challenge": "e2645a0592e94ee78d8fbeaf65a4b82b",
   "step": {
-    "identity_id": "e45f579fd02d41adbf8cb45e0f6a44ff",
+    "identity_id": "53515d02-642a-4043-a943-bb11c0bdc6a5",
     "method_name": "emailed_code",
     "metadata": { "code": "320028" }
   }
