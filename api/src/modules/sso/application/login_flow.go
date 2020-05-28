@@ -15,13 +15,13 @@ func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) stri
 	return sso.authFlowService.LoginInit(ctx, loginChallenge)
 }
 
-type LoginStepCmd struct {
-	LoginChallenge string              `json:"login_challenge"`
-	Step           authentication.Step `json:"step"`
+type LoginAuthnStepCmd struct {
+	LoginChallenge string     `json:"login_challenge"`
+	Step           authn.Step `json:"authn_step"`
 }
 
 // Validate the LoginStepCmd
-func (cmd LoginStepCmd) Validate() error {
+func (cmd LoginAuthnStepCmd) Validate() error {
 	// validate nested structure separately
 	if err := validation.ValidateStruct(&cmd.Step,
 		validation.Field(&cmd.Step.IdentityID, validation.Required, is.UUIDv4.Error("identity id should be an uuid v4")),
@@ -72,7 +72,7 @@ func (sso SSOService) LoginInfo(ctx context.Context, loginChallenge string) (Log
 
 // LoginStep assert an authentication step in a multi-factor authentication process
 // Today there is only one-step authentication process existing
-func (sso SSOService) LoginStep(ctx context.Context, cmd LoginStepCmd) (login.Redirect, error) {
+func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd) (login.Redirect, error) {
 	redirect := login.Redirect{}
 
 	// 1. ensure the login challenge is correct
@@ -82,7 +82,7 @@ func (sso SSOService) LoginStep(ctx context.Context, cmd LoginStepCmd) (login.Re
 	}
 
 	// 2. try to assert the authentication step
-	if err := sso.authenticationService.AssertStep(ctx, cmd.Step); err != nil {
+	if err := sso.authenticationService.AssertAuthnStep(ctx, cmd.Step); err != nil {
 		return redirect, err
 	}
 

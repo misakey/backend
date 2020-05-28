@@ -25,7 +25,7 @@ func NewAuthenticationStepSQLBoiler(db *sql.DB) *AuthenticationStepSQLBoiler {
 	}
 }
 
-func (repo *AuthenticationStepSQLBoiler) Create(ctx context.Context, authnStep *authentication.Step) error {
+func (repo *AuthenticationStepSQLBoiler) Create(ctx context.Context, authnStep *authn.Step) error {
 	// convert domain to sql model
 	sqlAuthnStep := sqlboiler.AuthenticationStep{
 		IdentityID: authnStep.IdentityID,
@@ -56,10 +56,10 @@ func (repo *AuthenticationStepSQLBoiler) CompleteAt(ctx context.Context, id int,
 func (repo *AuthenticationStepSQLBoiler) Last(
 	ctx context.Context,
 	identityID string,
-	methodName authentication.Method,
-) (authentication.Step, error) {
+	methodName authn.Method,
+) (authn.Step, error) {
 
-	authnStep := authentication.Step{}
+	authnStep := authn.Step{}
 
 	mods := []qm.QueryMod{
 		sqlboiler.AuthenticationStepWhere.IdentityID.EQ(identityID),
@@ -80,7 +80,7 @@ func (repo *AuthenticationStepSQLBoiler) Last(
 	// build domain model based on sql data
 	authnStep.ID = sqlAuthnStep.ID
 	authnStep.IdentityID = sqlAuthnStep.IdentityID
-	authnStep.MethodName = authentication.Method(sqlAuthnStep.MethodName)
+	authnStep.MethodName = authn.Method(sqlAuthnStep.MethodName)
 	authnStep.Metadata = sqlAuthnStep.Metadata
 	authnStep.CreatedAt = sqlAuthnStep.CreatedAt
 	authnStep.CompleteAt = sqlAuthnStep.CompleteAt

@@ -49,8 +49,8 @@ func (af AuthFlowHTTP) LoginInfo(ctx echo.Context) error {
 }
 
 // Handles POST /login/step - perform authentication request for a login flow
-func (af AuthFlowHTTP) LoginStep(ctx echo.Context) error {
-	cmd := application.LoginStepCmd{}
+func (af AuthFlowHTTP) LoginAuthnStep(ctx echo.Context) error {
+	cmd := application.LoginAuthnStepCmd{}
 
 	if err := ctx.Bind(&cmd); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
@@ -60,7 +60,7 @@ func (af AuthFlowHTTP) LoginStep(ctx echo.Context) error {
 		return merror.Transform(err).From(merror.OriBody)
 	}
 
-	redirect, err := af.service.LoginStep(ctx.Request().Context(), cmd)
+	redirect, err := af.service.LoginAuthnStep(ctx.Request().Context(), cmd)
 	if err != nil {
 		return merror.Transform(err).From(merror.OriBody).Describe("could not step on login flow")
 	}

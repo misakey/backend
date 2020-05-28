@@ -1,4 +1,4 @@
-package authentication
+package authn
 
 import (
 	"context"
@@ -14,9 +14,9 @@ type Service struct {
 }
 
 type stepRepo interface {
-	Create(ctx context.Context, step *authentication.Step) error
+	Create(ctx context.Context, step *authn.Step) error
 	CompleteAt(ctx context.Context, stepID int, completeTime time.Time) error
-	Last(ctx context.Context, identityID string, methodName authentication.Method) (authentication.Step, error)
+	Last(ctx context.Context, identityID string, methodName authn.Method) (authn.Step, error)
 }
 
 func NewService(steps stepRepo) Service {
@@ -27,7 +27,7 @@ func NewService(steps stepRepo) Service {
 
 // AssertStep considering the method name and the received metadata
 // Return no error in case of success
-func (as *Service) AssertStep(ctx context.Context, assertion authentication.Step) error {
+func (as *Service) AssertAuthnStep(ctx context.Context, assertion authn.Step) error {
 	// always take the most recent step as the current one - ignore others
 	currentStep, err := as.steps.Last(ctx, assertion.IdentityID, assertion.MethodName)
 	if err != nil {
@@ -41,7 +41,7 @@ func (as *Service) AssertStep(ctx context.Context, assertion authentication.Step
 	// check the metadata
 	var metadataErr error
 	switch currentStep.MethodName {
-	case authentication.EmailedCodeMethod:
+	case authn.EmailedCodeMethod:
 		metadataErr = as.assertEmailedCode(currentStep, assertion.Metadata)
 	default:
 		metadataErr = merror.BadRequest().Detail("method_name", merror.DVInvalid)

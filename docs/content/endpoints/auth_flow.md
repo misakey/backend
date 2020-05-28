@@ -167,42 +167,37 @@ _JSON Body:_
 ```json
   {
     "identity": {
-        "id": "4a98b5a1-1c08-46c9-8f26-18d54cbed30a",
-        "account_id": null,
-        "identifier_id": "53515d02-642a-4043-a943-bb11c0bdc6a5",
-        "is_authable": true,
-        "display_name": "auth@test.com",
-        "notifications": "minimal",
-        "avatar_url": null,
-        "confirmed": false
+        "display_name": "MUCHMICHMACH@test.com",
+        "avatar_url": null
+    },
+    "authn_step": {
+        "identity_id": "4a98b5a1-1c08-46c9-8f26-18d54cbed30a",
+        "method_name": "emailed_code"
     },
   }
 ```
 
-- `id` (uuid string): unique identity id.
-- `account_id` (uuid string) (nullable): linked account identifier.
-- `is_authable` (boolean): either the identity can be used to performed to authenticate the end-user.
 - `display_name` (string): a customizable display name.
-- `notifications` (string) (one of: _minimal_, _moderate_ or _frequent_): the configuration of notificatons.
 - `avatar_url` (string) (nullable): the web address of the end-user avatar file.
-- `confirmed` (boolean): either the identity has been proven.
+- `identity_id` (uuid string): the unique identity id the authentication step is attached to.
+- `method_name` (string) (one of: _emailed_code_): the preferred authentication method.
 ____
 # Perform an authentication step in the login flow
 
-The next step to authentication the end-user is to let them enter some information
+The next step to authenticate the end-user is to let them enter some information
 assuring they own the identity. This is called an **authentication step**.
 
 Some login flow will require many steps later but as of today, we only have one step
 even for our most secure flows.
 
 ```bash
-  POST https://api.misakey.com.local/auth/login/step
+  POST https://api.misakey.com.local/auth/login/authn-step
 ```
 
 ```json
 {
   "login_challenge": "e2645a0592e94ee78d8fbeaf65a4b82b",
-  "step": {
+  "authn_step": {
     "identity_id": "53515d02-642a-4043-a943-bb11c0bdc6a5",
     "method_name": "emailed_code",
     "metadata": { "code": "320028" }
@@ -214,9 +209,9 @@ The request doesn't require an authorization header.
 
 _JSON Body:_
 
-- `login_challenge` (string): can be found in preivous redirect URL.
+- `login_challenge` (string): can be found in previous redirect URL.
 - `identity_id` (uuid string): the authable identity id.
-- `method_nam` (string) (one of: _emailed_code_): the authentication method used.
+- `method_name` (string) (one of: _emailed_code_): the authentication method used.
 - `metadata` (json object): metadata containing the emailed code value.
 
 ### Success Response
@@ -290,16 +285,16 @@ This request allows to init an authentication step:
 - if a new step must be initialized
 
 ```bash
-  POST https://api.misakey.com.local/authentication-steps
+  POST https://api.misakey.com.local/authn-steps
 ```
 
 ```json
   {
-  	"login_challenge": "e45f579fd02d41adbf8cb45e0f6a44ff",
-  	"step": {
-  		"identity_id": "fed6784f-913b-49cb-9174-a8b7dc6bc675",
-        "method_name": "emailed_code"
-  	}
+    "login_challenge": "e45f579fd02d41adbf8cb45e0f6a44ff",
+    "authn_step": {
+      "identity_id": "fed6784f-913b-49cb-9174-a8b7dc6bc675",
+      "method_name": "emailed_code"
+    }
   }
 ```
 
@@ -324,7 +319,7 @@ _Code:_
 
 On errors, some information should be displayed to the end-user.
 
-**1. A step already exists:**
+**1. A authn step already exists:**
 
 This error occurs when an authentication step already exists for this `identity_id` and `method_name`
 

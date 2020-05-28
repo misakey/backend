@@ -1,4 +1,4 @@
-package authentication
+package authn
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 // CreateEmailedCode authentication step
 func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) error {
 	// try to retrieve an existing code for this identity
-	existing, err := as.steps.Last(ctx, identityID, authentication.EmailedCodeMethod)
+	existing, err := as.steps.Last(ctx, identityID, authn.EmailedCodeMethod)
 	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
 		return err
 	}
@@ -31,9 +31,9 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 		return err
 	}
 
-	flow := authentication.Step{
+	flow := authn.Step{
 		IdentityID: identityID,
-		MethodName: authentication.EmailedCodeMethod,
+		MethodName: authn.EmailedCodeMethod,
 		Metadata:   codeMetadata,
 
 		CreatedAt: time.Now(),
@@ -50,7 +50,7 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 	return nil
 }
 
-func (as *Service) assertEmailedCode(currentStep authentication.Step, inputMetadata types.JSON) error {
+func (as *Service) assertEmailedCode(currentStep authn.Step, inputMetadata types.JSON) error {
 	// transform metadata into code metadata structure
 	input, err := toCodeMetadata(inputMetadata)
 	if err != nil {

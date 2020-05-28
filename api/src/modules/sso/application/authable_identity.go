@@ -5,9 +5,11 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
 )
 
 // IdentityAuthableCmd orders:
@@ -41,7 +43,14 @@ func (cmd IdentityAuthableCmd) Validate() error {
 }
 
 type IdentityAuthableView struct {
-	Identity domain.Identity `json:"identity"`
+	Identity struct {
+		DisplayName string      `json:"display_name"`
+		AvatarURL   null.String `json:"avatar_url"`
+	} `json:"identity"`
+	AuthnStep struct {
+		IdentityID string       `json:"identity_id"`
+		MethodName authn.Method `json:"method_name"`
+	} `json:"authn_step"`
 }
 
 // RequireIdentityAuthable for an auth flow.
@@ -72,7 +81,8 @@ func (sso SSOService) RequireIdentityAuthable(ctx context.Context, cmd IdentityA
 
 	// 2. check if an identity exist for the identifier
 	identityNotFound := func(err error) bool { return err != nil && merror.HasCode(err, merror.NotFoundCode) }
-	view.Identity, err = sso.identityService.GetAuthableByIdentifierID(ctx, identifier.ID)
+	var identity domain.Identity
+	identity, err = sso.identityService.GetAuthableByIdentifierID(ctx, identifier.ID)
 	if err != nil && !identityNotFound(err) {
 		return view, err
 	}
@@ -81,23 +91,29 @@ func (sso SSOService) RequireIdentityAuthable(ctx context.Context, cmd IdentityA
 	// or just retrieve the corresponding account
 	if identityNotFound(err) {
 		// a. create the Identity without account
-		view.Identity = domain.Identity{
+		identity = domain.Identity{
 			IdentifierID: identifier.ID,
 			DisplayName:  cmd.Identifier.Value,
 			IsAuthable:   true,
 			Confirmed:    false,
 		}
-		if err := sso.identityService.Create(ctx, &view.Identity); err != nil {
+		if err := sso.identityService.Create(ctx, &identity); err != nil {
 			return view, err
 		}
 	}
 
+	// bind identity information on view
+	view.Identity.DisplayName = identity.DisplayName
+	view.Identity.AvatarURL = identity.AvatarURL
+	view.AuthnStep.IdentityID = identity.ID
+
+	// NOTE: if condition logic is commented because no password exists today
 	// 4. if the identity has no linked account, we automatically init a emailed code authentication step
-	if view.Identity.AccountID.IsZero() {
-		if err := sso.authenticationService.CreateEmailedCode(ctx, view.Identity.ID); err != nil {
-			return view, err
-		}
+	// if identity.AccountID.IsZero() {
+	if err := sso.authenticationService.CreateEmailedCode(ctx, identity.ID); err != nil {
+		return view, err
 	}
-
+	view.AuthnStep.MethodName = authn.EmailedCodeMethod
+	// }
 	return view, nil
 }

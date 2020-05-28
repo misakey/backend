@@ -6,15 +6,15 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 // AuthenticationStepCmd orders:
 // - the retry of an authentication step init for the identity
 type AuthenticationStepCmd struct {
-	LoginChallenge string              `json:"login_challenge"`
-	Step           authentication.Step `json:"step"`
+	LoginChallenge string     `json:"login_challenge"`
+	Step           authn.Step `json:"authn_step"`
 }
 
 // Validate the AuthenticationStepCmd
@@ -32,7 +32,7 @@ func (cmd AuthenticationStepCmd) Validate() error {
 }
 
 // This method is used to try to init an authentication step
-func (sso SSOService) InitStep(ctx context.Context, cmd AuthenticationStepCmd) error {
+func (sso SSOService) InitAuthnStep(ctx context.Context, cmd AuthenticationStepCmd) error {
 	var err error
 
 	// 0. check if the identity exists
@@ -49,7 +49,7 @@ func (sso SSOService) InitStep(ctx context.Context, cmd AuthenticationStepCmd) e
 
 	// 2. we try to init the authentication step
 	switch cmd.Step.MethodName {
-	case authentication.EmailedCodeMethod:
+	case authn.EmailedCodeMethod:
 		return sso.authenticationService.CreateEmailedCode(ctx, cmd.Step.IdentityID)
 	default:
 		return merror.BadRequest().Describe("unknown method name").Detail("method_name", merror.DVInvalid)

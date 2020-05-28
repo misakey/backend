@@ -12,7 +12,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/account"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authentication"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
@@ -63,7 +63,7 @@ func InitModule(router *echo.Echo, dbConn *sql.DB) {
 		viper.GetString("authflow.login_page_url"),
 		viper.GetString("authflow.consent_page_url"),
 	)
-	authenticationService := authentication.NewService(authnStepRepo)
+	authenticationService := authn.NewService(authnStepRepo)
 	ssoService := application.NewSSOService(
 		accountService,
 		identityService,
