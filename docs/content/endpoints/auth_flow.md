@@ -252,3 +252,66 @@ _JSON Body:_
      },
 }
 ```
+
+## Init a new authentication step
+
+
+This request allows to init an authentication step:
+- in case the last one has expired
+- if a new step must be initialized
+
+```bash
+  POST https://api.misakey.com.local/authentication-steps
+```
+
+```json
+  {
+  	"login_challenge": "e45f579fd02d41adbf8cb45e0f6a44ff",
+  	"step": {
+  		"identity_id": "fed6784f-913b-49cb-9174-a8b7dc6bc675",
+        "method_name": "emailed_code"
+  	}
+  }
+```
+
+The request doesn't require an authorization header.
+
+_JSON Body:_
+
+- `login_challenge` (string): can be found in previous redirect URL
+- `identity_id` (uuid string): the identity ID for which the authentication step will be initialized
+- `method_name` (string): the method used by the authentication step
+
+### Success Response
+
+This route does not return any content.
+
+_Code:_
+```bash
+    HTTP 204 No Content
+```
+
+### Notable Error Responses
+
+On errors, some information should be displayed to the end-user.
+
+**1. A step already exists:**
+
+This error occurs when an authentication step already exists for this `identity_id` and `method_name`
+
+_Code:_
+```bash
+  HTTP 409 Conflict
+```
+
+```json
+{
+    "code": "conflict",
+    "origin": "body",
+    "desc": "could not ask for a code: a code has already been generated",
+    "details": {
+        "identity_id": "conflict",
+        "method_name": "conflict"
+    }
+}
+```

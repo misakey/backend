@@ -9,7 +9,8 @@ import (
 )
 
 type Service struct {
-	steps stepRepo
+	steps        stepRepo
+	codeValidity time.Duration
 }
 
 type stepRepo interface {
@@ -19,7 +20,9 @@ type stepRepo interface {
 }
 
 func NewService(steps stepRepo) Service {
-	return Service{steps: steps}
+	return Service{
+		steps:        steps,
+		codeValidity: 5 * time.Minute}
 }
 
 // AssertStep considering the method name and the received metadata

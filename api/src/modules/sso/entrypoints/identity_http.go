@@ -37,3 +37,21 @@ func (entrypoint IdentityHTTP) RequireAuthableIdentity(ctx echo.Context) error {
 	}
 	return ctx.JSON(http.StatusOK, identity)
 }
+
+// Handles POST /authentication-steps - init a new authentication step
+func (entrypoint IdentityHTTP) InitStep(ctx echo.Context) error {
+	cmd := application.AuthenticationStepCmd{}
+	if err := ctx.Bind(&cmd); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
+
+	if err := cmd.Validate(); err != nil {
+		return merror.Transform(err).From(merror.OriBody)
+	}
+
+	if err := entrypoint.service.InitStep(ctx.Request().Context(), cmd); err != nil {
+		return merror.Transform(err).Describe("could not init authentication step").From(merror.OriBody)
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
+}

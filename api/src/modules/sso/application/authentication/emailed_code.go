@@ -14,7 +14,18 @@ import (
 
 // CreateEmailedCode authentication step
 func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) error {
-	// TODO10: limit the creation of emailed code in time (one every 5 minutes)
+	// try to retrieve an existing code for this identity
+	existing, err := as.steps.Last(ctx, identityID, authentication.EmailedCodeMethod)
+	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
+		return err
+	}
+	if err == nil && time.Now().Sub(existing.InitiatedAt) < as.codeValidity {
+		return merror.Conflict().
+			Describe("a code has already been generated").
+			Detail("identity_id", merror.DVConflict).
+			Detail("method_name", merror.DVConflict)
+	}
+
 	codeMetadata, err := generateCodeMetadata()
 	if err != nil {
 		return err
@@ -59,7 +70,7 @@ func (as *Service) assertEmailedCode(currentStep authentication.Step, inputMetad
 	}
 
 	// check stored code is not expired
-	if time.Now().After(currentStep.CreatedAt.Add(5 * time.Minute)) {
+	if time.Now().After(currentStep.InitiatedAt.Add(as.codeValidity)) {
 		return merror.Forbidden().From(merror.OriBody).Detail("code", merror.DVExpired)
 	}
 

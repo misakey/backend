@@ -17,6 +17,9 @@ func initRoutes(
 	identityHTTP := entrypoints.NewIdentityHTTP(ssoService)
 	authFlowHTTP := entrypoints.NewAuthFlowHTTP(ssoService)
 
+	routes := router.Group("")
+	routes.POST("/authentication-steps", identityHTTP.InitStep)
+
 	authRoutes := router.Group("/auth")
 	authRoutes.GET("/login", authFlowHTTP.LoginInit)
 	// TODO14: add a limit req on gateway to this endpoint
