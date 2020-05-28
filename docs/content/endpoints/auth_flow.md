@@ -60,7 +60,8 @@ ____
     GET https://auth.misakey.com.local/_/oauth2/auth
 ```
 
-  Some query parameters are expected, see [Open ID Connect RFC](https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest).
+_Query Parameters:_
+- see [Open ID Connect RFC](https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest).
 
 ### Response
 
@@ -82,13 +83,53 @@ _JSON Body:_
 The `Location` header contains the same URL than the HTML body. The user's agent should be redirected to this URL to continue the auth flow to the login flow.
 
 ____
-# Require an authable identity for a given identifier
+# Get Login Information
 
+This route is used to retrieve information about the current login flow using a login challenge.
+
+```bash
+  GET https://api.misakey.com.local/auth/login/info
+```
+
+_Query Parameters:_
+- `login_challenge` (string): the login challenge corresponding to the current auth flow.
+
+# Response
+
+_Code_:
+```bash
+    HTTP 200 OK
+```
+
+_JSON Body_:
+```json
+  {
+      "client": {
+          "id": "c001d00d-5ecc-beef-ca4e-b00b1e54a111",
+          "name": "Misakey App",
+          "logo_uri": "https://media.glassdoor.com/sqll/2449676/misakey-squarelogo-1549446114307.png"
+      },
+      "scope": [
+          "openid"
+      ],
+      "acr_values": null,
+      "login_hint": ""
+  }
+```
+
+- `client_id` (uuid string): unique identifier of the SSO client involved in the auth flow.
+- `client_name` (string): name of the concerned SSO client.
+- `client_url` (string) (nullable): web-address of the logo file representing the SSO client.
+- `scope` (string): list of scope sent during the auth flow init.
+- `acr_values` (string) (nullable): list of acr values sent during the auth flow init.
+- `login_hint` (string): the login_hint sent during the auth flow init.
+
+____
+# Require an authable identity for a given identifier
 
 This request is idempotent.
 
-This route is used to retrieve information about current login flow
-and the authable identity the end-user will log in.
+This route is used to retrieve information the authable identity the end-user will log in.
 
 The authable identity can be a new one created for the occasion or an existing one.
 See _Response_ below for more information.
@@ -115,13 +156,14 @@ _JSON Body:_
 
 ### Success Response
 
-This route returns current login flow information and the authable identity the end-user will login as.
+This route returns the authable identity the end-user will login as.
 
 _Code:_
 ```bash
     HTTP 200 OK
 ```
 
+_JSON Body:_
 ```json
   {
     "identity": {
@@ -134,14 +176,6 @@ _Code:_
         "avatar_url": null,
         "confirmed": false
     },
-    "login_info": {
-      "client_id": "c001d00d-5ecc-beef-ca4e-b00b1e54a111",
-      "scope": [
-        "openid"
-      ],
-      "acr_values": null,
-      "login_hint": ""
-    }
   }
 ```
 
@@ -152,11 +186,6 @@ _Code:_
 - `notifications` (string) (one of: _minimal_, _moderate_ or _frequent_): the configuration of notificatons.
 - `avatar_url` (string) (nullable): the web address of the end-user avatar file.
 - `confirmed` (boolean): either the identity has been proven.
-- `client_id` (uuid string): client_id parameter received during the auth flow init.
-- `scope` (array of strings) (can be empty): the current auth flow's scope.
-- `acr_values` (array of strings) (can be empty): the current auth flow's acr_values.
-- `login_hint` (string) (can be empty): the current auth flow's login_hint.
-
 ____
 # Perform an authentication step in the login flow
 
@@ -167,7 +196,7 @@ Some login flow will require many steps later but as of today, we only have one 
 even for our most secure flows.
 
 ```bash
-  POST https://api.misakey.com.local/login/step
+  POST https://api.misakey.com.local/auth/login/step
 ```
 
 ```json

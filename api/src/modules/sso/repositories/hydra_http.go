@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 
+	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
@@ -35,16 +36,49 @@ func NewHydraHTTP(
 
 // GetLoginContext from hydra
 func (hh HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (login.Context, error) {
-	logCtx := login.Context{}
+	// 1. prepare the request
+	// expected hydra DTO format
+	hydraLogReq := struct {
+		Challenge      string   `json:"challenge"`
+		Skip           bool     `json:"skip"`
+		Subject        string   `json:"subject"`
+		RequestedScope []string `json:"requested_scope"`
+		Client         struct { // concerned relying party
+			ID      string `json:"client_id"`
+			Name    string `json:"client_name"`
+			LogoURI string `json:"logo_uri"`
+		} `json:"client"`
+		OIDCContext struct { // OIDC context of the current request
+			ACRValues []string `json:"acr_values"`
+			LoginHint string   `json:"login_hint"`
+		} `json:"oidc_context"`
+	}{}
+	// query parameters
 	params := url.Values{}
 	params.Add("login_challenge", loginChallenge)
-	err := hh.adminRester.Get(ctx, "/oauth2/auth/requests/login", params, &logCtx)
+
+	// 2. perform the request
+	logCtx := login.Context{}
+	err := hh.adminRester.Get(ctx, "/oauth2/auth/requests/login", params, &hydraLogReq)
 	if err != nil {
 		if merror.HasCode(err, merror.NotFoundCode) {
 			err = merror.Transform(err).Detail("challenge", merror.DVNotFound)
 		}
 		return logCtx, err
 	}
+
+	// 3. fill domain model using the DTO
+	logCtx.Challenge = hydraLogReq.Challenge
+	logCtx.Skip = hydraLogReq.Skip
+	logCtx.Subject = hydraLogReq.Subject
+	logCtx.RequestedScope = hydraLogReq.RequestedScope
+	logCtx.Client.ID = hydraLogReq.Client.ID
+	logCtx.Client.Name = hydraLogReq.Client.Name
+	if hydraLogReq.Client.LogoURI != "" {
+		logCtx.Client.LogoURL = null.StringFrom(hydraLogReq.Client.LogoURI)
+	}
+	logCtx.OIDCContext.ACRValues = hydraLogReq.OIDCContext.ACRValues
+	logCtx.OIDCContext.LoginHint = hydraLogReq.OIDCContext.LoginHint
 	return logCtx, nil
 }
 
@@ -124,17 +158,7 @@ func (h *HydraHTTP) Consent(ctx context.Context, consentChallenge string, accept
 // 	return afs.adminRester.Post(ctx, route, nil, hydraClient, nil)
 // }
 //
-// // GetClient: retrieve a Hydra Client from hydra using a client id.
-// func (h *HydraHTTP) GetClient(ctx context.Context, id string) (*model.HydraClient, error) {
-// 	cli := model.HydraClient{}
-// 	route := fmt.Sprintf("/clients/%s", id)
-//
-// 	err := afs.adminRester.Get(ctx, route, nil, &cli)
-// 	if err != nil {
-// 		return nil, merror.Transform(err).If(merror.NotFound()).Detail("id", merror.DVNotFound).End()
-// 	}
-// 	return &cli, nil
-// }
+
 //
 // // UpdateClient: update Hydra Client in hydra
 // func (h *HydraHTTP) UpdateClient(ctx context.Context, hydraClient *model.HydraClient) error {

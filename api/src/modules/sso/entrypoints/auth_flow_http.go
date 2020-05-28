@@ -33,6 +33,21 @@ func (af AuthFlowHTTP) LoginInit(ctx echo.Context) error {
 	return ctx.Redirect(http.StatusFound, redirectURL)
 }
 
+func (af AuthFlowHTTP) LoginInfo(ctx echo.Context) error {
+	// parse parameters
+	loginChallenge := ctx.QueryParam("login_challenge")
+	if loginChallenge == "" {
+		return merror.BadRequest().From(merror.OriQuery).Detail("login_challenge", merror.DVRequired)
+	}
+	// init login then redirect
+	info, err := af.service.LoginInfo(ctx.Request().Context(), loginChallenge)
+	if err != nil {
+		return merror.Transform(err).Describe("cannot retrieve login info")
+	}
+	return ctx.JSON(http.StatusOK, info)
+
+}
+
 // Handles POST /login/step - perform authentication request for a login flow
 func (af AuthFlowHTTP) LoginStep(ctx echo.Context) error {
 	cmd := application.LoginStepCmd{}

@@ -31,10 +31,6 @@ func (entrypoint IdentityHTTP) RequireAuthableIdentity(ctx echo.Context) error {
 	if err != nil {
 		return merror.Transform(err).Describe("could not require authable identity").From(merror.OriBody)
 	}
-
-	if identity.LoginInfo.ACRValues == nil {
-		identity.LoginInfo.ACRValues = []string{}
-	}
 	return ctx.JSON(http.StatusOK, identity)
 }
 

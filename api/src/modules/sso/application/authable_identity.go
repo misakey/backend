@@ -8,7 +8,6 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
 )
 
 // IdentityAuthableCmd orders:
@@ -42,8 +41,7 @@ func (cmd IdentityAuthableCmd) Validate() error {
 }
 
 type IdentityAuthableView struct {
-	Identity  domain.Identity `json:"identity"`
-	LoginInfo login.FlowInfo  `json:"login_info"`
+	Identity domain.Identity `json:"identity"`
 }
 
 // RequireIdentityAuthable for an auth flow.
@@ -57,8 +55,8 @@ func (sso SSOService) RequireIdentityAuthable(ctx context.Context, cmd IdentityA
 	var err error
 	view := IdentityAuthableView{}
 
-	// 0. retrieve login flow information
-	view.LoginInfo, err = sso.authFlowService.LoginGetInfo(ctx, cmd.LoginChallenge)
+	// 0. check the login challenge exists
+	_, err = sso.authFlowService.LoginGetContext(ctx, cmd.LoginChallenge)
 	if err != nil {
 		return view, err
 	}

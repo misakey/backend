@@ -1,5 +1,7 @@
 package login
 
+import "github.com/volatiletech/null"
+
 // Context bears internal data about current user authentication request
 type Context struct {
 	Challenge      string   `json:"challenge"`
@@ -7,21 +9,14 @@ type Context struct {
 	Subject        string   `json:"subject"`
 	RequestedScope []string `json:"requested_scope"`
 	Client         struct { // concerned relying party
-		ID string `json:"client_id"`
+		ID      string      `json:"id"`
+		Name    string      `json:"name"`
+		LogoURL null.String `json:"logo_uri"`
 	} `json:"client"`
 	OIDCContext struct { // OIDC context of the current request
 		ACRValues []string `json:"acr_values"`
 		LoginHint string   `json:"login_hint"`
 	} `json:"oidc_context"`
-}
-
-// FlowInfo bears data about current user authentication status that we can share externally
-// It is in a way the Context structure with less data
-type FlowInfo struct {
-	ClientID       string   `json:"client_id"`
-	RequestedScope []string `json:"scope"`
-	ACRValues      []string `json:"acr_values"`
-	LoginHint      string   `json:"login_hint"`
 }
 
 // Redirect information for the user's agent

@@ -5,8 +5,10 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) string {
@@ -36,6 +38,36 @@ func (cmd LoginStepCmd) Validate() error {
 	}
 
 	return nil
+}
+
+// LoginInfoView bears data about current user authentication status
+type LoginInfoView struct {
+	Client struct { // concerned relying party
+		ID      string      `json:"id"`
+		Name    string      `json:"name"`
+		LogoURL null.String `json:"logo_uri"`
+	} `json:"client"`
+	RequestedScope []string `json:"scope"`
+	ACRValues      []string `json:"acr_values"`
+	LoginHint      string   `json:"login_hint"`
+}
+
+func (sso SSOService) LoginInfo(ctx context.Context, loginChallenge string) (LoginInfoView, error) {
+	view := LoginInfoView{}
+
+	logCtx, err := sso.authFlowService.LoginGetContext(ctx, loginChallenge)
+	if err != nil {
+		return view, merror.Transform(err).Describe("could not get context")
+	}
+
+	// fill view with domain model
+	view.Client.ID = logCtx.Client.ID
+	view.Client.Name = logCtx.Client.Name
+	view.Client.LogoURL = logCtx.Client.LogoURL
+	view.RequestedScope = logCtx.RequestedScope
+	view.ACRValues = logCtx.OIDCContext.ACRValues
+	view.LoginHint = logCtx.OIDCContext.LoginHint
+	return view, nil
 }
 
 // LoginStep assert an authentication step in a multi-factor authentication process

@@ -22,6 +22,7 @@ func initRoutes(
 
 	authRoutes := router.Group("/auth")
 	authRoutes.GET("/login", authFlowHTTP.LoginInit)
+	authRoutes.GET("/login/info", authFlowHTTP.LoginInfo)
 	// TODO14: add a limit req on gateway to this endpoint
 	authRoutes.POST("/login/step", authFlowHTTP.LoginStep)
 	authRoutes.GET("/consent", authFlowHTTP.ConsentInit)
