@@ -20,7 +20,8 @@ import (
 )
 
 func InitModule(router *echo.Echo, dbConn *sql.DB) {
-	// TODO12: check mandatory configuration / hide secrets
+	initConfig()
+
 	// init self authenticator for hydra rester
 	selfAuth, err := oidc.NewClient(
 		viper.GetString("authflow.self_client_id"),
