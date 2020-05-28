@@ -19,7 +19,7 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
 		return err
 	}
-	if err == nil && time.Now().Sub(existing.InitiatedAt) < as.codeValidity {
+	if err == nil && time.Now().Sub(existing.CreatedAt) < as.codeValidity {
 		return merror.Conflict().
 			Describe("a code has already been generated").
 			Detail("identity_id", merror.DVConflict).
@@ -70,7 +70,7 @@ func (as *Service) assertEmailedCode(currentStep authentication.Step, inputMetad
 	}
 
 	// check stored code is not expired
-	if time.Now().After(currentStep.InitiatedAt.Add(as.codeValidity)) {
+	if time.Now().After(currentStep.CreatedAt.Add(as.codeValidity)) {
 		return merror.Forbidden().From(merror.OriBody).Detail("code", merror.DVExpired)
 	}
 
