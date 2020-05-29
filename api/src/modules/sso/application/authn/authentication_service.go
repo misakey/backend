@@ -4,13 +4,20 @@ import (
 	"context"
 	"time"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 type Service struct {
-	steps        stepRepo
-	codeValidity time.Duration
+	steps             stepRepo
+	identifierService identifier.IdentifierService
+	identityService   identity.IdentityService
+	templates         email.Renderer
+	emails            email.Sender
+	codeValidity      time.Duration
 }
 
 type stepRepo interface {
@@ -19,10 +26,19 @@ type stepRepo interface {
 	Last(ctx context.Context, identityID string, methodName authn.Method) (authn.Step, error)
 }
 
-func NewService(steps stepRepo) Service {
+func NewService(
+	steps stepRepo,
+	identifierService identifier.IdentifierService,
+	identityService identity.IdentityService,
+	templates email.Renderer,
+	emails email.Sender) Service {
 	return Service{
-		steps:        steps,
-		codeValidity: 5 * time.Minute}
+		steps:             steps,
+		identifierService: identifierService,
+		identityService:   identityService,
+		templates:         templates,
+		emails:            emails,
+		codeValidity:      5 * time.Minute}
 }
 
 // AssertStep considering the method name and the received metadata

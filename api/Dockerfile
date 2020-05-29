@@ -14,6 +14,9 @@ FROM alpine:3.11
 # install tls tooling
 RUN until apk --no-cache add ca-certificates~=20191127-r1; do sleep 1; done; rm -rf /var/cache/apk/*
 
+# copy mailing template files
+COPY ./src/templates /etc/templates
+
 # get binary from build image
 COPY --from=builder /bin/api /bin/api
 

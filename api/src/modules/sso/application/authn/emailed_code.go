@@ -2,7 +2,6 @@ package authn
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/volatiletech/null"
@@ -45,9 +44,36 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 		return err
 	}
 
-	// TODO11: send the email
-	fmt.Println("Emailed Code: ", string(codeMetadata))
-	return nil
+	// retrieve the identifier
+	identity, err := as.identityService.Get(ctx, identityID)
+	if err != nil {
+		// if the step exist, the identity should exist
+		// if it does not, we have an internal problem
+		return merror.Transform(err).Describe("could not find identity")
+	}
+
+	identifier, err := as.identifierService.Get(ctx, identity.IdentifierID)
+	if err != nil {
+		// here the identifier should exist
+		// if it does not, we have an internal problem
+		return merror.Transform(err).Describe("could not find identifier")
+	}
+
+	decodedCode, err := toCodeMetadata(codeMetadata)
+	if err != nil {
+		return err
+	}
+
+	data := map[string]interface{}{
+		"to":   identifier.Value,
+		"code": decodedCode.Code,
+	}
+	content, err := as.templates.NewEmail(ctx, identifier.Value, "Votre code de confirmation - Misakey", "code", data)
+	if err != nil {
+		return err
+	}
+
+	return as.emails.Send(ctx, content)
 }
 
 func (as *Service) assertEmailedCode(currentStep authn.Step, inputMetadata types.JSON) error {

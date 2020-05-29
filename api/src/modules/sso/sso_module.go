@@ -2,6 +2,7 @@ package sso
 
 import (
 	"database/sql"
+	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -10,10 +11,11 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/oidc"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/rester/http"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/account"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
@@ -53,6 +55,26 @@ func InitModule(router *echo.Echo, dbConn *sql.DB) {
 	identityRepo := repositories.NewIdentitySQLBoiler(dbConn)
 	authnStepRepo := repositories.NewAuthenticationStepSQLBoiler(dbConn)
 	hydraRepo := repositories.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
+	templateRepo := email.NewTemplateFileSystem(viper.GetString("mail.templates"))
+	var emailRepo email.Sender
+	env := os.Getenv("ENV")
+	if env == "development" {
+		emailRepo = email.NewLogMailer()
+	} else if env == "production" {
+		emailRepo = email.NewMailerAmazonSES(viper.GetString("aws.ses_region"))
+	} else {
+		log.Fatal().Msg("wrong env value")
+	}
+	emailRenderer, err := email.NewEmailRenderer(
+		templateRepo,
+		[]string{
+			"code_html", "code_txt",
+		},
+		viper.GetString("mail.from"),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("email renderer")
+	}
 
 	// init services
 	accountService := account.NewAccountService(accountRepo)
@@ -63,7 +85,12 @@ func InitModule(router *echo.Echo, dbConn *sql.DB) {
 		viper.GetString("authflow.login_page_url"),
 		viper.GetString("authflow.consent_page_url"),
 	)
-	authenticationService := authn.NewService(authnStepRepo)
+	authenticationService := authn.NewService(
+		authnStepRepo,
+		identifierService,
+		identityService,
+		emailRenderer, emailRepo,
+	)
 	ssoService := application.NewSSOService(
 		accountService,
 		identityService,

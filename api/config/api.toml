@@ -26,3 +26,12 @@
   # admin/public url of hydra backend service
   admin_endpoint = "hydra:4445"
   public_endpoint = "hydra:4444"
+
+[mail]
+  templates = "/etc/templates"
+  from = "contact@misakey.com"
+
+# only used if ENV=production
+# [aws]
+#   # region slug name used for Amazon SES
+#   ses_region = "eu-west-1"
