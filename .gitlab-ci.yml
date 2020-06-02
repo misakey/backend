@@ -53,4 +53,4 @@ after_script:
 include:
     - api/.gitlab-ci.yml
     - docs/.gitlab-ci.yml
-    # - gateway/.gitlab-ci.yml
+    - gateway/.gitlab-ci.yml
