@@ -38,7 +38,8 @@ func NewService(
 		identityService:   identityService,
 		templates:         templates,
 		emails:            emails,
-		codeValidity:      5 * time.Minute}
+		codeValidity:      5 * time.Minute,
+	}
 }
 
 // AssertStep considering the method name and the received metadata
