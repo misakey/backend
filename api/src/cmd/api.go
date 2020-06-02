@@ -73,7 +73,12 @@ func initService() {
 
 func initDefaultConfig() {
 	// always look for the configuration file in the /etc folder
-	viper.SetConfigName("api")
+	env := os.Getenv("ENV")
+	if env == "development" {
+		viper.SetConfigName("api-config.dev")
+	} else {
+		viper.SetConfigName("api-config")
+	}
 	viper.AddConfigPath("/etc/")
 
 	// defaults

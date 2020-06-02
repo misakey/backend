@@ -2,7 +2,7 @@ FROM registry.misakey.dev/misakey/docker/golang-dev:latest
 
 WORKDIR /go/src/app
 COPY . .
-COPY ./config/api.toml /etc/api.toml
+COPY ./config/api.toml /etc/api-config.dev.toml
 
 # set the version env variable used in the /version endpoint
 ARG VERSION=local-build
