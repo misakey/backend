@@ -13,24 +13,24 @@ import (
 
 // HTTP implements Hydra repository interface using HTTP REST
 type HydraHTTP struct {
-	publicRester         rester.Client
-	authPublicFormRester rester.Client
-	adminRester          rester.Client
-	formAdminHydraRester rester.Client
+	publicJSONRester rester.Client
+	publicFormRester rester.Client
+	adminJSONRester  rester.Client
+	adminFormRester  rester.Client
 }
 
 // NewHydraHTTP is HTTP hydra structure constructor
 func NewHydraHTTP(
-	publicRester rester.Client,
-	authPublicFormRester rester.Client,
-	adminRester rester.Client,
-	formAdminHydraRester rester.Client,
+	publicJSONRester rester.Client,
+	publicFormRester rester.Client,
+	adminJSONRester rester.Client,
+	adminFormRester rester.Client,
 ) *HydraHTTP {
 	return &HydraHTTP{
-		publicRester:         publicRester,
-		authPublicFormRester: authPublicFormRester,
-		adminRester:          adminRester,
-		formAdminHydraRester: formAdminHydraRester,
+		publicJSONRester: publicJSONRester,
+		publicFormRester: publicFormRester,
+		adminJSONRester:  adminJSONRester,
+		adminFormRester:  adminFormRester,
 	}
 }
 
@@ -59,7 +59,7 @@ func (hh HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) 
 
 	// 2. perform the request
 	logCtx := login.Context{}
-	err := hh.adminRester.Get(ctx, "/oauth2/auth/requests/login", params, &hydraLogReq)
+	err := hh.adminJSONRester.Get(ctx, "/oauth2/auth/requests/login", params, &hydraLogReq)
 	if err != nil {
 		if merror.HasCode(err, merror.NotFoundCode) {
 			err = merror.Transform(err).Detail("challenge", merror.DVNotFound)
@@ -87,7 +87,7 @@ func (hh HydraHTTP) Login(ctx context.Context, loginChallenge string, acceptance
 	redirect := login.Redirect{}
 	params := url.Values{}
 	params.Add("login_challenge", loginChallenge)
-	err := hh.adminRester.Put(ctx, "/oauth2/auth/requests/login/accept", params, acceptance, &redirect)
+	err := hh.adminJSONRester.Put(ctx, "/oauth2/auth/requests/login/accept", params, acceptance, &redirect)
 	if err != nil {
 		if merror.HasCode(err, merror.NotFoundCode) {
 			err = merror.Transform(err).Detail("challenge", merror.DVNotFound)
@@ -102,7 +102,7 @@ func (h *HydraHTTP) GetConsentContext(ctx context.Context, consentChallenge stri
 	consentCtx := consent.Context{}
 	params := url.Values{}
 	params.Add("consent_challenge", consentChallenge)
-	err := h.adminRester.Get(ctx, "/oauth2/auth/requests/consent", params, &consentCtx)
+	err := h.adminJSONRester.Get(ctx, "/oauth2/auth/requests/consent", params, &consentCtx)
 	if err != nil {
 		return consentCtx, err
 	}
@@ -114,18 +114,26 @@ func (h *HydraHTTP) Consent(ctx context.Context, consentChallenge string, accept
 	redirect := consent.Redirect{}
 	params := url.Values{}
 	params.Add("consent_challenge", consentChallenge)
-	err := h.adminRester.Put(ctx, "/oauth2/auth/requests/consent/accept", params, acceptance, &redirect)
+	err := h.adminJSONRester.Put(ctx, "/oauth2/auth/requests/consent/accept", params, acceptance, &redirect)
 	if err != nil {
 		return redirect, err
 	}
 	return redirect, nil
 }
 
+//
+// // CreateClient: create a new Hydra Client in hydra
+// func (h *HydraHTTP) CreateClient(ctx context.Context, hydraClient *model.HydraClient) error {
+// 	route := fmt.Sprintf("/clients")
+//
+// 	return afs.adminJSONRester.Post(ctx, route, nil, hydraClient, nil)
+// }
+
 // // Logout : invalidates a subject's authentication session
 // func (h *HydraHTTP) Logout(ctx context.Context, id string) error {
 // 	route := fmt.Sprintf("/oauth2/auth/sessions/login?subject=%s", id)
 //
-// 	return afs.adminRester.Delete(ctx, route, nil)
+// 	return afs.adminJSONRester.Delete(ctx, route, nil)
 // }
 
 // // RevokeToken : invalidate access & refresh tokens
@@ -134,28 +142,7 @@ func (h *HydraHTTP) Consent(ctx context.Context, consentChallenge string, accept
 // 	params.Add("token", revocation.Token)
 // 	params.Add("client_id", revocation.ClientID)
 // 	params.Add("client_secret", revocation.ClientSecret)
-// 	return afs.authPublicFormRester.Post(ctx, "/oauth2/revoke", nil, params, nil)
-// }
-//
-// func (h *HydraHTTP) Introspect(ctx context.Context, opaqueTok string) (*model.IntrospectedToken, error) {
-// 	introTok := model.IntrospectedToken{}
-// 	route := fmt.Sprintf("/oauth2/introspect")
-//
-// 	params := url.Values{}
-// 	params.Add("token", opaqueTok)
-//
-// 	err := afs.formAdminHydraRester.Post(ctx, route, nil, params, &introTok)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &introTok, nil
-// }
-//
-// // CreateClient: create a new Hydra Client in hydra
-// func (h *HydraHTTP) CreateClient(ctx context.Context, hydraClient *model.HydraClient) error {
-// 	route := fmt.Sprintf("/clients")
-//
-// 	return afs.adminRester.Post(ctx, route, nil, hydraClient, nil)
+// 	return afs.publicFormRester.Post(ctx, "/oauth2/revoke", nil, params, nil)
 // }
 //
 
@@ -164,5 +151,5 @@ func (h *HydraHTTP) Consent(ctx context.Context, consentChallenge string, accept
 // func (h *HydraHTTP) UpdateClient(ctx context.Context, hydraClient *model.HydraClient) error {
 // 	route := fmt.Sprintf("/clients/%s", hydraClient.ID)
 //
-// 	return afs.adminRester.Put(ctx, route, nil, hydraClient, hydraClient)
+// 	return afs.adminJSONRester.Put(ctx, route, nil, hydraClient, hydraClient)
 // }

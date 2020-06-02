@@ -8,9 +8,8 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"github.com/volatiletech/sqlboiler/types"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
@@ -30,7 +29,7 @@ func (repo *AuthenticationStepSQLBoiler) Create(ctx context.Context, authnStep *
 	sqlAuthnStep := sqlboiler.AuthenticationStep{
 		IdentityID: authnStep.IdentityID,
 		MethodName: string(authnStep.MethodName),
-		Metadata:   types.JSON(authnStep.Metadata),
+		Metadata:   authnStep.RawJSONMetadata,
 	}
 	if !authnStep.CreatedAt.IsZero() {
 		sqlAuthnStep.CreatedAt = authnStep.CreatedAt
@@ -81,7 +80,7 @@ func (repo *AuthenticationStepSQLBoiler) Last(
 	authnStep.ID = sqlAuthnStep.ID
 	authnStep.IdentityID = sqlAuthnStep.IdentityID
 	authnStep.MethodName = authn.Method(sqlAuthnStep.MethodName)
-	authnStep.Metadata = sqlAuthnStep.Metadata
+	authnStep.RawJSONMetadata = sqlAuthnStep.Metadata
 	authnStep.CreatedAt = sqlAuthnStep.CreatedAt
 	authnStep.CompleteAt = sqlAuthnStep.CompleteAt
 	authnStep.Complete = sqlAuthnStep.CompleteAt.Valid

@@ -10,6 +10,7 @@ import (
 
 func initRoutes(
 	router *echo.Echo,
+	authzMidlw echo.MiddlewareFunc,
 	ssoService application.SSOService,
 	oauthCodeFlow oauth.AuthorizationCodeFlow,
 ) {
@@ -33,7 +34,6 @@ func initRoutes(
 	})
 
 	identityRoutes := router.Group("/identities")
+	identityRoutes.POST("/:id/account", identityHTTP.CreateAccount, authzMidlw)
 	identityRoutes.PUT("/authable", identityHTTP.RequireAuthableIdentity)
-	// identityRoutes.POST("/:id/assertions", identityHTTP.AssertIdentity)
-	// identityRoutes.POST("/identities", identityHTTP.CreateIdentity)
 }

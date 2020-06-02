@@ -6,7 +6,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/volatiletech/null"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
@@ -26,7 +26,7 @@ func (cmd LoginAuthnStepCmd) Validate() error {
 	if err := validation.ValidateStruct(&cmd.Step,
 		validation.Field(&cmd.Step.IdentityID, validation.Required, is.UUIDv4.Error("identity id should be an uuid v4")),
 		validation.Field(&cmd.Step.MethodName, validation.Required),
-		validation.Field(&cmd.Step.Metadata, validation.Required),
+		validation.Field(&cmd.Step.RawJSONMetadata, validation.Required),
 	); err != nil {
 		return err
 	}

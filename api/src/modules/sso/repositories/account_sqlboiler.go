@@ -22,6 +22,22 @@ func NewAccountSQLBoiler(db *sql.DB) *AccountSQLBoiler {
 	}
 }
 
+func (repo AccountSQLBoiler) toDomain(boilModel *sqlboiler.Account) *domain.Account {
+	return &domain.Account{
+		ID:         boilModel.ID,
+		Password:   boilModel.Password,
+		BackupData: boilModel.BackupData,
+	}
+}
+
+func (repo AccountSQLBoiler) toSqlBoiler(domModel *domain.Account) *sqlboiler.Account {
+	return &sqlboiler.Account{
+		ID:         domModel.ID,
+		Password:   domModel.Password,
+		BackupData: domModel.BackupData,
+	}
+}
+
 func (repo AccountSQLBoiler) Create(ctx context.Context, account *domain.Account) error {
 	// generate new UUID
 	id, err := uuid.NewRandom()
@@ -32,16 +48,13 @@ func (repo AccountSQLBoiler) Create(ctx context.Context, account *domain.Account
 	account.ID = id.String()
 
 	// convert domain to sql model
-	sqlAccount := sqlboiler.Account{
-		ID:       account.ID,
-		Password: account.Password,
-	}
+	sqlAccount := repo.toSqlBoiler(account)
 
 	return sqlAccount.Insert(ctx, repo.db, boil.Infer())
 }
 
 func (repo AccountSQLBoiler) Get(ctx context.Context, accountID string) (ret domain.Account, err error) {
-	account, err := sqlboiler.FindAccount(ctx, repo.db, accountID)
+	sqlAccount, err := sqlboiler.FindAccount(ctx, repo.db, accountID)
 	if err == sql.ErrNoRows {
 		return ret, merror.NotFound().Detail("id", merror.DVNotFound)
 	}
@@ -49,7 +62,5 @@ func (repo AccountSQLBoiler) Get(ctx context.Context, accountID string) (ret dom
 		return ret, err
 	}
 
-	ret.ID = account.ID
-	ret.HasPassword = (len(account.Password) != 0)
-	return ret, nil
+	return *repo.toDomain(sqlAccount), nil
 }

@@ -23,6 +23,32 @@ func NewIdentitySQLBoiler(db *sql.DB) *IdentitySQLBoiler {
 	}
 }
 
+func (repo IdentitySQLBoiler) toSqlBoiler(domModel *domain.Identity) *sqlboiler.Identity {
+	return &sqlboiler.Identity{
+		ID:            domModel.ID,
+		AccountID:     domModel.AccountID,
+		IdentifierID:  domModel.IdentifierID,
+		IsAuthable:    domModel.IsAuthable,
+		DisplayName:   domModel.DisplayName,
+		Notifications: domModel.Notifications,
+		AvatarURL:     domModel.AvatarURL,
+		Confirmed:     domModel.Confirmed,
+	}
+}
+
+func (repo IdentitySQLBoiler) toDomain(boilModel *sqlboiler.Identity) *domain.Identity {
+	return &domain.Identity{
+		ID:            boilModel.ID,
+		AccountID:     boilModel.AccountID,
+		IdentifierID:  boilModel.IdentifierID,
+		IsAuthable:    boilModel.IsAuthable,
+		DisplayName:   boilModel.DisplayName,
+		Notifications: boilModel.Notifications,
+		AvatarURL:     boilModel.AvatarURL,
+		Confirmed:     boilModel.Confirmed,
+	}
+}
+
 func (repo *IdentitySQLBoiler) Create(ctx context.Context, identity *domain.Identity) error {
 	// generate new UUID
 	id, err := uuid.NewRandom()
@@ -37,17 +63,7 @@ func (repo *IdentitySQLBoiler) Create(ctx context.Context, identity *domain.Iden
 	}
 
 	// convert domain to sql model
-	sqlIdentity := sqlboiler.Identity{
-		ID:            identity.ID,
-		AccountID:     identity.AccountID,
-		IdentifierID:  identity.IdentifierID,
-		IsAuthable:    identity.IsAuthable,
-		DisplayName:   identity.DisplayName,
-		Notifications: identity.Notifications,
-		AvatarURL:     identity.AvatarURL,
-		Confirmed:     identity.Confirmed,
-	}
-
+	sqlIdentity := repo.toSqlBoiler(identity)
 	return sqlIdentity.Insert(ctx, repo.db, boil.Infer())
 }
 
@@ -59,16 +75,19 @@ func (repo *IdentitySQLBoiler) Get(ctx context.Context, identityID string) (ret 
 	if err != nil {
 		return ret, err
 	}
-	ret.ID = identity.ID
-	ret.AccountID = identity.AccountID
-	ret.IdentifierID = identity.IdentifierID
-	ret.IsAuthable = identity.IsAuthable
-	ret.DisplayName = identity.DisplayName
-	ret.Notifications = identity.Notifications
-	ret.AvatarURL = identity.AvatarURL
-	ret.Confirmed = identity.Confirmed
-	return ret, nil
+	return *repo.toDomain(identity), nil
 
+}
+
+func (repo *IdentitySQLBoiler) Update(ctx context.Context, identity *domain.Identity) error {
+	rowsAff, err := repo.toSqlBoiler(identity).Update(ctx, repo.db, boil.Infer())
+	if err != nil {
+		return err
+	}
+	if rowsAff == 0 {
+		return merror.NotFound().Describe("no rows affected").Detail("id", merror.DVNotFound)
+	}
+	return nil
 }
 
 func (repo *IdentitySQLBoiler) Confirm(ctx context.Context, identityID string) error {
@@ -110,16 +129,7 @@ func (repo *IdentitySQLBoiler) List(ctx context.Context, filters domain.Identity
 	}
 
 	for i, record := range identityRecords {
-		domainIdentities[i] = &domain.Identity{
-			ID:            record.ID,
-			AccountID:     record.AccountID,
-			IdentifierID:  record.IdentifierID,
-			IsAuthable:    record.IsAuthable,
-			DisplayName:   record.DisplayName,
-			Notifications: record.Notifications,
-			AvatarURL:     record.AvatarURL,
-			Confirmed:     record.Confirmed,
-		}
+		domainIdentities[i] = repo.toDomain(record)
 	}
 	return domainIdentities, nil
 }

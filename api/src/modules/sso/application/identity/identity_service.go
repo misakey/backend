@@ -12,6 +12,7 @@ import (
 type identityRepo interface {
 	Create(context.Context, *domain.Identity) error
 	Get(context.Context, string) (domain.Identity, error)
+	Update(context.Context, *domain.Identity) error
 	Confirm(context.Context, string) error
 	List(context.Context, domain.IdentityFilters) ([]*domain.Identity, error)
 }
@@ -56,6 +57,9 @@ func (ids IdentityService) GetAuthableByIdentifierID(ctx context.Context, identi
 	return *identities[0], nil
 }
 
+func (ids IdentityService) Update(ctx context.Context, identity *domain.Identity) error {
+	return ids.identities.Update(ctx, identity)
+}
 func (ids IdentityService) Confirm(ctx context.Context, id string) error {
 	return ids.identities.Confirm(ctx, id)
 }

@@ -19,6 +19,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 )
 
 func InitModule(router *echo.Echo, dbConn *sql.DB) {
@@ -110,6 +111,12 @@ func InitModule(router *echo.Echo, dbConn *sql.DB) {
 		log.Fatal().Err(err).Msg("oauth authorization code flow")
 	}
 
+	// init authorization middleware
+	authzMidlw := authz.NewTokenIntrospectionMidlw(
+		viper.GetString("authflow.self_client_id"),
+		adminHydraFORM,
+	)
+
 	// bind all routes to the router
-	initRoutes(router, ssoService, *oauthCodeFlow)
+	initRoutes(router, authzMidlw, ssoService, *oauthCodeFlow)
 }

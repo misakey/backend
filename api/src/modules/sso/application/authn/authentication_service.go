@@ -7,7 +7,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
@@ -59,7 +59,7 @@ func (as *Service) AssertAuthnStep(ctx context.Context, assertion authn.Step) er
 	var metadataErr error
 	switch currentStep.MethodName {
 	case authn.EmailedCodeMethod:
-		metadataErr = as.assertEmailedCode(currentStep, assertion.Metadata)
+		metadataErr = as.assertEmailedCode(currentStep, assertion.RawJSONMetadata)
 	default:
 		metadataErr = merror.BadRequest().Detail("method_name", merror.DVInvalid)
 	}

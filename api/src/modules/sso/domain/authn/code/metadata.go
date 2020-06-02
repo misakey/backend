@@ -1,4 +1,4 @@
-package authn
+package code
 
 import (
 	"crypto/rand"
@@ -19,8 +19,8 @@ type codeMetadata struct {
 	Code string `json:"code"`
 }
 
-// generateCodeMetadata cryptographically: a code with secure pseudorandom number generated.
-func generateCodeMetadata() (ret types.JSON, err error) {
+// GenerateAsRawJSON a code cryptographically: a code with secure pseudorandom number generated.
+func GenerateAsRawJSON() (ret types.JSON, err error) {
 	b := make([]byte, codeSize)
 	n, err := io.ReadAtLeast(rand.Reader, b, codeSize)
 	if err != nil {
@@ -39,7 +39,7 @@ func generateCodeMetadata() (ret types.JSON, err error) {
 	return ret, ret.UnmarshalJSON(data)
 }
 
-func toCodeMetadata(msg types.JSON) (ret codeMetadata, err error) {
+func ToMetadata(msg types.JSON) (ret codeMetadata, err error) {
 	msgJSON, err := msg.MarshalJSON()
 	if err != nil {
 		return ret, err

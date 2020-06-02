@@ -7,7 +7,8 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/types"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/code"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
@@ -25,15 +26,15 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 			Detail("method_name", merror.DVConflict)
 	}
 
-	codeMetadata, err := generateCodeMetadata()
+	codeRawJSON, err := code.GenerateAsRawJSON()
 	if err != nil {
 		return err
 	}
 
 	flow := authn.Step{
-		IdentityID: identityID,
-		MethodName: authn.EmailedCodeMethod,
-		Metadata:   codeMetadata,
+		IdentityID:      identityID,
+		MethodName:      authn.EmailedCodeMethod,
+		RawJSONMetadata: codeRawJSON,
 
 		CreatedAt: time.Now(),
 
@@ -59,7 +60,7 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 		return merror.Transform(err).Describe("could not find identifier")
 	}
 
-	decodedCode, err := toCodeMetadata(codeMetadata)
+	decodedCode, err := code.ToMetadata(codeRawJSON)
 	if err != nil {
 		return err
 	}
@@ -76,14 +77,14 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 	return as.emails.Send(ctx, content)
 }
 
-func (as *Service) assertEmailedCode(currentStep authn.Step, inputMetadata types.JSON) error {
+func (as *Service) assertEmailedCode(currentStep authn.Step, inputRawJSON types.JSON) error {
 	// transform metadata into code metadata structure
-	input, err := toCodeMetadata(inputMetadata)
+	input, err := code.ToMetadata(inputRawJSON)
 	if err != nil {
 		return merror.Forbidden().From(merror.OriBody).
 			Describe(err.Error()).Detail("metadata", merror.DVMalformed)
 	}
-	stored, err := toCodeMetadata(currentStep.Metadata)
+	stored, err := code.ToMetadata(currentStep.RawJSONMetadata)
 	if err != nil {
 		return merror.Forbidden().
 			Describef("could not convert step %d as emailed code: %v", currentStep.ID, err.Error()).
