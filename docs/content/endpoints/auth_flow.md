@@ -75,7 +75,7 @@ _Headers:_
     Location: https://api.misakey.com.local/auth/login?login_challenge=4f112272f2fa4cbe939b04e74dd3e49e
 ```
 
-_JSON Body:_
+_HTML Body:_
 ```html
     <a href="https://api.misakey.com.local/auth/login?login_challenge=4f112272f2fa4cbe939b04e74dd3e49e">Found</a>
 ```
@@ -117,9 +117,10 @@ _JSON Body_:
   }
 ```
 
-- `client_id` (uuid string): unique identifier of the SSO client involved in the auth flow.
-- `client_name` (string): name of the concerned SSO client.
-- `client_url` (string) (nullable): web-address of the logo file representing the SSO client.
+- `client` (object): information about the SSO client involved in the auth flow:
+  - `id` (uuid string): the unique id.
+  - `name` (string): the name.
+  - `url` (string) (nullable): web-address of the logo file.
 - `scope` (string): list of scope sent during the auth flow init.
 - `acr_values` (string) (nullable): list of acr values sent during the auth flow init.
 - `login_hint` (string): the login_hint sent during the auth flow init.
@@ -152,7 +153,8 @@ The request doesn't require an authorization header.
 _JSON Body:_
 
 - `login_challenge` (string): can be found in preivous redirect URL.
-- `value` (string): the identifier value the end-user entered in the dedicated input text.
+- `identifier` (object): information about the used identifier to authenticate the end-user:
+  - `value` (string): the identifier value the end-user entered in the dedicated input text.
 
 ### Success Response
 
@@ -177,10 +179,12 @@ _JSON Body:_
   }
 ```
 
-- `display_name` (string): a customizable display name.
-- `avatar_url` (string) (nullable): the web address of the end-user avatar file.
-- `identity_id` (uuid string): the unique identity id the authentication step is attached to.
-- `method_name` (string) (one of: _emailed_code_): the preferred authentication method.
+- `identity` (object): the authable identity linked to the received identifier value.
+  - `display_name` (string): a customizable display name.
+  - `avatar_url` (string) (nullable): the web address of the end-user avatar file.
+- `authn_step` (object): the preferred authentication step:
+  - `identity_id` (uuid string): the unique identity id the authentication step is attached to.
+  - `method_name` (string) (one of: _emailed_code_): the authentication method.
 ____
 # Perform an authentication step in the login flow
 
@@ -210,9 +214,10 @@ The request doesn't require an authorization header.
 _JSON Body:_
 
 - `login_challenge` (string): can be found in previous redirect URL.
-- `identity_id` (uuid string): the authable identity id.
-- `method_name` (string) (one of: _emailed_code_): the authentication method used.
-- `metadata` (json object): metadata containing the emailed code value.
+- `authn_step` (object): the performed authentication step information:
+  - `identity_id` (uuid string): the authable identity id.
+  - `method_name` (string) (one of: _emailed_code_): the authentication method used.
+  - `metadata` (json object): metadata containing the emailed code value.
 
 ### Success Response
 
@@ -302,9 +307,10 @@ The request doesn't require an authorization header.
 
 _JSON Body:_
 
-- `login_challenge` (string): can be found in previous redirect URL
-- `identity_id` (uuid string): the identity ID for which the authentication step will be initialized
-- `method_name` (string): the method used by the authentication step
+- `login_challenge` (string): can be found in previous redirect URL.
+- `authn_step` (object): the initiated authentication step information:
+  - `identity_id` (uuid string): the identity ID for which the authentication step will be initialized.
+  - `method_name` (string): the method used by the authentication step.
 
 ### Success Response
 

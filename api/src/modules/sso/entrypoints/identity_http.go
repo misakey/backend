@@ -24,8 +24,7 @@ func (entrypoint IdentityHTTP) CreateAccount(ctx echo.Context) error {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
 	}
 
-	pathIdentityID := ctx.Param("id")
-	cmd.IdentityID = pathIdentityID
+	cmd.IdentityID = ctx.Param("id")
 
 	if err := cmd.Validate(); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
