@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"github.com/volatiletech/null"
@@ -121,6 +122,22 @@ func (h *HydraHTTP) Consent(ctx context.Context, consentChallenge string, accept
 	return redirect, nil
 }
 
+// DeleteSession authentication for a subject
+func (h *HydraHTTP) DeleteSession(ctx context.Context, subject string) error {
+	route := fmt.Sprintf(
+		"/oauth2/auth/sessions/login?subject=%s",
+		url.PathEscape(subject),
+	)
+	return h.adminFormRester.Delete(ctx, route, nil)
+}
+
+// RevokeToken
+func (h *HydraHTTP) RevokeToken(ctx context.Context, accessToken string) error {
+	params := url.Values{}
+	params.Add("token", accessToken)
+	return h.publicFormRester.Post(ctx, "/oauth2/revoke", nil, params, nil)
+}
+
 //
 // // CreateClient: create a new Hydra Client in hydra
 // func (h *HydraHTTP) CreateClient(ctx context.Context, hydraClient *model.HydraClient) error {
@@ -128,23 +145,6 @@ func (h *HydraHTTP) Consent(ctx context.Context, consentChallenge string, accept
 //
 // 	return afs.adminJSONRester.Post(ctx, route, nil, hydraClient, nil)
 // }
-
-// // Logout : invalidates a subject's authentication session
-// func (h *HydraHTTP) Logout(ctx context.Context, id string) error {
-// 	route := fmt.Sprintf("/oauth2/auth/sessions/login?subject=%s", id)
-//
-// 	return afs.adminJSONRester.Delete(ctx, route, nil)
-// }
-
-// // RevokeToken : invalidate access & refresh tokens
-// func (h *HydraHTTP) RevokeToken(ctx context.Context, revocation model.TokenRevocation) error {
-// 	params := url.Values{}
-// 	params.Add("token", revocation.Token)
-// 	params.Add("client_id", revocation.ClientID)
-// 	params.Add("client_secret", revocation.ClientSecret)
-// 	return afs.publicFormRester.Post(ctx, "/oauth2/revoke", nil, params, nil)
-// }
-//
 
 //
 // // UpdateClient: update Hydra Client in hydra

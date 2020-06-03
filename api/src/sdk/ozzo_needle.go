@@ -1,15 +1,36 @@
 package sdk
 
 import (
+	"regexp"
+	"strings"
+
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-type OzzoNeedle struct {
+type ozzoNeedle struct {
+	matchFirstCap *regexp.Regexp
+	matchAllCap   *regexp.Regexp
 }
 
-func (n OzzoNeedle) Explode(err error) error {
+func NewOzzoNeedle() ozzoNeedle {
+	return ozzoNeedle{
+		matchFirstCap: regexp.MustCompile("(.)([A-Z][a-z]+)"),
+		matchAllCap:   regexp.MustCompile("([a-z0-9])([A-Z])"),
+	}
+}
+
+func (n ozzoNeedle) toSnakeCase(str string) string {
+	if n.matchFirstCap == nil {
+		return "ozzo_needle_wrongly_allocated!"
+	}
+	snake := n.matchFirstCap.ReplaceAllString(str, "${1}_${2}")
+	snake = n.matchAllCap.ReplaceAllString(snake, "${1}_${2}")
+	return strings.ToLower(snake)
+}
+
+func (n ozzoNeedle) Explode(err error) error {
 	// try to consider error cause as validator error to understand deeper the error
 	valErrs, ok := merror.Cause(err).(v.Errors)
 	if !ok {
@@ -17,22 +38,24 @@ func (n OzzoNeedle) Explode(err error) error {
 	}
 
 	mErr := merror.Transform(err).Code(merror.BadRequestCode)
-	return recHandleErrors(mErr, valErrs, nil)
+	return n.recHandleErrors(mErr, valErrs, nil)
 }
 
-func recHandleErrors(mErr merror.Error, valErrs v.Errors, replaceFieldTag *string) merror.Error {
+func (n ozzoNeedle) recHandleErrors(mErr merror.Error, valErrs v.Errors, replaceFieldTag *string) merror.Error {
 	// v.Errors is basically a mao["structure_tag"]error, we parse it
 	for fieldTag, valErr := range valErrs {
 		if replaceFieldTag != nil {
 			fieldTag = *replaceFieldTag
+		} else {
+			// we ensure the field is snake case
+			fieldTag = n.toSnakeCase(fieldTag)
 		}
-
 		// v.Errors can be nested - for slice validation as an example since
 		// errors can be different between index 0 and 1
 		// it is case we use recursive to handle it and override the fieldTag
 		// future fieldTags for slice are index, we don't want to map detail on indexes
 		if reValErrs, ok := valErr.(v.Errors); ok {
-			mErr = recHandleErrors(mErr, reValErrs, &fieldTag)
+			mErr = n.recHandleErrors(mErr, reValErrs, &fieldTag)
 			continue
 		}
 

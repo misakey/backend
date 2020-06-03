@@ -17,6 +17,27 @@ type StructToValidate struct {
 	Email    string   `json:"email"`
 }
 
+func TestToSnakeCase(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"", ""},
+		{"already_snake", "already_snake"},
+		{"A", "a"},
+		{"AA", "aa"},
+		{"AaAa", "aa_aa"},
+		{"HTTPRequest", "http_request"},
+		{"ThisTestHasBeenCopyPasted", "this_test_has_been_copy_pasted"},
+		{"With23Ya", "with23_ya"},
+		{"URL43324Hu", "url43324_hu"},
+	}
+	for _, test := range tests {
+		have := NewOzzoNeedle().toSnakeCase(test.input)
+		assert.Equalf(t, test.want, have, "wrong snake case")
+	}
+}
+
 func TestOzzoExplode(t *testing.T) {
 	// init structure
 	data := StructToValidate{
@@ -35,7 +56,7 @@ func TestOzzoExplode(t *testing.T) {
 		v.Field(&data.Email, v.Required, is.Email),
 	)
 
-	err = OzzoNeedle{}.Explode(err)
+	err = NewOzzoNeedle().Explode(err)
 	mErr := err.(merror.Error)
 	assert.Equalf(t, merror.BadRequestCode, mErr.Co, "code test")
 	assert.Equalf(t, merror.DVRequired, string(mErr.Details["json_tag"]), "required test")

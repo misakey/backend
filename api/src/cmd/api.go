@@ -43,7 +43,7 @@ func initService() {
 
 	// add error needles to auto handle some specific errors on layers we use everywhere
 	bubble.AddNeedle(bubble.PSQLNeedle{})
-	bubble.AddNeedle(sdk.OzzoNeedle{})
+	bubble.AddNeedle(sdk.NewOzzoNeedle())
 	bubble.AddNeedle(sdk.EchoNeedle{})
 	bubble.Lock()
 

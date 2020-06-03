@@ -11,7 +11,7 @@ import (
 )
 
 type GetBackupCmd struct {
-	AccountID string
+	AccountID string `json:"-"`
 }
 
 func (cmd GetBackupCmd) Validate() error {
@@ -44,7 +44,7 @@ func (sso SSOService) GetBackup(ctx context.Context, cmd GetBackupCmd) (GetBacku
 }
 
 type UpdateBackupCmd struct {
-	AccountID  string
+	AccountID  string `json:"-"`
 	Data       string `json:"data"`
 	NewVersion int    `json:"version"`
 }

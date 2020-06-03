@@ -62,7 +62,7 @@ func (af AuthFlowHTTP) LoginAuthnStep(ctx echo.Context) error {
 
 	redirect, err := af.service.LoginAuthnStep(ctx.Request().Context(), cmd)
 	if err != nil {
-		return merror.Transform(err).From(merror.OriBody).Describe("could not step on login flow")
+		return merror.Transform(err).From(merror.OriBody).Describe("login flow step")
 	}
 	return ctx.JSON(http.StatusOK, redirect)
 }
@@ -76,4 +76,11 @@ func (af AuthFlowHTTP) ConsentInit(ctx echo.Context) error {
 	// init consent then redirect
 	redirectURL := af.service.ConsentInit(ctx.Request().Context(), consentChallenge)
 	return ctx.Redirect(http.StatusFound, redirectURL)
+}
+
+func (af AuthFlowHTTP) Logout(ctx echo.Context) error {
+	if err := af.service.Logout(ctx.Request().Context()); err != nil {
+		return merror.Transform(err).From(merror.OriBody).Describe("logout")
+	}
+	return ctx.NoContent(http.StatusNoContent)
 }

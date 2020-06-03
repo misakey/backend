@@ -30,8 +30,8 @@ func initRoutes(
 	authRoutes := router.Group("/auth")
 	authRoutes.GET("/login", authFlowHTTP.LoginInit)
 	authRoutes.GET("/login/info", authFlowHTTP.LoginInfo)
-	// TODO14: add a limit req on gateway to this endpoint
 	authRoutes.POST("/login/authn-step", authFlowHTTP.LoginAuthnStep)
+	authRoutes.POST("/logout", authFlowHTTP.Logout, authzMidlw)
 	authRoutes.GET("/consent", authFlowHTTP.ConsentInit)
 	authRoutes.GET("/callback", func(ctx echo.Context) error {
 		oauthCodeFlow.ExchangeToken(ctx.Response().Writer, ctx.Request())

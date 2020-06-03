@@ -14,7 +14,7 @@ import (
 )
 
 type CreateAccountCmd struct {
-	IdentityID string
+	IdentityID string `json:"-"`
 
 	Password   argon2.HashedPassword `json:"prehashed_password"`
 	BackupData string                `json:"backup_data"`

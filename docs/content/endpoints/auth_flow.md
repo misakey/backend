@@ -53,8 +53,9 @@ sequenceDiagram
     api.misakey.com->>auth.misakey.com: redirects user's agent to final url with tokens
 {{</mermaid>}}
 
-____
-# Initiate an authorization code flow
+## Initiate an authorization code flow
+
+### Request
 
 ```bash
     GET https://auth.misakey.com.local/_/oauth2/auth
@@ -80,10 +81,11 @@ _HTML Body:_
 
 The `Location` header contains the same URL than the HTML body. The user's agent should be redirected to this URL to continue the auth flow to the login flow.
 
-____
-# Get Login Information
+## Get Login Information
 
 This route is used to retrieve information about the current login flow using a login challenge.
+
+### Request
 
 ```bash
   GET https://api.misakey.com.local/auth/login/info
@@ -92,7 +94,7 @@ This route is used to retrieve information about the current login flow using a 
 _Query Parameters:_
 - `login_challenge` (string): the login challenge corresponding to the current auth flow.
 
-# Response
+### Response
 
 _Code_:
 ```bash
@@ -123,8 +125,7 @@ _JSON Body_:
 - `acr_values` (string) (nullable): list of acr values sent during the auth flow init.
 - `login_hint` (string): the login_hint sent during the auth flow init.
 
-____
-# Require an authable identity for a given identifier
+## Require an authable identity for a given identifier
 
 This request is idempotent.
 
@@ -133,10 +134,16 @@ This route is used to retrieve information the authable identity the end-user wi
 The authable identity can be a new one created for the occasion or an existing one.
 See _Response_ below for more information.
 
+### Request
+
+_Headers:_
+- The request doesn't require an authorization header.
+
 ```bash
   PUT https://api.misakey.com.local/identities/authable
 ```
 
+_JSON Body:_
 ```json
   {
   	"login_challenge": "e45f579fd02d41adbf8cb45e0f6a44ff",
@@ -145,10 +152,6 @@ See _Response_ below for more information.
   	}
   }
 ```
-
-The request doesn't require an authorization header.
-
-_JSON Body:_
 
 - `login_challenge` (string): can be found in preivous redirect URL.
 - `identifier` (object): information about the used identifier to authenticate the end-user:
@@ -183,8 +186,8 @@ _JSON Body:_
 - `authn_step` (object): the preferred authentication step:
   - `identity_id` (uuid string): the unique identity id the authentication step is attached to.
   - `method_name` (string) (one of: _emailed_code_): the authentication method.
-____
-# Perform an authentication step in the login flow
+
+## Perform an authentication step in the login flow
 
 The next step to authenticate the end-user is to let them enter some information
 assuring they own the identity. This is called an **authentication step**.
@@ -192,10 +195,16 @@ assuring they own the identity. This is called an **authentication step**.
 Some login flow will require many steps later but as of today, we only have one step
 even for our most secure flows.
 
+### Request
+
 ```bash
   POST https://api.misakey.com.local/auth/login/authn-step
 ```
 
+_Headers:_
+- The request doesn't require an authorization header.
+
+_JSON Body:_
 ```json
 {
   "login_challenge": "e2645a0592e94ee78d8fbeaf65a4b82b",
@@ -206,10 +215,6 @@ even for our most secure flows.
   }
 }
 ```
-
-The request doesn't require an authorization header.
-
-_JSON Body:_
 
 - `login_challenge` (string): can be found in previous redirect URL.
 - `authn_step` (object): the performed authentication step information:
@@ -282,7 +287,6 @@ _JSON Body:_
 
 ## Init a new authentication step
 
-
 This request allows to init an authentication step:
 - in case the last one has expired
 - if a new step must be initialized
@@ -301,7 +305,8 @@ This request allows to init an authentication step:
   }
 ```
 
-The request doesn't require an authorization header.
+_Headers:_
+- The request doesn't require an authorization header.
 
 _JSON Body:_
 
@@ -342,4 +347,30 @@ _Code:_
         "method_name": "conflict"
     }
 }
+```
+
+## Logout
+
+This request logouts a user from their authentication session.
+
+An authentication session is valid for an identity but it potentially links other identities
+through the account relationship, be aware this action invalidates the session for the whole
+account in this case.
+
+### Request
+
+```bash
+  POST https://api.misakey.com.local/logout
+```
+
+_Headers_:
+- `Authorization` (opaque token) (ACR >= 0): `subject` claim as the identity id sent in body.
+
+### Success Response
+
+This route does not return any content.
+
+_Code:_
+```bash
+    HTTP 204 No Content
 ```
