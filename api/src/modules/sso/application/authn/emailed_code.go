@@ -18,9 +18,11 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
 		return err
 	}
-	if err == nil && time.Now().Sub(existing.CreatedAt) < as.codeValidity {
+	// if the last authn step is not complete and not expired, we can't create a new one
+	if err == nil && !existing.Complete &&
+		time.Now().Sub(existing.CreatedAt) < as.codeValidity {
 		return merror.Conflict().
-			Describe("a code has already been generated").
+			Describe("a code has already been generated and not used").
 			Detail("identity_id", merror.DVConflict).
 			Detail("method_name", merror.DVConflict)
 	}
