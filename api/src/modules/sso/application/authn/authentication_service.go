@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 )
 
 type Service struct {

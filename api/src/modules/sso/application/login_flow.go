@@ -6,7 +6,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/volatiletech/null"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )

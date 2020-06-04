@@ -9,7 +9,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authentication"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 )
 
 // IdentityAuthableCmd orders:
