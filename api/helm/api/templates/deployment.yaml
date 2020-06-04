@@ -51,6 +51,10 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
+          volumeMounts:
+            - mountPath: /etc/api-config.toml
+              subPath: api-config.toml
+              name: config
           livenessProbe:
             httpGet:
               path: /version
@@ -63,6 +67,10 @@ spec:
 {{ toYaml .Values.resources | indent 12 }}
       imagePullSecrets:
         - name: regcred
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "api.fullname" . }}
     {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
