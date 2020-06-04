@@ -8,10 +8,10 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/sqlboiler"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 type AuthenticationStepSQLBoiler struct {
@@ -63,7 +63,7 @@ func (repo *AuthenticationStepSQLBoiler) Last(
 	mods := []qm.QueryMod{
 		sqlboiler.AuthenticationStepWhere.IdentityID.EQ(identityID),
 		sqlboiler.AuthenticationStepWhere.MethodName.EQ(string(methodName)),
-		qm.OrderBy(sqlboiler.AuthenticationStepColumns.CreatedAt),
+		qm.OrderBy(sqlboiler.AuthenticationStepColumns.CreatedAt + " DESC"),
 	}
 
 	sqlAuthnStep, err := sqlboiler.AuthenticationSteps(mods...).One(ctx, repo.db)
