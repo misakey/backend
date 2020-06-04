@@ -15,7 +15,7 @@ subdomains:
   - auth
   - api
   - misadmin
-  - www
+  - app
 
 service:
   type: ClusterIP

@@ -16,8 +16,7 @@ hydra:
         cors:
           enabled: true
           allowed_origins:
-            - https://admin.misakey.com
-            - https://www.misakey.com
+            - https://app.misakey.com
           allowed_methods:
             - GET
           allowed_headers:
