@@ -14,6 +14,8 @@ type ozzoNeedle struct {
 	matchAllCap   *regexp.Regexp
 }
 
+// NewOzzoNeedle is the mandatory-to-use ozzoNeedle constructor
+// it instantiates regexp required to ensure details keys are snake case formatted
 func NewOzzoNeedle() ozzoNeedle {
 	return ozzoNeedle{
 		matchFirstCap: regexp.MustCompile("(.)([A-Z][a-z]+)"),
@@ -21,6 +23,7 @@ func NewOzzoNeedle() ozzoNeedle {
 	}
 }
 
+// toSnakeCase transforms the received string into a snake case formatted string
 func (n ozzoNeedle) toSnakeCase(str string) string {
 	if n.matchFirstCap == nil {
 		return "ozzo_needle_wrongly_allocated!"

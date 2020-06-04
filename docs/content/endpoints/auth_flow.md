@@ -18,39 +18,39 @@ It is probably worth to read before implement following routes.
 ## Overall auth flow
 
 As of today:
-- `auth.misakey.com`: the frontend client
+- `app.misakey.com`: the frontend client
 - `auth.misakey.com/_`: the Ory Hydra service
 - `api.misakey.com`: the backend service responsible for authentication
 
 {{<mermaid>}}
 sequenceDiagram
-    auth.misakey.com->>auth.misakey.com/_: initiates oauth2 authorization code
-    auth.misakey.com/_->>+auth.misakey.com: redirects the user's agent with login challenge
-    Note right of auth.misakey.com: Starts Login Flow
-    auth.misakey.com-->>-api.misakey.com: .
+    app.misakey.com->>auth.misakey.com/_: initiates oauth2 authorization code
+    auth.misakey.com/_->>+app.misakey.com: redirects the user's agent with login challenge
+    Note right of app.misakey.com: Starts Login Flow
+    app.misakey.com-->>-api.misakey.com: .
     api.misakey.com-->auth.misakey.com/_: fetches login info
     api.misakey.com->>api.misakey.com: checks user's session
-    api.misakey.com->>auth.misakey.com: redirect to login page
-    auth.misakey.com->>api.misakey.com: require an authable identity for an identifier
+    api.misakey.com->>app.misakey.com: redirect to login page
+    app.misakey.com->>api.misakey.com: require an authable identity for an identifier
     api.misakey.com->>api.misakey.com: potentially create a new identity/account
-    api.misakey.com->>auth.misakey.com: returns the authable identity information
-    auth.misakey.com->>api.misakey.com: authenticates user with credentials
+    api.misakey.com->>app.misakey.com: returns the authable identity information
+    app.misakey.com->>api.misakey.com: authenticates user with credentials
     api.misakey.com-->auth.misakey.com/_: transmits login info and receives redirect url with login verifier
-    api.misakey.com->>+auth.misakey.com: redirects end user to auth server with login verifier
-    auth.misakey.com->>-auth.misakey.com/_: .
-    Note right of auth.misakey.com: Ends Login Flow
-    auth.misakey.com/_->>+auth.misakey.com: redirects the user's agent with consent challenge
-    auth.misakey.com->>-api.misakey.com: .
-    Note right of auth.misakey.com: Starts Consent Flow
+    api.misakey.com->>+app.misakey.com: redirects end user to auth server with login verifier
+    app.misakey.com->>-auth.misakey.com/_: .
+    Note right of app.misakey.com: Ends Login Flow
+    auth.misakey.com/_->>+app.misakey.com: redirects the user's agent with consent challenge
+    app.misakey.com->>-api.misakey.com: .
+    Note right of app.misakey.com: Starts Consent Flow
     api.misakey.com-->auth.misakey.com/_: fetches consent info
     api.misakey.com-->auth.misakey.com/_: transmits consent info and receives redirect url with consent verifier
-    api.misakey.com->>+auth.misakey.com: redirects end user to auth server with consent verifier
-    auth.misakey.com->>-auth.misakey.com/_: .
-    Note right of auth.misakey.com: Ends Consent Flow
-    api.misakey.com->>+auth.misakey.com: redirects user's agent to redirect url with code
-    auth.misakey.com->>-api.misakey.com: .
+    api.misakey.com->>+app.misakey.com: redirects end user to auth server with consent verifier
+    app.misakey.com->>-auth.misakey.com/_: .
+    Note right of app.misakey.com: Ends Consent Flow
+    api.misakey.com->>+app.misakey.com: redirects user's agent to redirect url with code
+    app.misakey.com->>-api.misakey.com: .
     api.misakey.com-->auth.misakey.com/_: fetches tokens as an authenticated client
-    api.misakey.com->>auth.misakey.com: redirects user's agent to final url with tokens
+    api.misakey.com->>app.misakey.com: redirects user's agent to final url with tokens
 {{</mermaid>}}
 
 ## Initiate an authorization code flow
