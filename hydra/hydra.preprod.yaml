@@ -16,8 +16,7 @@ hydra:
         cors:
           enabled: true
           allowed_origins:
-            - https://admin.preprod.misakey.dev
-            - https://www.preprod.misakey.dev
+            - https://app.preprod.misakey.dev
           allowed_methods:
             - GET
           allowed_headers:
