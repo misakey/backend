@@ -11,16 +11,15 @@
           <td align="center" valign="top" id="bodyCell" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;margin: 0;padding: 20px;font-family: &quot;Roboto&quot;, sans-serif;height: 100% !important;">
           <div class="main">
             <p style="text-align: center;-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%; margin-bottom: 30px;">
-              <img src="https://static.misakey.com/img/MisakeyLogo.png" width="50" alt="Misakey Logo" style="-ms-interpolation-mode: bicubic;border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
+              <img src="https://static.misakey.com/img/MisakeyLogoTypo.png" width="150" alt="Misakey Logo" style="-ms-interpolation-mode: bicubic;border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
             </p>
-
-            <h1>Code de validation Misakey</h1>
 
             <p>Nous avons reçu une demande d’authentification Misakey par code de confirmation.</p>
 
-            <p>Votre code de confirmation Misakey est :</p>
+            <h3>Votre code de confirmation</h3>
 
-            <strong>{{.code}}</strong>
+
+            <h2>{{.code}}</h2>
 
 
             <p>Si vous n’êtes pas à l'origine de cette demande, envoyez un e-mail à <a href="mailto:feedback@misakey.com">feedback@misakey.com</a> pour nous le signaler et ne transférez ce code à aucune personne.</p>
