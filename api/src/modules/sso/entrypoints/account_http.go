@@ -18,7 +18,7 @@ func NewAccountHTTP(service application.SSOService) AccountHTTP {
 
 // Handles GET /accounts/:id/backup - get the account backup information
 func (entrypoint AccountHTTP) GetBackup(ctx echo.Context) error {
-	query := application.BackupQuery{
+	query := application.AccountQuery{
 		AccountID: ctx.Param("id"),
 	}
 
@@ -50,4 +50,21 @@ func (entrypoint AccountHTTP) UpdateBackup(ctx echo.Context) error {
 		return merror.Transform(err).Describe("service update backup").From(merror.OriBody)
 	}
 	return ctx.NoContent(http.StatusNoContent)
+}
+
+// Handles GET /accounts/:id/pwd-params - get the account password public parameters
+func (entrypoint AccountHTTP) GetPwdParams(ctx echo.Context) error {
+	query := application.AccountQuery{
+		AccountID: ctx.Param("id"),
+	}
+
+	if err := query.Validate(); err != nil {
+		return merror.Transform(err).From(merror.OriBody)
+	}
+
+	view, err := entrypoint.service.GetAccountPwdParams(ctx.Request().Context(), query)
+	if err != nil {
+		return merror.Transform(err).Describe("service get account pwd params").From(merror.OriBody)
+	}
+	return ctx.JSON(http.StatusOK, view)
 }

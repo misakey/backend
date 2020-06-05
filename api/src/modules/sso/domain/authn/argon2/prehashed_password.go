@@ -77,10 +77,10 @@ func (p HashedPassword) Matches(encodedHash string) (bool, error) {
 	return matches, nil
 }
 
-// DecodeArgon2Params attempts to decode a string from DB
+// DecodeParams attempts to decode a string from DB
 // as a Argon2+HMAC hash, and if successful returns the argon2 parameters.
 // This is used to send the parameters to the client during authentication.
-func DecodeArgon2Params(encodedHash string) (params *Params, err error) {
+func DecodeParams(encodedHash string) (params Params, err error) {
 	params, _, _, err = decode(encodedHash)
 	if err != nil {
 		return params, err

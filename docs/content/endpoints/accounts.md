@@ -22,6 +22,8 @@ This route allows the creation of an account on an existing identity.
 
 The identity must have no registered linked account.
 
+The `prehashed_password` contains information following [Argon2 server relief concepts](../../concepts/server-relief/).
+
 ### Request
 
 ```bash
@@ -36,15 +38,7 @@ _Path Parameters:_
 _JSON Body:_
 ```json
 {
-	"prehashed_password": {
-		"params": {
-			"memory": 1024,
-			"parallelism": 1,
-			"iterations": 1,
-			"salt_base64": "Yydlc3QgdmFjaGVtZW50IHNhbMOpZSBjb21tZSBwaHJhc2UgZW5jb2TDqWUgZW4gYmFzZSA2NA=="
-		},
-		"hash_base64": "Ym9uam91ciBmbG9yZW50IGNvbW1lbnQgdmFzLXR1IGVuIGNldHRlIGJlbGxlIGpvdXJuw6llID8h"
-	},
+	"prehashed_password": {{% include "include/passwordHash.json" 4 %}},
 	"backup_data": "TGEgdmllLCBjZSBuJ2VzdCBwYXMgZCdhdHRlbmRyZSBxdWUgbCdvcmFnZSBwYXNzZSwgYydlc3QgZCdhcHByZW5kcmUgw6AgZGFuc2VyIHNvdXMgbGEgcGx1aWUu"
 }
 ```
@@ -70,12 +64,7 @@ _JSON Body:_
   {
     "id": "5f80b4ec-b42a-4554-a738-4fb532ba2ee4",
     "prehashed_password": {
-      "params": {
-        "memory": 1024,
-        "parallelism": 1,
-        "iterations": 1,
-        "salt_base64": "Yydlc3QgdmFjaGVtZW50IHNhbMOpZSBjb21tZSBwaHJhc2UgZW5jb2TDqWUgZW4gYmFzZSA2NA=="
-      }
+      "params": {{% include "include/hashParameters.json" 8 %}},
     },
     "backup_data": "TGEgdmllLCBjZSBuJ2VzdCBwYXMgZCdhdHRlbmRyZSBxdWUgbCdvcmFnZSBwYXNzZSwgYydlc3QgZCdhcHByZW5kcmUgw6AgZGFuc2VyIHNvdXMgbGEgcGx1aWUu",
     "backup_version": 1,
@@ -91,6 +80,38 @@ _JSON Body:_
     - `salt_base64` (base64 string).
 - `backup_data` (base64 string): the stored backup data.
 - `backup_version` (integer): the backup version - always 1 on creation.
+
+## Get the account password parameters
+
+This route allows the retrieval of the account password hash parameters.
+
+Hash parameters contains information about the way the password has been hashed
+following [Argon2 server relief concepts](../../concepts/server-relief/).
+
+### Request
+
+```bash
+  GET https://api.misakey.com.local/accounts/:id/pwd-params
+```
+
+_Headers:_
+- No `Authorization` is required to retrieve the resource.
+
+### Success Response
+
+_Code:_
+```bash
+  HTTP 200 OK
+```
+
+```json
+{{% include "include/hashParameters.json" %}}
+```
+
+- `memory` (integer).
+- `parallelism` (integer).
+- `iterations` (integer).
+- `salt_base64` (base64 string).
 
 ## Get the account backup
 

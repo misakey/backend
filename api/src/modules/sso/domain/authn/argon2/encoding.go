@@ -22,26 +22,26 @@ func encode(argon2Params Params, serverSalt []byte, finalHash []byte) string {
 	)
 }
 
-func decode(encodedHash string) (params *Params, hmacSalt []byte, finalHash []byte, err error) {
+func decode(encodedHash string) (params Params, hmacSalt []byte, finalHash []byte, err error) {
+	params = Params{}
 	parts := strings.Split(encodedHash, "$")
 
 	// because the string *starts* with a "$",
 	// there should be 6 parts
 	// with "part[0]" being the empty string
 	if len(parts) != 6 {
-		return nil, nil, nil, ErrBadFormat
+		return params, nil, nil, ErrBadFormat
 	}
 	if parts[1] != algorithmID {
-		return nil, nil, nil, ErrBadFormat
+		return params, nil, nil, ErrBadFormat
 	}
 
-	params = &Params{}
 	_, err = fmt.Sscanf(
 		parts[2], "m=%d,t=%d,p=%d",
 		&params.Memory, &params.Iterations, &params.Parallelism,
 	)
 	if err != nil {
-		return nil, nil, nil, err
+		return params, nil, nil, err
 	}
 
 	// no need to decode this one because the server does not process it
@@ -50,12 +50,12 @@ func decode(encodedHash string) (params *Params, hmacSalt []byte, finalHash []by
 
 	hmacSalt, err = base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
-		return nil, nil, nil, err
+		return params, nil, nil, err
 	}
 
 	finalHash, err = base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
-		return nil, nil, nil, err
+		return params, nil, nil, err
 	}
 
 	return params, hmacSalt, finalHash, nil

@@ -26,6 +26,7 @@ func initRoutes(
 	accountRoutes := router.Group("/accounts")
 	accountRoutes.GET("/:id/backup", accountHTTP.GetBackup, authzMidlw)
 	accountRoutes.PUT("/:id/backup", accountHTTP.UpdateBackup, authzMidlw)
+	accountRoutes.GET("/:id/pwd-params", accountHTTP.GetPwdParams)
 
 	authRoutes := router.Group("/auth")
 	authRoutes.GET("/login", authFlowHTTP.LoginInit)

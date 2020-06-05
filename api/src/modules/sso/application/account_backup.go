@@ -10,11 +10,11 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
-type BackupQuery struct {
+type AccountQuery struct {
 	AccountID string
 }
 
-func (query BackupQuery) Validate() error {
+func (query AccountQuery) Validate() error {
 	return v.ValidateStruct(&query,
 		v.Field(&query.AccountID, v.Required, is.UUIDv4.Error("account id must be an uuid v4")),
 	)
@@ -25,7 +25,7 @@ type BackupView struct {
 	Version int    `json:"version"`
 }
 
-func (sso SSOService) GetBackup(ctx context.Context, query BackupQuery) (BackupView, error) {
+func (sso SSOService) GetBackup(ctx context.Context, query AccountQuery) (BackupView, error) {
 	view := BackupView{}
 
 	// check access using context

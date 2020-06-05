@@ -28,7 +28,7 @@ using a custom [Hugo shortcode][] named `include`:
     {{% include "include/hashParameters.json" %}}
 
 Additionally to the path to the snippet (please put snippets in the `include` directory),
-the shortcode takes two other parameters that are *optionnal*:
+the shortcode takes two other parameters that are *optional*:
 the first is an integer indicating the **indentation** (using spaces) that must be applied to the included snippet
 (useful when including a JSON object inside another JSON object),
 and the second is a boolean represented as `0` (false, the default) or `1` (true)
