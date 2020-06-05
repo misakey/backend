@@ -23,22 +23,25 @@ import (
 
 // Account is an object representing the database table.
 type Account struct {
-	ID         string `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Password   string `boil:"password" json:"password" toml:"password" yaml:"password"`
-	BackupData string `boil:"backup_data" json:"backup_data" toml:"backup_data" yaml:"backup_data"`
+	ID            string `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Password      string `boil:"password" json:"password" toml:"password" yaml:"password"`
+	BackupData    string `boil:"backup_data" json:"backup_data" toml:"backup_data" yaml:"backup_data"`
+	BackupVersion int    `boil:"backup_version" json:"backup_version" toml:"backup_version" yaml:"backup_version"`
 
 	R *accountR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L accountL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var AccountColumns = struct {
-	ID         string
-	Password   string
-	BackupData string
+	ID            string
+	Password      string
+	BackupData    string
+	BackupVersion string
 }{
-	ID:         "id",
-	Password:   "password",
-	BackupData: "backup_data",
+	ID:            "id",
+	Password:      "password",
+	BackupData:    "backup_data",
+	BackupVersion: "backup_version",
 }
 
 // Generated where
@@ -59,14 +62,32 @@ func (w whereHelperstring) IN(slice []string) qm.QueryMod {
 	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
 }
 
+type whereHelperint struct{ field string }
+
+func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint) NEQ(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint) LT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperint) IN(slice []int) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+
 var AccountWhere = struct {
-	ID         whereHelperstring
-	Password   whereHelperstring
-	BackupData whereHelperstring
+	ID            whereHelperstring
+	Password      whereHelperstring
+	BackupData    whereHelperstring
+	BackupVersion whereHelperint
 }{
-	ID:         whereHelperstring{field: "\"account\".\"id\""},
-	Password:   whereHelperstring{field: "\"account\".\"password\""},
-	BackupData: whereHelperstring{field: "\"account\".\"backup_data\""},
+	ID:            whereHelperstring{field: "\"account\".\"id\""},
+	Password:      whereHelperstring{field: "\"account\".\"password\""},
+	BackupData:    whereHelperstring{field: "\"account\".\"backup_data\""},
+	BackupVersion: whereHelperint{field: "\"account\".\"backup_version\""},
 }
 
 // AccountRels is where relationship names are stored.
@@ -90,9 +111,9 @@ func (*accountR) NewStruct() *accountR {
 type accountL struct{}
 
 var (
-	accountAllColumns            = []string{"id", "password", "backup_data"}
+	accountAllColumns            = []string{"id", "password", "backup_data", "backup_version"}
 	accountColumnsWithoutDefault = []string{"id", "password"}
-	accountColumnsWithDefault    = []string{"backup_data"}
+	accountColumnsWithDefault    = []string{"backup_data", "backup_version"}
 	accountPrimaryKeyColumns     = []string{"id"}
 )
 

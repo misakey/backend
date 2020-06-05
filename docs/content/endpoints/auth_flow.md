@@ -71,9 +71,7 @@ _Code:_
 ```
 
 _Headers:_
-```bash
-    Location: https://api.misakey.com.local/auth/login?login_challenge=4f112272f2fa4cbe939b04e74dd3e49e
-```
+- `Location`: https://api.misakey.com.local/auth/login?login_challenge=4f112272f2fa4cbe939b04e74dd3e49e
 
 _HTML Body:_
 ```html

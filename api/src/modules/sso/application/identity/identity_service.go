@@ -30,11 +30,17 @@ func NewIdentityService(
 }
 
 func (ids IdentityService) Create(ctx context.Context, identity *domain.Identity) error {
-	return ids.identities.Create(ctx, identity)
+	if err := ids.identities.Create(ctx, identity); err != nil {
+		return merror.Transform(err).Describe("create identity")
+	}
+	return nil
 }
 
-func (ids IdentityService) Get(ctx context.Context, identityID string) (domain.Identity, error) {
-	return ids.identities.Get(ctx, identityID)
+func (ids IdentityService) Get(ctx context.Context, identityID string) (ret domain.Identity, err error) {
+	if ret, err = ids.identities.Get(ctx, identityID); err != nil {
+		return ret, merror.Transform(err).Describe("get identity")
+	}
+	return ret, nil
 }
 
 func (ids IdentityService) GetAuthableByIdentifierID(ctx context.Context, identifierID string) (domain.Identity, error) {
@@ -58,8 +64,14 @@ func (ids IdentityService) GetAuthableByIdentifierID(ctx context.Context, identi
 }
 
 func (ids IdentityService) Update(ctx context.Context, identity *domain.Identity) error {
-	return ids.identities.Update(ctx, identity)
+	if err := ids.identities.Update(ctx, identity); err != nil {
+		return merror.Transform(err).Describe("update identity")
+	}
+	return nil
 }
 func (ids IdentityService) Confirm(ctx context.Context, id string) error {
-	return ids.identities.Confirm(ctx, id)
+	if err := ids.identities.Confirm(ctx, id); err != nil {
+		return merror.Transform(err).Describe("confirm identity")
+	}
+	return nil
 }

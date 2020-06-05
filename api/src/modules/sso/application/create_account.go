@@ -50,7 +50,8 @@ type CreateAccountView struct {
 	PrehashedPassword struct {
 		Params argon2.Params `json:"params"`
 	} `json:"prehashed_password"`
-	BackupData string `json:"backup_data"`
+	BackupData    string `json:"backup_data"`
+	BackupVersion int    `json:"backup_version"`
 }
 
 func (sso SSOService) CreateAccount(ctx context.Context, cmd CreateAccountCmd) (CreateAccountView, error) {
@@ -99,6 +100,7 @@ func (sso SSOService) CreateAccount(ctx context.Context, cmd CreateAccountCmd) (
 	// fill view model with domain model
 	view.ID = account.ID
 	view.BackupData = account.BackupData
+	view.BackupVersion = account.BackupVersion // should be always 1
 	view.PrehashedPassword.Params = cmd.Password.Params
 	return view, nil
 }

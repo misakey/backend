@@ -24,17 +24,19 @@ func NewAccountSQLBoiler(db *sql.DB) *AccountSQLBoiler {
 
 func (repo AccountSQLBoiler) toDomain(boilModel *sqlboiler.Account) *domain.Account {
 	return &domain.Account{
-		ID:         boilModel.ID,
-		Password:   boilModel.Password,
-		BackupData: boilModel.BackupData,
+		ID:            boilModel.ID,
+		Password:      boilModel.Password,
+		BackupData:    boilModel.BackupData,
+		BackupVersion: boilModel.BackupVersion,
 	}
 }
 
 func (repo AccountSQLBoiler) toSqlBoiler(domModel *domain.Account) *sqlboiler.Account {
 	return &sqlboiler.Account{
-		ID:         domModel.ID,
-		Password:   domModel.Password,
-		BackupData: domModel.BackupData,
+		ID:            domModel.ID,
+		Password:      domModel.Password,
+		BackupData:    domModel.BackupData,
+		BackupVersion: domModel.BackupVersion,
 	}
 }
 
@@ -63,4 +65,18 @@ func (repo AccountSQLBoiler) Get(ctx context.Context, accountID string) (ret dom
 	}
 
 	return *repo.toDomain(sqlAccount), nil
+}
+
+func (repo AccountSQLBoiler) Update(ctx context.Context, account *domain.Account) error {
+	sqlAccount := repo.toSqlBoiler(account)
+
+	rowsAff, err := sqlAccount.Update(ctx, repo.db, boil.Infer())
+	if err != nil {
+		return err
+	}
+	if rowsAff == 0 {
+		return merror.NotFound().Detail("id", merror.DVNotFound).
+			Describe("no account rows affected on udpate")
+	}
+	return nil
 }

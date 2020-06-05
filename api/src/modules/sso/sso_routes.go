@@ -15,12 +15,17 @@ func initRoutes(
 	oauthCodeFlow oauth.AuthorizationCodeFlow,
 ) {
 	// init entrypoints
-	identityHTTP := entrypoints.NewIdentityHTTP(ssoService)
+	accountHTTP := entrypoints.NewAccountHTTP(ssoService)
 	authFlowHTTP := entrypoints.NewAuthFlowHTTP(ssoService)
 	authnHTTP := entrypoints.NewAuthnHTTP(ssoService)
+	identityHTTP := entrypoints.NewIdentityHTTP(ssoService)
 
 	routes := router.Group("")
 	routes.POST("/authn-steps", authnHTTP.InitAuthnStep)
+
+	accountRoutes := router.Group("/accounts")
+	accountRoutes.GET("/:id/backup", accountHTTP.GetBackup, authzMidlw)
+	accountRoutes.PUT("/:id/backup", accountHTTP.UpdateBackup, authzMidlw)
 
 	authRoutes := router.Group("/auth")
 	authRoutes.GET("/login", authFlowHTTP.LoginInit)
