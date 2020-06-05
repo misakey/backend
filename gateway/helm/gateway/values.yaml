@@ -5,7 +5,7 @@
 replicaCount: 2
 
 image:
-  repository: registry.misakey.dev/misakey/misakey/gateway
+  repository: registry.misakey.dev/misakey/backend/gateway
   tag:
   pullPolicy: Always
 
@@ -23,7 +23,7 @@ service:
 
 ingress:
   enabled: true
-  annotations: 
+  annotations:
     kubernetes.io/ingress.class: nginx
     certmanager.k8s.io/cluster-issuer: letsencrypt
 
