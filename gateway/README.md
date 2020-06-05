@@ -32,10 +32,10 @@ The gateway should be rebuild when modified to have changes applied (`docker-com
 The gateway image is built and deployed each time the repo is pushed. It generates 3 images:
 
 - On `tags`
-  - `registry.misakey.dev/misakey/misakey/gateway:<tag>`
+  - `registry.misakey.dev/misakey/backend/gateway:<tag>`
 - On `master`
-  - `registry.misakey.dev/misakey/misakey/gateway:preprod`
-  - `registry.misakey.dev/misakey/misakey/gateway:latest`
+  - `registry.misakey.dev/misakey/backend/gateway:preprod`
+  - `registry.misakey.dev/misakey/backend/gateway:latest`
 
 
 - Make sure the image you want to deploy exists
