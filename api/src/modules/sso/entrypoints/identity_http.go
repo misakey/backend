@@ -24,7 +24,7 @@ func (entrypoint IdentityHTTP) CreateAccount(ctx echo.Context) error {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
 	}
 
-	cmd.IdentityID = ctx.Param("id")
+	cmd.SetIdentityID(ctx.Param("id"))
 
 	if err := cmd.Validate(); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -32,9 +32,26 @@ func (entrypoint IdentityHTTP) CreateAccount(ctx echo.Context) error {
 
 	view, err := entrypoint.service.CreateAccount(ctx.Request().Context(), cmd)
 	if err != nil {
-		return merror.Transform(err).Describe("could not create account").From(merror.OriBody)
+		return merror.Transform(err).Describe("create account").From(merror.OriBody)
 	}
 	return ctx.JSON(http.StatusCreated, view)
+}
+
+// Handles GET /identities/:id - retrieve an existing identity
+func (entrypoint IdentityHTTP) GetIdentity(ctx echo.Context) error {
+	query := application.IdentityQuery{
+		IdentityID: ctx.Param("id"),
+	}
+
+	if err := query.Validate(); err != nil {
+		return merror.Transform(err).From(merror.OriBody)
+	}
+
+	identity, err := entrypoint.service.GetIdentity(ctx.Request().Context(), query)
+	if err != nil {
+		return merror.Transform(err).Describe("get identity").From(merror.OriBody)
+	}
+	return ctx.JSON(http.StatusOK, identity)
 }
 
 // Handles PUT /identities/authable - retrieve authable identity information

@@ -18,15 +18,15 @@ func NewAccountHTTP(service application.SSOService) AccountHTTP {
 
 // Handles GET /accounts/:id/backup - get the account backup information
 func (entrypoint AccountHTTP) GetBackup(ctx echo.Context) error {
-	cmd := application.GetBackupCmd{
+	query := application.BackupQuery{
 		AccountID: ctx.Param("id"),
 	}
 
-	if err := cmd.Validate(); err != nil {
+	if err := query.Validate(); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
 	}
 
-	view, err := entrypoint.service.GetBackup(ctx.Request().Context(), cmd)
+	view, err := entrypoint.service.GetBackup(ctx.Request().Context(), query)
 	if err != nil {
 		return merror.Transform(err).Describe("service get backup").From(merror.OriBody)
 	}
@@ -41,7 +41,7 @@ func (entrypoint AccountHTTP) UpdateBackup(ctx echo.Context) error {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
 	}
 
-	cmd.AccountID = ctx.Param("id")
+	cmd.SetAccountID(ctx.Param("id"))
 	if err := cmd.Validate(); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
 	}

@@ -39,6 +39,7 @@ func initRoutes(
 	})
 
 	identityRoutes := router.Group("/identities")
+	identityRoutes.GET("/:id", identityHTTP.GetIdentity, authzMidlw)
 	identityRoutes.POST("/:id/account", identityHTTP.CreateAccount, authzMidlw)
 	identityRoutes.PUT("/authable", identityHTTP.RequireAuthableIdentity)
 }

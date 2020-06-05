@@ -3,14 +3,47 @@ package application
 import (
 	"context"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
+	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/volatiletech/null"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 )
+
+type IdentityQuery struct {
+	IdentityID string
+}
+
+func (query IdentityQuery) Validate() error {
+	return v.ValidateStruct(&query,
+		v.Field(&query.IdentityID, v.Required, is.UUIDv4.Error("identity id must be an uuid v4")),
+	)
+}
+
+type IdentityView struct {
+	domain.Identity
+}
+
+func (sso SSOService) GetIdentity(ctx context.Context, query IdentityQuery) (IdentityView, error) {
+	view := IdentityView{}
+	var err error
+
+	// verify identity access
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return view, merror.Forbidden()
+	}
+
+	if acc.Subject != query.IdentityID {
+		return view, merror.Forbidden()
+	}
+
+	view.Identity, err = sso.identityService.Get(ctx, query.IdentityID)
+	return view, err
+}
 
 // IdentityAuthableCmd orders:
 // - the assurance of an identifier matching the received value
@@ -27,14 +60,14 @@ type IdentityAuthableCmd struct {
 // Validate the IdentityAuthableCmd
 func (cmd IdentityAuthableCmd) Validate() error {
 	// validate nested structure separately
-	if err := validation.ValidateStruct(&cmd.Identifier,
-		validation.Field(&cmd.Identifier.Value, validation.Required, is.Email.Error("only emails are supported")),
+	if err := v.ValidateStruct(&cmd.Identifier,
+		v.Field(&cmd.Identifier.Value, v.Required, is.Email.Error("only emails are supported")),
 	); err != nil {
 		return err
 	}
 
-	if err := validation.ValidateStruct(&cmd,
-		validation.Field(&cmd.LoginChallenge, validation.Required),
+	if err := v.ValidateStruct(&cmd,
+		v.Field(&cmd.LoginChallenge, v.Required),
 	); err != nil {
 		return err
 	}

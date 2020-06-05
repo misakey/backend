@@ -14,10 +14,14 @@ import (
 )
 
 type CreateAccountCmd struct {
-	IdentityID string `json:"-"`
+	identityID string
 
 	Password   argon2.HashedPassword `json:"prehashed_password"`
 	BackupData string                `json:"backup_data"`
+}
+
+func (cmd *CreateAccountCmd) SetIdentityID(id string) {
+	cmd.identityID = id
 }
 
 func (cmd CreateAccountCmd) Validate() error {
@@ -37,7 +41,7 @@ func (cmd CreateAccountCmd) Validate() error {
 	}
 
 	if err := v.ValidateStruct(&cmd,
-		v.Field(&cmd.IdentityID, v.Required, is.UUIDv4.Error("identity_id must be an UUIDv4")),
+		v.Field(&cmd.identityID, v.Required, is.UUIDv4.Error("identity_id must be an UUIDv4")),
 		v.Field(&cmd.BackupData, v.Required, is.Base64.Error("backup_data must be base64 encoded")),
 	); err != nil {
 		return merror.Transform(err).Describe("validating create account command")
@@ -62,12 +66,12 @@ func (sso SSOService) CreateAccount(ctx context.Context, cmd CreateAccountCmd) (
 		return view, merror.Forbidden()
 	}
 
-	if acc.Subject != cmd.IdentityID {
+	if acc.Subject != cmd.identityID {
 		return view, merror.Forbidden()
 	}
 
 	// retrieve the concerned identity
-	identity, err := sso.identityService.Get(ctx, cmd.IdentityID)
+	identity, err := sso.identityService.Get(ctx, cmd.identityID)
 	if err != nil {
 		return view, err
 	}

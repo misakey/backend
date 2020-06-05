@@ -10,30 +10,30 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
-type GetBackupCmd struct {
-	AccountID string `json:"-"`
+type BackupQuery struct {
+	AccountID string
 }
 
-func (cmd GetBackupCmd) Validate() error {
-	return v.ValidateStruct(&cmd,
-		v.Field(&cmd.AccountID, v.Required, is.UUIDv4.Error("account id must be an uuid v4")),
+func (query BackupQuery) Validate() error {
+	return v.ValidateStruct(&query,
+		v.Field(&query.AccountID, v.Required, is.UUIDv4.Error("account id must be an uuid v4")),
 	)
 }
 
-type GetBackupView struct {
+type BackupView struct {
 	Data    string `json:"data"`
 	Version int    `json:"version"`
 }
 
-func (sso SSOService) GetBackup(ctx context.Context, cmd GetBackupCmd) (GetBackupView, error) {
-	view := GetBackupView{}
+func (sso SSOService) GetBackup(ctx context.Context, query BackupQuery) (BackupView, error) {
+	view := BackupView{}
 
 	// check access using context
-	if err := sso.hasAccountAccess(ctx, cmd.AccountID); err != nil {
+	if err := sso.hasAccountAccess(ctx, query.AccountID); err != nil {
 		return view, err
 	}
 
-	account, err := sso.accountService.Get(ctx, cmd.AccountID)
+	account, err := sso.accountService.Get(ctx, query.AccountID)
 	if err != nil {
 		return view, err
 	}
@@ -44,14 +44,18 @@ func (sso SSOService) GetBackup(ctx context.Context, cmd GetBackupCmd) (GetBacku
 }
 
 type UpdateBackupCmd struct {
-	AccountID  string `json:"-"`
+	accountID  string
 	Data       string `json:"data"`
 	NewVersion int    `json:"version"`
 }
 
+func (cmd *UpdateBackupCmd) SetAccountID(id string) {
+	cmd.accountID = id
+}
+
 func (cmd UpdateBackupCmd) Validate() error {
 	return v.ValidateStruct(&cmd,
-		v.Field(&cmd.AccountID, v.Required, is.UUIDv4.Error("account id must be an uuid v4")),
+		v.Field(&cmd.accountID, v.Required, is.UUIDv4.Error("account id must be an uuid v4")),
 		v.Field(&cmd.Data, v.Required, is.Base64.Error("data must be base64 encoded")),
 		v.Field(&cmd.NewVersion, v.Required),
 	)
@@ -59,12 +63,12 @@ func (cmd UpdateBackupCmd) Validate() error {
 
 func (sso SSOService) UpdateBackup(ctx context.Context, cmd UpdateBackupCmd) error {
 	// check access
-	if err := sso.hasAccountAccess(ctx, cmd.AccountID); err != nil {
+	if err := sso.hasAccountAccess(ctx, cmd.accountID); err != nil {
 		return err
 	}
 
 	// retrieve the current state of the account
-	currentAccount, err := sso.accountService.Get(ctx, cmd.AccountID)
+	currentAccount, err := sso.accountService.Get(ctx, cmd.accountID)
 	if err != nil {
 		return err
 	}

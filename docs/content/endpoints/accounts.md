@@ -4,11 +4,11 @@ title: Accounts
 
 ## Introduction
 
-Accounts are entities within the system representing theorically one physical person
-in the real world.
+**Account** is an entity within the system representing theorically one physical person
+in the "real world".
 
 It is used for 3 main reasons:
-- link identities together (one person can have many identities).
+- link [identities](../identities/) together (one person can have many identities).
 - store a password (for authentication flow and for the use cryptographic features).
 - store some backup data (data used to make cryptographic features better).
 
@@ -18,7 +18,7 @@ to many (identities) relationship.
 
 ## Create an account on an identity
 
-This route allow the creation of an account on an existing identity.
+This route allows the creation of an account on an existing identity.
 
 The identity must have no registered linked account.
 
@@ -94,7 +94,7 @@ _JSON Body:_
 
 ## Get the account backup
 
-This route allow the retrieval of the account backup using the unique account id.
+This route allows the retrieval of the account backup using the unique account id.
 
 ### Request
 
@@ -128,7 +128,7 @@ _JSON Body:_
 ____
 ## Update the account backup
 
-This route allow the update of the account backup using the unique account id.
+This route allows the update of the account backup using the unique account id.
 
 ### Request
 
