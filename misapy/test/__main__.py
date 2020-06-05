@@ -3,7 +3,7 @@ import os
 from time import sleep
 from base64 import b64encode
 
-from . import http
+from .. import http
 
 URL_PREFIX = 'http://127.0.0.1:5020'
 
