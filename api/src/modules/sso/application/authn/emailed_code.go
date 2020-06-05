@@ -2,6 +2,7 @@ package authn
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/volatiletech/null"
@@ -70,7 +71,8 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 		"to":   identifier.Value,
 		"code": decodedCode.Code,
 	}
-	content, err := as.templates.NewEmail(ctx, identifier.Value, "Votre code de confirmation - Misakey", "code", data)
+	subject := fmt.Sprintf("Votre code de confirmation - %s", decodedCode.Code)
+	content, err := as.templates.NewEmail(ctx, identifier.Value, subject, "code", data)
 	if err != nil {
 		return err
 	}

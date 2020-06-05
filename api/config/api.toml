@@ -29,7 +29,7 @@
 
 [mail]
   templates = "/etc/templates"
-  from = "contact@misakey.com"
+  from = "Misakey <local-protection@misakey.com>"
 
 # only used if ENV=production
 # [aws]
