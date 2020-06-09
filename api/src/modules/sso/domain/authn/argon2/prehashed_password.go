@@ -3,8 +3,6 @@ package argon2
 import (
 	"crypto/subtle"
 	"encoding/base64"
-	"errors"
-	"fmt"
 )
 
 // We consider received password following argon2 server relief principle
@@ -87,11 +85,3 @@ func DecodeParams(encodedHash string) (params Params, err error) {
 	}
 	return params, nil
 }
-
-const (
-	algorithmID = "com.misakey.argon2-relief-v1"
-)
-
-var (
-	ErrBadFormat = errors.New(fmt.Sprintf(`the stored hash is not in format "%s"`, algorithmID))
-)

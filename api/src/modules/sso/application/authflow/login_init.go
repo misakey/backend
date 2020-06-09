@@ -7,6 +7,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/oauth"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
 )
 
@@ -23,8 +24,14 @@ func (afs AuthFlowService) LoginInit(ctx context.Context, loginChallenge string)
 	// TODO: handle session for identity ID corresponding to same accounts
 	// skip indicates if an active session has been detected so the authentication is not required
 	if loginCtx.Skip {
+		// set browser cookie as authentication method - acr 0
+		amr := authn.MethodRefs{}
+		amr.Add(authn.AMRBrowserCookie)
+
 		acceptance := login.Acceptance{
 			Subject: loginCtx.Subject,
+			ACR:     authn.ACR0.String(),
+			Context: authn.NewContext().SetAMR(amr),
 		}
 		successRedirect, err := afs.authFlow.Login(ctx, loginCtx.Challenge, acceptance)
 		if err != nil {

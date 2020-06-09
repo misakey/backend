@@ -12,15 +12,9 @@ import (
 type Step struct {
 	ID              int
 	IdentityID      string     `json:"identity_id"`
-	MethodName      Method     `json:"method_name"`
+	MethodName      MethodRef  `json:"method_name"`
 	RawJSONMetadata types.JSON `json:"metadata"`
 	CreatedAt       time.Time
 	Complete        bool
 	CompleteAt      null.Time
 }
-
-type Method string
-
-const (
-	EmailedCodeMethod Method = "emailed_code"
-)

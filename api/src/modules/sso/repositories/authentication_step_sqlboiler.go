@@ -55,7 +55,7 @@ func (repo *AuthenticationStepSQLBoiler) CompleteAt(ctx context.Context, id int,
 func (repo *AuthenticationStepSQLBoiler) Last(
 	ctx context.Context,
 	identityID string,
-	methodName authn.Method,
+	methodName authn.MethodRef,
 ) (authn.Step, error) {
 
 	authnStep := authn.Step{}
@@ -79,7 +79,7 @@ func (repo *AuthenticationStepSQLBoiler) Last(
 	// build domain model based on sql data
 	authnStep.ID = sqlAuthnStep.ID
 	authnStep.IdentityID = sqlAuthnStep.IdentityID
-	authnStep.MethodName = authn.Method(sqlAuthnStep.MethodName)
+	authnStep.MethodName = authn.MethodRef(sqlAuthnStep.MethodName)
 	authnStep.RawJSONMetadata = sqlAuthnStep.Metadata
 	authnStep.CreatedAt = sqlAuthnStep.CreatedAt
 	authnStep.CompleteAt = sqlAuthnStep.CompleteAt

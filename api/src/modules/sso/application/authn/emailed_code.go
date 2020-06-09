@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/types"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
@@ -16,7 +15,7 @@ import (
 // CreateEmailedCode authentication step
 func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) error {
 	// try to retrieve an existing code for this identity
-	existing, err := as.steps.Last(ctx, identityID, authn.EmailedCodeMethod)
+	existing, err := as.steps.Last(ctx, identityID, authn.AMREmailedCode)
 	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
 		return err
 	}
@@ -36,7 +35,7 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 
 	flow := authn.Step{
 		IdentityID:      identityID,
-		MethodName:      authn.EmailedCodeMethod,
+		MethodName:      authn.AMREmailedCode,
 		RawJSONMetadata: codeRawJSON,
 
 		CreatedAt: time.Now(),
@@ -51,16 +50,12 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 	// retrieve the identifier
 	identity, err := as.identityService.Get(ctx, identityID)
 	if err != nil {
-		// if the step exist, the identity should exist
-		// if it does not, we have an internal problem
-		return merror.Transform(err).Describe("could not find identity")
+		return merror.Transform(err).Describe("get identity")
 	}
 
 	identifier, err := as.identifierService.Get(ctx, identity.IdentifierID)
 	if err != nil {
-		// here the identifier should exist
-		// if it does not, we have an internal problem
-		return merror.Transform(err).Describe("could not find identifier")
+		return merror.Transform(err).Describe("get identifier")
 	}
 
 	decodedCode, err := code.ToMetadata(codeRawJSON)
@@ -81,9 +76,22 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 	return as.emails.Send(ctx, content)
 }
 
-func (as *Service) assertEmailedCode(currentStep authn.Step, inputRawJSON types.JSON) error {
+func (as *Service) assertEmailedCode(
+	ctx context.Context,
+	assertion authn.Step,
+) error {
+	// always take the most recent step as the current one - ignore others
+	currentStep, err := as.steps.Last(ctx, assertion.IdentityID, assertion.MethodName)
+	if err != nil {
+		return err
+	}
+	// check the most recent step has not been already complete
+	if currentStep.Complete {
+		return merror.Conflict().Describe("emailed code already complete")
+	}
+
 	// transform metadata into code metadata structure
-	input, err := code.ToMetadata(inputRawJSON)
+	input, err := code.ToMetadata(assertion.RawJSONMetadata)
 	if err != nil {
 		return merror.Forbidden().From(merror.OriBody).
 			Describe(err.Error()).Detail("metadata", merror.DVMalformed)
@@ -105,5 +113,6 @@ func (as *Service) assertEmailedCode(currentStep authn.Step, inputRawJSON types.
 		return merror.Forbidden().From(merror.OriBody).Detail("code", merror.DVExpired)
 	}
 
-	return nil
+	// complete the authentication step
+	return as.steps.CompleteAt(ctx, currentStep.ID, time.Now())
 }

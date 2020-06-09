@@ -8,6 +8,7 @@
   {{- $splitted := split $invocation " " -}}
   {{- $included := index $splitted 2 -}}
   {{- $inclusion_source := $included | readFile -}}
+  {{- $inclusion_source := strings.TrimRight "\n" $inclusion_source }}
   {{- $inclusion_indentation := index $splitted 3 -}}
   {{- $inclusion_indented_newline := printf "\n%s" (" " | strings.Repeat $inclusion_indentation) -}}
   {{- $inclusion := replaceRE "\n" $inclusion_indented_newline $inclusion_source -}}

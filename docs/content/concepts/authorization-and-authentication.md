@@ -144,9 +144,9 @@ the security level and it is not up to the end-user to choose.
 :warning: Third-parties are responsible of managing potential session with lower `acr` than requested.
 If an authentication session is still active, `acr_values` parameter might be ignored
 since only the ID token is aware of the previous `acr` value and so the Misakey auth server is not.
-Final `acr` claims shall be always compared to initial `acr_values`.
+Final `acr` claims must be always compared to initial `acr_values`.
 If the final `acr` shows a less secure authentication than expected:
-the authorization code flow shall be performed again using `prompt=login` parameter
+the authorization code flow must be performed again using `prompt=login` parameter
 (or force authentication and ignore potential session.
 
 ### 4.3. Methods
@@ -168,34 +168,45 @@ to the requested `acr_values`.
 
 Table of correspondance between ACR and Authentication methods:
 
-| ACR |  method_name |
-|:--- | :---         |
-| 1   | emailed_code |
-| 2   | password     |
+- `browser_cookie`: ACR 0.
+- `emailed_code`: ACR 1.
+- `prehashed_password`: ACR 2.
 
-#### 4.3.2. Emailed Code
+#### 4.3.2. Browser Cookie
+
+Browser Cookie allows the client to not re-ask to the end-user to login, it
+also make possible silent authentication to get a new access token smoothly.
+
+Long-lived browser cookies aren't a decent authentication method to ensure
+the connected user is the owner of the identity, so the corresponding `acr` is 0.
+
+This is based on [Nist Assurance Levels][] specification.
+
+#### 4.3.3. Emailed Code
 
 Emailed Code method is a randomly generated 6 digits code sent to the user
 using a external channel.
 
-In order to trigger it:
-- `acr_values` query parameter shall be set to `1` during auth flow first request.
-- The identifier kind shall be: `email`.
-- The secret kind shall be: `emailed_code`.
+To enforce it:
+- `acr_values` query parameter must be set to `1` during auth flow first request.
+
+To perform it:
+- The auth step method name must be: `emailed_code`.
 
 The user must complete the authentication by sending the received code in a short time window.
 The user must wait some timee between two codes generation/sending.
 
 Used alone, its final corresponding `acr` is 1.
 
-#### 4.3.3. Password
+#### 4.3.4. Password
 
 Password method is a hashed password comparison, using [Argon2 server relief][].
 
-In order to trigger it:
-- `acr_values` query parameter shall be set to `2` during auth flow first request.
-- The identifier kind shall be: `email`.
-- The secret kind shall be: `password`.
+To enforce it:
+- `acr_values` query parameter must be set to `2` during auth flow first request.
+
+To perform it:
+- The auth step method name must be: `prehashed_password`.
 
 Used alone, its final corresponding `acr` is 2.
 
@@ -240,3 +251,4 @@ while initing the auth flow to access the resource.
 [the authentication request]: https://openid.net/specs/openid-connect-core-1_0.html#ImplicitAuthRequest
 [Level of Assurance]: https://www.itu.int/rec/T-REC-X.1254-201209-I/en
 [Argon2 server relief]: https://password-hashing.net/submissions/specs/Argon-v3.pdf
+[Nist Assurance Levels]: https://openid.net/specs/openid-provider-authentication-policy-extension-1_0.html#anchor11

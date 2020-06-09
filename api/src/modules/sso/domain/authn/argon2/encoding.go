@@ -4,6 +4,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
+
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+)
+
+const (
+	algorithmID = "com.misakey.argon2-relief-v1"
 )
 
 func encode(argon2Params Params, serverSalt []byte, finalHash []byte) string {
@@ -23,17 +29,14 @@ func encode(argon2Params Params, serverSalt []byte, finalHash []byte) string {
 }
 
 func decode(encodedHash string) (params Params, hmacSalt []byte, finalHash []byte, err error) {
-	params = Params{}
 	parts := strings.Split(encodedHash, "$")
 
 	// because the string *starts* with a "$",
 	// there should be 6 parts
 	// with "part[0]" being the empty string
-	if len(parts) != 6 {
-		return params, nil, nil, ErrBadFormat
-	}
-	if parts[1] != algorithmID {
-		return params, nil, nil, ErrBadFormat
+	if len(parts) != 6 || parts[1] != algorithmID {
+		err = merror.Forbidden().Describef(`the stored hash is not in format "%s"`, algorithmID)
+		return
 	}
 
 	_, err = fmt.Sscanf(
@@ -41,7 +44,7 @@ func decode(encodedHash string) (params Params, hmacSalt []byte, finalHash []byt
 		&params.Memory, &params.Iterations, &params.Parallelism,
 	)
 	if err != nil {
-		return params, nil, nil, err
+		return
 	}
 
 	// no need to decode this one because the server does not process it
@@ -50,13 +53,9 @@ func decode(encodedHash string) (params Params, hmacSalt []byte, finalHash []byt
 
 	hmacSalt, err = base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
-		return params, nil, nil, err
+		return
 	}
 
 	finalHash, err = base64.RawStdEncoding.DecodeString(parts[5])
-	if err != nil {
-		return params, nil, nil, err
-	}
-
-	return params, hmacSalt, finalHash, nil
+	return
 }

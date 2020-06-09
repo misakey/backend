@@ -64,7 +64,7 @@ _JSON Body:_
   {
     "id": "5f80b4ec-b42a-4554-a738-4fb532ba2ee4",
     "prehashed_password": {
-      "params": {{% include "include/hashParameters.json" 8 %}},
+      "params": {{% include "include/hashParameters.json" 8 %}}
     },
     "backup_data": "[STRINGIFIED JSON]",
     "backup_version": 1,

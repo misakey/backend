@@ -1,6 +1,9 @@
 package login
 
-import "github.com/volatiletech/null"
+import (
+	"github.com/volatiletech/null"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+)
 
 // Context bears internal data about current user authentication request
 type Context struct {
@@ -26,10 +29,11 @@ type Redirect struct {
 
 // Acceptance contains data about the user authentication approval
 type Acceptance struct {
-	Subject     string `json:"subject"`
-	ACR         string `json:"acr"`
-	Remember    bool   `json:"remember"`
-	RememberFor int    `json:"remember_for"`
+	Subject     string        `json:"subject"`
+	ACR         string        `json:"acr"`
+	Remember    bool          `json:"remember"`
+	RememberFor int           `json:"remember_for"`
+	Context     authn.Context `json:"context"`
 }
 
 // // LogoutRequest contains the id of the user

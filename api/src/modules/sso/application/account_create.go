@@ -60,7 +60,7 @@ type CreateAccountView struct {
 
 func (sso SSOService) CreateAccount(ctx context.Context, cmd CreateAccountCmd) (CreateAccountView, error) {
 	view := CreateAccountView{}
-	// TODO: check the identity is inside the token
+
 	acc := ajwt.GetAccesses(ctx)
 	if acc == nil {
 		return view, merror.Forbidden()

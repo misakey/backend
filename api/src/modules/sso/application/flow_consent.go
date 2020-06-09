@@ -38,7 +38,7 @@ func (sso SSOService) ConsentInit(ctx context.Context, consentChallenge string) 
 	}
 	acceptance.Session.IDTokenClaims.Scope = strings.Join(consentCtx.RequestedScope, " ")
 	acceptance.Session.IDTokenClaims.Email = identifier.Value
-	// acceptance.Session.IDTokenClaims.AMR = strings.Split(consentCtx.Context["amr"], " ")
+	acceptance.Session.IDTokenClaims.AMR = consentCtx.AuthnContext.GetAMR()
 	acceptance.Session.AccessTokenClaims.ACR = consentCtx.ACR
 
 	// 4. tell hydra the consent contract

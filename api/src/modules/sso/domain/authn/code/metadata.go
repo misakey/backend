@@ -39,6 +39,7 @@ func GenerateAsRawJSON() (ret types.JSON, err error) {
 	return ret, ret.UnmarshalJSON(data)
 }
 
+// ToMetadata code conversion from a RawJSON message
 func ToMetadata(msg types.JSON) (ret codeMetadata, err error) {
 	msgJSON, err := msg.MarshalJSON()
 	if err != nil {

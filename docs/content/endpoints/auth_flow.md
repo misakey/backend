@@ -12,8 +12,15 @@ is required.
 Routes are ordered consedering the expected way they should be called.
 
 An auth flow is linked to both authorization and authentication.
-A description of these concepts can be found [here](../../concepts/authorization-and-authentication/).
+A description of these concepts can be found in the [Authorization & Authentication specification](../../concepts/authorization-and-authentication/).
 It is probably worth to read before implement following routes.
+
+
+**Authentication information**:
+
+The final ID Token contains information about the authentication performed by the user.
+
+See [the list of **Authentication Method References** and corresponding **Authentication Context Classes**](http://localhost:1313/concepts/authorization-and-authentication/#43-methods) for more info.
 
 ## Overall auth flow
 
@@ -195,6 +202,8 @@ assuring they own the identity. This is called an **authentication step**.
 Some login flow will require many steps later but as of today, we only have one step
 even for our most secure flows.
 
+The metadata field contained in the authentication step depends of the method name.
+
 ### Request
 
 ```bash
@@ -211,7 +220,7 @@ _JSON Body:_
   "authn_step": {
     "identity_id": "53515d02-642a-4043-a943-bb11c0bdc6a5",
     "method_name": "emailed_code",
-    "metadata": { "code": "320028" }
+    "metadata": "(format defined in next section)"
   }
 }
 ```
@@ -219,8 +228,40 @@ _JSON Body:_
 - `login_challenge` (string): can be found in previous redirect URL.
 - `authn_step` (object): the performed authentication step information:
   - `identity_id` (uuid string): the authable identity id.
-  - `method_name` (string) (one of: _emailed_code_): the authentication method used.
-  - `metadata` (json object): metadata containing the emailed code value.
+  - `method_name` (string) (one of: _emailed_code_, _prehased_password_): the authentication method used.
+  - `metadata` (json object): metadata containing the emailed code value or the prehashed password.
+The list of possible formats is defined in the next section.
+
+### Possibles formats for the `metadata` field
+
+This section describes the possible metadata format, as a JSON object, which is a
+field contained in the JSON body of the previous section.
+
+The context of this specification is the performing of an authentication step only.
+
+I - **emailed_code** as `method_name`:
+
+_JSON Body:_
+```json
+{
+  [...]
+  "method_name": "emailed_code",
+  "metadata": {
+    "code": "320028"
+  },
+  [...]
+}
+```
+
+II - **prehashed_password** as `method_name`:
+```json
+{
+  [...]
+  "method_name": "prehashed_password",
+  "metadata": {{% include "include/passwordHash.json" 2 %}},
+  [...]
+}
+```
 
 ### Success Response
 

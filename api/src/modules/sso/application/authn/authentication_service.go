@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/account"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
@@ -15,6 +16,7 @@ type Service struct {
 	steps             stepRepo
 	identifierService identifier.IdentifierService
 	identityService   identity.IdentityService
+	accountService    account.AccountService
 	templates         email.Renderer
 	emails            email.Sender
 	codeValidity      time.Duration
@@ -23,19 +25,21 @@ type Service struct {
 type stepRepo interface {
 	Create(ctx context.Context, step *authn.Step) error
 	CompleteAt(ctx context.Context, stepID int, completeTime time.Time) error
-	Last(ctx context.Context, identityID string, methodName authn.Method) (authn.Step, error)
+	Last(ctx context.Context, identityID string, methodName authn.MethodRef) (authn.Step, error)
 }
 
 func NewService(
 	steps stepRepo,
 	identifierService identifier.IdentifierService,
 	identityService identity.IdentityService,
+	accountService account.AccountService,
 	templates email.Renderer,
 	emails email.Sender) Service {
 	return Service{
 		steps:             steps,
 		identifierService: identifierService,
 		identityService:   identityService,
+		accountService:    accountService,
 		templates:         templates,
 		emails:            emails,
 		codeValidity:      5 * time.Minute,
@@ -44,34 +48,33 @@ func NewService(
 
 // AssertStep considering the method name and the received metadata
 // Return no error in case of success
-func (as *Service) AssertAuthnStep(ctx context.Context, assertion authn.Step) error {
-	// always take the most recent step as the current one - ignore others
-	currentStep, err := as.steps.Last(ctx, assertion.IdentityID, assertion.MethodName)
-	if err != nil {
-		return err
-	}
-	// check the most recent step has not been already complete
-	if currentStep.Complete {
-		return merror.Conflict().Describe("most recent step already complete")
-	}
+func (as *Service) AssertAuthnStep(ctx context.Context, assertion authn.Step) (authn.ClassRef, authn.MethodRefs, error) {
+	acr := authn.ACR0
+	amr := authn.MethodRefs{}
 
 	// check the metadata
 	var metadataErr error
-	switch currentStep.MethodName {
-	case authn.EmailedCodeMethod:
-		metadataErr = as.assertEmailedCode(currentStep, assertion.RawJSONMetadata)
+	switch assertion.MethodName {
+	case authn.AMREmailedCode:
+		metadataErr = as.assertEmailedCode(ctx, assertion)
+		acr = authn.ACR1
+	case authn.AMRPrehashedPassword:
+		metadataErr = as.assertPassword(ctx, assertion)
+		acr = authn.ACR2
 	default:
-		metadataErr = merror.BadRequest().Detail("method_name", merror.DVInvalid)
+		metadataErr = merror.BadRequest().Detail("method_name", merror.DVMalformed)
 	}
-	if metadataErr != nil {
-		return metadataErr
-	}
+	amr.Add(assertion.MethodName)
+	return acr, amr, metadataErr
+}
 
-	// complete the authentication step - update the entity
-	currentStep.Complete = true
-	if err := as.steps.CompleteAt(ctx, currentStep.ID, time.Now()); err != nil {
-		return err
+// GetRememberFor as an integer corresponding to seconds, according to the authentication context class
+func (as *Service) GetRememberFor(acr authn.ClassRef) int {
+	switch acr {
+	case authn.ACR1:
+		return 3600 // 1h
+	case authn.ACR2:
+		return 2592000 // 30d
 	}
-
-	return nil
+	return 1
 }

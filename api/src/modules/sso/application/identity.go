@@ -81,8 +81,8 @@ type IdentityAuthableView struct {
 		AvatarURL   null.String `json:"avatar_url"`
 	} `json:"identity"`
 	AuthnStep struct {
-		IdentityID string       `json:"identity_id"`
-		MethodName authn.Method `json:"method_name"`
+		IdentityID string          `json:"identity_id"`
+		MethodName authn.MethodRef `json:"method_name"`
 	} `json:"authn_step"`
 }
 
@@ -142,13 +142,13 @@ func (sso SSOService) RequireIdentityAuthable(ctx context.Context, cmd IdentityA
 
 	// NOTE: if condition logic is commented because no password exists today
 	// 4. if the identity has no linked account, we automatically init a emailed code authentication step
-	// if identity.AccountID.IsZero() {
-	// we ignore conflict error - if a code already exist, we still want to return authable identity information
-	err = sso.authenticationService.CreateEmailedCode(ctx, identity.ID)
-	if err != nil && !merror.HasCode(err, merror.ConflictCode) {
-		return view, err
+	if identity.AccountID.IsZero() {
+		// we ignore the conflict error code - if a code already exist, we still want to return authable identity information
+		err = sso.authenticationService.CreateEmailedCode(ctx, identity.ID)
+		if err != nil && !merror.HasCode(err, merror.ConflictCode) {
+			return view, err
+		}
+		view.AuthnStep.MethodName = authn.AMREmailedCode
 	}
-	view.AuthnStep.MethodName = authn.EmailedCodeMethod
-	// }
 	return view, nil
 }

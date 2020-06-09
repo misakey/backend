@@ -76,7 +76,8 @@ func (n ozzoNeedle) recHandleErrors(mErr merror.Error, valErrs v.Errors, replace
 			"validation_length_out_of_range",
 			"validation_length_empty_required",
 			"validation_is_email",
-			"validation_is_uuid_v4":
+			"validation_is_uuid_v4",
+			"validation_is_base64":
 			mErr.Detail(fieldTag, merror.DVMalformed)
 		case
 			"validation_required",

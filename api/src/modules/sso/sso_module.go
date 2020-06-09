@@ -90,6 +90,7 @@ func InitModule(router *echo.Echo, dbConn *sql.DB) {
 		authnStepRepo,
 		identifierService,
 		identityService,
+		accountService,
 		emailRenderer, emailRepo,
 	)
 	ssoService := application.NewSSOService(

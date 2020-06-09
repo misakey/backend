@@ -3,41 +3,17 @@ package application
 import (
 	"context"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
+	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/volatiletech/null"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) string {
 	return sso.authFlowService.LoginInit(ctx, loginChallenge)
-}
-
-type LoginAuthnStepCmd struct {
-	LoginChallenge string     `json:"login_challenge"`
-	Step           authn.Step `json:"authn_step"`
-}
-
-// Validate the LoginStepCmd
-func (cmd LoginAuthnStepCmd) Validate() error {
-	// validate nested structure separately
-	if err := validation.ValidateStruct(&cmd.Step,
-		validation.Field(&cmd.Step.IdentityID, validation.Required, is.UUIDv4.Error("identity id should be an uuid v4")),
-		validation.Field(&cmd.Step.MethodName, validation.Required),
-		validation.Field(&cmd.Step.RawJSONMetadata, validation.Required),
-	); err != nil {
-		return err
-	}
-
-	if err := validation.ValidateStruct(&cmd,
-		validation.Field(&cmd.LoginChallenge, validation.Required),
-	); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // LoginInfoView bears data about current user authentication status
@@ -70,6 +46,31 @@ func (sso SSOService) LoginInfo(ctx context.Context, loginChallenge string) (Log
 	return view, nil
 }
 
+type LoginAuthnStepCmd struct {
+	LoginChallenge string     `json:"login_challenge"`
+	Step           authn.Step `json:"authn_step"`
+}
+
+// Validate the LoginStepCmd
+func (cmd LoginAuthnStepCmd) Validate() error {
+	// validate nested structure separately
+	if err := v.ValidateStruct(&cmd.Step,
+		v.Field(&cmd.Step.IdentityID, v.Required, is.UUIDv4.Error("identity id should be an uuid v4")),
+		v.Field(&cmd.Step.MethodName, v.Required),
+		v.Field(&cmd.Step.RawJSONMetadata, v.Required),
+	); err != nil {
+		return err
+	}
+
+	if err := v.ValidateStruct(&cmd,
+		v.Field(&cmd.LoginChallenge, v.Required),
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // LoginStep assert an authentication step in a multi-factor authentication process
 // Today there is only one-step authentication process existing
 func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd) (login.Redirect, error) {
@@ -82,24 +83,28 @@ func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd)
 	}
 
 	// 2. try to assert the authentication step
-	if err := sso.authenticationService.AssertAuthnStep(ctx, cmd.Step); err != nil {
+	acr, amr, err := sso.authenticationService.AssertAuthnStep(ctx, cmd.Step)
+	if err != nil {
 		return redirect, err
 	}
 
-	// 3. confirm the identity
-	// TODO: just call it when it is necessary ?
-	if err := sso.identityService.Confirm(ctx, cmd.Step.IdentityID); err != nil {
-		return redirect, err
+	// 3. if the authn step was emailed_code - we confirm the identity
+	if amr.Has(authn.AMREmailedCode) {
+		if err := sso.identityService.Confirm(ctx, cmd.Step.IdentityID); err != nil {
+			return redirect, err
+		}
 	}
 
 	// 4. accept the login session
 	acceptance := login.Acceptance{
-		// TODO: handle session for identity ID corresponding to same accounts - there is no account today
+		// TODO: handle session for identity ID corresponding to same accounts
 		Subject: cmd.Step.IdentityID,
-		// TODO: make authentication service evaluate the real ACR the day we introduce passwords
-		ACR:         "1",
+
 		Remember:    true,
-		RememberFor: 2592000,
+		RememberFor: sso.authenticationService.GetRememberFor(acr),
+
+		ACR:     acr.String(),
+		Context: authn.NewContext().SetAMR(amr),
 	}
 	return sso.authFlowService.LoginAccept(ctx, logCtx.Challenge, acceptance)
 }

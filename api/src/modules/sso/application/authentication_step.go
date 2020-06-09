@@ -49,9 +49,12 @@ func (sso SSOService) InitAuthnStep(ctx context.Context, cmd AuthenticationStepC
 
 	// 2. we try to init the authentication step
 	switch cmd.Step.MethodName {
-	case authn.EmailedCodeMethod:
+	case authn.AMREmailedCode:
 		return sso.authenticationService.CreateEmailedCode(ctx, cmd.Step.IdentityID)
+	case authn.AMRPrehashedPassword:
+		return sso.authenticationService.AssertPasswordExistence(ctx, cmd.Step.IdentityID)
 	default:
 		return merror.BadRequest().Describe("unknown method name").Detail("method_name", merror.DVInvalid)
 	}
+	return nil
 }
