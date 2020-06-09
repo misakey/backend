@@ -39,7 +39,7 @@ _JSON Body:_
 ```json
 {
 	"prehashed_password": {{% include "include/passwordHash.json" 4 %}},
-	"backup_data": "TGEgdmllLCBjZSBuJ2VzdCBwYXMgZCdhdHRlbmRyZSBxdWUgbCdvcmFnZSBwYXNzZSwgYydlc3QgZCdhcHByZW5kcmUgw6AgZGFuc2VyIHNvdXMgbGEgcGx1aWUu"
+	"backup_data": "[STRINGIFIED JSON]"
 }
 ```
 
@@ -50,7 +50,7 @@ _JSON Body:_
     - `iterations` (integer).
     - `salt_base64` (base64 string).
   - `hash_base64` (base64 string): the prehashed password.
-- `backup_data` (base64 string): the user backup data.
+- `backup_data` (string): the user backup data.
 
 ### Success Response
 
@@ -66,7 +66,7 @@ _JSON Body:_
     "prehashed_password": {
       "params": {{% include "include/hashParameters.json" 8 %}},
     },
-    "backup_data": "TGEgdmllLCBjZSBuJ2VzdCBwYXMgZCdhdHRlbmRyZSBxdWUgbCdvcmFnZSBwYXNzZSwgYydlc3QgZCdhcHByZW5kcmUgw6AgZGFuc2VyIHNvdXMgbGEgcGx1aWUu",
+    "backup_data": "[STRINGIFIED JSON]",
     "backup_version": 1,
   }
 ```
@@ -78,7 +78,7 @@ _JSON Body:_
     - `parallelism` (integer).
     - `iterations` (integer).
     - `salt_base64` (base64 string).
-- `backup_data` (base64 string): the stored backup data.
+- `backup_data` (string): the stored backup data.
 - `backup_version` (integer): the backup version - always 1 on creation.
 
 ## Get the account password parameters
@@ -138,12 +138,12 @@ _Code:_
 _JSON Body:_
 ```json
 {
-    "data": "TGEgdmllLCBjZSBuJ2VzdCBwYXMgZCdhdHRlbmRyZSBxdWUgbCdvcmFnZSBwYXNzZSwgYydlc3QgZCdhcHByZW5kcmUgw6AgZGFuc2VyIHNvdXMgbGEgcGx1aWUu",
+    "data": "[STRINGIFIED JSON]",
     "version": 3
 }
 ```
 
-- `data` (base64 string): the user backup data.
+- `data` (string): the user backup data.
 - `version` (integer): the current backup version.
 
 ____
@@ -165,12 +165,12 @@ _Path Parameters:_
 _JSON Body:_
 ```json
 {
-    "data": "TGEgdmllLCBjZSBuJ2VzdCBwYXMgZCdhdHRlbmRyZSBxdWUgbCdvcmFnZSBwYXNzZSwgYydlc3QgZCdhcHByZW5kcmUgw6AgZGFuc2VyIHNvdXMgbGEgcGx1aWUu",
+    "data": "[STRINGIFIED JSON]",
     "version": 3
 }
 ```
 
-- `data` (base64 string): the user backup data.
+- `data` (string): the user backup data.
 - `version` (integer): this value is expected to be equal to 1 + the version of the backup currently stored.
 The client informs the server it increase the version number by updating the backup data.
 

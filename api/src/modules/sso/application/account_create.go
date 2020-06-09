@@ -42,7 +42,7 @@ func (cmd CreateAccountCmd) Validate() error {
 
 	if err := v.ValidateStruct(&cmd,
 		v.Field(&cmd.identityID, v.Required, is.UUIDv4.Error("identity_id must be an UUIDv4")),
-		v.Field(&cmd.BackupData, v.Required, is.Base64.Error("backup_data must be base64 encoded")),
+		v.Field(&cmd.BackupData, v.Required),
 	); err != nil {
 		return merror.Transform(err).Describe("validating create account command")
 	}

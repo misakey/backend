@@ -56,7 +56,7 @@ func (cmd *UpdateBackupCmd) SetAccountID(id string) {
 func (cmd UpdateBackupCmd) Validate() error {
 	return v.ValidateStruct(&cmd,
 		v.Field(&cmd.accountID, v.Required, is.UUIDv4.Error("account id must be an uuid v4")),
-		v.Field(&cmd.Data, v.Required, is.Base64.Error("data must be base64 encoded")),
+		v.Field(&cmd.Data, v.Required),
 		v.Field(&cmd.NewVersion, v.Required),
 	)
 }
