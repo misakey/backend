@@ -66,8 +66,8 @@ func initService() {
 
 	// init modules
 	generic.InitModule(e)
-	sso.InitModule(e, dbConn)
-	boxes.InitModule(e, dbConn)
+	identityIntraprocess := sso.InitModule(e, dbConn)
+	boxes.InitModule(e, dbConn, identityIntraprocess)
 
 	// finally launch the echo server
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", viper.GetInt("server.port"))))

@@ -118,6 +118,9 @@ func (repo *IdentitySQLBoiler) List(ctx context.Context, filters domain.Identity
 	if filters.IsAuthable.Valid {
 		mods = append(mods, sqlboiler.IdentityWhere.IsAuthable.EQ(filters.IsAuthable.Bool))
 	}
+	if len(filters.IDs) > 0 {
+		mods = append(mods, sqlboiler.IdentityWhere.ID.IN(filters.IDs))
+	}
 
 	identityRecords, err := sqlboiler.Identities(mods...).All(ctx, repo.db)
 	domainIdentities := make([]*domain.Identity, len(identityRecords))

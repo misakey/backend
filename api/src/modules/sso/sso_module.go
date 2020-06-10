@@ -18,11 +18,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 )
 
-func InitModule(router *echo.Echo, dbConn *sql.DB) {
+func InitModule(router *echo.Echo, dbConn *sql.DB) entrypoints.IdentityIntraprocessInterface {
 	initConfig()
 
 	// init self authenticator for hydra rester
@@ -120,4 +121,8 @@ func InitModule(router *echo.Echo, dbConn *sql.DB) {
 
 	// bind all routes to the router
 	initRoutes(router, authzMidlw, ssoService, *oauthCodeFlow)
+
+	identityIntraprocess := entrypoints.NewIdentityIntraprocess(identityService)
+
+	return &identityIntraprocess
 }

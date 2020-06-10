@@ -12,8 +12,7 @@ func (e *Event) ToSqlBoiler() *sqlboiler.Event {
 		CreatedAt: e.CreatedAt,
 		Type:      e.Type,
 		Content:   null.JSONFrom(e.Content),
-		// TODO (for now we put a constant because senders are ont implemented)
-		SenderID: "c80b6bf4-d021-42d5-bd06-2769fa7a81b5",
+		SenderID:  e.SenderID,
 	}
 
 	return &result

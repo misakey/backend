@@ -11,6 +11,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/sqlboiler"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
@@ -19,6 +20,11 @@ type PostEventRequest struct {
 }
 
 func (h *handler) postEvent(ctx echo.Context) error {
+	accesses := ajwt.GetAccesses(ctx.Request().Context())
+	if accesses == nil {
+		return merror.Forbidden()
+	}
+
 	req := &PostEventRequest{}
 	if err := ctx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -48,14 +54,20 @@ func (h *handler) postEvent(ctx echo.Context) error {
 	// - for messages, check box is not closed
 	// - for box closing, check box is not already closed
 
-	// TODO add event sender
+	sender, err := h.IdentityService.GetIdentity(ctx.Request().Context(), accesses.Subject)
+	if err != nil {
+		return merror.Transform(err).Describe("fetching sender identity")
+	}
+	event.SenderID = sender.ID
 
 	err = event.ToSqlBoiler().Insert(ctx.Request().Context(), h.DB, boil.Infer())
 	if err != nil {
 		return merror.Transform(err).Describe("inserting event in DB")
 	}
 
-	return ctx.JSON(http.StatusCreated, event)
+	eventView := events.ToView(event, &sender)
+
+	return ctx.JSON(http.StatusCreated, eventView)
 }
 
 func checkBoxExists(ctx context.Context, boxId string, db *sql.DB) (bool, error) {

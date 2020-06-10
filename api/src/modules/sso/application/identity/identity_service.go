@@ -43,6 +43,10 @@ func (ids IdentityService) Get(ctx context.Context, identityID string) (ret doma
 	return ret, nil
 }
 
+func (ids IdentityService) List(ctx context.Context, filters domain.IdentityFilters) ([]*domain.Identity, error) {
+	return ids.identities.List(ctx, filters)
+}
+
 func (ids IdentityService) GetAuthableByIdentifierID(ctx context.Context, identifierID string) (domain.Identity, error) {
 	filters := domain.IdentityFilters{
 		IdentifierID: null.StringFrom(identifierID),

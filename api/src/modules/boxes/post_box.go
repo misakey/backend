@@ -11,6 +11,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/utils"
 	"gitlab.misakey.dev/misakey/backend/api/src/sqlboiler"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
@@ -29,7 +30,10 @@ func (req creationRequest) Validate() error {
 }
 
 func (h *handler) CreateBox(ctx echo.Context) error {
-	// TODO: access control
+	accesses := ajwt.GetAccesses(ctx.Request().Context())
+	if accesses == nil {
+		return merror.Forbidden()
+	}
 
 	req := &creationRequest{}
 	if err := ctx.Bind(req); err != nil {
@@ -52,9 +56,15 @@ func (h *handler) CreateBox(ctx echo.Context) error {
 		boxState:  *req,
 	}
 
-	creationEvent, err := createCreationEvent(req, boxID, creationTime)
+	creator, err := h.IdentityService.GetIdentity(ctx.Request().Context(), accesses.Subject)
 	if err != nil {
-		return merror.Transform(err).Describe("box creation event")
+		return merror.Transform(err).Describe("fetching creator identity")
+	}
+	box.Creator = events.Sender(creator.DisplayName)
+
+	creationEvent, err := createCreationEvent(req, boxID, creationTime, accesses.Subject)
+	if err != nil {
+		return merror.Transform(err).Describe("creating box creation event")
 	}
 	err = creationEvent.Insert(ctx.Request().Context(), h.DB, boil.Infer())
 	if err != nil {
@@ -64,7 +74,7 @@ func (h *handler) CreateBox(ctx echo.Context) error {
 	return ctx.JSON(http.StatusCreated, box)
 }
 
-func createCreationEvent(req *creationRequest, boxID string, creationTime time.Time) (*sqlboiler.Event, error) {
+func createCreationEvent(req *creationRequest, boxID string, creationTime time.Time, creatorID string) (*sqlboiler.Event, error) {
 	e := events.Event{}
 	e.Type = "create"
 
@@ -82,6 +92,8 @@ func createCreationEvent(req *creationRequest, boxID string, creationTime time.T
 	e.BoxID = boxID
 
 	e.CreatedAt = creationTime
+
+	e.SenderID = creatorID
 
 	return e.ToSqlBoiler(), nil
 }

@@ -6,6 +6,7 @@ import datetime
 import json
 
 import requests
+import urllib3; urllib3.disable_warnings()
 
 now = datetime.datetime.now()
 suffix = now.isoformat(timespec='seconds')
@@ -23,7 +24,8 @@ class UnexpectedResponseStatus(Exception):
             f'got {response.status_code}'
         )
 
-def call_request_fn_decorated(fn, *args, expected_status_code=None, **kwargs):
+def call_request_fn_decorated(fn, *args, expected_status_code=None, raise_for_status=True, **kwargs):
+    '''`raise_for_status` only has effect when there is no `expected_status_code`'''
     response = fn(*args, **kwargs)
 
     with open(logfile, 'a') as f:
@@ -42,8 +44,9 @@ def call_request_fn_decorated(fn, *args, expected_status_code=None, **kwargs):
             response.raise_for_status()
         else:
             raise UnexpectedResponseStatus(expected_status_code, response)
-    
-    response.raise_for_status()
+    elif raise_for_status:
+        response.raise_for_status()
+
     return response
 
 post = lambda *args, **kwargs: call_request_fn_decorated(requests.post, *args, **kwargs)
@@ -84,6 +87,8 @@ def pretty_string_of_response(response):
 
     parts = list() 
     parts.append(f'{request.method} {request.url}')
+    for (name, value) in request.headers.items():
+        parts.append(f'{name}: {value}')
     if req_payload:
         parts.append('Request Body:')
         parts.append(str(req_payload))
