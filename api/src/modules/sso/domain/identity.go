@@ -11,6 +11,9 @@ type Identity struct {
 	Notifications string      `json:"notifications"`
 	AvatarURL     null.String `json:"avatar_url"`
 	Confirmed     bool        `json:"confirmed"`
+
+	// Identifier is always returned within the identity entity as a nested JSON object
+	Identifier Identifier `json:"identifier"`
 }
 
 type IdentityFilters struct {

@@ -41,7 +41,11 @@ func (sso SSOService) GetIdentity(ctx context.Context, query IdentityQuery) (Ide
 		return view, merror.Forbidden()
 	}
 
+	// set the view on identity retrieval
 	view.Identity, err = sso.identityService.Get(ctx, query.IdentityID)
+	if err != nil {
+		return view, err
+	}
 	return view, err
 }
 

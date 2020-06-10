@@ -81,7 +81,7 @@ func InitModule(router *echo.Echo, dbConn *sql.DB) entrypoints.IdentityIntraproc
 	// init services
 	accountService := account.NewAccountService(accountRepo)
 	identifierService := identifier.NewIdentifierService(identifierRepo)
-	identityService := identity.NewIdentityService(identityRepo)
+	identityService := identity.NewIdentityService(identityRepo, identifierService)
 	authFlowService := authflow.NewAuthFlowService(
 		hydraRepo,
 		viper.GetString("authflow.login_page_url"),

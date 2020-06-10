@@ -6,6 +6,7 @@ import (
 	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 )
 
@@ -19,26 +20,37 @@ type identityRepo interface {
 
 type IdentityService struct {
 	identities identityRepo
+
+	identifierService identifier.IdentifierService
 }
 
 func NewIdentityService(
 	identityRepo identityRepo,
+	identifierService identifier.IdentifierService,
 ) IdentityService {
 	return IdentityService{
 		identities: identityRepo,
+
+		identifierService: identifierService,
 	}
 }
 
 func (ids IdentityService) Create(ctx context.Context, identity *domain.Identity) error {
 	if err := ids.identities.Create(ctx, identity); err != nil {
-		return merror.Transform(err).Describe("create identity")
+		return merror.Transform(err).Describe("creating identity")
 	}
 	return nil
 }
 
 func (ids IdentityService) Get(ctx context.Context, identityID string) (ret domain.Identity, err error) {
 	if ret, err = ids.identities.Get(ctx, identityID); err != nil {
-		return ret, merror.Transform(err).Describe("get identity")
+		return ret, merror.Transform(err).Describe("getting identity")
+	}
+
+	// retrieve the related identifier
+	ret.Identifier, err = ids.identifierService.Get(ctx, ret.IdentifierID)
+	if err != nil {
+		return ret, merror.Transform(err).Describe("getting identifier")
 	}
 	return ret, nil
 }
@@ -69,13 +81,13 @@ func (ids IdentityService) GetAuthableByIdentifierID(ctx context.Context, identi
 
 func (ids IdentityService) Update(ctx context.Context, identity *domain.Identity) error {
 	if err := ids.identities.Update(ctx, identity); err != nil {
-		return merror.Transform(err).Describe("update identity")
+		return merror.Transform(err).Describe("updating identity")
 	}
 	return nil
 }
 func (ids IdentityService) Confirm(ctx context.Context, id string) error {
 	if err := ids.identities.Confirm(ctx, id); err != nil {
-		return merror.Transform(err).Describe("confirm identity")
+		return merror.Transform(err).Describe("confirming identity")
 	}
 	return nil
 }

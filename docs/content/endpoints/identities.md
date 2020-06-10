@@ -60,20 +60,29 @@ _JSON Body:_
   {
     "id": "89a27dec-c0bb-40ed-bfc8-dc74a1b99dc9",
     "account_id": null,
-    "identifier_id": "abc9dd47-0c4e-4ef3-ae27-0c21ea6d7450",
     "is_authable": true,
-    "display_name": "non@dpo.com",
+    "display_name": "iamagreat@dpo.com",
     "notifications": "minimal",
     "avatar_url": null,
-    "confirmed": true
+    "confirmed": true,
+    "identifier_id": "abc9dd47-0c4e-4ef3-ae27-0c21ea6d7450",
+    "identifier": {
+      "id": "e5d889de-6be1-4201-bb7e-0772fbbf41e2",
+      "value": "iamagreat@dpo.com",
+      "kind": "email"
+    }
   }
 ```
 
 - `id` (uuid string): the unique identity id.
 - `account_id` (uuid string) (nullable): the linked account unique id.
-- `identifier_id` (uuid string): the linked identifier unique id.
 - `is_authable` (uuid string): either the identity can be used in a login flow.
 - `display_name` (uuid string): the name to display to represent the identity.
 - `notifications` (uuid string): the frequency of notifications for this identity.
 - `avatar_url` (uuid string) (nullable): the web-address of the avatar's file content.
 - `confirmed` (uuid string): either the identity has been guaranted to be owned by the end-user.
+- `identifier_id` (uuid string): the linked identifier unique id.
+- `identifier` (json object): the linked identifier object, nested.
+  - `id` (uuid string): the unique identifier id.
+  - `kind` (string) (oneof: _email_): the kind of the identifier.
+  - `value` (string): the value of the identifier.
