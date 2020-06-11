@@ -14,7 +14,11 @@ An event has the following fields:
 - `id`, a UUID, (set by the server)
 - `server_event_created_at` (format: `"2020-04-01T20:22:45.691Z"`)
   the time at which it was received by the server (set by the server)
-- `sender`, an object representing the sender (set by the server). *(TODO: Its exact content will be decided when the refacto of identifiers and emails is done.)*
+- `sender`, an object representing the sender (set by the server)
+  with the following shape:
+  ```
+  {{% include "include/event-sender.json" 2 %}}
+  ```
 - `type`, one of `create`, `msg.txt`, `msg.file`, `state.lifecycle`
 - `content`, an object which shape depends on `type`
 

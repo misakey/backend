@@ -20,6 +20,9 @@ with testContext():
             'title': 'Test Box',
         }
     )
+    creator = r.json()['creator']
+    assert creator['display_name'] == s.email
+    assert creator['identifier']['value'] == s.email
 
     box_id = r.json()['id']
 
@@ -61,7 +64,10 @@ with testContext():
         assert 'server_event_created_at' in event
         assert 'type' in event
         assert 'content' in event
-        assert event['sender'] == s.email
+
+        sender = event['sender']
+        assert sender['display_name'] == s.email
+        assert sender['identifier']['value'] == s.email
 
     # Testing bad box ID
     r = s.post(

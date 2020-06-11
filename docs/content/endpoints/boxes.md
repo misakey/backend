@@ -34,9 +34,7 @@ of type `create` that contains all the information about the creation of the box
       "public_key": "SXvalkvhuhcj2UiaS4d0Q3OeuHOhMVeQT7ZGfCH2YCw",
       "title": "Requête RGPD FNAC",
       "id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
-      "creator": {
-        "TODO": "shape of objects representing people (registered or not)"
-      }
+      "creator": {{% include "include/event-sender.json" 6 %}},
       "server_created_at": "2020-04-01T20:22:45.691Z"
     }
 
@@ -81,9 +79,7 @@ they are created by the backend during the creation of the box.
       "id": "f17169e0-61d8-4211-bb9f-bac29fe46d2d",
       "type": "msg.txt",
       "server_event_created_at": "2020-04-01T20:22:45.691Z",
-      "sender": {
-        "TODO": "shape of objects representing people (registered or not)"
-      },
+      "sender": {{% include "include/event-sender.json" 6 %}},
       "content": {
         "encrypted": "UrxdLg+Z5cyeRMz8/zk2aKxRlW9jwKf9FPskm8QO8EeiSm3B+Hj3JbvTdCnbsLVB8bjVC/GHYuzabHogpbXNuBTiFSMau3G81OkSoLDo58q6X8Rq7PE/ULcHhB1sClJ63Qk5DyTOXSPA3yr2LQTY0gfKLSnAT45H3d6wLV+fg5LEAtsJV3hRAZfiKd0dRjv7UZxS4rUAr2BM5EDA2lGP4az8Vd9xyhSmYiNPPDXEWwBmFFSUM8PaA9Lnectl2VjLLY4mDmhbjnBF+9WntV42Baa4zfP46Zxhq1EbGjPItStWPSZl4onKg1BUP2qcHQBqjoliIiuru7rw3Qd/7zse8A=="
       }

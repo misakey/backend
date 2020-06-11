@@ -11,8 +11,8 @@ type boxState struct {
 	Title     string `json:"title"`
 }
 type Box struct {
-	ID        string        `json:"id"`
-	CreatedAt time.Time     `json:"server_created_at"`
-	Creator   events.Sender `json:"creator"`
+	ID        string            `json:"id"`
+	CreatedAt time.Time         `json:"server_created_at"`
+	Creator   events.SenderView `json:"creator"`
 	boxState
 }

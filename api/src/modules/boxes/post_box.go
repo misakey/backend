@@ -60,7 +60,7 @@ func (h *handler) CreateBox(ctx echo.Context) error {
 	if err != nil {
 		return merror.Transform(err).Describe("fetching creator identity")
 	}
-	box.Creator = events.Sender(creator.DisplayName)
+	box.Creator = events.NewSenderView(creator)
 
 	creationEvent, err := createCreationEvent(req, boxID, creationTime, accesses.Subject)
 	if err != nil {

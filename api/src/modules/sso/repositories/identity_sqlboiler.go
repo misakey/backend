@@ -37,7 +37,7 @@ func (repo IdentitySQLBoiler) toSqlBoiler(domModel *domain.Identity) *sqlboiler.
 }
 
 func (repo IdentitySQLBoiler) toDomain(boilModel *sqlboiler.Identity) *domain.Identity {
-	return &domain.Identity{
+	result := &domain.Identity{
 		ID:            boilModel.ID,
 		AccountID:     boilModel.AccountID,
 		IdentifierID:  boilModel.IdentifierID,
@@ -47,6 +47,15 @@ func (repo IdentitySQLBoiler) toDomain(boilModel *sqlboiler.Identity) *domain.Id
 		AvatarURL:     boilModel.AvatarURL,
 		Confirmed:     boilModel.Confirmed,
 	}
+
+	if boilModel.R != nil {
+		identifier := boilModel.R.Identifier
+		result.Identifier.ID = identifier.ID
+		result.Identifier.Kind = domain.IdentifierKind(identifier.Kind)
+		result.Identifier.Value = identifier.Value
+	}
+
+	return result
 }
 
 func (repo *IdentitySQLBoiler) Create(ctx context.Context, identity *domain.Identity) error {
@@ -121,6 +130,9 @@ func (repo *IdentitySQLBoiler) List(ctx context.Context, filters domain.Identity
 	if len(filters.IDs) > 0 {
 		mods = append(mods, sqlboiler.IdentityWhere.ID.IN(filters.IDs))
 	}
+
+	// eager loading
+	mods = append(mods, qm.Load("Identifier"))
 
 	identityRecords, err := sqlboiler.Identities(mods...).All(ctx, repo.db)
 	domainIdentities := make([]*domain.Identity, len(identityRecords))

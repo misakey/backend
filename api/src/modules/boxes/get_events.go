@@ -45,7 +45,7 @@ func (h *handler) listEvents(ctx echo.Context) error {
 	var result []events.View
 	for _, e := range dbEvents {
 		sender := sendersMap[e.SenderID]
-		result = append(result, events.ToView(events.FromSqlBoiler(e), &sender))
+		result = append(result, events.ToView(events.FromSqlBoiler(e), sender))
 	}
 
 	return ctx.JSON(http.StatusOK, result)

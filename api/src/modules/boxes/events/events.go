@@ -10,8 +10,6 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
-type Sender string
-
 type UserSetFields struct {
 	Type    string     `json:"type"`
 	Content types.JSON `json:"content"`

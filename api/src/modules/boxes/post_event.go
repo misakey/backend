@@ -65,7 +65,7 @@ func (h *handler) postEvent(ctx echo.Context) error {
 		return merror.Transform(err).Describe("inserting event in DB")
 	}
 
-	eventView := events.ToView(event, &sender)
+	eventView := events.ToView(event, sender)
 
 	return ctx.JSON(http.StatusCreated, eventView)
 }
