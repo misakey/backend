@@ -81,6 +81,57 @@ _JSON Body:_
 - `backup_data` (string): the stored backup data.
 - `backup_version` (integer): the backup version - always 1 on creation.
 
+## Change password
+
+This route allows the update of an account password and the associated backup data.
+
+The `old_password` and `new_password` contain information following [Argon2 server relief concepts](../../concepts/server-relief/).
+
+### Request
+
+```bash
+  PUT https://api.misakey.com.local/account/:id/password
+```
+_Headers:_
+- `Authorization` (opaque token) (ACR >= 2): `subject` claim as the identity id.
+
+_Path Parameters:_
+- `id` (uuid string): the account id.
+
+_JSON Body:_
+```json
+{
+	"old_password": {{% include "include/passwordHash.json" 4 %}},
+	"new_password": {{% include "include/passwordHash.json" 4 %}},
+	"backup_data": "[STRINGIFIED JSON]",
+    "backup_version": 3
+}
+```
+
+- `old_password` (object): prehashed password using argon2:
+  - `params` (object): argon2 parameters:
+    - `memory` (integer).
+    - `parallelism` (integer).
+    - `iterations` (integer).
+    - `salt_base64` (base64 string).
+  - `hash_base64` (base64 string): the prehashed password.
+- `new_password` (object): prehashed password using argon2:
+  - `params` (object): argon2 parameters:
+    - `memory` (integer).
+    - `parallelism` (integer).
+    - `iterations` (integer).
+    - `salt_base64` (base64 string).
+  - `hash_base64` (base64 string): the prehashed password.
+- `backup_data` (string): the new user backup data.
+- `backup_version` (integer): the new backup data version (must be current version + 1).
+
+### Success Response
+
+_Code:_
+```bash
+  HTTP 204 NO CONTENT
+```
+
 ## Get the account password parameters
 
 This route allows the retrieval of the account password hash parameters.

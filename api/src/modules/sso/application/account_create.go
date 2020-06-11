@@ -25,22 +25,9 @@ func (cmd *CreateAccountCmd) SetIdentityID(id string) {
 }
 
 func (cmd CreateAccountCmd) Validate() error {
-	// validate nested structure separately
-	err := v.ValidateStruct(&cmd.Password, v.Field(&cmd.Password.HashBase64, v.Required))
-	if err != nil {
-		return merror.Transform(err).Describe("validating prehashed password")
-	}
-
-	if err := v.ValidateStruct(&cmd.Password.Params,
-		v.Field(&cmd.Password.Params.Memory, v.Required),
-		v.Field(&cmd.Password.Params.Iterations, v.Required),
-		v.Field(&cmd.Password.Params.Parallelism, v.Required),
-		v.Field(&cmd.Password.Params.SaltBase64, v.Required, is.Base64.Error("salt_base64 must be base64 encoded")),
-	); err != nil {
-		return merror.Transform(err).Describe("validating prehashed password params")
-	}
 
 	if err := v.ValidateStruct(&cmd,
+		v.Field(&cmd.Password),
 		v.Field(&cmd.identityID, v.Required, is.UUIDv4.Error("identity_id must be an UUIDv4")),
 		v.Field(&cmd.BackupData, v.Required),
 	); err != nil {

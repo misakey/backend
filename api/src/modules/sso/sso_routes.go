@@ -27,6 +27,8 @@ func initRoutes(
 	accountRoutes.GET("/:id/backup", accountHTTP.GetBackup, authzMidlw)
 	accountRoutes.PUT("/:id/backup", accountHTTP.UpdateBackup, authzMidlw)
 	accountRoutes.GET("/:id/pwd-params", accountHTTP.GetPwdParams)
+	// TODO: check ACR2 for change password
+	accountRoutes.PUT("/:id/password", accountHTTP.ChangePassword, authzMidlw)
 
 	authRoutes := router.Group("/auth")
 	authRoutes.GET("/login", authFlowHTTP.LoginInit)

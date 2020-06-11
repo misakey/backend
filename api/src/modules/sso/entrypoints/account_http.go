@@ -68,3 +68,23 @@ func (entrypoint AccountHTTP) GetPwdParams(ctx echo.Context) error {
 	}
 	return ctx.JSON(http.StatusOK, view)
 }
+
+// Handles PUT /accounts/:id/password - change the password of the account
+func (entrypoint AccountHTTP) ChangePassword(ctx echo.Context) error {
+	cmd := application.ChangePasswordCmd{}
+
+	if err := ctx.Bind(&cmd); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
+
+	cmd.AccountID = ctx.Param("id")
+	if err := cmd.Validate(); err != nil {
+		return merror.Transform(err)
+	}
+
+	if err := entrypoint.service.ChangePassword(ctx.Request().Context(), cmd); err != nil {
+		return merror.Transform(err).Describe("change password")
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
+}

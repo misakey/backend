@@ -3,6 +3,10 @@ package argon2
 import (
 	"crypto/subtle"
 	"encoding/base64"
+
+	v "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 // We consider received password following argon2 server relief principle
@@ -84,4 +88,22 @@ func DecodeParams(encodedHash string) (params Params, err error) {
 		return params, err
 	}
 	return params, nil
+}
+
+// Validate the password format
+func (p HashedPassword) Validate() error {
+	if err := v.Validate(&p.HashBase64, v.Required); err != nil {
+		return merror.Transform(err).Describe("validating prehashed password")
+	}
+
+	if err := v.ValidateStruct(&p.Params,
+		v.Field(&p.Params.Memory, v.Required),
+		v.Field(&p.Params.Iterations, v.Required),
+		v.Field(&p.Params.Parallelism, v.Required),
+		v.Field(&p.Params.SaltBase64, v.Required, is.Base64.Error("salt_base64 must be base64 encoded")),
+	); err != nil {
+		return merror.Transform(err).Describe("validating prehashed password params")
+	}
+
+	return nil
 }
