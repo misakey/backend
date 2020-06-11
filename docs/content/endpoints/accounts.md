@@ -132,6 +132,49 @@ _Code:_
   HTTP 204 NO CONTENT
 ```
 
+## Reset password
+	
+This route allows to reset a password on an account.
+
+The request needs to be authenticated with an ACR1 token corresponding to an identity linked to the account.
+
+The `password` contains information following [Argon2 server relief concepts](../../concepts/server-relief/).
+
+### Request
+
+```bash
+  PUT https://api.misakey.com.local/account/:id/password/reset
+```
+_Headers:_
+- `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
+
+_Path Parameters:_
+- `id` (uuid string): the account id.
+
+_JSON Body:_
+```json
+{
+	"password": {{% include "include/passwordHash.json" 4 %}},
+	"backup_data": "[STRINGIFIED JSON]"
+}
+```
+
+- `password` (object): prehashed password using argon2:
+  - `params` (object): argon2 parameters:
+    - `memory` (integer).
+    - `parallelism` (integer).
+    - `iterations` (integer).
+    - `salt_base64` (base64 string).
+  - `hash_base64` (base64 string): the prehashed password.
+- `backup_data` (string): the new user backup data.
+
+### Success Response
+
+_Code:_
+```bash
+  HTTP 204 NO CONTENT
+```
+
 ## Get the account password parameters
 
 This route allows the retrieval of the account password hash parameters.

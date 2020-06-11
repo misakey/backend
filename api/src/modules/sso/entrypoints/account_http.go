@@ -88,3 +88,23 @@ func (entrypoint AccountHTTP) ChangePassword(ctx echo.Context) error {
 
 	return ctx.NoContent(http.StatusNoContent)
 }
+
+// Handles PUT /accounts/:id/password/reset - reset the password of the account
+func (entrypoint AccountHTTP) ResetPassword(ctx echo.Context) error {
+	cmd := application.ResetPasswordCmd{}
+
+	if err := ctx.Bind(&cmd); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
+
+	cmd.AccountID = ctx.Param("id")
+	if err := cmd.Validate(); err != nil {
+		return merror.Transform(err)
+	}
+
+	if err := entrypoint.service.ResetPassword(ctx.Request().Context(), cmd); err != nil {
+		return merror.Transform(err).Describe("reset password").From(merror.OriBody)
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
+}
