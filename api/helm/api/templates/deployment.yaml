@@ -30,11 +30,16 @@ spec:
           image: "{{ .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: DATABASE_URL
+            - name: DSN_SSO
               valueFrom:
                 secretKeyRef:
                   name: {{ template "api.name" . }}
-                  key: database_url
+                  key: dsn_sso
+            - name: DSN_BOX
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "api.name" . }}
+                  key: dsn_box
             - name: AWS_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
