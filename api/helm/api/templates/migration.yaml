@@ -16,15 +16,25 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-        - name: {{ .Chart.Name }}-migrate
+        - name: {{ .Chart.Name }}-sso-migrate
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           args:
-            - migrate
+            - sso-migrate
           env:
-            - name: DATABASE_URL
+            - name: DSN_SSO
               valueFrom:
                 secretKeyRef:
                   name: {{ template "api.name" . }}
-                  key: database_url
+                  key: dsn_sso
+        - name: {{ .Chart.Name }}-box-migrate
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          args:
+            - box-migrate
+          env:
+            - name: DSN_BOX
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "api.name" . }}
+                  key: dsn_box
       imagePullSecrets:
         - name: regcred

@@ -6,14 +6,14 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
-	"gitlab.misakey.dev/misakey/backend/api/src/sqlboiler"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 func (h *handler) listEvents(ctx echo.Context) error {

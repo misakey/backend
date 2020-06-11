@@ -6,18 +6,18 @@ import (
 	"github.com/pressly/goose"
 )
 
-func init() {
-	goose.AddMigration(UpAddBackupDataToAccount, DownAddBackupDataToAccount)
+func initAddBackupDataToAccount() {
+	goose.AddMigration(upAddBackupDataToAccount, downAddBackupDataToAccount)
 }
 
-func UpAddBackupDataToAccount(tx *sql.Tx) error {
+func upAddBackupDataToAccount(tx *sql.Tx) error {
 	_, err := tx.Exec(`ALTER TABLE account
 		ADD COLUMN backup_data VARCHAR NOT NULL DEFAULT '';
 `)
 	return err
 }
 
-func DownAddBackupDataToAccount(tx *sql.Tx) error {
+func downAddBackupDataToAccount(tx *sql.Tx) error {
 	_, err := tx.Exec(`ALTER TABLE account
 		DROP COLUMN backup_data;
 `)

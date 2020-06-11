@@ -1,12 +1,13 @@
 no-tests = true
 no-hooks = true
 pkgname = "sqlboiler"
+output = "../repositories/sqlboiler"
 wipe = true
 
 [psql]
-  dbname = "api"
+  dbname = "sso-migration-test"
   host   = "localhost"
-  port   = 5500
+  port   = 5501
   user   = "misakey"
   pass   = "secret"
   sslmode = "disable"

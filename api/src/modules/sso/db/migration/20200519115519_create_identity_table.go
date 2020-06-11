@@ -6,7 +6,7 @@ import (
 	"github.com/pressly/goose"
 )
 
-func init() {
+func initCreateIdentityTable() {
 	goose.AddMigration(upCreateIdentityTable, downCreateIdentityTable)
 }
 

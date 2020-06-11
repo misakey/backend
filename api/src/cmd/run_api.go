@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/bubble"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/db"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/echorouter"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
 
@@ -53,21 +52,10 @@ func initService() {
 	e := echorouter.New()
 	e.HideBanner = true
 
-	// init db connections
-	dbConn, err := db.NewPSQLConn(
-		os.Getenv("DATABASE_URL"),
-		viper.GetInt("sql.max_open_connections"),
-		viper.GetInt("sql.max_idle_connections"),
-		viper.GetDuration("sql.conn_max_lifetime"),
-	)
-	if err != nil {
-		log.Fatal().Err(err).Msg("could not connect to db")
-	}
-
 	// init modules
 	generic.InitModule(e)
-	identityIntraprocess := sso.InitModule(e, dbConn)
-	boxes.InitModule(e, dbConn, identityIntraprocess)
+	identityIntraprocess := sso.InitModule(e)
+	boxes.InitModule(e, identityIntraprocess)
 
 	// finally launch the echo server
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", viper.GetInt("server.port"))))
@@ -83,8 +71,10 @@ func initDefaultConfig() {
 	}
 	viper.AddConfigPath("/etc/")
 
-	// defaults
+	// set defaults value for configuration
+	// some of these fields are shared between modules.
 	viper.SetDefault("server.port", 8080)
+	viper.SetDefault("hydra.secure", true)
 	viper.SetDefault("sql.max_open_connections", 50)
 	viper.SetDefault("sql.max_idle_connections", 2)
 	viper.SetDefault("sql.conn_max_lifetime", "0m")

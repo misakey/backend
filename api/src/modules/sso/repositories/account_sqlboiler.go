@@ -9,7 +9,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/backend/api/src/sqlboiler"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories/sqlboiler"
 )
 
 type AccountSQLBoiler struct {

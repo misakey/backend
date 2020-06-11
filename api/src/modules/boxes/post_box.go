@@ -8,11 +8,12 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/sqlboiler/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/utils"
-	"gitlab.misakey.dev/misakey/backend/api/src/sqlboiler"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/repositories/sqlboiler"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/utils"
 )
 
 type creationRequest = boxState

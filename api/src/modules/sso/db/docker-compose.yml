@@ -1,0 +1,29 @@
+version: '2.1'
+
+services:
+  sso_migrate:
+    build:
+      context: ../../../../
+      dockerfile: Dockerfile
+    depends_on:
+      api_db:
+        condition: service_healthy
+    environment:
+      - DSN_SSO=postgres://misakey:secret@api_db:5432/sso-migration-test?sslmode=disable
+      - ENV=development
+    command: "sso-migrate --goose=up"
+
+  api_db:
+    image: postgres:11.4
+    ports:
+      - 127.0.0.1:5501:5432
+    environment:
+      - POSTGRES_USER=misakey
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=sso-migration-test
+      - PGPASSWORD=secret # used for healthcheck
+    command: ["postgres", "-c", "log_statement=all"]
+    healthcheck:
+      test: "pg_isready --host=localhost --username=misakey --dbname=sso-migration-test"
+      interval: 5s
+      retries: 10

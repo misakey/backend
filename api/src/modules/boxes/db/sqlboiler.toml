@@ -1,0 +1,14 @@
+no-tests = true
+no-hooks = true
+pkgname = "sqlboiler"
+output = "../repositories/sqlboiler"
+wipe = true
+
+[psql]
+  dbname = "box-migration-test"
+  host   = "localhost"
+  port   = 5502
+  user   = "misakey"
+  pass   = "secret"
+  sslmode = "disable"
+  blacklist = ["goose_db_version"]

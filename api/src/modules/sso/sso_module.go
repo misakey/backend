@@ -1,12 +1,12 @@
 package sso
 
 import (
-	"database/sql"
 	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/db"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/oauth"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/oidc"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/rester/http"
@@ -23,8 +23,19 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 )
 
-func InitModule(router *echo.Echo, dbConn *sql.DB) entrypoints.IdentityIntraprocessInterface {
+func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	initConfig()
+
+	// init db connections
+	dbConn, err := db.NewPSQLConn(
+		os.Getenv("DSN_SSO"),
+		viper.GetInt("sql.max_open_connections"),
+		viper.GetInt("sql.max_idle_connections"),
+		viper.GetDuration("sql.conn_max_lifetime"),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not connect to db")
+	}
 
 	// init self authenticator for hydra rester
 	selfAuth, err := oidc.NewClient(

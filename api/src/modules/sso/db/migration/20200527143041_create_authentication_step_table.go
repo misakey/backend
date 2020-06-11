@@ -7,7 +7,7 @@ import (
 	"github.com/pressly/goose"
 )
 
-func init() {
+func initCreateAuthenticateStepTable() {
 	goose.AddMigration(upCreateAuthenticateStepTable, downCreateAuthenticateStepTable)
 }
 

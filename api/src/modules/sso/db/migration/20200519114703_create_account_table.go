@@ -2,10 +2,11 @@ package migration
 
 import (
 	"database/sql"
+
 	"github.com/pressly/goose"
 )
 
-func init() {
+func initCreateAccountTable() {
 	goose.AddMigration(upCreateAccountTable, downCreateAccountTable)
 }
 

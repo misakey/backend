@@ -4,15 +4,11 @@ import (
 	"os"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/config"
 )
 
 func initConfig() {
-	// set defaults value for configuration
-	viper.SetDefault("hydra.secure", true)
-
 	// handle missing mandatory fields
 	mandatoryFields := []string{
 		"authflow.self_client_id",

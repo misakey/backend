@@ -12,7 +12,7 @@ from . import http
 def get_confirmation_code(identity_id):
   proc = subprocess.run(
     (
-      'docker exec test-and-run_api_db_1  psql -t -d api -U misakey -h localhost -c'.split()
+      'docker exec test-and-run_api_db_1  psql -t -d sso -U misakey -h localhost -c'.split()
       + [
           "SELECT metadata "
           "FROM authentication_step "
