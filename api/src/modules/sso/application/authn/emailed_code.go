@@ -103,8 +103,9 @@ func (as *Service) assertEmailedCode(
 			Detail("stored_code", merror.DVMalformed)
 	}
 
-	// compare codes
-	if input.Code != stored.Code {
+	// try to match codes
+	match := stored.Matches(input)
+	if !match {
 		return merror.Forbidden().From(merror.OriBody).Detail("code", merror.DVInvalid)
 	}
 

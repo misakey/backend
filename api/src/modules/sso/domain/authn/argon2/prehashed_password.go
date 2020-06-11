@@ -59,7 +59,7 @@ func (p HashedPassword) Hash() (encodedHash string, err error) {
 	return encode(p.Params, serverSalt, finalHash), nil
 }
 
-// Matches checks whether the password matches a password hash from the database
+// Matches checks whether the input password matches the current password hash
 func (p HashedPassword) Matches(encodedHash string) (bool, error) {
 	_, serverSalt, expectedHash, err := decode(encodedHash)
 	if err != nil {

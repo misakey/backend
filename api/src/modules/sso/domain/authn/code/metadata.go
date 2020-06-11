@@ -2,6 +2,7 @@ package code
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -47,4 +48,9 @@ func ToMetadata(msg types.JSON) (ret codeMetadata, err error) {
 	}
 	err = json.Unmarshal(msgJSON, &ret)
 	return ret, err
+}
+
+// Matches checks whether an input code the current code matches
+func (c codeMetadata) Matches(input codeMetadata) bool {
+	return subtle.ConstantTimeCompare([]byte(input.Code), []byte(c.Code)) == 1
 }
