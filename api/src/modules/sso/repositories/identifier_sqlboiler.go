@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -34,7 +35,7 @@ func (repo *IdentifierSQLBoiler) Create(ctx context.Context, identifier *domain.
 	// convert domain to sql model
 	sqlIdentifier := sqlboiler.Identifier{
 		ID:    identifier.ID,
-		Value: identifier.Value,
+		Value: strings.ToLower(identifier.Value),
 		Kind:  string(identifier.Kind),
 	}
 
@@ -64,7 +65,7 @@ func (repo *IdentifierSQLBoiler) Get(ctx context.Context, id string) (domain.Ide
 func (repo *IdentifierSQLBoiler) GetByKindValue(ctx context.Context, kind domain.IdentifierKind, value string) (domain.Identifier, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.IdentifierWhere.Kind.EQ(string(kind)),
-		sqlboiler.IdentifierWhere.Value.EQ(value),
+		sqlboiler.IdentifierWhere.Value.EQ(strings.ToLower(value)),
 	}
 
 	identifier, err := sqlboiler.Identifiers(mods...).One(ctx, repo.db)
