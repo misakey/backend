@@ -73,7 +73,12 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 		return err
 	}
 
-	return as.emails.Send(ctx, content)
+	if err := as.emails.Send(ctx, content); err != nil {
+		// delete the create authentication step - ignore on failure
+		_ = as.steps.Delete(ctx, flow.ID)
+		return err
+	}
+	return nil
 }
 
 func (as *Service) assertEmailedCode(

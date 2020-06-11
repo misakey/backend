@@ -26,6 +26,7 @@ type stepRepo interface {
 	Create(ctx context.Context, step *authn.Step) error
 	CompleteAt(ctx context.Context, stepID int, completeTime time.Time) error
 	Last(ctx context.Context, identityID string, methodName authn.MethodRef) (authn.Step, error)
+	Delete(ctx context.Context, stepID int) error
 }
 
 func NewService(

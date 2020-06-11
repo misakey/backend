@@ -24,7 +24,7 @@ func NewAuthenticationStepSQLBoiler(db *sql.DB) *AuthenticationStepSQLBoiler {
 	}
 }
 
-func (repo *AuthenticationStepSQLBoiler) Create(ctx context.Context, authnStep *authn.Step) error {
+func (repo AuthenticationStepSQLBoiler) Create(ctx context.Context, authnStep *authn.Step) error {
 	// convert domain to sql model
 	sqlAuthnStep := sqlboiler.AuthenticationStep{
 		IdentityID: authnStep.IdentityID,
@@ -43,7 +43,7 @@ func (repo *AuthenticationStepSQLBoiler) Create(ctx context.Context, authnStep *
 	return nil
 }
 
-func (repo *AuthenticationStepSQLBoiler) CompleteAt(ctx context.Context, id int, completeTime time.Time) error {
+func (repo AuthenticationStepSQLBoiler) CompleteAt(ctx context.Context, id int, completeTime time.Time) error {
 	data := sqlboiler.M{sqlboiler.AuthenticationStepColumns.CompleteAt: null.TimeFrom(completeTime)}
 	rowsAff, err := sqlboiler.AuthenticationSteps(sqlboiler.AuthenticationStepWhere.ID.EQ(id)).UpdateAll(ctx, repo.db, data)
 	if rowsAff == 0 {
@@ -52,7 +52,7 @@ func (repo *AuthenticationStepSQLBoiler) CompleteAt(ctx context.Context, id int,
 	return err
 }
 
-func (repo *AuthenticationStepSQLBoiler) Last(
+func (repo AuthenticationStepSQLBoiler) Last(
 	ctx context.Context,
 	identityID string,
 	methodName authn.MethodRef,
@@ -85,4 +85,18 @@ func (repo *AuthenticationStepSQLBoiler) Last(
 	authnStep.CompleteAt = sqlAuthnStep.CompleteAt
 	authnStep.Complete = sqlAuthnStep.CompleteAt.Valid
 	return authnStep, nil
+}
+
+func (repo AuthenticationStepSQLBoiler) Delete(ctx context.Context, stepID int) error {
+	mod := sqlboiler.AuthenticationStepWhere.ID.EQ(stepID)
+
+	rowsAff, err := sqlboiler.AuthenticationSteps(mod).DeleteAll(ctx, repo.db)
+	if err != nil {
+		return err
+	}
+	if rowsAff == 0 {
+		return merror.NotFound().Describe("deleting authn step").
+			Detail("id", merror.DVNotFound)
+	}
+	return nil
 }
