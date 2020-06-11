@@ -27,7 +27,7 @@ require (
 	github.com/volatiletech/inflect v0.0.1 // indirect
 	github.com/volatiletech/null v8.0.0+incompatible
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
-	gitlab.misakey.dev/misakey/msk-sdk-go v1.9.0
+	gitlab.misakey.dev/misakey/msk-sdk-go v1.10.0
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0 // indirect
