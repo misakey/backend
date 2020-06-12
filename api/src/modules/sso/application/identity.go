@@ -153,6 +153,8 @@ func (sso SSOService) RequireIdentityAuthable(ctx context.Context, cmd IdentityA
 			return view, err
 		}
 		view.AuthnStep.MethodName = authn.AMREmailedCode
+	} else {
+		view.AuthnStep.MethodName = authn.AMRPrehashedPassword
 	}
 	return view, nil
 }
