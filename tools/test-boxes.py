@@ -1,12 +1,14 @@
+#!/usr/bin/env python3
+
 import json
 import os
 import sys
 from time import sleep
 from base64 import b64encode
 
-from .. import http
-from ..get_access_token import get_authenticated_session
-from ..test_context import testContext
+from misapy import http
+from misapy.get_access_token import get_authenticated_session
+from misapy.test_context import testContext
 
 URL_PREFIX = 'http://127.0.0.1:5020'
 

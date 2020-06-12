@@ -4,6 +4,8 @@ but it logs the requests to a file in "/tmp",
 and you can provide a "expected_status_code" during calls'''
 import datetime
 import json
+import sys
+from urllib.parse import urlparse
 
 import requests
 import urllib3; urllib3.disable_warnings()
@@ -26,7 +28,11 @@ class UnexpectedResponseStatus(Exception):
 
 def call_request_fn_decorated(fn, *args, expected_status_code=None, raise_for_status=True, **kwargs):
     '''`raise_for_status` only has effect when there is no `expected_status_code`'''
-    response = fn(*args, **kwargs)
+    try:
+        response = fn(*args, **kwargs)
+    except requests.exceptions.ConnectionError as error:
+        host = urlparse(error.request.url).netloc
+        sys.exit(f'Connection error: is "{host}" up?')
 
     with open(logfile, 'a') as f:
         f.write(pretty_string_of_response(response))
@@ -73,7 +79,10 @@ def pretty_string_of_response(response):
             + '...' if len(response.text) > 20 else ''
         )
 
-    request = response.request
+    if response.history:
+        request = response.history[0].request
+    else:
+        request = response.request
 
     if request.headers.get('Content-Type') == 'application/json':
         req_payload = json.dumps(
@@ -94,12 +103,16 @@ def pretty_string_of_response(response):
         parts.append(str(req_payload))
     else:
         parts.append('(No Request Body)')
-    if response.history:
-        parts.append('\nRedirections:')
-        for redir in response.history:
-            parts.append(redir.headers['location'])
-    parts.append('\nResponse')
-    parts.append(f'HTTP {response.status_code} {response.reason}')
+    
+
+    for redir in response.history:
+        parts.append(f'\nHTTP {redir.status_code} {redir.reason}')
+        for (name, value) in redir.headers.items():
+            parts.append(f'{name}: {value}')
+
+    parts.append(f'\nHTTP {response.status_code} {response.reason}')
+    for (name, value) in response.headers.items():
+        parts.append(f'{name}: {value}')    
     parts.append(body)
 
     return '\n'.join(parts)
