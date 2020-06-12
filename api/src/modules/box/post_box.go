@@ -21,7 +21,7 @@ type creationRequest = boxState
 // Validate validates the shape of a box creation request
 func (req creationRequest) Validate() error {
 	if err := validation.ValidateStruct(&req,
-		validation.Field(&req.PublicKey, validation.Required, validation.Match(utils.RxUnpaddedURLsafeBase64)),
+		validation.Field(&req.PublicKey, validation.Required, validation.Match(utils.RxUnpaddedURLsafeBase64).Error("must be unpadded url-safe base64")),
 		validation.Field(&req.Title, validation.Required, validation.Length(5, 50)),
 	); err != nil {
 		return err

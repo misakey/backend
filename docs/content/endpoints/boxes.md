@@ -19,9 +19,7 @@ most of them describing a change of the *state* of the box.
       "title": "Requête RGPD FNAC",
     }
 
-Where `public_key` is the public key of the box,
-the key that must be used to encrypt messages sent to this box,
-and `title` is the title of the box.
+Where `public_key` must be in **unpadded url-safe base64**.
 
 Note that when a box is created, it already contains a first event
 of type `create` that contains all the information about the creation of the box.
