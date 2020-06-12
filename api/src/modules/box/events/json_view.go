@@ -42,7 +42,7 @@ type View struct {
 }
 
 // ToView transforms an event into its JSON view.
-func ToView(e *Event, senderIdentity domain.Identity) View {
+func ToView(e Event, senderIdentity domain.Identity) View {
 	view := View{
 		Type:      e.Type,
 		Content:   e.Content,

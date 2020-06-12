@@ -1,7 +1,6 @@
 package box
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -12,89 +11,75 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/utils"
 )
 
-type creationRequest = boxState
-
-// Validate validates the shape of a box creation request
-func (req creationRequest) Validate() error {
-	if err := validation.ValidateStruct(&req,
-		validation.Field(&req.PublicKey, validation.Required, validation.Match(utils.RxUnpaddedURLsafeBase64).Error("must be unpadded url-safe base64")),
-		validation.Field(&req.Title, validation.Required, validation.Length(5, 50)),
-	); err != nil {
-		return err
-	}
-
-	return nil
+type boxCreationRequest struct {
+	PublicKey string `json:"public_key"`
+	Title     string `json:"title"`
 }
 
-func (h *handler) CreateBox(ctx echo.Context) error {
-	accesses := ajwt.GetAccesses(ctx.Request().Context())
+// Validate validates the shape of a box creation request
+func (req boxCreationRequest) Validate() error {
+	return validation.ValidateStruct(&req,
+		validation.Field(&req.PublicKey, validation.Required, validation.Match(utils.RxUnpaddedURLsafeBase64).Error("must be unpadded url-safe base64")),
+		validation.Field(&req.Title, validation.Required, validation.Length(5, 50)),
+	)
+}
+
+type boxView struct {
+	ID        string            `json:"id"`
+	CreatedAt time.Time         `json:"server_created_at"`
+	Creator   events.SenderView `json:"creator"`
+	PublicKey string            `json:"public_key"`
+	Title     string            `json:"title"`
+	Lifecycle string            `json:"lifecycle"`
+	LastEvent events.View       `json:"last_event"`
+}
+
+func (h *handler) CreateBox(eCtx echo.Context) error {
+	ctx := eCtx.Request().Context()
+
+	// retrieve accesses
+	accesses := ajwt.GetAccesses(ctx)
 	if accesses == nil {
 		return merror.Forbidden()
 	}
 
-	req := &creationRequest{}
-	if err := ctx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
-	}
-	if err := req.Validate(); err != nil {
+	// bind and validate the request body
+	req := &boxCreationRequest{}
+	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
 	}
 
+	// generate an id for the created box
 	boxID, err := utils.RandomUUIDString()
 	if err != nil {
-		return merror.Transform(err).Describe("could not generate box ID")
+		return merror.Transform(err).Describe("generating box ID")
 	}
 
-	creationTime := time.Now()
-
-	box := &Box{
-		ID:        boxID,
-		CreatedAt: creationTime,
-		boxState:  *req,
-	}
-
-	creator, err := h.IdentityService.GetIdentity(ctx.Request().Context(), accesses.Subject)
+	// generate the corresponding events of a box creation
+	content, err := events.NewCreationJSON(req.PublicKey, req.Title)
 	if err != nil {
-		return merror.Transform(err).Describe("fetching creator identity")
+		return merror.Transform(err).From(merror.OriBody)
 	}
-	box.Creator = events.NewSenderView(creator)
 
-	creationEvent, err := createCreationEvent(req, boxID, creationTime, accesses.Subject)
+	event, err := events.New("create", content, boxID, accesses.Subject)
 	if err != nil {
-		return merror.Transform(err).Describe("creating box creation event")
+		return err
 	}
-	err = creationEvent.Insert(ctx.Request().Context(), h.DB, boil.Infer())
+
+	// persist the event in storage
+	err = event.ToSqlBoiler().Insert(ctx, h.db, boil.Infer())
 	if err != nil {
 		return merror.Transform(err)
 	}
 
-	return ctx.JSON(http.StatusCreated, box)
-}
-
-func createCreationEvent(req *creationRequest, boxID string, creationTime time.Time, creatorID string) (*sqlboiler.Event, error) {
-	e := events.Event{}
-	e.Type = "create"
-
-	var err error
-	e.Content, err = json.Marshal(req)
+	// build the box view and return it
+	box, err := events.ComputeBox(ctx, boxID, h.db, h.identityRepo, event)
 	if err != nil {
-		return nil, merror.Transform(err).From(merror.OriBody).Describe("could not marshall request body")
+		return merror.Transform(err).Describe("building box")
 	}
 
-	e.ID, err = utils.RandomUUIDString()
-	if err != nil {
-		return nil, merror.Transform(err).Describe("could not generate id for creation event")
-	}
-
-	e.BoxID = boxID
-
-	e.CreatedAt = creationTime
-
-	e.SenderID = creatorID
-
-	return e.ToSqlBoiler(), nil
+	return eCtx.JSON(http.StatusCreated, box)
 }

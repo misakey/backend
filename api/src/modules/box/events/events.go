@@ -1,11 +1,13 @@
 package events
 
 import (
+	"context"
+	"database/sql"
 	"time"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/types"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/utils"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
@@ -15,80 +17,54 @@ type UserSetFields struct {
 	Content types.JSON `json:"content"`
 }
 
-type readOnlyFields struct {
-	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"server_event_created_at"`
-	SenderID  string    `json:"-"`
-}
-
 type Event struct {
-	UserSetFields
-	readOnlyFields
-	BoxID string `json:"-"`
+	ID        string
+	CreatedAt time.Time
+	SenderID  string
+	Type      string
+	Content   types.JSON
+	BoxID     string
 }
 
-type messageContent struct {
-	Encrypted string `json:"encrypted"`
-}
-
-type lifecycleContent struct {
-	State string `json:"state"`
-}
-
-func New(fields UserSetFields, boxID string) (*Event, error) {
-	err := validation.ValidateStruct(&fields,
-		validation.Field(&fields.Type, validation.Required, validation.In("msg.text", "msg.file", "state.lifecycle")),
-	)
-	if err != nil {
-		return nil, err
-	}
-
+func New(eType string, jsonContent types.JSON, boxID string, senderID string) (Event, error) {
 	event := Event{
-		UserSetFields: fields,
-		BoxID:         boxID,
+		CreatedAt: time.Now(),
+		SenderID:  senderID,
+		Type:      eType,
+		BoxID:     boxID,
+		Content:   jsonContent,
 	}
-
-	// Validating the shape of the event
-	// (no business logic validation here)
-	if event.Type == "msg.text" || event.Type == "msg.file" {
-		content := messageContent{}
-		err = event.Content.Unmarshal(&content)
-		if err != nil {
-			return nil, merror.Transform(err).Code(merror.BadRequestCode).Detail("content", "invalid")
-		}
-		err = validation.ValidateStruct(&content,
-			validation.Field(&content.Encrypted, validation.Required, is.Base64, validation.Length(1, 1024)),
-		)
-		if err != nil {
-			return nil, merror.Transform(err).Code(merror.BadRequestCode).Detail("encrypted", "invalid")
-		}
-	} else {
-		switch event.Type {
-		case "state.lifecycle":
-			content := lifecycleContent{}
-			err := event.Content.Unmarshal(&content)
-			if err != nil {
-				return nil, merror.Transform(err).Code(merror.BadRequestCode).Detail("content", "invalid")
-			}
-			err = validation.ValidateStruct(&content,
-				validation.Field(&content.State, validation.Required, validation.In("closed")),
-			)
-			if err != nil {
-				return nil, merror.Transform(err).Code(merror.BadRequestCode).Detail("state", "invalid")
-			}
-		default:
-			// This is an internal error and not a bad request error
-			// because "type" field should have already been checked
-			return nil, merror.Internal().Describef(`no validation function for event type "%s"`, event.Type)
-		}
+	// validate the shape of the event content
+	err := validateContent(event)
+	if err != nil {
+		return event, merror.Transform(err).Describe("validating content")
 	}
 
 	event.ID, err = utils.RandomUUIDString()
 	if err != nil {
-		return nil, merror.Transform(err).Describe("could not generate id for event")
+		return event, merror.Transform(err).Describe("generating event id")
+	}
+	return event, nil
+}
+
+func List(ctx context.Context, boxID string, db *sql.DB) ([]Event, error) {
+	dbEvents, err := sqlboiler.Events(
+		sqlboiler.EventWhere.BoxID.EQ(boxID),
+		qm.OrderBy(sqlboiler.EventColumns.CreatedAt+" DESC"),
+	).All(ctx, db)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("retrieving db events")
 	}
 
-	event.CreatedAt = time.Now()
+	events := make([]Event, len(dbEvents))
+	for i, record := range dbEvents {
+		events[i] = FromSqlBoiler(record)
+	}
 
-	return &event, nil
+	if len(events) == 0 {
+		return events, merror.NotFound().Detail("id", merror.DVNotFound).
+			Describef("no box with id %s", boxID)
+	}
+
+	return events, nil
 }

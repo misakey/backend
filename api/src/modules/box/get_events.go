@@ -7,11 +7,9 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
@@ -25,37 +23,31 @@ func (h *handler) listEvents(ctx echo.Context) error {
 		return merror.Transform(err).Code(merror.BadRequestCode).From(merror.OriPath)
 	}
 
-	dbEvents, err := sqlboiler.Events(
-		sqlboiler.EventWhere.BoxID.EQ(boxID),
-		qm.OrderBy(sqlboiler.EventColumns.CreatedAt),
-	).All(ctx.Request().Context(), h.DB)
+	// list
+	boxEvents, err := events.List(ctx.Request().Context(), boxID, h.db)
 	if err != nil {
-		return merror.Transform(err).Describe("retrieving events")
+		return err
 	}
 
-	if dbEvents == nil {
-		return merror.NotFound().Describef("no box with id %s", boxID)
-	}
-
-	sendersMap, err := mapSenderIdentities(ctx.Request().Context(), dbEvents, h.IdentityService)
+	sendersMap, err := mapSenderIdentities(ctx.Request().Context(), boxEvents, h.identityRepo)
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving events senders")
 	}
 
-	var result []events.View
-	for _, e := range dbEvents {
+	views := make([]events.View, len(boxEvents))
+	for i, e := range boxEvents {
 		sender := sendersMap[e.SenderID]
-		result = append(result, events.ToView(events.FromSqlBoiler(e), sender))
+		views[i] = events.ToView(e, sender)
 	}
 
-	return ctx.JSON(http.StatusOK, result)
+	return ctx.JSON(http.StatusOK, views)
 }
 
-func mapSenderIdentities(ctx context.Context, dbEvents sqlboiler.EventSlice, identityService entrypoints.IdentityIntraprocessInterface) (map[string]domain.Identity, error) {
+func mapSenderIdentities(ctx context.Context, events []events.Event, identityRepo entrypoints.IdentityIntraprocessInterface) (map[string]domain.Identity, error) {
 	// getting senders IDs without duplicates
 	var senderIDs []string
 	idMap := make(map[string]bool)
-	for _, event := range dbEvents {
+	for _, event := range events {
 		_, alreadyPresent := idMap[event.SenderID]
 		if !alreadyPresent {
 			senderIDs = append(senderIDs, event.SenderID)
@@ -63,7 +55,7 @@ func mapSenderIdentities(ctx context.Context, dbEvents sqlboiler.EventSlice, ide
 		}
 	}
 
-	identities, err := identityService.ListIdentities(ctx, domain.IdentityFilters{IDs: senderIDs})
+	identities, err := identityRepo.ListIdentities(ctx, domain.IdentityFilters{IDs: senderIDs})
 	if err != nil {
 		return nil, err
 	}

@@ -29,6 +29,7 @@ The `prehashed_password` contains information following [Argon2 server relief co
 ```bash
   POST https://api.misakey.com.local/identities/:id/account
 ```
+
 _Headers:_
 - `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
 
@@ -133,7 +134,7 @@ _Code:_
 ```
 
 ## Reset password
-	
+
 This route allows to reset a password on an account.
 
 The request needs to be authenticated with an ACR1 token corresponding to an identity linked to the account.

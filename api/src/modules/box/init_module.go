@@ -14,8 +14,8 @@ import (
 )
 
 type handler struct {
-	DB              *sql.DB
-	IdentityService entrypoints.IdentityIntraprocessInterface
+	db           *sql.DB
+	identityRepo entrypoints.IdentityIntraprocessInterface
 }
 
 func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntraprocessInterface) {
@@ -43,8 +43,8 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 	)
 
 	h := handler{
-		DB:              dbConn,
-		IdentityService: identityIntraprocess,
+		db:           dbConn,
+		identityRepo: identityIntraprocess,
 	}
 
 	bindRoutes(router, h, authzMidlw)
