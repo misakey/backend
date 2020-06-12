@@ -121,12 +121,12 @@ var EventWhere = struct {
 	Type      whereHelperstring
 	Content   whereHelpernull_JSON
 }{
-	ID:        whereHelperstring{field: "\"events\".\"id\""},
-	BoxID:     whereHelperstring{field: "\"events\".\"box_id\""},
-	CreatedAt: whereHelpertime_Time{field: "\"events\".\"created_at\""},
-	SenderID:  whereHelperstring{field: "\"events\".\"sender_id\""},
-	Type:      whereHelperstring{field: "\"events\".\"type\""},
-	Content:   whereHelpernull_JSON{field: "\"events\".\"content\""},
+	ID:        whereHelperstring{field: "\"event\".\"id\""},
+	BoxID:     whereHelperstring{field: "\"event\".\"box_id\""},
+	CreatedAt: whereHelpertime_Time{field: "\"event\".\"created_at\""},
+	SenderID:  whereHelperstring{field: "\"event\".\"sender_id\""},
+	Type:      whereHelperstring{field: "\"event\".\"type\""},
+	Content:   whereHelpernull_JSON{field: "\"event\".\"content\""},
 }
 
 // EventRels is where relationship names are stored.
@@ -194,7 +194,7 @@ func (q eventQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Event,
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "sqlboiler: failed to execute a one query for events")
+		return nil, errors.Wrap(err, "sqlboiler: failed to execute a one query for event")
 	}
 
 	return o, nil
@@ -221,7 +221,7 @@ func (q eventQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to count events rows")
+		return 0, errors.Wrap(err, "sqlboiler: failed to count event rows")
 	}
 
 	return count, nil
@@ -237,7 +237,7 @@ func (q eventQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "sqlboiler: failed to check if events exists")
+		return false, errors.Wrap(err, "sqlboiler: failed to check if event exists")
 	}
 
 	return count > 0, nil
@@ -245,7 +245,7 @@ func (q eventQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool
 
 // Events retrieves all the records using an executor.
 func Events(mods ...qm.QueryMod) eventQuery {
-	mods = append(mods, qm.From("\"events\""))
+	mods = append(mods, qm.From("\"event\""))
 	return eventQuery{NewQuery(mods...)}
 }
 
@@ -259,7 +259,7 @@ func FindEvent(ctx context.Context, exec boil.ContextExecutor, iD string, select
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"events\" where \"id\"=$1", sel,
+		"select %s from \"event\" where \"id\"=$1", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -269,7 +269,7 @@ func FindEvent(ctx context.Context, exec boil.ContextExecutor, iD string, select
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "sqlboiler: unable to select from events")
+		return nil, errors.Wrap(err, "sqlboiler: unable to select from event")
 	}
 
 	return eventObj, nil
@@ -279,7 +279,7 @@ func FindEvent(ctx context.Context, exec boil.ContextExecutor, iD string, select
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
 func (o *Event) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
-		return errors.New("sqlboiler: no events provided for insertion")
+		return errors.New("sqlboiler: no event provided for insertion")
 	}
 
 	var err error
@@ -315,9 +315,9 @@ func (o *Event) Insert(ctx context.Context, exec boil.ContextExecutor, columns b
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"events\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO \"event\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"events\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO \"event\" %sDEFAULT VALUES%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -345,7 +345,7 @@ func (o *Event) Insert(ctx context.Context, exec boil.ContextExecutor, columns b
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "sqlboiler: unable to insert into events")
+		return errors.Wrap(err, "sqlboiler: unable to insert into event")
 	}
 
 	if !cached {
@@ -377,10 +377,10 @@ func (o *Event) Update(ctx context.Context, exec boil.ContextExecutor, columns b
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return 0, errors.New("sqlboiler: unable to update events, could not build whitelist")
+			return 0, errors.New("sqlboiler: unable to update event, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"events\" SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE \"event\" SET %s WHERE %s",
 			strmangle.SetParamNames("\"", "\"", 1, wl),
 			strmangle.WhereClause("\"", "\"", len(wl)+1, eventPrimaryKeyColumns),
 		)
@@ -400,12 +400,12 @@ func (o *Event) Update(ctx context.Context, exec boil.ContextExecutor, columns b
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to update events row")
+		return 0, errors.Wrap(err, "sqlboiler: unable to update event row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by update for events")
+		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by update for event")
 	}
 
 	if !cached {
@@ -423,12 +423,12 @@ func (q eventQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, co
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to update all for events")
+		return 0, errors.Wrap(err, "sqlboiler: unable to update all for event")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to retrieve rows affected for events")
+		return 0, errors.Wrap(err, "sqlboiler: unable to retrieve rows affected for event")
 	}
 
 	return rowsAff, nil
@@ -461,7 +461,7 @@ func (o EventSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, co
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"events\" SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE \"event\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, colNames),
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, eventPrimaryKeyColumns, len(o)))
 
@@ -486,7 +486,7 @@ func (o EventSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, co
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
 func (o *Event) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
-		return errors.New("sqlboiler: no events provided for upsert")
+		return errors.New("sqlboiler: no event provided for upsert")
 	}
 	if !boil.TimestampsAreSkipped(ctx) {
 		currTime := time.Now().In(boil.GetLocation())
@@ -545,7 +545,7 @@ func (o *Event) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnC
 		)
 
 		if updateOnConflict && len(update) == 0 {
-			return errors.New("sqlboiler: unable to upsert events, could not build update column list")
+			return errors.New("sqlboiler: unable to upsert event, could not build update column list")
 		}
 
 		conflict := conflictColumns
@@ -553,7 +553,7 @@ func (o *Event) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnC
 			conflict = make([]string, len(eventPrimaryKeyColumns))
 			copy(conflict, eventPrimaryKeyColumns)
 		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"events\"", updateOnConflict, ret, update, conflict, insert)
+		cache.query = buildUpsertQueryPostgres(dialect, "\"event\"", updateOnConflict, ret, update, conflict, insert)
 
 		cache.valueMapping, err = queries.BindMapping(eventType, eventMapping, insert)
 		if err != nil {
@@ -574,11 +574,11 @@ func (o *Event) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnC
 		returns = queries.PtrsFromMapping(value, cache.retMapping)
 	}
 
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, cache.query)
-		fmt.Fprintln(boil.DebugWriter, vals)
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.query)
+		fmt.Fprintln(writer, vals)
 	}
-
 	if len(cache.retMapping) != 0 {
 		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
@@ -588,7 +588,7 @@ func (o *Event) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnC
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "sqlboiler: unable to upsert events")
+		return errors.Wrap(err, "sqlboiler: unable to upsert event")
 	}
 
 	if !cached {
@@ -608,7 +608,7 @@ func (o *Event) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, e
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), eventPrimaryKeyMapping)
-	sql := "DELETE FROM \"events\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"event\" WHERE \"id\"=$1"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -617,12 +617,12 @@ func (o *Event) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, e
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to delete from events")
+		return 0, errors.Wrap(err, "sqlboiler: unable to delete from event")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by delete for events")
+		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by delete for event")
 	}
 
 	return rowsAff, nil
@@ -638,12 +638,12 @@ func (q eventQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (i
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: unable to delete all from events")
+		return 0, errors.Wrap(err, "sqlboiler: unable to delete all from event")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for events")
+		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for event")
 	}
 
 	return rowsAff, nil
@@ -661,7 +661,7 @@ func (o EventSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (i
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"events\" WHERE " +
+	sql := "DELETE FROM \"event\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, eventPrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
@@ -676,7 +676,7 @@ func (o EventSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (i
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for events")
+		return 0, errors.Wrap(err, "sqlboiler: failed to get rows affected by deleteall for event")
 	}
 
 	return rowsAff, nil
@@ -708,7 +708,7 @@ func (o *EventSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) e
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"events\".* FROM \"events\" WHERE " +
+	sql := "SELECT \"event\".* FROM \"event\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, eventPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
@@ -726,7 +726,7 @@ func (o *EventSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) e
 // EventExists checks if the Event row exists.
 func EventExists(ctx context.Context, exec boil.ContextExecutor, iD string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"events\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"event\" where \"id\"=$1 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -737,7 +737,7 @@ func EventExists(ctx context.Context, exec boil.ContextExecutor, iD string) (boo
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "sqlboiler: unable to check if events exists")
+		return false, errors.Wrap(err, "sqlboiler: unable to check if event exists")
 	}
 
 	return exists, nil

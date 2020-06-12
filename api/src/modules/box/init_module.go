@@ -1,4 +1,4 @@
-package boxes
+package box
 
 import (
 	"database/sql"

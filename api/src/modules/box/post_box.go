@@ -1,4 +1,4 @@
-package boxes
+package box
 
 import (
 	"encoding/json"
@@ -11,9 +11,9 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/repositories/sqlboiler"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/utils"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/utils"
 )
 
 type creationRequest = boxState

@@ -2,7 +2,7 @@ package events
 
 import (
 	"github.com/volatiletech/null"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/repositories/sqlboiler"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 )
 
 func (e *Event) ToSqlBoiler() *sqlboiler.Event {

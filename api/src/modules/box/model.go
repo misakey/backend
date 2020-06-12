@@ -1,9 +1,9 @@
-package boxes
+package box
 
 import (
 	"time"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/boxes/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
 
 type boxState struct {

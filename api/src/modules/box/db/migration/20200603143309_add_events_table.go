@@ -11,7 +11,7 @@ func initAddEventsTable() {
 }
 
 func upAddEventsTable(tx *sql.Tx) error {
-	_, err := tx.Exec(`CREATE TABLE events(
+	_, err := tx.Exec(`CREATE TABLE event(
 		id UUID PRIMARY KEY,
 		box_id UUID NOT NULL,
 		created_at timestamptz NOT NULL,
@@ -23,6 +23,6 @@ func upAddEventsTable(tx *sql.Tx) error {
 }
 
 func downAddEventsTable(tx *sql.Tx) error {
-	_, err := tx.Exec(`DROP TABLE events;`)
+	_, err := tx.Exec(`DROP TABLE event;`)
 	return err
 }

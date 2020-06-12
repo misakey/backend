@@ -1,4 +1,4 @@
-package boxes
+package box
 
 import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/config"

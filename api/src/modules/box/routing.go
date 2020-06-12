@@ -1,4 +1,4 @@
-package boxes
+package box
 
 import (
 	"github.com/labstack/echo/v4"
