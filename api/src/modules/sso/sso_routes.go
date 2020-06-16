@@ -45,6 +45,9 @@ func initRoutes(
 
 	identityRoutes := router.Group("/identities")
 	identityRoutes.GET("/:id", identityHTTP.GetIdentity, authzMidlw)
+	identityRoutes.PATCH("/:id", identityHTTP.PartiallyUpdateIdentity, authzMidlw)
+	identityRoutes.PUT("/:id/avatar", identityHTTP.UploadAvatar, authzMidlw)
+	identityRoutes.DELETE("/:id/avatar", identityHTTP.DeleteAvatar, authzMidlw)
 	identityRoutes.POST("/:id/account", identityHTTP.CreateAccount, authzMidlw)
 	identityRoutes.PUT("/authable", identityHTTP.RequireAuthableIdentity)
 }

@@ -70,11 +70,17 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	hydraRepo := repositories.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
 	templateRepo := email.NewTemplateFileSystem(viper.GetString("mail.templates"))
 	var emailRepo email.Sender
+	var avatarRepo identity.AvatarRepo
 	env := os.Getenv("ENV")
 	if env == "development" {
 		emailRepo = email.NewLogMailer()
+		avatarRepo = repositories.NewAvatarFileSystem(viper.GetString("server.avatars"), viper.GetString("server.avatar_url"))
 	} else if env == "production" {
 		emailRepo = email.NewMailerAmazonSES(viper.GetString("aws.ses_region"))
+		avatarRepo, err = repositories.NewAvatarAmazonS3(viper.GetString("aws.s3_region"), viper.GetString("aws.bucket"), viper.GetString("aws.avatars_domain"))
+		if err != nil {
+			log.Fatal().Msg("could not initiate AWS S3 avatar bucket connection")
+		}
 	} else {
 		log.Fatal().Msg("wrong env value")
 	}
@@ -92,7 +98,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	// init services
 	accountService := account.NewAccountService(accountRepo)
 	identifierService := identifier.NewIdentifierService(identifierRepo)
-	identityService := identity.NewIdentityService(identityRepo, identifierService)
+	identityService := identity.NewIdentityService(identityRepo, avatarRepo, identifierService)
 	authFlowService := authflow.NewAuthFlowService(
 		hydraRepo,
 		viper.GetString("authflow.login_page_url"),
@@ -132,6 +138,11 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 
 	// bind all routes to the router
 	initRoutes(router, authzMidlw, ssoService, *oauthCodeFlow)
+	// bind static assets for avatars only if configuration has been set up
+	avatarLocation := viper.GetString("server.avatars")
+	if len(avatarLocation) > 0 {
+		router.Static("/avatars", avatarLocation)
+	}
 
 	identityIntraprocess := entrypoints.NewIdentityIntraprocess(identityService)
 

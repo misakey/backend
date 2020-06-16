@@ -25,7 +25,7 @@ func initConfig() {
 	}
 	switch os.Getenv("ENV") {
 	case "production":
-		mandatoryFields = append(mandatoryFields, []string{"aws.ses_region"}...)
+		mandatoryFields = append(mandatoryFields, []string{"aws.ses_region", "aws.s3_region", "aws.bucket", "aws.avatars_domain"}...)
 		if os.Getenv("AWS_ACCESS_KEY") == "" {
 			log.Warn().Msg("AWS_ACCESS_KEY not set")
 		}
@@ -33,6 +33,7 @@ func initConfig() {
 			log.Warn().Msg("AWS_SECRET_KEY not set")
 		}
 	case "development":
+		mandatoryFields = append(mandatoryFields, []string{"server.avatars", "server.avatar_url"}...)
 		log.Info().Msg("{} Development mode is activated. {}")
 	default:
 		log.Fatal().Msg("unknown ENV value (should be production|development)")

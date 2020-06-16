@@ -86,3 +86,80 @@ _JSON Body:_
   - `id` (uuid string): the unique identifier id.
   - `kind` (string) (oneof: _email_): the kind of the identifier.
   - `value` (string): the value of the identifier.
+
+## Update an identity
+
+For the moment, only the Display Name and Notifications can be updated.
+
+The request must be authenticated with a token corresponding to the updated identity.
+
+### Request
+
+```bash
+  PATCH https://api.misakey.com.local/identities/:id
+```
+_Headers:_
+- `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
+
+_Path Parameters:_
+- `id` (uuid string): the identity unique id.
+
+_Body Parameters:_
+- `display_name` (string): the identity display name.
+- `notifications` (string): notification setting. Must be one of `minimal`, `moderate`, `frequent`.
+
+### Success Response
+
+_Code:_
+```bash
+  HTTP 204 No Content
+```
+
+## Upload an avatar
+
+The request must be authenticated with a token corresponding to the identity on which the avatar is uploaded.
+
+### Request
+
+```bash
+  PUT https://api.misakey.com.local/identities/:id/avatar
+```
+_Headers:_
+- `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
+
+_Path Parameters:_
+- `id` (uuid string): the identity unique id.
+
+_Body Parameters (multipart/form\_data):_
+- `avatar` (object): the avatar file.
+
+### Success Response
+
+_Code:_
+```bash
+  HTTP 204 No Content
+```
+
+## Delete an avatar
+
+The request must be authenticated with a token corresponding to the identity on which the avatar is deleted.
+
+If no avatar is set on the identity, the request will return a `409 CONFLICT`.
+
+### Request
+
+```bash
+  DELETE https://api.misakey.com.local/identities/:id/avatar
+```
+_Headers:_
+- `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
+
+_Path Parameters:_
+- `id` (uuid string): the identity unique id.
+
+### Success Response
+
+_Code:_
+```bash
+  HTTP 204 No Content
+```

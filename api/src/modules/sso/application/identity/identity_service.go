@@ -18,18 +18,26 @@ type identityRepo interface {
 	List(context.Context, domain.IdentityFilters) ([]*domain.Identity, error)
 }
 
+type AvatarRepo interface {
+	Upload(context.Context, *domain.AvatarFile) (string, error)
+	Delete(context.Context, *domain.AvatarFile) error
+}
+
 type IdentityService struct {
 	identities identityRepo
+	avatars    AvatarRepo
 
 	identifierService identifier.IdentifierService
 }
 
 func NewIdentityService(
 	identityRepo identityRepo,
+	avatarRepo AvatarRepo,
 	identifierService identifier.IdentifierService,
 ) IdentityService {
 	return IdentityService{
 		identities: identityRepo,
+		avatars:    avatarRepo,
 
 		identifierService: identifierService,
 	}
