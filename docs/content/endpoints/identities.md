@@ -29,9 +29,13 @@ or in the interface at any moment.
 There is no need to re-authenticate switching identities unless the security level
 of an identity is higher than the current one the end-user is logged in.
 
+## Require an authable identity for a given identifier
+
+Described in [the auth flow section](../auth_flow/#require-an-authable-identity-for-a-given-identifier).
+
 ## Create an account on an identity
 
-Described [in accounts section](../accounts/#create-an-account-on-an-identity)
+Described [in the accounts section](../accounts/#create-an-account-on-an-identity)
 
 ## Get an identity
 

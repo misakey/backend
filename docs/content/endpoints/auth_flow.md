@@ -183,7 +183,8 @@ _JSON Body:_
     },
     "authn_step": {
         "identity_id": "4a98b5a1-1c08-46c9-8f26-18d54cbed30a",
-        "method_name": "emailed_code"
+        "method_name": "password",
+        "metadata": (format described in the next section)
     },
   }
 ```
@@ -194,7 +195,26 @@ _JSON Body:_
   - `account_id` (string) (nullable): the potential account id linked to the identity.
 - `authn_step` (object): the preferred authentication step:
   - `identity_id` (uuid string): the unique identity id the authentication step is attached to.
-  - `method_name` (string) (one of: _emailed_code_): the authentication method.
+  - `method_name` (string) (one of: _emailed_code_, _prehashed_password_): the preferred authentication method.
+  - `metadata` (string) (nullable): filled considering the preferred method.
+
+### Possible formats for the `metadata` field
+
+Considering the preferred authentication method, the metadata can contain additional information.
+
+I - **prehashed_password** as `method_name`:
+
+/!\ Warning, the metadata has not the exact same shape as [the metadata used to perform
+an authentication step](./#possible-formats-for-the-metadata-field-1) using the prehased_password method, which also contains the hash of the password.
+
+```json
+{
+  [...]
+  "method_name": "prehashed_password",
+  "metadata": {{% include "include/hashParameters.json" 2 %}},
+  [...]
+}
+```
 
 ## Perform an authentication step in the login flow
 
@@ -234,7 +254,7 @@ _JSON Body:_
   - `metadata` (json object): metadata containing the emailed code value or the prehashed password.
 The list of possible formats is defined in the next section.
 
-### Possibles formats for the `metadata` field
+### Possible formats for the `metadata` field
 
 This section describes the possible metadata format, as a JSON object, which is a
 field contained in the JSON body of the previous section.
@@ -256,6 +276,10 @@ _JSON Body:_
 ```
 
 II - **prehashed_password** as `method_name`:
+
+/!\ Warning, the metadata has not the exact same shape as [the metadata returned requiring
+an authable identity](./#possible-formats-for-the-metadata-field) with the prehased_password as preferred method, which contains only the hash parameters of the password.
+
 ```json
 {
   [...]

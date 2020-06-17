@@ -5,6 +5,8 @@ import (
 	"io"
 	"path/filepath"
 
+	"github.com/volatiletech/sqlboiler/types"
+
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/google/uuid"
@@ -14,6 +16,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/argon2"
 )
 
 type IdentityQuery struct {
@@ -86,11 +89,11 @@ type IdentityAuthableView struct {
 	Identity struct {
 		DisplayName string      `json:"display_name"`
 		AvatarURL   null.String `json:"avatar_url"`
-		AccountID   null.String `json:"account_id"`
 	} `json:"identity"`
 	AuthnStep struct {
 		IdentityID string          `json:"identity_id"`
 		MethodName authn.MethodRef `json:"method_name"`
+		Metadata   *types.JSON     `json:"metadata"`
 	} `json:"authn_step"`
 }
 
@@ -146,20 +149,31 @@ func (sso SSOService) RequireIdentityAuthable(ctx context.Context, cmd IdentityA
 	// bind identity information on view
 	view.Identity.DisplayName = identity.DisplayName
 	view.Identity.AvatarURL = identity.AvatarURL
-	view.Identity.AccountID = identity.AccountID
 	view.AuthnStep.IdentityID = identity.ID
 
 	// NOTE: if condition logic is commented because no password exists today
 	// 4. if the identity has no linked account, we automatically init a emailed code authentication step
 	if identity.AccountID.IsZero() {
+		view.AuthnStep.MethodName = authn.AMREmailedCode
 		// we ignore the conflict error code - if a code already exist, we still want to return authable identity information
 		err = sso.authenticationService.CreateEmailedCode(ctx, identity.ID)
 		if err != nil && !merror.HasCode(err, merror.ConflictCode) {
 			return view, err
 		}
-		view.AuthnStep.MethodName = authn.AMREmailedCode
 	} else {
 		view.AuthnStep.MethodName = authn.AMRPrehashedPassword
+		account, err := sso.accountService.Get(ctx, identity.AccountID.String)
+		if err != nil {
+			return view, err
+		}
+		params, err := argon2.DecodeParams(account.Password)
+		if err != nil {
+			return view, err
+		}
+		view.AuthnStep.Metadata = &types.JSON{}
+		if err := view.AuthnStep.Metadata.Marshal(params); err != nil {
+			return view, err
+		}
 	}
 	return view, nil
 }
