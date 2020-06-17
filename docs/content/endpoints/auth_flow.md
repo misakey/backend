@@ -178,7 +178,8 @@ _JSON Body:_
   {
     "identity": {
         "display_name": "MUCHMICHMACH@test.com",
-        "avatar_url": null
+        "avatar_url": null,
+        "account_id": "5f80b4ec-b42a-4554-a738-4fb532ba2ee4", 
     },
     "authn_step": {
         "identity_id": "4a98b5a1-1c08-46c9-8f26-18d54cbed30a",
@@ -190,6 +191,7 @@ _JSON Body:_
 - `identity` (object): the authable identity linked to the received identifier value.
   - `display_name` (string): a customizable display name.
   - `avatar_url` (string) (nullable): the web address of the end-user avatar file.
+  - `account_id` (string) (nullable): the potential account id linked to the identity.
 - `authn_step` (object): the preferred authentication step:
   - `identity_id` (uuid string): the unique identity id the authentication step is attached to.
   - `method_name` (string) (one of: _emailed_code_): the authentication method.

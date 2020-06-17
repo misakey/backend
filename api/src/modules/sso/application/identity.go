@@ -86,6 +86,7 @@ type IdentityAuthableView struct {
 	Identity struct {
 		DisplayName string      `json:"display_name"`
 		AvatarURL   null.String `json:"avatar_url"`
+		AccountID   null.String `json:"account_id"`
 	} `json:"identity"`
 	AuthnStep struct {
 		IdentityID string          `json:"identity_id"`
@@ -145,6 +146,7 @@ func (sso SSOService) RequireIdentityAuthable(ctx context.Context, cmd IdentityA
 	// bind identity information on view
 	view.Identity.DisplayName = identity.DisplayName
 	view.Identity.AvatarURL = identity.AvatarURL
+	view.Identity.AccountID = identity.AccountID
 	view.AuthnStep.IdentityID = identity.ID
 
 	// NOTE: if condition logic is commented because no password exists today
