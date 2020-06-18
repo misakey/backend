@@ -1,5 +1,5 @@
 {{- if .Values.ingress.enabled -}}
-{{- $fullName := include "nginx.fullname" . -}}
+{{- $fullName := include "api.fullname" . -}}
 {{- $ingressPath := .Values.ingress.path -}}
 {{- $dns := .Values.dns -}}
 apiVersion: extensions/v1beta1
@@ -7,8 +7,8 @@ kind: Ingress
 metadata:
   name: {{ $fullName }}
   labels:
-    app: {{ template "nginx.name" . }}
-    chart: {{ template "nginx.chart" . }}
+    app: {{ template "api.name" . }}
+    chart: {{ template "api.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 {{- with .Values.ingress.annotations }}

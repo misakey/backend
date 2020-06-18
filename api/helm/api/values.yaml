@@ -6,6 +6,8 @@ replicaCount: 2
 env:
 ddenv: production
 
+dns: misakey.com
+
 image:
   repository: registry.misakey.dev/misakey/backend/api
   tag:
@@ -17,6 +19,17 @@ service:
 
 ingress:
   enabled: false
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
+    certmanager.k8s.io/cluster-issuer: letsencrypt
+
+ingressRoute:
+  enabled: true
+  maxAge: 600
+  allowedSubdomains:
+    - app
+    - auth
 
 resources:
   limits:

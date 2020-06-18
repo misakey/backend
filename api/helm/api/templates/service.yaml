@@ -15,7 +15,6 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-      env: {{ required "env is required" .Values.env }}
   selector:
     app: {{ template "api.name" . }}
     release: {{ .Release.Name }}
