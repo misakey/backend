@@ -24,7 +24,7 @@ func (h *handler) listEvents(ctx echo.Context) error {
 	}
 
 	// list
-	boxEvents, err := events.List(ctx.Request().Context(), boxID, h.db)
+	boxEvents, err := events.ListByBoxID(ctx.Request().Context(), h.db, boxID)
 	if err != nil {
 		return err
 	}

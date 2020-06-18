@@ -43,25 +43,7 @@ _
 
 _JSON Body:_
 ```json
-    {
-      "id": "91ec8274-2b6d-40ff-afad-83e8ba5808e5",
-      "server_created_at": "2020-06-12T13:38:32.142857839Z",
-      "public_key": "ShouldBeUnpaddedUrlSafeBase64",
-      "title": "Test Box",
-      "lifecycle": "open",
-      "creator": {{% include "include/event-sender.json" 6 %}},
-      "last_event": {
-        "id": "ff6114f3-9838-40ed-a80d-bb376fd929f5",
-        "type": "create",
-        "content": {
-           "public_key": "ShouldBeUnpaddedUrlSafeBase64",
-           "title": "Test Box",
-           "state": "open"
-        },
-        "server_event_created_at": "2020-06-12T13:38:32.142857839Z",
-        "sender": {{% include "include/event-sender.json" 8 %}}
-      },
-    }
+{{% include "include/box.json" %}}
 ```
 
 The most important part is the `id` field
@@ -90,25 +72,66 @@ _Code:_
 
 _JSON Body:_
 ```json
-    {
-      "id": "91ec8274-2b6d-40ff-afad-83e8ba5808e5",
-      "server_created_at": "2020-06-12T13:38:32.142857839Z",
-      "public_key": "ShouldBeUnpaddedUrlSafeBase64",
-      "title": "Test Box",
-      "lifecycle": "open",
-      "creator": {{% include "include/event-sender.json" 6 %}},
-      "last_event": {
-        "id": "ff6114f3-9838-40ed-a80d-bb376fd929f5",
-        "type": "create",
-        "content": {
-           "public_key": "ShouldBeUnpaddedUrlSafeBase64",
-           "title": "Test Box",
-           "state": "open"
-        },
-        "server_event_created_at": "2020-06-12T13:38:32.142857839Z",
-        "sender": {{% include "include/event-sender.json" 8 %}}
-      },
-    }
+{{% include "include/box.json" %}}
+```
+
+## Get the total count of boxes for the current user
+
+### Request
+
+This request allows to retrieval of information about accessible boxes list.
+
+Today only the total count of boxes is returned as an response header.
+
+```bash
+  HEAD https://api.misakey.com/boxes
+```
+
+_Headers:_
+- `Authorization` (opaque token) (ACR >= 1): a valid token.
+
+### Response
+
+_Code:_
+```bash
+  HTTP 204 NO CONTENT
+```
+
+_Headers:_
+- `X-Total-Count` (integer): the total count of boxes that the user can access.
+
+## Listing boxes
+
+### Request
+
+Users are able to list boxes they have an access to.
+
+The returned list is automatically computed from the server according to the authorization
+provided by the received bearer token.
+
+```bash
+  GET https://api.misakey.com/boxes
+```
+
+_Headers:_
+- `Authorization` (opaque token) (ACR >= 1): a valid token.
+
+_Query Parameters:_
+
+Pagination ([more info](/concepts/pagination)) with default limit set to 10.
+
+### Response
+
+_Code:_
+```bash
+  HTTP 200 OK
+```
+
+A list of event is returned.
+```json
+[
+  {{% include "include/box.json" %}}
+]
 ```
 
 ## Sending an Event to a Box

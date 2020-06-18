@@ -3,12 +3,14 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"regexp"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/volatiletech/sqlboiler/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/utils"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
+
+var rxUnpaddedURLsafeBase64 = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
 
 type creationContent struct {
 	stateLifecycleContent
@@ -36,7 +38,7 @@ func (c *creationContent) Unmarshal(content types.JSON) error {
 func (c creationContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.State, v.Required, v.In("open")),
-		v.Field(&c.PublicKey, v.Required, v.Match(utils.RxUnpaddedURLsafeBase64)),
+		v.Field(&c.PublicKey, v.Required, v.Match(rxUnpaddedURLsafeBase64)),
 		v.Field(&c.Title, v.Required, v.Length(5, 50)),
 	)
 }

@@ -19,6 +19,9 @@ type handler struct {
 }
 
 func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntraprocessInterface) {
+	// init the box module configuration
+	initConfig()
+
 	// init db connections
 	dbConn, err := db.NewPSQLConn(
 		os.Getenv("DSN_BOX"),

@@ -2,7 +2,6 @@ package box
 
 import (
 	"net/http"
-	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
@@ -11,7 +10,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/utils"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
 type boxCreationRequest struct {
@@ -22,19 +21,9 @@ type boxCreationRequest struct {
 // Validate validates the shape of a box creation request
 func (req boxCreationRequest) Validate() error {
 	return validation.ValidateStruct(&req,
-		validation.Field(&req.PublicKey, validation.Required, validation.Match(utils.RxUnpaddedURLsafeBase64).Error("must be unpadded url-safe base64")),
+		validation.Field(&req.PublicKey, validation.Required),
 		validation.Field(&req.Title, validation.Required, validation.Length(5, 50)),
 	)
-}
-
-type boxView struct {
-	ID        string            `json:"id"`
-	CreatedAt time.Time         `json:"server_created_at"`
-	Creator   events.SenderView `json:"creator"`
-	PublicKey string            `json:"public_key"`
-	Title     string            `json:"title"`
-	Lifecycle string            `json:"lifecycle"`
-	LastEvent events.View       `json:"last_event"`
 }
 
 func (h *handler) CreateBox(eCtx echo.Context) error {
@@ -53,7 +42,7 @@ func (h *handler) CreateBox(eCtx echo.Context) error {
 	}
 
 	// generate an id for the created box
-	boxID, err := utils.RandomUUIDString()
+	boxID, err := uuid.NewString()
 	if err != nil {
 		return merror.Transform(err).Describe("generating box ID")
 	}

@@ -12,8 +12,9 @@ from misapy.test_context import testContext
 
 URL_PREFIX = 'http://127.0.0.1:5020'
 
-with testContext():
-    s = get_authenticated_session()
+
+def create_box_and_post_some_events_to_it(session):
+    s = session
 
     r = s.post(
         f'{URL_PREFIX}/boxes',
@@ -71,8 +72,15 @@ with testContext():
         assert sender['display_name'] == s.email
         assert sender['identifier']['value'] == s.email
 
+    return box_id
+
+
+with testContext():
+    s1 = get_authenticated_session()
+    box1_id = create_box_and_post_some_events_to_it(session=s1)
+
     # Testing bad box ID
-    r = s.post(
+    r = s1.post(
         f'{URL_PREFIX}/boxes/457d5c70-03c2-4179-92a5-f945e666b922/events',
         json={
             'type': 'msg.text',
@@ -82,12 +90,12 @@ with testContext():
         },
         expected_status_code=404
     )
-    r = s.get(
+    r = s1.get(
         f'{URL_PREFIX}/boxes/457d5c70-03c2-4179-92a5-f945e666b922/events',
         expected_status_code=404,
     )
 
-    r = s.post(
+    r = s1.post(
         f'{URL_PREFIX}/boxes/YOU_KNOW_IM_BAD/events',
         json={
             'type': 'msg.text',
@@ -100,12 +108,72 @@ with testContext():
 
     # Testing incomplete event
 
-    r = s.post(
-        f'{URL_PREFIX}/boxes/{box_id}/events',
+    r = s1.post(
+        f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.text',
         },
         expected_status_code=400
     )
+
+    # Testing box listing
+
+    # Another identity creates other boxes
+    sleep(0.5)  # TODO disable rate limiting in test environment
+    s2 = get_authenticated_session()
+    box2_id = create_box_and_post_some_events_to_it(session=s2)
+    box3_id = create_box_and_post_some_events_to_it(session=s2)
+    box4_id = create_box_and_post_some_events_to_it(session=s2)
+
+    # Identity 1 posts to box 2
+    r = s1.post(
+        f'{URL_PREFIX}/boxes/{box2_id}/events',
+        json={
+            'type': 'msg.text',
+            'content': {
+                'encrypted': b64encode(os.urandom(32)).decode()
+            }
+        }
+    )
+
+    r = s1.get(f'{URL_PREFIX}/boxes')
+    boxes = r.json()
+    assert len(boxes) == 2
+    # identity one did not take part into box 3 so it should not be returned
+    assert set(map(lambda box: box['id'], boxes)) == {box1_id, box2_id}
+
+    # Testing pagination
+
+    r = s2.get(
+        f'{URL_PREFIX}/boxes',
+        params={
+            'offset': 1,
+            'limit': 2,
+        }
+    )
+    boxes = r.json()
+    assert len(boxes) == 2
+
+    r = s2.get(
+        f'{URL_PREFIX}/boxes',
+        params={
+            'offset': 1,
+            'limit': 10,
+        }
+    )
+    boxes = r.json()
+    # Identity 2 has 3 boxes in total
+    assert len(boxes) == 2
+
+    r = s2.get(
+        f'{URL_PREFIX}/boxes',
+        params={
+            'offset': 20,
+            'limit': 2,
+        }
+    )
+
+    boxes = r.json()
+    assert boxes == []
 
     print('All OK')

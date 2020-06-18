@@ -33,7 +33,7 @@ type boxComputer struct {
 	events []Event
 
 	// the output
-	box *Box
+	box Box
 }
 
 // ComputeBox box according to the received boxID.
@@ -45,12 +45,12 @@ func ComputeBox(
 	boxID string,
 	db *sql.DB, identityRepo entrypoints.IdentityIntraprocessInterface,
 	events ...Event,
-) (*Box, error) {
+) (Box, error) {
 	// init the computer system
 	computer := &boxComputer{
 		db:           db,
 		identityRepo: identityRepo,
-		box:          &Box{ID: boxID},
+		box:          Box{ID: boxID},
 		events:       events,
 	}
 	computer.ePlayer = map[string]func(context.Context, Event) error{
@@ -60,7 +60,9 @@ func ComputeBox(
 
 	// automatically retrieve events if 0 events loaded
 	if len(events) == 0 {
-		computer.retrieveEvents(ctx)
+		if err := computer.retrieveEvents(ctx); err != nil {
+			return computer.box, err
+		}
 	}
 
 	// comput the box then return it
@@ -70,7 +72,7 @@ func ComputeBox(
 
 func (c *boxComputer) retrieveEvents(ctx context.Context) error {
 	var err error
-	c.events, err = List(ctx, c.box.ID, c.db)
+	c.events, err = ListByBoxID(ctx, c.db, c.box.ID)
 	return err
 }
 

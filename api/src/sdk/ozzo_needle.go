@@ -84,6 +84,9 @@ func (n ozzoNeedle) recHandleErrors(mErr merror.Error, valErrs v.Errors, replace
 			"validation_required",
 			"validation_nil_or_not_empty_required":
 			mErr.Detail(fieldTag, merror.DVRequired)
+		case
+			"validation_min_greater_equal_than_required":
+			mErr.Detail(fieldTag, merror.DVInvalid)
 		default:
 			mErr.Detail(fieldTag, merror.DVInvalid).Detail("please_inform_about_this_unknown_code", errObj.Code())
 		}
