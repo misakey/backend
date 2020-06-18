@@ -1,12 +1,10 @@
 Misakey
 =======
 
-## What is Misakey ?
+[Misakey](https://misakey.com) is the user account solution for people and applications who
+value privacy and simplicity. And it’s open source.
 
-[Misakey](https://misakey.com) is a platform to secure data portability. Users can accustom websites 
-to send their data back to them avoiding the big tech. Websites can easily return their users' data using a secure path.
-
-You can find more info about Misakey in our [about page (french only)](https://docs.misakey.com/).
+You can find more info about Misakey in our [website](https://www.misakey.com) and our [about page](https://about.misakey.com/).
 
 ## Technical overview
 
@@ -30,17 +28,13 @@ We host the platform on a Kubernetes cluster, so everything we build is done to 
 
 #### SDK
 
-- [msk-sdk-go](https://gitlab.misakey.dev/misakey/msk-sdk-go/README.md)
+- [msk-sdk-go](https://gitlab.com/misakey/msk-sdk-go/README.md)
 
 ### Frontend
 
 #### Webapp & webextension
 
-- [frontend](https://gitlab.misakey.dev/misakey/frontend/README.md)
-
-#### Management tool for applications
-
-- [misadmin-frontend](https://gitlab.misakey.dev/misakey/misadmin-frontend/README.md)
+- [frontend](https://gitlab.com/misakey/frontend/README.md)
 
 
 ## Community
@@ -55,6 +49,10 @@ We will answer you rapidly and would love to hear what community tools you would
 
 Most code is released under the AGPLv3. 
 If subdirectories include a different license, that license applies instead.
+
+## Source management disclaimer
+
+Misakey uses GitLab for the development of its free softwares. Our Github repositories are only mirrors. If you want to work with us, fork us on gitlab.com (no registration needed, you can sign in with your Github account)
 
 ## Cryptography notice
 
