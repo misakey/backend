@@ -116,7 +116,7 @@ func (as *Service) assertEmailedCode(
 
 	// check stored code is not expired
 	if time.Now().After(currentStep.CreatedAt.Add(as.codeValidity)) {
-		return merror.Forbidden().From(merror.OriBody).Detail("code", merror.DVExpired)
+		return merror.Forbidden().From(merror.OriBody).Detail("metadata", merror.DVExpired)
 	}
 
 	// complete the authentication step
