@@ -111,7 +111,7 @@ func (as *Service) assertEmailedCode(
 	// try to match codes
 	match := stored.Matches(input)
 	if !match {
-		return merror.Forbidden().From(merror.OriBody).Detail("code", merror.DVInvalid)
+		return merror.Forbidden().From(merror.OriBody).Detail("metadata", merror.DVInvalid)
 	}
 
 	// check stored code is not expired
