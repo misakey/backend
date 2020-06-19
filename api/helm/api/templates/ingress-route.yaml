@@ -15,6 +15,15 @@ spec:
     - websecure
   routes:
     - kind: Rule
+      match: Host(`api.{{ $dns }}`) && Path(`/auth/login/authn-step`)
+      services:
+        - name: {{ $fullName }}
+          port: {{ .Values.service.port }}
+      middlewares:
+        - name: cors-headers
+        - name: security-headers
+        - name: login-rate-limiting
+    - kind: Rule
       match: Host(`api.{{ $dns }}`)
       services:
         - name: {{ $fullName }}
@@ -24,6 +33,14 @@ spec:
         - name: security-headers
   tls:
     certResolver: le
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: login-rate-limiting
+spec:
+  rateLimit:
+    average: 1
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
