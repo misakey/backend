@@ -33,8 +33,8 @@ func (sso SSOService) GetAccountPwdParams(ctx context.Context, query AccountQuer
 
 type ChangePasswordCmd struct {
 	AccountID     string
-	OldPassword   argon2.HashedPassword `json:"old_password"`
-	NewPassword   argon2.HashedPassword `json:"new_password"`
+	OldPassword   argon2.HashedPassword `json:"old_prehashed_password"`
+	NewPassword   argon2.HashedPassword `json:"new_prehashed_password"`
 	BackupData    string                `json:"backup_data"`
 	BackupVersion int                   `json:"backup_version"`
 }
@@ -54,7 +54,7 @@ func (cmd ChangePasswordCmd) Validate() error {
 
 type ResetPasswordCmd struct {
 	AccountID  string
-	Password   argon2.HashedPassword `json:"password"`
+	Password   argon2.HashedPassword `json:"prehashed_password"`
 	BackupData string                `json:"backup_data"`
 }
 

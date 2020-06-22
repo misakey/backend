@@ -86,7 +86,7 @@ _JSON Body:_
 
 This route allows the update of an account password and the associated backup data.
 
-The `old_password` and `new_password` contain information following [Argon2 server relief concepts](../../concepts/server-relief/).
+The `old_prehashed_password` and `new_prehashed_password` contain information following [Argon2 server relief concepts](../../concepts/server-relief/).
 
 ### Request
 
@@ -102,21 +102,21 @@ _Path Parameters:_
 _JSON Body:_
 ```json
 {
-	"old_password": {{% include "include/passwordHash.json" 4 %}},
-	"new_password": {{% include "include/passwordHash.json" 4 %}},
+	"old_prehashed_password": {{% include "include/passwordHash.json" 4 %}},
+	"new_prehashed_password": {{% include "include/passwordHash.json" 4 %}},
 	"backup_data": "[STRINGIFIED JSON]",
     "backup_version": 3
 }
 ```
 
-- `old_password` (object): prehashed password using argon2:
+- `old_prehashed_password` (object): prehashed password using argon2:
   - `params` (object): argon2 parameters:
     - `memory` (integer).
     - `parallelism` (integer).
     - `iterations` (integer).
     - `salt_base64` (base64 string).
   - `hash_base64` (base64 string): the prehashed password.
-- `new_password` (object): prehashed password using argon2:
+- `new_prehashed_password` (object): prehashed password using argon2:
   - `params` (object): argon2 parameters:
     - `memory` (integer).
     - `parallelism` (integer).
@@ -139,7 +139,7 @@ This route allows to reset a password on an account.
 
 The request needs to be authenticated with an ACR1 token corresponding to an identity linked to the account.
 
-The `password` contains information following [Argon2 server relief concepts](../../concepts/server-relief/).
+The `prehashed_password` contains information following [Argon2 server relief concepts](../../concepts/server-relief/).
 
 ### Request
 
@@ -155,12 +155,12 @@ _Path Parameters:_
 _JSON Body:_
 ```json
 {
-	"password": {{% include "include/passwordHash.json" 4 %}},
+	"prehashed_password": {{% include "include/passwordHash.json" 4 %}},
 	"backup_data": "[STRINGIFIED JSON]"
 }
 ```
 
-- `password` (object): prehashed password using argon2:
+- `prehashed_password` (object): prehashed password using argon2:
   - `params` (object): argon2 parameters:
     - `memory` (integer).
     - `parallelism` (integer).
