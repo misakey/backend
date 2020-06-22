@@ -266,3 +266,33 @@ _Code:_
     }
 }
 ```
+
+## Download an encrypted file
+
+### Request
+
+```bash
+  GET https://www.api.misakey.com/boxes/:bid/encrypted-files/:eid
+```
+
+_Path Parameters:_
+- `bid` (string) (uuid): the box id where the file has been initially uploaded.
+- `eid` (string) (uuid): the encrypted file id contained in the content of the `msg.file` event.
+
+_Headers:_
+- `Authorization` (opaque token) (ACR >= 1): a valid access token.
+
+### Response
+
+_Code:_
+```bash
+  HTTP 200 OK
+```
+
+_Headers:_
+- `Content-Type: application/octet-stream`: the response is an octet stream.
+
+_Octect Stream Body:_
+```
+  (the raw data of the encrypted file)
+```

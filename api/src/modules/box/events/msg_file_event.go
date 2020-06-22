@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"database/sql"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -11,7 +12,7 @@ import (
 )
 
 type msgFileContent struct {
-	msgContent
+	Encrypted       string `json:"encrypted"`
 	EncryptedFileID string `json:"encrypted_file_id"`
 }
 
@@ -41,7 +42,7 @@ func NewMsgFile(
 
 	// build the event content
 	content := msgFileContent{
-		msgContent:      msgContent{Encrypted: encryptedContent},
+		Encrypted:       encryptedContent,
 		EncryptedFileID: fileID,
 	}
 
@@ -50,4 +51,13 @@ func NewMsgFile(
 		return e, "", merror.Transform(err).Describe("new event")
 	}
 	return e, fileID, nil
+}
+
+func GetMsgFile(
+	ctx context.Context,
+	db *sql.DB,
+	boxID, fileID string,
+) (Event, error) {
+	jsonQuery := `{"encrypted_file_id": "` + fileID + `"}`
+	return FindByTypeContent(ctx, db, boxID, "msg.file", &jsonQuery)
 }

@@ -79,3 +79,24 @@ func ListByBoxID(ctx context.Context, db *sql.DB, boxID string) ([]Event, error)
 
 	return events, nil
 }
+
+func FindByTypeContent(ctx context.Context, db *sql.DB, boxID, eType string, jsonQuery *string) (Event, error) {
+	var e Event
+
+	// build query
+	mods := []qm.QueryMod{
+		sqlboiler.EventWhere.BoxID.EQ(boxID),
+		sqlboiler.EventWhere.Type.EQ(eType),
+		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " DESC"),
+	}
+	// add content query if existing
+	if jsonQuery != nil {
+		mods = append(mods, qm.Where(`content::jsonb @> ?`, *jsonQuery))
+	}
+
+	dbEvent, err := sqlboiler.Events(mods...).One(ctx, db)
+	if err != nil {
+		return e, merror.Transform(err).Describe("retrieving type/content db event")
+	}
+	return FromSqlBoiler(dbEvent), nil
+}

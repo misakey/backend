@@ -49,7 +49,7 @@ func (h *handler) uploadEncryptedFile(eCtx echo.Context) error {
 		return err
 	}
 	cmd.size = encFile.Size
-	cmd.boxID = eCtx.Param("id")
+	cmd.boxID = eCtx.Param("bid")
 	if err := cmd.Validate(); err != nil {
 		return err
 	}
@@ -83,4 +83,46 @@ func (h *handler) uploadEncryptedFile(eCtx echo.Context) error {
 	}
 
 	return eCtx.JSON(http.StatusCreated, view)
+}
+
+type dlEncFileCmd struct {
+	boxID  string
+	fileID string
+}
+
+func (cmd dlEncFileCmd) Validate() error {
+	return v.ValidateStruct(&cmd,
+		v.Field(&cmd.boxID, v.Required, is.UUIDv4),
+		v.Field(&cmd.fileID, v.Required, is.UUIDv4),
+	)
+}
+
+func (h *handler) downloadEncryptedFile(eCtx echo.Context) error {
+	ctx := eCtx.Request().Context()
+
+	// to be a connected user is required
+	if ajwt.GetAccesses(ctx) == nil {
+		return merror.Forbidden()
+	}
+
+	cmd := dlEncFileCmd{
+		boxID:  eCtx.Param("bid"),
+		fileID: eCtx.Param("eid"),
+	}
+	if err := cmd.Validate(); err != nil {
+		return err
+	}
+
+	// check the box and the file does exist - represented by an event
+	_, err := events.GetMsgFile(ctx, h.db, cmd.boxID, cmd.fileID)
+	if err != nil {
+		return merror.Transform(err).Describe("finding msg.file event")
+	}
+
+	// download the file then render it
+	data, err := h.files.Download(ctx, cmd.boxID, cmd.fileID)
+	if err != nil {
+		return merror.Transform(err).Describe("downloading")
+	}
+	return eCtx.Blob(http.StatusOK, "application/octet-stream", data)
 }

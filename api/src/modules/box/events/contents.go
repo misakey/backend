@@ -13,12 +13,17 @@ import (
 var contentTypeGetters = map[string]func() anyContent{
 	"create":          func() anyContent { return &creationContent{} },
 	"state.lifecycle": func() anyContent { return &stateLifecycleContent{} },
-	"msg.text":        func() anyContent { return &msgContent{} },
+	"msg.text":        func() anyContent { return &msgTextContent{} },
 	"msg.file":        func() anyContent { return &msgFileContent{} },
 }
 
 type anyContent interface {
+	// Unmarshal should allow the JSON encoding of the content
+	// into a types.JSON variable
 	Unmarshal(types.JSON) error
+
+	// Validate should confirm the content contains all expected data
+	// in an appropriate format
 	Validate() error
 }
 

@@ -12,5 +12,6 @@ func bindRoutes(router *echo.Echo, h handler, authzMidlw echo.MiddlewareFunc) {
 	boxRouter.POST("", h.CreateBox)
 	boxRouter.GET("/:id/events", h.listEvents)
 	boxRouter.POST("/:id/events", h.postEvent)
-	boxRouter.POST("/:id/encrypted-files", h.uploadEncryptedFile)
+	boxRouter.POST("/:bid/encrypted-files", h.uploadEncryptedFile)
+	boxRouter.GET("/:bid/encrypted-files/:eid", h.downloadEncryptedFile)
 }
