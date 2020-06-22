@@ -79,16 +79,17 @@ func (n ozzoNeedle) recHandleErrors(mErr merror.Error, valErrs v.Errors, replace
 			"validation_is_uuid_v4",
 			"validation_match_invalid",
 			"validation_is_base64":
-			mErr.Detail(fieldTag, merror.DVMalformed)
+			_ = mErr.Detail(fieldTag, merror.DVMalformed)
 		case
 			"validation_required",
 			"validation_nil_or_not_empty_required":
-			mErr.Detail(fieldTag, merror.DVRequired)
+			_ = mErr.Detail(fieldTag, merror.DVRequired)
 		case
-			"validation_min_greater_equal_than_required":
-			mErr.Detail(fieldTag, merror.DVInvalid)
+			"validation_min_greater_equal_than_required",
+			"validation_max_less_equal_than_required":
+			_ = mErr.Detail(fieldTag, merror.DVInvalid)
 		default:
-			mErr.Detail(fieldTag, merror.DVInvalid).Detail("please_inform_about_this_unknown_code", errObj.Code())
+			_ = mErr.Detail(fieldTag, merror.DVInvalid).Detail("please_inform_about_this_unknown_code", errObj.Code())
 		}
 	}
 	return mErr

@@ -1,10 +1,12 @@
 [server]
   port = 5000
-  # optional location of store avatars (in case of ENV=development to not store avatars on a remote system but locally)
+  # optional location of avatars files (in case of ENV=development - storage on the file system instead of remote aws s3)
   avatars = "/etc/avatars"
   # string used to build avatar final url (in case of ENV=development)
   avatar_url = "https://api.misakey.com.local/avatars"
-
+  # optional location of box encrypted files (in case of ENV=development - storage on the file system instead of remote aws s3)
+  encrypted_files = "/etc/encrypted-files"
+  
 [authflow]
   # frontend location to ask for user to authenticate
   login_page_url = "https://app.misakey.com.local/auth/login"
@@ -40,5 +42,5 @@
 #   # region slug name used for Amazon SES
 #   ses_region = "eu-west-1"
 #   s3_region = "eu-west-3"
-#   bucket = "usercontent.misakey.com"
-#   avatars_domain = "usercontent.misakey.com"
+#   user_content_bucket = "usercontent.misakey.com"
+#   encrypted_files_bucket = "preprod-encrypted-files"

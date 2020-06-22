@@ -10,7 +10,6 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
 type boxCreationRequest struct {
@@ -41,31 +40,19 @@ func (h *handler) CreateBox(eCtx echo.Context) error {
 		return merror.Transform(err).From(merror.OriBody)
 	}
 
-	// generate an id for the created box
-	boxID, err := uuid.NewString()
+	event, err := events.NewCreate(req.Title, req.PublicKey, accesses.Subject)
 	if err != nil {
-		return merror.Transform(err).Describe("generating box ID")
-	}
-
-	// generate the corresponding events of a box creation
-	content, err := events.NewCreationJSON(req.PublicKey, req.Title)
-	if err != nil {
-		return merror.Transform(err).From(merror.OriBody)
-	}
-
-	event, err := events.New("create", content, boxID, accesses.Subject)
-	if err != nil {
-		return err
+		return merror.Transform(err).Describe("creating create event")
 	}
 
 	// persist the event in storage
 	err = event.ToSqlBoiler().Insert(ctx, h.db, boil.Infer())
 	if err != nil {
-		return merror.Transform(err)
+		return merror.Transform(err).Describe("inserting event")
 	}
 
 	// build the box view and return it
-	box, err := events.ComputeBox(ctx, boxID, h.db, h.identityRepo, event)
+	box, err := events.ComputeBox(ctx, event.BoxID, h.db, h.identityRepo, event)
 	if err != nil {
 		return merror.Transform(err).Describe("building box")
 	}

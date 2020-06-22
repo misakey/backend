@@ -39,15 +39,19 @@ but is instead inserted automatically by the backend
 at the creation of the box.
 An event of type `create` has the following content fields:
 
-- `public_key`: the public key that must be used to encrypt messages for this box
-- `title`: the title of the box
+- `public_key` (string): the public key that must be used to encrypt messages for this box
+- `title` (string): the title of the box
 
 Messages are events with type `msg.txt` or `msg.file` with the following content fields:
 
-- `encrypted` is the encrypted message (encoded with base64).
+- `encrypted` (string) (base64): the encrypted message.
   Recall that files are sent separately from the message,
   so the size of a message event stays rather small.
 
+For `msg.file` event, there is an additionnal information:
+
+- `encrypted_file_id` (string) (uuid): a unique identifier used to store and download the file
+
 Messages of type `state.lifecycle` have the following content fields:
 
-- `state` for which the only allowed value for now is `closed`.
+- `state` (string): for which the only allowed value for now is `closed`.

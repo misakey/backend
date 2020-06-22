@@ -1,5 +1,5 @@
 ---
-title: Auth Flow
+title: SSO - Auth Flow
 ---
 
 Performing an auth flow is the only to obtain an access token and ID token.

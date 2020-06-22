@@ -1,5 +1,5 @@
 ---
-title: Boxes
+title: Box - Boxes
 ---
 
 Boxes contain *events* that have a *type*.
@@ -152,8 +152,9 @@ _JSON Body:_
     }
 ```
 
-Note that events with type `create` cannot be posted by clients,
-they are created by the backend during the creation of the box.
+List of events that cannot be posted by clients:
+- `create`: they are created by the backend during the creation of the box.
+- `msg.file`: they are created by the backend during the upload of an encrypted file.
 
 ### Response
 
@@ -196,3 +197,72 @@ _Code_:
 ```
 
 [Events](/concepts/box-events) are returned in chronological order.
+
+## Upload an encrypted file to a box
+
+The upload of an encrypted file triggers the creation of a `msg.file` event then returns it.
+
+### Request
+
+```bash
+  POST https://api.misakey.com.local/boxes/:id/encrypted-files
+```
+_Headers:_
+- `Authorization` (opaque token) (ACR >= 1): just a valid access token.
+
+_Path Parameters:_
+- `id` (uuid string): the box unique id the file is uploaded in.
+
+_Multipart Form Data Body:_
+- `encrypted_file` (binary): the encrypted data, this file size must be less than 8MB.
+- `msg_encrypted_content` (string) (base64): encrypted content that will be store in the created `msg.file` event.
+
+### Success Response
+
+_Code:_
+```bash
+  HTTP 201 CREATED
+```
+
+_JSON Body_:
+```
+{
+    "id": "cac1f19f-46eb-4be9-ba21-8346f1fd3838",
+    "type": "msg.file",
+    "content": {
+        "encrypted": "Ym9uam91ciBmbG9yZW50IGNvbW1lbnQgdmFzLXR1IGVuIGNldHRlIGJlbGxlIGpvdXJuw6llID8h",
+        "encrypted_file_id": "9b2c3cdc-d768-43ef-ba23-350b56b3d8ed"
+    },
+    "server_event_created_at": "2020-06-19T15:36:28.092359097Z",
+    "sender": {
+        "display_name": "898d05-test@misakey.com",
+        "avatar_url": null,
+        "identifier": {
+            "value": "898d05-test@misakey.com",
+            "kind": "email"
+        }
+    }
+}
+```
+
+### Notable Error Reponses
+
+1 - The file is too big:
+
+The file size is limited to 8MB.
+
+_Code:_
+```bash
+  HTTP 400 BAD REQUEST
+```
+
+```json
+{
+    "code": "bad_request",
+    "origin": "not_defined",
+    "desc": "size: the maximum file size is 8MB.",
+    "details": {
+        "size": "invalid"
+    }
+}
+```

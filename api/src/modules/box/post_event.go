@@ -27,7 +27,7 @@ type postEventRequest struct {
 func (req postEventRequest) Validate() error {
 	return v.ValidateStruct(&req,
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
-		v.Field(&req.Type, v.Required, v.In("create", "msg.text", "msg.file", "state.lifecycle")),
+		v.Field(&req.Type, v.Required, v.In("create", "msg.text", "state.lifecycle")),
 		v.Field(&req.Content, v.Required),
 	)
 }
@@ -58,32 +58,37 @@ func (h *handler) postEvent(eCtx echo.Context) error {
 		return merror.Transform(err).From(merror.OriBody)
 	}
 
-	boxExists, err := checkBoxExists(ctx, req.boxID, h.db)
+	view, err := h.createEvent(ctx, event)
 	if err != nil {
-		return merror.Transform(err).Describe("checking existence of box")
+		return err
+	}
+	return eCtx.JSON(http.StatusCreated, view)
+}
+
+func (h *handler) createEvent(
+	ctx context.Context,
+	e events.Event,
+) (events.View, error) {
+	view := events.View{}
+	boxExists, err := checkBoxExists(ctx, e.BoxID, h.db)
+	if err != nil {
+		return view, merror.Transform(err).Describe("checking existence of box")
 	}
 	if !boxExists {
-		return merror.NotFound().Detail("id", merror.DVNotFound).
-			Describef("no box with id %s", req.boxID)
+		return view, merror.NotFound().Detail("id", merror.DVNotFound).
+			Describef("no box with id %s", e.BoxID)
 	}
 
-	// TODO business logic validation:
-	// - access control
-	// - for messages, check box is not closed
-	// - for box closing, check box is not already closed
-
-	sender, err := h.identityRepo.GetIdentity(ctx, accesses.Subject)
+	sender, err := h.identityRepo.GetIdentity(ctx, e.SenderID)
 	if err != nil {
-		return merror.Transform(err).Describe("fetching sender identity")
+		return view, merror.Transform(err).Describe("fetching sender identity")
 	}
 
-	err = event.ToSqlBoiler().Insert(ctx, h.db, boil.Infer())
-	if err != nil {
-		return merror.Transform(err).Describe("inserting event in DB")
+	if err := e.ToSqlBoiler().Insert(ctx, h.db, boil.Infer()); err != nil {
+		return view, merror.Transform(err).Describe("inserting event in DB")
 	}
 
-	eventView := events.ToView(event, sender)
-	return eCtx.JSON(http.StatusCreated, eventView)
+	return events.ToView(e, sender), nil
 }
 
 func checkBoxExists(ctx context.Context, boxId string, db *sql.DB) (bool, error) {

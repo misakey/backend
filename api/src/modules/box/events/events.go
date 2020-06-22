@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -41,6 +42,19 @@ func New(eType string, jsonContent types.JSON, boxID string, senderID string) (E
 		return event, merror.Transform(err).Describe("generating event id")
 	}
 	return event, nil
+}
+
+func NewWithAnyContent(eType string, content anyContent, boxID string, senderID string) (Event, error) {
+	contentBytes, err := json.Marshal(content)
+	if err != nil {
+		return Event{}, merror.Transform(err).Describe("marshalling anyContent into bytes")
+	}
+	jsonContent := types.JSON{}
+	if err := jsonContent.UnmarshalJSON(contentBytes); err != nil {
+		return Event{}, merror.Transform(err).Describe("unmarshalling content bytes into types.JSON")
+	}
+
+	return New(eType, jsonContent, boxID, senderID)
 }
 
 func ListByBoxID(ctx context.Context, db *sql.DB, boxID string) ([]Event, error) {

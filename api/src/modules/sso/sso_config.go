@@ -25,7 +25,7 @@ func initConfig() {
 	}
 	switch os.Getenv("ENV") {
 	case "production":
-		mandatoryFields = append(mandatoryFields, []string{"aws.ses_region", "aws.s3_region", "aws.bucket", "aws.avatars_domain"}...)
+		mandatoryFields = append(mandatoryFields, []string{"aws.ses_region", "aws.s3_region", "aws.user_content_bucket"}...)
 		if os.Getenv("AWS_ACCESS_KEY") == "" {
 			log.Warn().Msg("AWS_ACCESS_KEY not set")
 		}

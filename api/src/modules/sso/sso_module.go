@@ -77,12 +77,12 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 		avatarRepo = repositories.NewAvatarFileSystem(viper.GetString("server.avatars"), viper.GetString("server.avatar_url"))
 	} else if env == "production" {
 		emailRepo = email.NewMailerAmazonSES(viper.GetString("aws.ses_region"))
-		avatarRepo, err = repositories.NewAvatarAmazonS3(viper.GetString("aws.s3_region"), viper.GetString("aws.bucket"), viper.GetString("aws.avatars_domain"))
+		avatarRepo, err = repositories.NewAvatarAmazonS3(viper.GetString("aws.s3_region"), viper.GetString("aws.user_content_bucket"))
 		if err != nil {
 			log.Fatal().Msg("could not initiate AWS S3 avatar bucket connection")
 		}
 	} else {
-		log.Fatal().Msg("wrong env value")
+		log.Fatal().Msg("unknown ENV value (should be production|development)")
 	}
 	emailRenderer, err := email.NewEmailRenderer(
 		templateRepo,

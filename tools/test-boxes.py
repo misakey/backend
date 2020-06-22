@@ -42,16 +42,6 @@ def create_box_and_post_some_events_to_it(session):
     r = s.post(
         f'{URL_PREFIX}/boxes/{box_id}/events',
         json={
-            'type': 'msg.file',
-            'content': {
-                'encrypted': b64encode(os.urandom(32)).decode()
-            }
-        }
-    )
-
-    r = s.post(
-        f'{URL_PREFIX}/boxes/{box_id}/events',
-        json={
             'type': 'state.lifecycle',
             'content': {
                 'state': 'closed'
@@ -61,7 +51,7 @@ def create_box_and_post_some_events_to_it(session):
 
     r = s.get(f'{URL_PREFIX}/boxes/{box_id}/events')
     event_list = r.json()
-    assert len(event_list) == 4
+    assert len(event_list) == 3
     for event in event_list:
         assert 'id' in event
         assert 'server_event_created_at' in event

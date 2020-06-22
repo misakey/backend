@@ -6,15 +6,15 @@ import (
 	"github.com/volatiletech/sqlboiler/types"
 )
 
-type messageContent struct {
+type msgContent struct {
 	Encrypted string `json:"encrypted"`
 }
 
-func (c *messageContent) Unmarshal(content types.JSON) error {
+func (c *msgContent) Unmarshal(content types.JSON) error {
 	return content.Unmarshal(c)
 }
 
-func (c messageContent) Validate() error {
+func (c msgContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.Encrypted, v.Required, is.Base64, v.Length(1, 1024)),
 	)

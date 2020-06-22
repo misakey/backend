@@ -1,5 +1,5 @@
 ---
-title: Identities
+title: SSO - Identities
 ---
 
 ## Introduction

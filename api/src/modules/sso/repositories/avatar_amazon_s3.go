@@ -21,13 +21,11 @@ type AvatarAmazonS3 struct {
 	session  *s3.S3
 	uploader *s3manager.Uploader
 
-	bucket       string
-	avatarDomain string
-	folder       string
+	bucket string
 }
 
 // NewAvatarAmazonS3 init an S3 session
-func NewAvatarAmazonS3(region, bucket string, avatarDomain string) (*AvatarAmazonS3, error) {
+func NewAvatarAmazonS3(region, bucket string) (*AvatarAmazonS3, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(region)},
 	)
@@ -36,20 +34,18 @@ func NewAvatarAmazonS3(region, bucket string, avatarDomain string) (*AvatarAmazo
 	}
 
 	// create all required actors to interact with s3
+	s3Cli := s3.New(sess)
 	s := &AvatarAmazonS3{
-		session:  s3.New(sess),
-		uploader: s3manager.NewUploader(sess),
-
-		bucket:       bucket,
-		avatarDomain: avatarDomain,
-		folder:       "profile/picture/",
+		session:  s3Cli,
+		uploader: s3manager.NewUploaderWithClient(s3Cli),
+		bucket:   bucket,
 	}
 	return s, nil
 }
 
 // getKey by concatenating some info
 func (s *AvatarAmazonS3) getKey(avatar *domain.AvatarFile) string {
-	return filepath.Join(s.folder, avatar.Filename)
+	return filepath.Join("identity-avatars", avatar.Filename)
 }
 
 func (s *AvatarAmazonS3) Upload(ctx context.Context, avatar *domain.AvatarFile) (string, error) {
@@ -62,11 +58,11 @@ func (s *AvatarAmazonS3) Upload(ctx context.Context, avatar *domain.AvatarFile) 
 		return "", merror.Internal().Describef("unable to upload %q to %q, %v", s.getKey(avatar), s.bucket, err)
 	}
 
-	avatarURI, _ := url.Parse(uo.Location)
-	avatarURI.Host = s.avatarDomain
-	avatarURI.Path = strings.TrimPrefix(avatarURI.Path, "/"+s.bucket)
+	avatarURL, _ := url.Parse(uo.Location)
+	avatarURL.Host = s.bucket
+	avatarURL.Path = strings.TrimPrefix(avatarURL.Path, "/"+s.bucket)
 
-	return avatarURI.String(), nil
+	return avatarURL.String(), nil
 }
 
 func (s *AvatarAmazonS3) Delete(ctx context.Context, avatar *domain.AvatarFile) error {

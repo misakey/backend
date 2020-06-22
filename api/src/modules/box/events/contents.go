@@ -13,8 +13,8 @@ import (
 var contentTypeGetters = map[string]func() anyContent{
 	"create":          func() anyContent { return &creationContent{} },
 	"state.lifecycle": func() anyContent { return &stateLifecycleContent{} },
-	"msg.text":        func() anyContent { return &messageContent{} },
-	"msg.file":        func() anyContent { return &messageContent{} },
+	"msg.text":        func() anyContent { return &msgContent{} },
+	"msg.file":        func() anyContent { return &msgFileContent{} },
 }
 
 type anyContent interface {
