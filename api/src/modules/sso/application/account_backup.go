@@ -101,8 +101,8 @@ func (sso SSOService) hasAccountAccess(ctx context.Context, accountID string) er
 		return err
 	}
 
-	// the identiy should not be orphan
-	if !identity.AccountID.Valid {
+	// the identity should not be volatile
+	if identity.AccountID.String == "" {
 		return merror.Forbidden()
 	}
 

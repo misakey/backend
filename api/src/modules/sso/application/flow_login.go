@@ -47,8 +47,9 @@ func (sso SSOService) LoginInfo(ctx context.Context, loginChallenge string) (Log
 }
 
 type LoginAuthnStepCmd struct {
-	LoginChallenge string     `json:"login_challenge"`
-	Step           authn.Step `json:"authn_step"`
+	LoginChallenge   string            `json:"login_challenge"`
+	Step             authn.Step        `json:"authn_step"`
+	PasswordResetExt *PasswordResetCmd `json:"password_reset"`
 }
 
 // Validate the LoginStepCmd
@@ -68,6 +69,10 @@ func (cmd LoginAuthnStepCmd) Validate() error {
 		return err
 	}
 
+	if cmd.PasswordResetExt != nil {
+		return cmd.PasswordResetExt.Validate()
+	}
+
 	return nil
 }
 
@@ -76,10 +81,17 @@ func (cmd LoginAuthnStepCmd) Validate() error {
 func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd) (login.Redirect, error) {
 	redirect := login.Redirect{}
 
-	// 1. ensure the login challenge is correct
+	// 1. ensure the login challenge is correct and the identity is authable
 	logCtx, err := sso.authFlowService.LoginGetContext(ctx, cmd.LoginChallenge)
 	if err != nil {
 		return redirect, err
+	}
+	identity, err := sso.identityService.Get(ctx, cmd.Step.IdentityID)
+	if err != nil {
+		return redirect, err
+	}
+	if !identity.IsAuthable {
+		return redirect, merror.Forbidden().Describe("identity not authable")
 	}
 
 	// 2. try to assert the authentication step
@@ -92,6 +104,14 @@ func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd)
 	if amr.Has(authn.AMREmailedCode) {
 		if err := sso.identityService.Confirm(ctx, cmd.Step.IdentityID); err != nil {
 			return redirect, err
+		}
+
+		// handle the reset password extension only if the emailed_code method has been used
+		if cmd.PasswordResetExt != nil {
+			if err := sso.resetPassword(ctx, *cmd.PasswordResetExt, cmd.Step.IdentityID); err != nil {
+				return redirect, err
+			}
+			acr = authn.ACR2
 		}
 	}
 

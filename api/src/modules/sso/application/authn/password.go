@@ -16,7 +16,7 @@ func (as *Service) AssertPasswordExistence(ctx context.Context, identityID strin
 		return merror.Transform(err).Describe("get identity")
 	}
 
-	if identity.AccountID.IsZero() {
+	if identity.AccountID.String == "" {
 		return merror.Conflict().Describe("identity has no linked account").
 			Detail("identity_id", merror.DVConflict).
 			Detail("account_id", merror.DVRequired)
@@ -38,7 +38,7 @@ func (as *Service) assertPassword(ctx context.Context, assertion authn.Step) err
 		return err
 	}
 
-	if identity.AccountID.IsZero() {
+	if identity.AccountID.String == "" {
 		return merror.Forbidden().Describe("identity has no linked account").
 			Detail("account_id", merror.DVRequired)
 	}

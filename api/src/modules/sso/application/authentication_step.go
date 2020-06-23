@@ -33,18 +33,19 @@ func (cmd AuthenticationStepCmd) Validate() error {
 
 // This method is used to try to init an authentication step
 func (sso SSOService) InitAuthnStep(ctx context.Context, cmd AuthenticationStepCmd) error {
-	var err error
-
-	// 0. check if the identity exists
-	_, err = sso.identityService.Get(ctx, cmd.Step.IdentityID)
+	// 0. check if the identity exists and authable
+	identity, err := sso.identityService.Get(ctx, cmd.Step.IdentityID)
 	if err != nil {
 		return err
+	}
+	if !identity.IsAuthable {
+		return merror.Forbidden().Describe("identity not authable")
 	}
 
 	// 1. check login challenge
 	_, err = sso.authFlowService.LoginGetContext(ctx, cmd.LoginChallenge)
 	if err != nil {
-		return merror.NotFound().Describe("could not find login challenge").Detail("login_challenge", merror.DVNotFound)
+		return merror.NotFound().Describe("finding login challenge").Detail("login_challenge", merror.DVNotFound)
 	}
 
 	// 2. we try to init the authentication step
@@ -56,5 +57,4 @@ func (sso SSOService) InitAuthnStep(ctx context.Context, cmd AuthenticationStepC
 	default:
 		return merror.BadRequest().Describe("unknown method name").Detail("method_name", merror.DVInvalid)
 	}
-	return nil
 }

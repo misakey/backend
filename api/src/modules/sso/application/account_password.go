@@ -52,23 +52,6 @@ func (cmd ChangePasswordCmd) Validate() error {
 	return nil
 }
 
-type ResetPasswordCmd struct {
-	AccountID  string
-	Password   argon2.HashedPassword `json:"prehashed_password"`
-	BackupData string                `json:"backup_data"`
-}
-
-func (cmd ResetPasswordCmd) Validate() error {
-	if err := v.ValidateStruct(&cmd,
-		v.Field(&cmd.Password),
-		v.Field(&cmd.BackupData, v.Required),
-		v.Field(&cmd.AccountID, v.Required, is.UUIDv4.Error("account_id must be an uuid4")),
-	); err != nil {
-		return merror.Transform(err).Describe("validating reset password command")
-	}
-	return nil
-}
-
 func (sso SSOService) ChangePassword(ctx context.Context, cmd ChangePasswordCmd) error {
 	// grab accesses from context
 	acc := ajwt.GetAccesses(ctx)
@@ -123,25 +106,37 @@ func (sso SSOService) ChangePassword(ctx context.Context, cmd ChangePasswordCmd)
 	return sso.accountService.Update(ctx, &account)
 }
 
-func (sso SSOService) ResetPassword(ctx context.Context, cmd ResetPasswordCmd) error {
-	// grab accesses from context
-	acc := ajwt.GetAccesses(ctx)
-	if acc == nil {
-		return merror.Forbidden()
-	}
+type PasswordResetCmd struct {
+	Password   argon2.HashedPassword `json:"prehashed_password"`
+	BackupData string                `json:"backup_data"`
+}
 
+func (cmd PasswordResetCmd) Validate() error {
+	if err := v.ValidateStruct(&cmd,
+		v.Field(&cmd.Password),
+		v.Field(&cmd.BackupData, v.Required),
+	); err != nil {
+		return merror.Transform(err).Describe("validating reset password command")
+	}
+	return nil
+}
+
+func (sso SSOService) resetPassword(ctx context.Context, cmd PasswordResetCmd, identityID string) error {
 	// verify authenticated identity id is linked to the given account id
-	identity, err := sso.identityService.Get(ctx, acc.Subject)
+	identity, err := sso.identityService.Get(ctx, identityID)
 	if err != nil {
 		return merror.Forbidden().Describe("invalid token subject")
 	}
 
-	if identity.AccountID.String != cmd.AccountID {
-		return merror.Forbidden().Detail("account_id", merror.DVForbidden)
+	if identity.AccountID.String == "" {
+		return merror.Conflict().
+			Describe("identity is not linked to any account").
+			Detail("identity_id", merror.DVConflict).
+			Detail("account_id", merror.DVRequired)
 	}
 
 	// get account
-	account, err := sso.accountService.Get(ctx, cmd.AccountID)
+	account, err := sso.accountService.Get(ctx, identity.AccountID.String)
 	if err != nil {
 		return err
 	}

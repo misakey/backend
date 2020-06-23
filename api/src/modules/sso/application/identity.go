@@ -151,9 +151,8 @@ func (sso SSOService) RequireIdentityAuthable(ctx context.Context, cmd IdentityA
 	view.Identity.AvatarURL = identity.AvatarURL
 	view.AuthnStep.IdentityID = identity.ID
 
-	// NOTE: if condition logic is commented because no password exists today
 	// 4. if the identity has no linked account, we automatically init a emailed code authentication step
-	if identity.AccountID.IsZero() {
+	if identity.AccountID.String == "" {
 		view.AuthnStep.MethodName = authn.AMREmailedCode
 		// we ignore the conflict error code - if a code already exist, we still want to return authable identity information
 		err = sso.authenticationService.CreateEmailedCode(ctx, identity.ID)

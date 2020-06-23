@@ -31,7 +31,7 @@ func initConfig() {
 	}
 
 	// no secret fields so far
-	secretFields := []string{}
+	secretFields := []string{"authflow.self_encoded_jwk"}
 	config.FatalIfMissing("BOX", mandatoryFields)
 	config.Print("BOX", secretFields)
 }

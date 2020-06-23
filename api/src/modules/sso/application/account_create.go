@@ -63,8 +63,9 @@ func (sso SSOService) CreateAccount(ctx context.Context, cmd CreateAccountCmd) (
 		return view, err
 	}
 	// the identity must be account free
-	if identity.AccountID.Valid {
-		return view, merror.Conflict().Describe("identity already attached to an account").
+	if identity.AccountID.String != "" {
+		return view, merror.Conflict().
+			Describe("identity already attached to an account").
 			Detail("account_id", merror.DVConflict)
 	}
 

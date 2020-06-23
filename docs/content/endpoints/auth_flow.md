@@ -226,6 +226,9 @@ even for our most secure flows.
 
 The metadata field contained in the authentication step depends of the method name.
 
+**Endpoint extensions**:
+- Reset the end-user password: while performing a authn step, there is a possibility to reset the password [using a payload extension](./#reset-password-extension).
+
 ### Request
 
 ```bash
@@ -352,6 +355,47 @@ _JSON Body:_
 }
 ```
 
+### Reset Password Extension
+
+Reset password is an extension that can be used during the user authentication.
+
+Be sure you have read [the whole route documentation](./#perform-an-authentication-step-in-the-login-flow) to understand it.
+
+Extending the JSON body payload, you can set new value to the account password (and the backup since the backup requires updates when the password changes).
+
+/!\ Today, the extension requires:
+- the method `emailed_code` to be used to be accepted by the server.
+- the current identity to be linked to an account.
+
+Using this extension, the final token ACR will be considered as if the `prehashed_password` method has been used instead of the `emailed_code` method.
+
+The extension adds to the initial payload explained below
+a `password_reset` json object describing the new password and backup values.
+
+The `prehashed_password` contains information following [Argon2 server relief concepts](../../concepts/server-relief/).
+
+_JSON Body:_
+```json
+  {
+    [...] (json payload described in the route below)  
+    "password_reset": {
+      "prehashed_password": {{% include "include/passwordHash.json" 6 %}},
+      "backup_data": "[STRINGIFIED JSON]"
+    }
+  }
+```
+
+- `password_reset` (object): information concerning the new password and backup.
+  - `prehashed_password` (object): prehashed password using argon2:
+    - `params` (object): argon2 parameters:
+      - `memory` (integer).
+      - `parallelism` (integer).
+      - `iterations` (integer).
+      - `salt_base64` (base64 string).
+    - `hash_base64` (base64 string): the prehashed password.
+  - `backup_data` (string): the new user backup data.
+
+
 ## Init a new authentication step
 
 This request allows to init an authentication step:
@@ -380,7 +424,7 @@ _JSON Body:_
 - `login_challenge` (string): can be found in previous redirect URL.
 - `authn_step` (object): the initiated authentication step information:
   - `identity_id` (uuid string): the identity ID for which the authentication step will be initialized.
-  - `method_name` (string): the method used by the authentication step.
+  - `method_name` (string) (one of: _emailed_code_, _prehashed_password_): the method used by the authentication step.
 
 ### Success Response
 
@@ -408,10 +452,31 @@ _Code:_
 {
     "code": "conflict",
     "origin": "body",
-    "desc": "could not ask for a code: a code has already been generated",
+    "desc": "initing an authn step: a code has already been generated",
     "details": {
         "identity_id": "conflict",
         "method_name": "conflict"
+    }
+}
+```
+
+**2. Impossible to perform a prehashed_password method with the identity:**
+
+This error occurs when the authable identity has no linked account. The password being attached to the account, such an authentication method is impossible to be handled.
+
+_Code:_
+```bash
+  HTTP 409 Conflict
+```
+
+```json
+{
+    "code": "conflict",
+    "origin": "body",
+    "desc": "initing an authn step: identity has no linked account",
+    "details": {
+        "identity_id": "conflict",
+        "account_id": "required"
     }
 }
 ```

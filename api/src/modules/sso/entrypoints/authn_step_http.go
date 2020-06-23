@@ -29,7 +29,7 @@ func (entrypoint AuthnHTTP) InitAuthnStep(ctx echo.Context) error {
 	}
 
 	if err := entrypoint.service.InitAuthnStep(ctx.Request().Context(), cmd); err != nil {
-		return merror.Transform(err).Describe("could not init authentication step").From(merror.OriBody)
+		return merror.Transform(err).Describe("initing authn step").From(merror.OriBody)
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
