@@ -68,7 +68,7 @@ func (h *handler) uploadEncryptedFile(eCtx echo.Context) error {
 	}
 
 	// upload the encrypted data
-	if err := h.files.Upload(ctx, e.BoxID, fileID, encData); err != nil {
+	if err := h.repo.Files().Upload(ctx, e.BoxID, fileID, encData); err != nil {
 		return merror.Transform(err).Describe("uploading file")
 	}
 
@@ -76,7 +76,7 @@ func (h *handler) uploadEncryptedFile(eCtx echo.Context) error {
 	view, err := h.createEvent(ctx, e)
 	if err != nil {
 		err = merror.Transform(err).Describe("inserting event in DB")
-		if delErr := h.files.Delete(ctx, e.BoxID, fileID); delErr != nil {
+		if delErr := h.repo.Files().Delete(ctx, e.BoxID, fileID); delErr != nil {
 			return merror.Transform(err).Describef("deleting file: %v", delErr)
 		}
 		return err
@@ -114,13 +114,13 @@ func (h *handler) downloadEncryptedFile(eCtx echo.Context) error {
 	}
 
 	// check the box and the file does exist - represented by an event
-	_, err := events.GetMsgFile(ctx, h.db, cmd.boxID, cmd.fileID)
+	_, err := events.GetMsgFile(ctx, h.repo.DB(), cmd.boxID, cmd.fileID)
 	if err != nil {
 		return merror.Transform(err).Describe("finding msg.file event")
 	}
 
 	// download the file then render it
-	data, err := h.files.Download(ctx, cmd.boxID, cmd.fileID)
+	data, err := h.repo.Files().Download(ctx, cmd.boxID, cmd.fileID)
 	if err != nil {
 		return merror.Transform(err).Describe("downloading")
 	}

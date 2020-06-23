@@ -1,32 +1,21 @@
 package box
 
 import (
-	"context"
-	"database/sql"
-	"io"
 	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/db"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/rester/http"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 )
 
 type handler struct {
-	db           *sql.DB
-	identityRepo entrypoints.IdentityIntraprocessInterface
-	files        fileRepo
-}
-
-type fileRepo interface {
-	Upload(context.Context, string, string, io.Reader) error
-	Download(context.Context, string, string) ([]byte, error)
-	Delete(context.Context, string, string) error
+	repo repositories.RealWorld
 }
 
 func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntraprocessInterface) {
@@ -56,24 +45,27 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 		adminHydraFORM,
 	)
 
-	var files fileRepo
+	var repo repositories.RealWorld
 	env := os.Getenv("ENV")
 	if env == "development" {
-		files = repositories.NewBoxFileSystem(viper.GetString("server.encrypted_files"))
+		repo = repositories.NewRealWorld(
+			dbConn,
+			identityIntraprocess,
+			repositories.NewBoxFileSystem(viper.GetString("server.encrypted_files")),
+		)
 	} else if env == "production" {
-		files, err = repositories.NewBoxFileAmazonS3(viper.GetString("aws.s3_region"), viper.GetString("aws.encrypted_files_bucket"))
-		if err != nil {
-			log.Fatal().Msg("could not initiate AWS S3 avatar bucket connection")
-		}
+		repo = repositories.NewRealWorld(
+			dbConn,
+			identityIntraprocess,
+			repositories.NewBoxFileAmazonS3(
+				viper.GetString("aws.s3_region"),
+				viper.GetString("aws.encrypted_files_bucket"),
+			),
+		)
 	} else {
 		log.Fatal().Msg("unknown ENV value (should be production|development)")
 	}
 
-	h := handler{
-		db:           dbConn,
-		identityRepo: identityIntraprocess,
-		files:        files,
-	}
-
+	h := handler{repo: repo}
 	bindRoutes(router, h, authzMidlw)
 }

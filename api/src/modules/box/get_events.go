@@ -24,12 +24,12 @@ func (h *handler) listEvents(ctx echo.Context) error {
 	}
 
 	// list
-	boxEvents, err := events.ListByBoxID(ctx.Request().Context(), h.db, boxID)
+	boxEvents, err := events.ListByBoxID(ctx.Request().Context(), h.repo.DB(), boxID)
 	if err != nil {
 		return err
 	}
 
-	sendersMap, err := mapSenderIdentities(ctx.Request().Context(), boxEvents, h.identityRepo)
+	sendersMap, err := mapSenderIdentities(ctx.Request().Context(), boxEvents, h.repo.Identities())
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving events senders")
 	}
@@ -55,7 +55,7 @@ func mapSenderIdentities(ctx context.Context, events []events.Event, identityRep
 		}
 	}
 
-	identities, err := identityRepo.ListIdentities(ctx, domain.IdentityFilters{IDs: senderIDs})
+	identities, err := identityRepo.List(ctx, domain.IdentityFilters{IDs: senderIDs})
 	if err != nil {
 		return nil, err
 	}

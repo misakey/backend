@@ -70,7 +70,7 @@ func (h *handler) createEvent(
 	e events.Event,
 ) (events.View, error) {
 	view := events.View{}
-	boxExists, err := checkBoxExists(ctx, e.BoxID, h.db)
+	boxExists, err := checkBoxExists(ctx, e.BoxID, h.repo.DB())
 	if err != nil {
 		return view, merror.Transform(err).Describe("checking existence of box")
 	}
@@ -79,23 +79,23 @@ func (h *handler) createEvent(
 			Describef("no box with id %s", e.BoxID)
 	}
 
-	sender, err := h.identityRepo.GetIdentity(ctx, e.SenderID)
+	sender, err := h.repo.Identities().Get(ctx, e.SenderID)
 	if err != nil {
 		return view, merror.Transform(err).Describe("fetching sender identity")
 	}
 
-	if err := e.ToSqlBoiler().Insert(ctx, h.db, boil.Infer()); err != nil {
+	if err := e.ToSqlBoiler().Insert(ctx, h.repo.DB(), boil.Infer()); err != nil {
 		return view, merror.Transform(err).Describe("inserting event in DB")
 	}
 
 	return events.ToView(e, sender), nil
 }
 
-func checkBoxExists(ctx context.Context, boxId string, db *sql.DB) (bool, error) {
+func checkBoxExists(ctx context.Context, boxId string, exec boil.ContextExecutor) (bool, error) {
 	_, err := sqlboiler.Events(
 		sqlboiler.EventWhere.BoxID.EQ(boxId),
 		sqlboiler.EventWhere.Type.EQ("create"),
-	).One(ctx, db)
+	).One(ctx, exec)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil

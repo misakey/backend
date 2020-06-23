@@ -57,7 +57,7 @@ func (c *boxComputer) playCreate(ctx context.Context, e Event) error {
 	c.box.Title = creationContent.Title
 
 	// set the creator information
-	identity, err := c.identityRepo.GetIdentity(ctx, e.SenderID)
+	identity, err := c.repo.Identities().Get(ctx, e.SenderID)
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving creator")
 	}

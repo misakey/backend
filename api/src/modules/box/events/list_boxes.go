@@ -2,24 +2,24 @@ package events
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
-func CountSenderBoxes(ctx context.Context, db *sql.DB, senderID string) (int, error) {
-	boxIDs, err := lastestBoxIDsForSender(ctx, db, senderID)
+func CountSenderBoxes(ctx context.Context, exec boil.ContextExecutor, senderID string) (int, error) {
+	boxIDs, err := lastestBoxIDsForSender(ctx, exec, senderID)
 	return len(boxIDs), err
 }
 
 func GetSenderBoxes(
 	ctx context.Context,
-	db *sql.DB, identityRepo entrypoints.IdentityIntraprocessInterface,
+	repo repositories.Contextual,
 	senderID string,
 	limit int,
 	offset int,
@@ -27,7 +27,7 @@ func GetSenderBoxes(
 	boxes := []Box{}
 
 	// 1. retrieve box IDs
-	boxIDs, err := lastestBoxIDsForSender(ctx, db, senderID)
+	boxIDs, err := lastestBoxIDsForSender(ctx, repo.DB(), senderID)
 	if err != nil {
 		return boxes, merror.Transform(err).Describe("listing box ids")
 	}
@@ -47,7 +47,7 @@ func GetSenderBoxes(
 	// 3. compute all boxes
 	boxes = make([]Box, len(boxIDs))
 	for i, boxID := range boxIDs {
-		boxes[i], err = ComputeBox(ctx, boxID, db, identityRepo)
+		boxes[i], err = ComputeBox(ctx, boxID, repo)
 		if err != nil {
 			return boxes, merror.Transform(err).Describef("computing box %s", boxID)
 		}
@@ -57,7 +57,7 @@ func GetSenderBoxes(
 
 func lastestBoxIDsForSender(
 	ctx context.Context,
-	db *sql.DB,
+	exec boil.ContextExecutor,
 	senderID string,
 ) ([]string, error) {
 	bCol := sqlboiler.EventColumns.BoxID
@@ -70,7 +70,7 @@ func lastestBoxIDsForSender(
 	`, bCol, cCol, bCol, bCol, sCol, senderID, bCol)
 
 	var dbEvents []Event
-	if err := queries.Raw(query).Bind(ctx, db, &dbEvents); err != nil {
+	if err := queries.Raw(query).Bind(ctx, exec, &dbEvents); err != nil {
 		return nil, merror.Transform(err).Describe("retrieving box id by sender id")
 	}
 

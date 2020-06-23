@@ -46,13 +46,13 @@ func (h *handler) CreateBox(eCtx echo.Context) error {
 	}
 
 	// persist the event in storage
-	err = event.ToSqlBoiler().Insert(ctx, h.db, boil.Infer())
+	err = event.ToSqlBoiler().Insert(ctx, h.repo.DB(), boil.Infer())
 	if err != nil {
 		return merror.Transform(err).Describe("inserting event")
 	}
 
 	// build the box view and return it
-	box, err := events.ComputeBox(ctx, event.BoxID, h.db, h.identityRepo, event)
+	box, err := events.ComputeBox(ctx, event.BoxID, h.repo, event)
 	if err != nil {
 		return merror.Transform(err).Describe("building box")
 	}

@@ -2,10 +2,10 @@ package events
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"time"
 
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/types"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
@@ -57,13 +57,13 @@ func NewWithAnyContent(eType string, content anyContent, boxID string, senderID 
 	return New(eType, jsonContent, boxID, senderID)
 }
 
-func ListByBoxID(ctx context.Context, db *sql.DB, boxID string) ([]Event, error) {
+func ListByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.EventWhere.BoxID.EQ(boxID),
 		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " DESC"),
 	}
 
-	dbEvents, err := sqlboiler.Events(mods...).All(ctx, db)
+	dbEvents, err := sqlboiler.Events(mods...).All(ctx, exec)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("retrieving db events")
 	}
@@ -80,7 +80,7 @@ func ListByBoxID(ctx context.Context, db *sql.DB, boxID string) ([]Event, error)
 	return events, nil
 }
 
-func FindByTypeContent(ctx context.Context, db *sql.DB, boxID, eType string, jsonQuery *string) (Event, error) {
+func FindByTypeContent(ctx context.Context, exec boil.ContextExecutor, boxID, eType string, jsonQuery *string) (Event, error) {
 	var e Event
 
 	// build query
@@ -94,7 +94,7 @@ func FindByTypeContent(ctx context.Context, db *sql.DB, boxID, eType string, jso
 		mods = append(mods, qm.Where(`content::jsonb @> ?`, *jsonQuery))
 	}
 
-	dbEvent, err := sqlboiler.Events(mods...).One(ctx, db)
+	dbEvent, err := sqlboiler.Events(mods...).One(ctx, exec)
 	if err != nil {
 		return e, merror.Transform(err).Describe("retrieving type/content db event")
 	}

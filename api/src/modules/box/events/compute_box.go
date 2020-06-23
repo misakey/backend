@@ -2,11 +2,11 @@ package events
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories"
 )
 
 // Box is a volatile object built based on events linked to its ID
@@ -27,8 +27,7 @@ type boxComputer struct {
 	ePlayer map[string]func(context.Context, Event) error
 
 	// repositories
-	identityRepo entrypoints.IdentityIntraprocessInterface
-	db           *sql.DB
+	repo repositories.Contextual
 
 	events []Event
 
@@ -43,15 +42,14 @@ type boxComputer struct {
 func ComputeBox(
 	ctx context.Context,
 	boxID string,
-	db *sql.DB, identityRepo entrypoints.IdentityIntraprocessInterface,
+	repo repositories.Contextual,
 	events ...Event,
 ) (Box, error) {
 	// init the computer system
 	computer := &boxComputer{
-		db:           db,
-		identityRepo: identityRepo,
-		box:          Box{ID: boxID},
-		events:       events,
+		repo:   repo,
+		box:    Box{ID: boxID},
+		events: events,
 	}
 	computer.ePlayer = map[string]func(context.Context, Event) error{
 		"create":          computer.playCreate,
@@ -72,7 +70,7 @@ func ComputeBox(
 
 func (c *boxComputer) retrieveEvents(ctx context.Context) error {
 	var err error
-	c.events, err = ListByBoxID(ctx, c.db, c.box.ID)
+	c.events, err = ListByBoxID(ctx, c.repo.DB(), c.box.ID)
 	return err
 }
 
@@ -100,7 +98,7 @@ func (c *boxComputer) playEvent(ctx context.Context, e Event, last bool) error {
 	// take care of binding the last event in the box
 	if last {
 		// get the sender information
-		identity, err := c.identityRepo.GetIdentity(ctx, e.SenderID)
+		identity, err := c.repo.Identities().Get(ctx, e.SenderID)
 		if err != nil {
 			return merror.Transform(err).Describe("retrieving last sender")
 		}

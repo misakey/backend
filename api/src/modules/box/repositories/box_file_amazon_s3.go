@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"path/filepath"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/rs/zerolog/log"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
@@ -23,12 +23,12 @@ type BoxFileAmazonS3 struct {
 }
 
 // NewBoxFileAmazonS3 init an S3 session
-func NewBoxFileAmazonS3(region, bucket string) (*BoxFileAmazonS3, error) {
+func NewBoxFileAmazonS3(region, bucket string) *BoxFileAmazonS3 {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(region)},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not create aws session (%v)", err)
+		log.Fatal().Msg("could not initiate AWS S3 avatar bucket connection")
 	}
 
 	// create all required actors to interact with s3
@@ -39,7 +39,7 @@ func NewBoxFileAmazonS3(region, bucket string) (*BoxFileAmazonS3, error) {
 		downloader: s3manager.NewDownloaderWithClient(s3Cli),
 		bucket:     bucket,
 	}
-	return s, nil
+	return s
 }
 
 // getKey by concatenating some info

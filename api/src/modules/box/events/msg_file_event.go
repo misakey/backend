@@ -2,10 +2,10 @@ package events
 
 import (
 	"context"
-	"database/sql"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
@@ -55,9 +55,9 @@ func NewMsgFile(
 
 func GetMsgFile(
 	ctx context.Context,
-	db *sql.DB,
+	exec boil.ContextExecutor,
 	boxID, fileID string,
 ) (Event, error) {
 	jsonQuery := `{"encrypted_file_id": "` + fileID + `"}`
-	return FindByTypeContent(ctx, db, boxID, "msg.file", &jsonQuery)
+	return FindByTypeContent(ctx, exec, boxID, "msg.file", &jsonQuery)
 }

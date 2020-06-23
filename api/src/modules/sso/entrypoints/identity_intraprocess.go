@@ -8,8 +8,8 @@ import (
 )
 
 type IdentityIntraprocessInterface interface {
-	GetIdentity(ctx context.Context, identityID string) (ret domain.Identity, err error)
-	ListIdentities(ctx context.Context, filters domain.IdentityFilters) ([]*domain.Identity, error)
+	Get(ctx context.Context, identityID string) (ret domain.Identity, err error)
+	List(ctx context.Context, filters domain.IdentityFilters) ([]*domain.Identity, error)
 }
 
 type IdentityIntraprocess struct {
@@ -22,10 +22,10 @@ func NewIdentityIntraprocess(identityService identity.IdentityService) IdentityI
 	}
 }
 
-func (intraproc *IdentityIntraprocess) GetIdentity(ctx context.Context, identityID string) (ret domain.Identity, err error) {
+func (intraproc *IdentityIntraprocess) Get(ctx context.Context, identityID string) (ret domain.Identity, err error) {
 	return intraproc.service.Get(ctx, identityID)
 }
 
-func (intraproc *IdentityIntraprocess) ListIdentities(ctx context.Context, filters domain.IdentityFilters) ([]*domain.Identity, error) {
+func (intraproc *IdentityIntraprocess) List(ctx context.Context, filters domain.IdentityFilters) ([]*domain.Identity, error) {
 	return intraproc.service.List(ctx, filters)
 }
