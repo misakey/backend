@@ -35,6 +35,7 @@ func initRoutes(
 	authRoutes.POST("/login/authn-step", authFlowHTTP.LoginAuthnStep)
 	authRoutes.POST("/logout", authFlowHTTP.Logout, authzMidlw)
 	authRoutes.GET("/consent", authFlowHTTP.ConsentInit)
+	authRoutes.POST("/consent", authFlowHTTP.ConsentAccept)
 	authRoutes.GET("/callback", func(ctx echo.Context) error {
 		oauthCodeFlow.ExchangeToken(ctx.Response().Writer, ctx.Request())
 		return nil

@@ -20,4 +20,5 @@ type IdentityFilters struct {
 	IdentifierID null.String
 	IsAuthable   null.Bool
 	IDs          []string
+	AccountID    null.String
 }

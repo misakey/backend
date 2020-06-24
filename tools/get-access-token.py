@@ -11,5 +11,7 @@ args = parser.parse_args()
 
 creds = get_credentials(args.email)
 print('email:', creds.email)
+print('identity_id:', creds.identity_id)
+print('consent has been done' if creds.consent_done else 'no consent required')
 print('access token:', creds.access_token)
 print('id token:', creds.id_token)

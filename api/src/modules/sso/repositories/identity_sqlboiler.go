@@ -130,6 +130,9 @@ func (repo *IdentitySQLBoiler) List(ctx context.Context, filters domain.Identity
 	if len(filters.IDs) > 0 {
 		mods = append(mods, sqlboiler.IdentityWhere.ID.IN(filters.IDs))
 	}
+	if filters.AccountID.Valid {
+		mods = append(mods, sqlboiler.IdentityWhere.AccountID.EQ(filters.AccountID))
+	}
 
 	// eager loading
 	mods = append(mods, qm.Load("Identifier"))

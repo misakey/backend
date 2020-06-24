@@ -481,6 +481,75 @@ _Code:_
 }
 ```
 
+## Accept the consent request in the consent flow
+
+This lets the user choose the scopes they want to accept.
+
+For the moment, those scopes are limited to `tos` and `privacy_policy`
+
+### Request
+
+```bash
+  POST https://api.misakey.com.local/auth/consent
+```
+
+_Headers:_
+- The request doesn't require an authorization header.
+
+_JSON Body:_
+```json
+{
+  "consent_challenge": "e2645a0592e94ee78d8fbeaf65a4b82b",
+  "identity_id": "53515d02-642a-4043-a943-bb11c0bdc6a5",
+  "consented_scopes": [
+    "tos",
+    "privacy_policy"
+  ]
+}
+```
+
+- `consent_challenge` (string): can be found in previous redirect URL.
+- `identity_id` (uuid string): the subject of the flow.
+- `consented_scopes` (list of string) (one of: _tos_, _privacy\_policy_): the accepted scopes
+
+### Success Response
+
+On success, the route returns the next URL to redirect the user's agent.
+
+_Code:_
+```bash
+  HTTP 200 OK
+```
+
+_JSON Body:_
+```json
+{
+    "redirect_to": "https://auth.misakey.com.local/_/oauth2/auth"
+}
+```
+
+- `redirect_to` (string): the URL the user's agent should be redirected to.
+
+### Notable Error Responses
+
+**1 - A mandatory scope is missing from consent**
+
+At least both `tos` and `privacy_policy` scopes must be consented on this request.
+
+Here is the error to expect if the client didn't send these scopes:
+```json
+{
+     "code": "forbidden",
+     "origin": "unknown",
+     "details": {
+       "tos": "required",
+       "privacy_policy": "required"
+     },
+}
+```
+
+Both `tos` and `privacy_policy` are returned, there is no granularity about which one is missing or if it is both of them.
+
 ## Logout
 
 This request logouts a user from their authentication session.

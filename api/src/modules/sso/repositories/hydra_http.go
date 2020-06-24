@@ -138,6 +138,17 @@ func (h *HydraHTTP) RevokeToken(ctx context.Context, accessToken string) error {
 	return h.publicFormRester.Post(ctx, "/oauth2/revoke", nil, params, nil)
 }
 
+// GetConsentSessions for a given Identity
+func (h *HydraHTTP) GetConsentSessions(ctx context.Context, identityID string) ([]consent.Session, error) {
+	consents := []consent.Session{}
+	params := url.Values{}
+	params.Add("subject", identityID)
+	if err := h.adminJSONRester.Get(ctx, "/oauth2/auth/sessions/consent", params, &consents); err != nil {
+		return nil, err
+	}
+	return consents, nil
+}
+
 //
 // // CreateClient: create a new Hydra Client in hydra
 // func (h *HydraHTTP) CreateClient(ctx context.Context, hydraClient *model.HydraClient) error {

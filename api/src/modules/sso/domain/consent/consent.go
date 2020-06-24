@@ -2,6 +2,15 @@ package consent
 
 import "gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 
+type Session struct {
+	GrantScope     []string `json:"grant_scope"`
+	ConsentRequest struct {
+		Client struct {
+			ID string `json:"client_id"`
+		} `json:"client"`
+	} `json:"consent_request"`
+}
+
 // Context bears internal data about current user consent request
 type Context struct {
 	Subject        string        `json:"subject"`
@@ -10,6 +19,9 @@ type Context struct {
 	ACR            string        `json:"acr"`
 	RequestedScope []string      `json:"requested_scope"`
 	AuthnContext   authn.Context `json:"context"`
+	Client         struct {
+		ID string `json:"client_id"`
+	} `json:"client"`
 }
 
 // Acceptance contains data about the user consent approval

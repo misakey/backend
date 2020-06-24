@@ -12,6 +12,7 @@ title: Authorization & Authentication
   * [3.1. Basics](#31-basics)
   * [3.2. Token](#32-token)
   * [3.3. Scopes](#33-scopes)
+  * [3.3. TOS and Privacy Policy](#33-tos-and-privacy-policy)
 * [4. Authentication](#4-authentication)
   * [4.1. Token](#41-token)
   * [4.2. Authentication Request](#42-authentication-request)
@@ -72,8 +73,26 @@ Tokens (ID & access tokens) lifetime is one hour.
 Regarding [OAuth 2.0][] protocol, the system relies on the [scope parameter][] parameter
 to generate tokens linked to more advanced authorization concepts.
 
-The only default scope required is `openid`. It enables the [OpenID Connect][] layer
+`openid` is default and required. It enables the [OpenID Connect][] layer
 on top of [OAuth 2.0][] to generates an [ID Token][] aside the access token.
+
+`tos` and `privacy_policy` are legal scopes that ensure
+the user has consented to Term of Services and Privacy Policy.
+They are required for Misakey App.
+
+### 3.4. TOS and Privacy Policy
+
+A user must have consented to TOS and Privacy Policy to access the application.
+For this we use scopes `tos` and `privacy_policy`. These must be requested when initializing
+the authorization code flow.
+
+These scopes are managed for a given account. It means that if one identity of an account
+has an existing valid session with those scopes, these will be automatically accepted
+for all identities of the account.
+
+If the scopes have never been accepted, the user will be redirected to a frontend page
+during the consent flow and the route `POST /auth/consent` must be used to
+publish their consent.
 
 ## 4. Authentication
 

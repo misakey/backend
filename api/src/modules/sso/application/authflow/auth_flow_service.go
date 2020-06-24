@@ -32,6 +32,7 @@ type authFlowRepo interface {
 
 	GetConsentContext(context.Context, string) (consent.Context, error)
 	Consent(context.Context, string, consent.Acceptance) (consent.Redirect, error)
+	GetConsentSessions(context.Context, string) ([]consent.Session, error)
 
 	DeleteSession(ctx context.Context, subject string) error
 	RevokeToken(ctx context.Context, token string) error

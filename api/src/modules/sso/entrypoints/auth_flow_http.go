@@ -67,7 +67,7 @@ func (af AuthFlowHTTP) LoginAuthnStep(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, redirect)
 }
 
-// Handles GET /consent - init login flow request
+// Handles GET /consent - init consent flow request
 func (af AuthFlowHTTP) ConsentInit(ctx echo.Context) error {
 	consentChallenge := ctx.QueryParam("consent_challenge")
 	if consentChallenge == "" {
@@ -83,4 +83,23 @@ func (af AuthFlowHTTP) Logout(ctx echo.Context) error {
 		return merror.Transform(err).From(merror.OriBody).Describe("logout")
 	}
 	return ctx.NoContent(http.StatusNoContent)
+}
+
+// Handles POST /consent - accept a consent request
+func (af AuthFlowHTTP) ConsentAccept(eCtx echo.Context) error {
+	cmd := application.ConsentAcceptCmd{}
+
+	if err := eCtx.Bind(&cmd); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
+
+	if err := cmd.Validate(); err != nil {
+		return merror.Transform(err).From(merror.OriBody)
+	}
+
+	redirect, err := af.service.ConsentAccept(eCtx.Request().Context(), cmd)
+	if err != nil {
+		return merror.Transform(err).From(merror.OriBody).Describe("consent flow")
+	}
+	return eCtx.JSON(http.StatusOK, redirect)
 }
