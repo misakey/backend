@@ -71,7 +71,8 @@ func (sso SSOService) CreateAccount(ctx context.Context, cmd CreateAccountCmd) (
 
 	// prepare the account to be created
 	account := domain.Account{
-		BackupData: cmd.BackupData,
+		BackupData:    cmd.BackupData,
+		BackupVersion: 1,
 	}
 	account.Password, err = cmd.Password.Hash()
 	if err != nil {
