@@ -13,6 +13,7 @@ import (
 
 type msgFileContent struct {
 	Encrypted       string `json:"encrypted"`
+	PublicKey       string `json:"public_key"`
 	EncryptedFileID string `json:"encrypted_file_id"`
 }
 
@@ -23,6 +24,7 @@ func (c *msgFileContent) Unmarshal(json types.JSON) error {
 func (c msgFileContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.Encrypted, v.Required, is.Base64),
+		v.Field(&c.PublicKey, v.Required),
 		v.Field(&c.EncryptedFileID, v.Required, is.UUIDv4),
 	)
 }
@@ -30,7 +32,7 @@ func (c msgFileContent) Validate() error {
 func NewMsgFile(
 	ctx context.Context,
 	boxID string, senderID string,
-	encryptedContent string,
+	encContent string, pubKey string,
 ) (Event, string, error) {
 	e := Event{}
 
@@ -42,7 +44,8 @@ func NewMsgFile(
 
 	// build the event content
 	content := msgFileContent{
-		Encrypted:       encryptedContent,
+		Encrypted:       encContent,
+		PublicKey:       pubKey,
 		EncryptedFileID: fileID,
 	}
 

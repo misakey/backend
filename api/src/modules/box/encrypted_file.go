@@ -16,13 +16,15 @@ type uploadEncryptedFileCmd struct {
 	boxID string
 	size  int64
 
-	MsgEncryptedContent string `form:"msg_encrypted_content"`
+	MsgEncContent string `form:"msg_encrypted_content"`
+	MsgPubKey     string `form:"msg_public_key"`
 }
 
 func (cmd uploadEncryptedFileCmd) Validate() error {
 	return v.ValidateStruct(&cmd,
 		v.Field(&cmd.boxID, v.Required, is.UUIDv4),
-		v.Field(&cmd.MsgEncryptedContent, v.Required, is.Base64),
+		v.Field(&cmd.MsgEncContent, v.Required, is.Base64),
+		v.Field(&cmd.MsgPubKey, v.Required),
 		v.Field(&cmd.size, v.Required, v.Max(8*1024*1000).Error("the maximum file size is 8MB")),
 	)
 }
@@ -62,7 +64,7 @@ func (h *handler) uploadEncryptedFile(eCtx echo.Context) error {
 	defer encData.Close()
 
 	// create the new msg file that will described the upload action
-	e, fileID, err := events.NewMsgFile(ctx, cmd.boxID, acc.Subject, cmd.MsgEncryptedContent)
+	e, fileID, err := events.NewMsgFile(ctx, cmd.boxID, acc.Subject, cmd.MsgEncContent, cmd.MsgPubKey)
 	if err != nil {
 		return merror.Transform(err).Describe("creating msg file event")
 	}
