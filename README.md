@@ -1,53 +1,44 @@
-Misakey
-=======
+<table align="center"><tr><td align="center" width="9999">
+<img src="logo.png" align="center" width="150" style="border-radius:60%;">
+
+# The Misakey Backend Project.
+
+[![pipeline](https://gitlab.misakey.dev/misakey/backend/badges/master/pipeline.svg)](https://gitlab.misakey.dev/misakey/backend/-/pipelines)
+[![api doc](https://img.shields.io/badge/doc-api-blue)](https://backend.docs.misakey.dev)
+[![License AGPLv3](https://img.shields.io/static/v1?label=License&message=AGPLv3&color=e32e72)](./LICENSE)
+
+</td></tr></table>
+
+## Introduction
 
 [Misakey](https://misakey.com) is the user account solution for people and applications who
-value privacy and simplicity. And it’s open source.
+value privacy and simplicity.
 
 You can find more info about Misakey in our [website](https://www.misakey.com) and our [about page](https://about.misakey.com/).
 
-## Technical overview
+## Folder architecture
 
 The project is composed of:
-* The API service, crafted with Golang. 
-* An instance of **hydra** ([repo](https://github.com/ory/hydra)) to manage our auth protocol
+* `api`: the main API service, crafted with Golang. 
+* `hydra`: configuration to run an instance of [Ory Hydra](https://github.com/ory/hydra) to manage the auth protocol.
+* `gateway`: an nginx gateway configuration.
+* `tools`: some script helpers and functional testing.
+* `docs`: the concepts and endpoints documentation.
 
-We host the platform on a Kubernetes cluster, so everything we build is done to work in Docker and K8s.
-
-## Misakey's source code
-
-### Backend
-
-####  API
-
-- [API](./api/README.md)
-
-#### Jobs
-
-- [notification-job](./notification-job/README.md)
-
-#### SDK
-
-- [msk-sdk-go](https://gitlab.com/misakey/msk-sdk-go/README.md)
-
-### Frontend
-
-#### Webapp & webextension
-
-- [frontend](https://gitlab.com/misakey/frontend/README.md)
-
+We host the platform on a Kubernetes cluster, so everything we build is done to work in Docker and k8s.
 
 ## Community
 
 We don't have tools to welcome community for now. 
 
 You want to talk with us, or contribute to the project? 
-[Send us an email](mailto:question.perso@misakey.com)!
-We will answer you rapidly and would love to hear what community tools you would like!
+You can open an issue or [send us an email](mailto:question.perso@misakey.com)!.
+
+We will answer you quickly and would love to hear what community tools you would like!
 
 ## License
 
-Most code is released under the AGPLv3. 
+Most of the code is released under the AGPLv3. 
 If subdirectories include a different license, that license applies instead.
 
 ## Source management disclaimer
