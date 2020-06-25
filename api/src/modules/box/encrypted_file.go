@@ -9,6 +9,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
 
@@ -54,6 +55,11 @@ func (h *handler) uploadEncryptedFile(eCtx echo.Context) error {
 	cmd.boxID = eCtx.Param("bid")
 	if err := cmd.Validate(); err != nil {
 		return err
+	}
+
+	// upload files works only on open boxes
+	if err := boxes.MustBeOpen(ctx, h.repo.DB(), cmd.boxID); err != nil {
+		return merror.Transform(err).Describe("checking open")
 	}
 
 	// retrieve the raw []byte from the file
@@ -103,7 +109,8 @@ func (h *handler) downloadEncryptedFile(eCtx echo.Context) error {
 	ctx := eCtx.Request().Context()
 
 	// to be a connected user is required
-	if ajwt.GetAccesses(ctx) == nil {
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
 		return merror.Forbidden()
 	}
 
@@ -112,6 +119,11 @@ func (h *handler) downloadEncryptedFile(eCtx echo.Context) error {
 		fileID: eCtx.Param("eid"),
 	}
 	if err := cmd.Validate(); err != nil {
+		return err
+	}
+
+	// if the box is closed, only the creator can download a file from it
+	if err := boxes.MustBeCreatorIfClosed(ctx, h.repo.DB(), cmd.boxID, acc.Subject); err != nil {
 		return err
 	}
 

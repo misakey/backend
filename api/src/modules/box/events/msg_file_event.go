@@ -49,7 +49,7 @@ func NewMsgFile(
 		EncryptedFileID: fileID,
 	}
 
-	e, err = NewWithAnyContent("msg.file", &content, boxID, senderID)
+	e, err = newWithAnyContent("msg.file", &content, boxID, senderID)
 	if err != nil {
 		return e, "", merror.Transform(err).Describe("new event")
 	}
@@ -62,5 +62,5 @@ func GetMsgFile(
 	boxID, fileID string,
 ) (Event, error) {
 	jsonQuery := `{"encrypted_file_id": "` + fileID + `"}`
-	return FindByTypeContent(ctx, exec, boxID, "msg.file", &jsonQuery)
+	return findByTypeContent(ctx, exec, boxID, "msg.file", &jsonQuery)
 }

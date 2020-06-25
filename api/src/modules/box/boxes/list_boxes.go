@@ -1,4 +1,4 @@
-package events
+package boxes
 
 import (
 	"context"
@@ -8,26 +8,26 @@ import (
 	"github.com/volatiletech/sqlboiler/queries"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 )
 
-func CountSenderBoxes(ctx context.Context, exec boil.ContextExecutor, senderID string) (int, error) {
-	boxIDs, err := lastestBoxIDsForSender(ctx, exec, senderID)
+func CountForSender(ctx context.Context, exec boil.ContextExecutor, senderID string) (int, error) {
+	boxIDs, err := latestIDsForSender(ctx, exec, senderID)
 	return len(boxIDs), err
 }
 
-func GetSenderBoxes(
+func ListForSender(
 	ctx context.Context,
 	repo repositories.Contextual,
 	senderID string,
-	limit int,
-	offset int,
+	limit, offset int,
 ) ([]Box, error) {
 	boxes := []Box{}
 
 	// 1. retrieve box IDs
-	boxIDs, err := lastestBoxIDsForSender(ctx, repo.DB(), senderID)
+	boxIDs, err := latestIDsForSender(ctx, repo.DB(), senderID)
 	if err != nil {
 		return boxes, merror.Transform(err).Describe("listing box ids")
 	}
@@ -47,7 +47,7 @@ func GetSenderBoxes(
 	// 3. compute all boxes
 	boxes = make([]Box, len(boxIDs))
 	for i, boxID := range boxIDs {
-		boxes[i], err = ComputeBox(ctx, boxID, repo)
+		boxes[i], err = Compute(ctx, boxID, repo)
 		if err != nil {
 			return boxes, merror.Transform(err).Describef("computing box %s", boxID)
 		}
@@ -55,7 +55,7 @@ func GetSenderBoxes(
 	return boxes, nil
 }
 
-func lastestBoxIDsForSender(
+func latestIDsForSender(
 	ctx context.Context,
 	exec boil.ContextExecutor,
 	senderID string,
@@ -69,7 +69,7 @@ func lastestBoxIDsForSender(
 		) GROUP BY %s ORDER BY latest DESC;
 	`, bCol, cCol, bCol, bCol, sCol, senderID, bCol)
 
-	var dbEvents []Event
+	var dbEvents []events.Event
 	if err := queries.Raw(query).Bind(ctx, exec, &dbEvents); err != nil {
 		return nil, merror.Transform(err).Describe("retrieving box id by sender id")
 	}

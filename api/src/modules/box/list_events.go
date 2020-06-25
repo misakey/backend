@@ -7,29 +7,41 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
-func (h *handler) listEvents(ctx echo.Context) error {
-	// TODO access control
+func (h *handler) listEvents(eCtx echo.Context) error {
+	ctx := eCtx.Request().Context()
 
-	boxID := ctx.Param("id")
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return merror.Forbidden()
+	}
+
+	boxID := eCtx.Param("id")
 	err := validation.Validate(boxID, validation.Required, is.UUIDv4)
 	if err != nil {
 		return merror.Transform(err).Code(merror.BadRequestCode).From(merror.OriPath)
 	}
 
+	// if the box is closed, only the creator can list its events
+	if err := boxes.MustBeCreatorIfClosed(ctx, h.repo.DB(), boxID, acc.Subject); err != nil {
+		return err
+	}
+
 	// list
-	boxEvents, err := events.ListByBoxID(ctx.Request().Context(), h.repo.DB(), boxID)
+	boxEvents, err := events.ListByBoxID(ctx, h.repo.DB(), boxID)
 	if err != nil {
 		return err
 	}
 
-	sendersMap, err := mapSenderIdentities(ctx.Request().Context(), boxEvents, h.repo.Identities())
+	sendersMap, err := mapSenderIdentities(ctx, boxEvents, h.repo.Identities())
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving events senders")
 	}
@@ -40,7 +52,7 @@ func (h *handler) listEvents(ctx echo.Context) error {
 		views[i] = events.ToView(e, sender)
 	}
 
-	return ctx.JSON(http.StatusOK, views)
+	return eCtx.JSON(http.StatusOK, views)
 }
 
 func mapSenderIdentities(ctx context.Context, events []events.Event, identityRepo entrypoints.IdentityIntraprocessInterface) (map[string]domain.Identity, error) {

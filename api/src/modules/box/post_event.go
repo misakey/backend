@@ -13,6 +13,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 )
@@ -27,7 +28,7 @@ type postEventRequest struct {
 func (req postEventRequest) Validate() error {
 	return v.ValidateStruct(&req,
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
-		v.Field(&req.Type, v.Required, v.In("create", "msg.text", "state.lifecycle")),
+		v.Field(&req.Type, v.Required, v.In("msg.text", "state.lifecycle")),
 		v.Field(&req.Content, v.Required),
 	)
 }
@@ -36,8 +37,8 @@ func (h *handler) postEvent(eCtx echo.Context) error {
 	ctx := eCtx.Request().Context()
 
 	// retrieve accesses
-	accesses := ajwt.GetAccesses(ctx)
-	if accesses == nil {
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
 		return merror.Forbidden()
 	}
 
@@ -53,7 +54,7 @@ func (h *handler) postEvent(eCtx echo.Context) error {
 	}
 
 	// "New" performs some shape validation
-	event, err := events.New(req.Type, req.Content, req.boxID, accesses.Subject)
+	event, err := events.New(req.Type, req.Content, req.boxID, acc.Subject)
 	if err != nil {
 		return merror.Transform(err).From(merror.OriBody)
 	}
@@ -70,6 +71,8 @@ func (h *handler) createEvent(
 	e events.Event,
 ) (events.View, error) {
 	view := events.View{}
+
+	// check the box does exist
 	boxExists, err := checkBoxExists(ctx, e.BoxID, h.repo.DB())
 	if err != nil {
 		return view, merror.Transform(err).Describe("checking existence of box")
@@ -77,6 +80,18 @@ func (h *handler) createEvent(
 	if !boxExists {
 		return view, merror.NotFound().Detail("id", merror.DVNotFound).
 			Describef("no box with id %s", e.BoxID)
+	}
+
+	// check the box is not closed
+	if err := boxes.MustBeOpen(ctx, h.repo.DB(), e.BoxID); err != nil {
+		return view, merror.Transform(err).Describe("checking open")
+	}
+
+	// check the sender is creator of the box for state.lifecycle events
+	if e.Type == "state.lifecycle" {
+		if err := boxes.MustBeCreator(ctx, h.repo.DB(), e.BoxID, e.SenderID); err != nil {
+			return view, merror.Transform(err).Describe("checking creator")
+		}
 	}
 
 	sender, err := h.repo.Identities().Get(ctx, e.SenderID)

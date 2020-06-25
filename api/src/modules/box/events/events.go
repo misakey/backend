@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -44,19 +45,6 @@ func New(eType string, jsonContent types.JSON, boxID string, senderID string) (E
 	return event, nil
 }
 
-func NewWithAnyContent(eType string, content anyContent, boxID string, senderID string) (Event, error) {
-	contentBytes, err := json.Marshal(content)
-	if err != nil {
-		return Event{}, merror.Transform(err).Describe("marshalling anyContent into bytes")
-	}
-	jsonContent := types.JSON{}
-	if err := jsonContent.UnmarshalJSON(contentBytes); err != nil {
-		return Event{}, merror.Transform(err).Describe("unmarshalling content bytes into types.JSON")
-	}
-
-	return New(eType, jsonContent, boxID, senderID)
-}
-
 func ListByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.EventWhere.BoxID.EQ(boxID),
@@ -80,7 +68,20 @@ func ListByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 	return events, nil
 }
 
-func FindByTypeContent(ctx context.Context, exec boil.ContextExecutor, boxID, eType string, jsonQuery *string) (Event, error) {
+func newWithAnyContent(eType string, content anyContent, boxID string, senderID string) (Event, error) {
+	contentBytes, err := json.Marshal(content)
+	if err != nil {
+		return Event{}, merror.Transform(err).Describe("marshalling anyContent into bytes")
+	}
+	jsonContent := types.JSON{}
+	if err := jsonContent.UnmarshalJSON(contentBytes); err != nil {
+		return Event{}, merror.Transform(err).Describe("unmarshalling content bytes into types.JSON")
+	}
+
+	return New(eType, jsonContent, boxID, senderID)
+}
+
+func findByTypeContent(ctx context.Context, exec boil.ContextExecutor, boxID, eType string, jsonQuery *string) (Event, error) {
 	var e Event
 
 	// build query
@@ -95,6 +96,9 @@ func FindByTypeContent(ctx context.Context, exec boil.ContextExecutor, boxID, eT
 	}
 
 	dbEvent, err := sqlboiler.Events(mods...).One(ctx, exec)
+	if err == sql.ErrNoRows {
+		return e, merror.NotFound().Describef("finding %s by type %s content", boxID, eType)
+	}
 	if err != nil {
 		return e, merror.Transform(err).Describe("retrieving type/content db event")
 	}

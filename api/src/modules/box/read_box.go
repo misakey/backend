@@ -10,7 +10,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 )
 
 type boxQuery struct {
@@ -29,7 +29,7 @@ func (h *handler) getBox(ctx echo.Context) error {
 	if err := q.Validate(); err != nil {
 		return merror.Transform(err).From(merror.OriPath)
 	}
-	box, err := events.ComputeBox(ctx.Request().Context(), q.boxID, h.repo)
+	box, err := boxes.Compute(ctx.Request().Context(), q.boxID, h.repo)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (h *handler) countBoxes(eCtx echo.Context) error {
 		return merror.Forbidden()
 	}
 
-	count, err := events.CountSenderBoxes(ctx, h.repo.DB(), acc.Subject)
+	count, err := boxes.CountForSender(ctx, h.repo.DB(), acc.Subject)
 	if err != nil {
 		return merror.Transform(err).Describe("counting sender boxes")
 	}
@@ -91,7 +91,7 @@ func (h *handler) listBoxes(eCtx echo.Context) error {
 		return merror.Forbidden()
 	}
 
-	boxes, err := events.GetSenderBoxes(
+	boxes, err := boxes.ListForSender(
 		ctx,
 		h.repo,
 		acc.Subject,

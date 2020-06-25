@@ -9,6 +9,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
 
@@ -52,7 +53,7 @@ func (h *handler) CreateBox(eCtx echo.Context) error {
 	}
 
 	// build the box view and return it
-	box, err := events.ComputeBox(ctx, event.BoxID, h.repo, event)
+	box, err := boxes.Compute(ctx, event.BoxID, h.repo, event)
 	if err != nil {
 		return merror.Transform(err).Describe("building box")
 	}

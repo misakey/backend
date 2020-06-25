@@ -11,8 +11,8 @@ import (
 )
 
 var contentTypeGetters = map[string]func() anyContent{
-	"create":          func() anyContent { return &creationContent{} },
-	"state.lifecycle": func() anyContent { return &stateLifecycleContent{} },
+	"create":          func() anyContent { return &CreationContent{} },
+	"state.lifecycle": func() anyContent { return &StateLifecycleContent{} },
 	"msg.text":        func() anyContent { return &msgTextContent{} },
 	"msg.file":        func() anyContent { return &msgFileContent{} },
 }
