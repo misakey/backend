@@ -6,12 +6,46 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
 )
+
+// ConsentInfoView bears data about current user authentication status
+type ConsentInfoView struct {
+	Subject        string        `json:"subject"`
+	ACR            string        `json:"acr"`
+	RequestedScope []string      `json:"scope"`
+	AuthnContext   authn.Context `json:"context"`
+	Client         struct {
+		ID      string      `json:"client_id"`
+		Name    string      `json:"name"`
+		LogoURL null.String `json:"logo_uri"`
+	} `json:"client"`
+}
+
+func (sso SSOService) ConsentInfo(ctx context.Context, loginChallenge string) (ConsentInfoView, error) {
+	view := ConsentInfoView{}
+
+	consentCtx, err := sso.authFlowService.ConsentGetContext(ctx, loginChallenge)
+	if err != nil {
+		return view, merror.Transform(err).Describe("could not get context")
+	}
+
+	// fill view with domain model
+	view.Subject = consentCtx.Subject
+	view.ACR = consentCtx.ACR
+	view.RequestedScope = consentCtx.RequestedScope
+	view.AuthnContext = consentCtx.AuthnContext
+	view.Client.ID = consentCtx.Client.ID
+	view.Client.Name = consentCtx.Client.Name
+	view.Client.LogoURL = consentCtx.Client.LogoURL
+	return view, nil
+}
 
 type ConsentAcceptCmd struct {
 	IdentityID       string   `json:"identity_id"`

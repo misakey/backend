@@ -33,6 +33,7 @@ func (af AuthFlowHTTP) LoginInit(ctx echo.Context) error {
 	return ctx.Redirect(http.StatusFound, redirectURL)
 }
 
+// Handles GET /login/info - get information about current login
 func (af AuthFlowHTTP) LoginInfo(ctx echo.Context) error {
 	// parse parameters
 	loginChallenge := ctx.QueryParam("login_challenge")
@@ -76,6 +77,22 @@ func (af AuthFlowHTTP) ConsentInit(ctx echo.Context) error {
 	// init consent then redirect
 	redirectURL := af.service.ConsentInit(ctx.Request().Context(), consentChallenge)
 	return ctx.Redirect(http.StatusFound, redirectURL)
+}
+
+// Handles GET /consent/info - get information about current consent
+func (af AuthFlowHTTP) ConsentInfo(ctx echo.Context) error {
+	// parse parameters
+	consentChallenge := ctx.QueryParam("consent_challenge")
+	if consentChallenge == "" {
+		return merror.BadRequest().From(merror.OriQuery).Detail("consent_challenge", merror.DVRequired)
+	}
+	// init consent then redirect
+	info, err := af.service.ConsentInfo(ctx.Request().Context(), consentChallenge)
+	if err != nil {
+		return merror.Transform(err).Describe("cannot retrieve consent info")
+	}
+	return ctx.JSON(http.StatusOK, info)
+
 }
 
 func (af AuthFlowHTTP) Logout(ctx echo.Context) error {

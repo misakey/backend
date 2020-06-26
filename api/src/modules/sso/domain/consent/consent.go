@@ -1,6 +1,9 @@
 package consent
 
-import "gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+import (
+	"github.com/volatiletech/null"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+)
 
 type Session struct {
 	GrantScope     []string `json:"grant_scope"`
@@ -20,7 +23,9 @@ type Context struct {
 	RequestedScope []string      `json:"requested_scope"`
 	AuthnContext   authn.Context `json:"context"`
 	Client         struct {
-		ID string `json:"client_id"`
+		ID      string      `json:"client_id"`
+		Name    string      `json:"name"`
+		LogoURL null.String `json:"logo_uri"`
 	} `json:"client"`
 }
 

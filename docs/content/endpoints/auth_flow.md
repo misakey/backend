@@ -481,6 +481,57 @@ _Code:_
 }
 ```
 
+## Get Consent Information
+
+This route is used to retrieve information about the current consent flow using a consent challenge.
+
+### Request
+
+```bash
+  GET https://api.misakey.com.local/auth/consent/info
+```
+
+_Query Parameters:_
+- `consent_challenge` (string): the consent challenge corresponding to the current auth flow.
+
+### Response
+
+_Code_:
+```bash
+    HTTP 200 OK
+```
+
+_JSON Body_:
+```json
+  {
+      "subject": "f058a198-e5e7-4d96-8b71-e6aa1edd3eb5",
+      "acr": "2",
+      "scope": [
+          "openid",
+          "tos",
+          "privacy_policy"
+      ],
+      "context": {
+          "amr": "emailed_code"
+      },
+      "client": {
+          "id": "c001d00d-5ecc-beef-ca4e-b00b1e54a111",
+          "name": "Misakey App",
+          "logo_uri": "https://media.glassdoor.com/sqll/2449676/misakey-squarelogo-1549446114307.png"
+      }
+  }
+```
+
+- `subject` (uuid string): unique id of the identity getting the token
+- `acr` (string): the acr level for the current flow
+- `scope` (string): list of scope sent during the auth flow init.
+- `context` (object): context of the current consent flow
+- `client` (object): information about the SSO client involved in the auth flow:
+  - `id` (uuid string): the unique id.
+  - `name` (string): the name.
+  - `url` (string) (nullable): web-address of the logo file.
+
+
 ## Accept the consent request in the consent flow
 
 This lets the user choose the scopes they want to accept.
