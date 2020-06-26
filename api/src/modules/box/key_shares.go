@@ -54,7 +54,7 @@ type keyShareQuery struct {
 
 func (query keyShareQuery) validate() error {
 	return v.ValidateStruct(&query,
-		v.Field(&query.invitationHash, v.Required, v.Match(rxUnpaddedURLsafeBase64)),
+		v.Field(&query.invitationHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 	)
 }
 
