@@ -7,8 +7,6 @@ import (
 	"html/template"
 
 	"github.com/pkg/errors"
-
-	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
 )
 
 func NewEmail(emailRenderer EmailRenderer, mailer Sender) Email {
@@ -118,7 +116,7 @@ func (m *EmailRenderer) NewEmail(
 }
 
 // render retrieves template from repo, executes it with given data then returns its final co  ntent
-func (m *EmailRenderer) render(ctx context.Context, templateName string, data map[string]interface{}) (output []byte, err error) {
+func (m *EmailRenderer) render(_ context.Context, templateName string, data map[string]interface{}) (output []byte, err error) {
 	buf := &bytes.Buffer{}
 
 	tmpl, err := m.templateRepo.Get(templateName)
@@ -132,15 +130,4 @@ func (m *EmailRenderer) render(ctx context.Context, templateName string, data ma
 	}
 
 	return buf.Bytes(), nil
-}
-
-func (em *Email) prepareAndSend(ctx context.Context, data map[string]interface{}) {
-	email, err := em.emailRenderer.NewEmail(ctx, data["recipient"].(string), data["subject"].(string), data["template"].(string), data)
-	if err != nil {
-		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not build %s email for %s", data["tem  plate"].(string), data["recipient"].(string))
-		return
-	}
-	if err := em.mailer.Send(ctx, email); err != nil {
-		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not send %s email for %s", data["temp  late"].(string), data["recipient"].(string))
-	}
 }

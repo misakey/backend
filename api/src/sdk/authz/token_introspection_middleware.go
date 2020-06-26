@@ -1,7 +1,6 @@
 package authz
 
 import (
-	"context"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -10,10 +9,6 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/rester"
 )
-
-type tokenRepo interface {
-	Introspect(ctx context.Context, opaqueTok string) (instropection, error)
-}
 
 // NewTokenIntrospectionMidlw used to declare a route require authorization
 // Information must be passed through a bearer token in Authorization HTTP Header

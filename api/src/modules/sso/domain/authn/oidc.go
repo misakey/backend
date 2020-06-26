@@ -28,7 +28,7 @@ func (amr MethodRefs) Has(method MethodRef) bool {
 }
 
 func (amr MethodRefs) String() string {
-	var tmp []string
+	tmp := make([]string, len(amr))
 	for _, v := range amr {
 		tmp = append(tmp, string(v))
 	}

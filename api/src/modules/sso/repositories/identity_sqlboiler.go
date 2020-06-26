@@ -23,7 +23,7 @@ func NewIdentitySQLBoiler(db *sql.DB) *IdentitySQLBoiler {
 	}
 }
 
-func (repo IdentitySQLBoiler) toSqlBoiler(domModel *domain.Identity) *sqlboiler.Identity {
+func (repo IdentitySQLBoiler) toSQLBoiler(domModel *domain.Identity) *sqlboiler.Identity {
 	return &sqlboiler.Identity{
 		ID:            domModel.ID,
 		AccountID:     domModel.AccountID,
@@ -72,7 +72,7 @@ func (repo *IdentitySQLBoiler) Create(ctx context.Context, identity *domain.Iden
 	}
 
 	// convert domain to sql model
-	sqlIdentity := repo.toSqlBoiler(identity)
+	sqlIdentity := repo.toSQLBoiler(identity)
 	return sqlIdentity.Insert(ctx, repo.db, boil.Infer())
 }
 
@@ -89,7 +89,7 @@ func (repo *IdentitySQLBoiler) Get(ctx context.Context, identityID string) (ret 
 }
 
 func (repo *IdentitySQLBoiler) Update(ctx context.Context, identity *domain.Identity) error {
-	rowsAff, err := repo.toSqlBoiler(identity).Update(ctx, repo.db, boil.Infer())
+	rowsAff, err := repo.toSQLBoiler(identity).Update(ctx, repo.db, boil.Infer())
 	if err != nil {
 		return err
 	}

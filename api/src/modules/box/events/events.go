@@ -58,7 +58,7 @@ func ListByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 
 	events := make([]Event, len(dbEvents))
 	for i, record := range dbEvents {
-		events[i] = FromSqlBoiler(record)
+		events[i] = FromSQLBoiler(record)
 	}
 
 	if len(events) == 0 {
@@ -102,5 +102,5 @@ func findByTypeContent(ctx context.Context, exec boil.ContextExecutor, boxID, eT
 	if err != nil {
 		return e, merror.Transform(err).Describe("retrieving type/content db event")
 	}
-	return FromSqlBoiler(dbEvent), nil
+	return FromSQLBoiler(dbEvent), nil
 }

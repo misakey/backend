@@ -9,7 +9,7 @@ type KeyShare struct {
 	Share          string `json:"share"`
 }
 
-func (src KeyShare) toSqlBoiler() *sqlboiler.KeyShare {
+func (src KeyShare) toSQLBoiler() *sqlboiler.KeyShare {
 	dest := sqlboiler.KeyShare{
 		InvitationHash: src.InvitationHash,
 		Share:          src.Share,
@@ -17,7 +17,7 @@ func (src KeyShare) toSqlBoiler() *sqlboiler.KeyShare {
 	return &dest
 }
 
-func fromSqlBoiler(src *sqlboiler.KeyShare) KeyShare {
+func fromSQLBoiler(src *sqlboiler.KeyShare) KeyShare {
 	dest := KeyShare{
 		InvitationHash: src.InvitationHash,
 		Share:          src.Share,

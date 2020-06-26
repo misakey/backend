@@ -7,7 +7,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 )
 
-func (e *Event) ToSqlBoiler() *sqlboiler.Event {
+func (e *Event) ToSQLBoiler() *sqlboiler.Event {
 	result := sqlboiler.Event{
 		BoxID: e.BoxID,
 
@@ -21,7 +21,7 @@ func (e *Event) ToSqlBoiler() *sqlboiler.Event {
 	return &result
 }
 
-func FromSqlBoiler(src *sqlboiler.Event) Event {
+func FromSQLBoiler(src *sqlboiler.Event) Event {
 	dst := Event{
 		ID:        src.ID,
 		CreatedAt: src.CreatedAt,

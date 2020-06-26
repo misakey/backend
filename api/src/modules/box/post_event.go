@@ -99,16 +99,16 @@ func (h *handler) createEvent(
 		return view, merror.Transform(err).Describe("fetching sender identity")
 	}
 
-	if err := e.ToSqlBoiler().Insert(ctx, h.repo.DB(), boil.Infer()); err != nil {
+	if err := e.ToSQLBoiler().Insert(ctx, h.repo.DB(), boil.Infer()); err != nil {
 		return view, merror.Transform(err).Describe("inserting event in DB")
 	}
 
 	return events.ToView(e, sender), nil
 }
 
-func checkBoxExists(ctx context.Context, boxId string, exec boil.ContextExecutor) (bool, error) {
+func checkBoxExists(ctx context.Context, boxID string, exec boil.ContextExecutor) (bool, error) {
 	_, err := sqlboiler.Events(
-		sqlboiler.EventWhere.BoxID.EQ(boxId),
+		sqlboiler.EventWhere.BoxID.EQ(boxID),
 		sqlboiler.EventWhere.Type.EQ("create"),
 	).One(ctx, exec)
 	if err != nil {

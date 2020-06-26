@@ -57,7 +57,7 @@ func ListForSender(
 
 func latestIDsForSender(
 	ctx context.Context,
-	exec boil.ContextExecutor,
+	exec boil.Executor,
 	senderID string,
 ) ([]string, error) {
 	bCol := sqlboiler.EventColumns.BoxID

@@ -31,7 +31,7 @@ func (repo AccountSQLBoiler) toDomain(boilModel *sqlboiler.Account) *domain.Acco
 	}
 }
 
-func (repo AccountSQLBoiler) toSqlBoiler(domModel *domain.Account) *sqlboiler.Account {
+func (repo AccountSQLBoiler) toSQLBoiler(domModel *domain.Account) *sqlboiler.Account {
 	return &sqlboiler.Account{
 		ID:            domModel.ID,
 		Password:      domModel.Password,
@@ -50,7 +50,7 @@ func (repo AccountSQLBoiler) Create(ctx context.Context, account *domain.Account
 	account.ID = id.String()
 
 	// convert domain to sql model
-	sqlAccount := repo.toSqlBoiler(account)
+	sqlAccount := repo.toSQLBoiler(account)
 
 	return sqlAccount.Insert(ctx, repo.db, boil.Infer())
 }
@@ -68,7 +68,7 @@ func (repo AccountSQLBoiler) Get(ctx context.Context, accountID string) (ret dom
 }
 
 func (repo AccountSQLBoiler) Update(ctx context.Context, account *domain.Account) error {
-	sqlAccount := repo.toSqlBoiler(account)
+	sqlAccount := repo.toSQLBoiler(account)
 
 	rowsAff, err := sqlAccount.Update(ctx, repo.db, boil.Infer())
 	if err != nil {

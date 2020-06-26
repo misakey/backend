@@ -27,7 +27,7 @@ func NewBoxFileSystem(location string) *BoxFileSystem {
 }
 
 // getKey by concatenating some info
-func (s *BoxFileSystem) getKey(boxID, fileID string) string {
+func (fs *BoxFileSystem) getKey(boxID, fileID string) string {
 	return boxID + "_" + fileID
 }
 

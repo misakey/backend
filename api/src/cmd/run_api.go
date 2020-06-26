@@ -19,7 +19,6 @@ import (
 
 var cfgFile string
 var goose string
-var env = os.Getenv("ENV")
 
 func init() {
 	cobra.OnInitialize()

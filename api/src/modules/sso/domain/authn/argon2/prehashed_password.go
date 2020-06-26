@@ -54,7 +54,10 @@ func (p HashedPassword) Hash() (encodedHash string, err error) {
 		return "", err
 	}
 
-	finalHash := hash(clientHash, serverSalt)
+	finalHash, err := hash(clientHash, serverSalt)
+	if err != nil {
+		return "", err
+	}
 
 	return encode(p.Params, serverSalt, finalHash), nil
 }
@@ -71,7 +74,10 @@ func (p HashedPassword) Matches(encodedHash string) (bool, error) {
 		return false, err
 	}
 
-	computedHash := hash(clientHash, serverSalt)
+	computedHash, err := hash(clientHash, serverSalt)
+	if err != nil {
+		return false, err
+	}
 
 	// note the constant time comparison to avoid timing attacks
 	matches := subtle.ConstantTimeCompare(computedHash, expectedHash) == 1

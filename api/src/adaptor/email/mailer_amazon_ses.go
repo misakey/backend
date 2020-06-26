@@ -73,16 +73,16 @@ func (m *MailerAmazonSES) Send(ctx context.Context, email *EmailNotification) er
 		if ok {
 			switch awsErr.Code() {
 			case ses.ErrCodeMessageRejected:
-				return fmt.Errorf("AWS %s (%v)", ses.ErrCodeMessageRejected, awsErr.Error())
+				return fmt.Errorf("aws %s (%v)", ses.ErrCodeMessageRejected, awsErr.Error())
 			case ses.ErrCodeMailFromDomainNotVerifiedException:
-				return fmt.Errorf("AWS %s (%v)", ses.ErrCodeMailFromDomainNotVerifiedException, awsErr.Error())
+				return fmt.Errorf("aws %s (%v)", ses.ErrCodeMailFromDomainNotVerifiedException, awsErr.Error())
 			case ses.ErrCodeConfigurationSetDoesNotExistException:
-				return fmt.Errorf("AWS %s (%v)", ses.ErrCodeConfigurationSetDoesNotExistException, awsErr.Error())
+				return fmt.Errorf("aws %s (%v)", ses.ErrCodeConfigurationSetDoesNotExistException, awsErr.Error())
 			default:
-				return fmt.Errorf("AWS Error (%v)", awsErr.Error())
+				return fmt.Errorf("aws Error (%v)", awsErr.Error())
 			}
 		}
-		return fmt.Errorf("Error (%v)", err.Error())
+		return fmt.Errorf("error (%v)", err.Error())
 	}
 
 	return nil

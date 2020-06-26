@@ -15,7 +15,7 @@ func Create(
 	invitHash, share string,
 ) error {
 	ks := KeyShare{invitHash, share}
-	return ks.toSqlBoiler().Insert(ctx, exec, boil.Infer())
+	return ks.toSQLBoiler().Insert(ctx, exec, boil.Infer())
 }
 
 func Get(
@@ -29,5 +29,5 @@ func Get(
 	if err != nil {
 		return ret, err
 	}
-	return fromSqlBoiler(record), nil
+	return fromSQLBoiler(record), nil
 }

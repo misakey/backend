@@ -36,7 +36,7 @@ func NewHydraHTTP(
 }
 
 // GetLoginContext from hydra
-func (hh HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (login.Context, error) {
+func (h HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (login.Context, error) {
 	// 1. prepare the request
 	// expected hydra DTO format
 	hydraLogReq := struct {
@@ -60,7 +60,7 @@ func (hh HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) 
 
 	// 2. perform the request
 	logCtx := login.Context{}
-	err := hh.adminJSONRester.Get(ctx, "/oauth2/auth/requests/login", params, &hydraLogReq)
+	err := h.adminJSONRester.Get(ctx, "/oauth2/auth/requests/login", params, &hydraLogReq)
 	if err != nil {
 		if merror.HasCode(err, merror.NotFoundCode) {
 			err = merror.Transform(err).Detail("challenge", merror.DVNotFound)
@@ -84,11 +84,11 @@ func (hh HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) 
 }
 
 // Login user to hydra
-func (hh HydraHTTP) Login(ctx context.Context, loginChallenge string, acceptance login.Acceptance) (login.Redirect, error) {
+func (h HydraHTTP) Login(ctx context.Context, loginChallenge string, acceptance login.Acceptance) (login.Redirect, error) {
 	redirect := login.Redirect{}
 	params := url.Values{}
 	params.Add("login_challenge", loginChallenge)
-	err := hh.adminJSONRester.Put(ctx, "/oauth2/auth/requests/login/accept", params, acceptance, &redirect)
+	err := h.adminJSONRester.Put(ctx, "/oauth2/auth/requests/login/accept", params, acceptance, &redirect)
 	if err != nil {
 		if merror.HasCode(err, merror.NotFoundCode) {
 			err = merror.Transform(err).Detail("challenge", merror.DVNotFound)

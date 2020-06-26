@@ -18,8 +18,10 @@ func generateRandomSalt() ([]byte, error) {
 	return b, nil
 }
 
-func hash(data []byte, key []byte) []byte {
+func hash(data []byte, key []byte) ([]byte, error) {
 	mac := hmac.New(sha256.New, key)
-	mac.Write(data)
-	return mac.Sum(nil)
+	if _, err := mac.Write(data); err != nil {
+		return nil, err
+	}
+	return mac.Sum(nil), nil
 }

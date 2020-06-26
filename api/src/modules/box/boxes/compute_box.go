@@ -134,7 +134,7 @@ func (c *computer) playCreate(ctx context.Context, e events.Event) error {
 }
 
 // today, state if only about lifecycle
-func (c *computer) playState(ctx context.Context, e events.Event) error {
+func (c *computer) playState(_ context.Context, e events.Event) error {
 	lifecycleContent := events.StateLifecycleContent{}
 	if err := lifecycleContent.Unmarshal(e.Content); err != nil {
 		return err

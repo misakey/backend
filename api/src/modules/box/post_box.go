@@ -47,7 +47,7 @@ func (h *handler) CreateBox(eCtx echo.Context) error {
 	}
 
 	// persist the event in storage
-	err = event.ToSqlBoiler().Insert(ctx, h.repo.DB(), boil.Infer())
+	err = event.ToSQLBoiler().Insert(ctx, h.repo.DB(), boil.Infer())
 	if err != nil {
 		return merror.Transform(err).Describe("inserting event")
 	}

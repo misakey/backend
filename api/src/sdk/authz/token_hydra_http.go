@@ -2,7 +2,6 @@ package authz
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"gitlab.misakey.dev/misakey/msk-sdk-go/rester"
@@ -24,7 +23,7 @@ func newTokenIntroHTTP(
 
 func (h tokenIntroHTTP) Introspect(ctx context.Context, opaqueTok string) (instropection, error) {
 	introTok := instropection{}
-	route := fmt.Sprintf("/oauth2/introspect")
+	route := "/oauth2/introspect"
 
 	params := url.Values{}
 	params.Add("token", opaqueTok)
