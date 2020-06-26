@@ -51,21 +51,14 @@ test: ## Unit test code
 
 .PHONY: lint
 lint: ## Lint project code with golint
-ifeq (, $(shell which golint))
-	@GO111MODULE=off go get -u golang.org/x/lint/golint
+ifeq (, $(shell which golangci-lint))
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
 endif
-	golint ./src/...
+	golangci-lint run ./src/...
 
 .PHONY: helm-lint
 helm-lint: ## Lint Helm chart
 	@helm lint ./helm/api --set env=production --set image.tag=latest
-
-.PHONY: strict-lint
-strict-lint: ## Lint project code with golint, return error if there is any suggestion
-ifeq (, $(shell which golint))
-	@GO111MODULE=off go get -u golang.org/x/lint/golint
-endif
-	golint -set_exit_status ./src/...
 
 .PHONY: build
 build: ## Build a docker image with the Go binary
