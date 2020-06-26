@@ -18,7 +18,7 @@ func upAddEventsTable(tx *sql.Tx) error {
 		sender_id UUID NOT NULL,
 		type VARCHAR(127) NOT NULL,
 		content JSON
-);`)
+	);`)
 	return err
 }
 

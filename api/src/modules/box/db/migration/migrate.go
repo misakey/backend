@@ -11,6 +11,7 @@ import (
 func Launch() {
 	// /!\ Do not forget to add you new migration here
 	initAddEventsTable()
+	initCreateKeyShareTable()
 
 	migration.StartGoose(os.Getenv("DSN_BOX"))
 }

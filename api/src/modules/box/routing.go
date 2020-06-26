@@ -14,4 +14,8 @@ func bindRoutes(router *echo.Echo, h handler, authzMidlw echo.MiddlewareFunc) {
 	boxRouter.POST("/:id/events", h.postEvent)
 	boxRouter.POST("/:bid/encrypted-files", h.uploadEncryptedFile)
 	boxRouter.GET("/:bid/encrypted-files/:eid", h.downloadEncryptedFile)
+
+	keyShareRouter := router.Group("/key-shares", authzMidlw)
+	keyShareRouter.POST("", h.createKeyShare)
+	keyShareRouter.GET("/:invitation-hash", h.getKeyShare)
 }

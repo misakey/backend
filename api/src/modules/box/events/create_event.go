@@ -2,16 +2,14 @@ package events
 
 import (
 	"context"
-	"regexp"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/types"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
-
-var rxUnpaddedURLsafeBase64 = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
 
 type CreationContent struct {
 	PublicKey string `json:"public_key"`
@@ -24,7 +22,7 @@ func (c *CreationContent) Unmarshal(json types.JSON) error {
 
 func (c CreationContent) Validate() error {
 	return v.ValidateStruct(&c,
-		v.Field(&c.PublicKey, v.Required, v.Match(rxUnpaddedURLsafeBase64)),
+		v.Field(&c.PublicKey, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 		v.Field(&c.Title, v.Required, v.Length(5, 50)),
 	)
 }
