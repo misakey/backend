@@ -35,7 +35,8 @@ func MustBeOpen(
 		}
 		return merror.Transform(err).Describe("getting lifecycle event")
 	}
-	return merror.Conflict().Describe("box is closed")
+	return merror.Conflict().Describe("box is closed").
+		Detail("lifecycle", merror.DVConflict)
 }
 
 func MustBeCreator(
@@ -50,7 +51,8 @@ func MustBeCreator(
 		return merror.Transform(err).Describe("getting create event")
 	}
 	if createEvent.SenderID != senderID {
-		return merror.Forbidden().Describe("sender not the creator")
+		return merror.Forbidden().Describe("sender not the creator").
+			Detail("sender_id", merror.DVForbidden)
 	}
 	return nil
 }
@@ -78,5 +80,6 @@ func MustBeCreatorIfClosed(
 		}
 		return merror.Transform(err).Describe("getting lifecycle event")
 	}
-	return merror.Forbidden().Describe("restricted to creator since box is closed")
+	return merror.Forbidden().Describe("restricted to creator since box is closed").
+		Detail("sender_id", merror.DVForbidden)
 }

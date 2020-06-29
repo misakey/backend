@@ -174,6 +174,27 @@ List of events that cannot be posted by clients:
     }
 ```
 
+### Notable Error Reponses
+
+**I - The box is closed:**
+
+A box that has received a lifecycle closed event cannot received new events.
+
+```bash
+  HTTP 409 CONFLICT
+```
+
+_JSON Body:_
+```json
+{
+    "code": "conflict",
+    "origin": "not_defined",
+    "desc": "box is closed.",
+    "details": {
+        "lifecyle": "conflict"
+    }
+}
+```
 
 ## Getting Events in a Box
 
