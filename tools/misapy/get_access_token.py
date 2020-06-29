@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 from urllib.parse import parse_qs as parse_query_string
 
 from . import http
+from .check_response import check_response, assert_fn
 
 
 def get_emailed_code(identity_id):
@@ -113,9 +114,15 @@ def get_credentials(email=None):
         raise_for_status=False,
     )
 
+    check_response(
+        r,
+        [
+            lambda r: assert_fn('error=' not in r.history[0].headers['location'])
+        ]
+    )
+
     login_url_query = urlparse(r.request.url).query
-    login_challenge = parse_query_string(login_url_query)[
-        'login_challenge'][0]
+    login_challenge = parse_query_string(login_url_query)['login_challenge'][0]
     identity_id, manual_redirection = login_flow(s, login_challenge, email)
     r = s.get(manual_redirection, raise_for_status=False)
 
