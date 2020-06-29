@@ -66,7 +66,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	accountRepo := repositories.NewAccountSQLBoiler(dbConn)
 	identifierRepo := repositories.NewIdentifierSQLBoiler(dbConn)
 	identityRepo := repositories.NewIdentitySQLBoiler(dbConn)
-	authnStepRepo := repositories.NewAuthenticationStepSQLBoiler(dbConn)
+	authnStepRepo := repositories.NewAuthnStepSQLBoiler(dbConn)
 	hydraRepo := repositories.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
 	templateRepo := email.NewTemplateFileSystem(viper.GetString("mail.templates"))
 	var emailRepo email.Sender

@@ -14,17 +14,17 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories/sqlboiler"
 )
 
-type AuthenticationStepSQLBoiler struct {
+type AuthnStepSQLBoiler struct {
 	db *sql.DB
 }
 
-func NewAuthenticationStepSQLBoiler(db *sql.DB) *AuthenticationStepSQLBoiler {
-	return &AuthenticationStepSQLBoiler{
+func NewAuthnStepSQLBoiler(db *sql.DB) *AuthnStepSQLBoiler {
+	return &AuthnStepSQLBoiler{
 		db: db,
 	}
 }
 
-func (repo AuthenticationStepSQLBoiler) Create(ctx context.Context, authnStep *authn.Step) error {
+func (repo AuthnStepSQLBoiler) Create(ctx context.Context, authnStep *authn.Step) error {
 	// convert domain to sql model
 	sqlAuthnStep := sqlboiler.AuthenticationStep{
 		IdentityID: authnStep.IdentityID,
@@ -43,7 +43,7 @@ func (repo AuthenticationStepSQLBoiler) Create(ctx context.Context, authnStep *a
 	return nil
 }
 
-func (repo AuthenticationStepSQLBoiler) CompleteAt(ctx context.Context, id int, completeTime time.Time) error {
+func (repo AuthnStepSQLBoiler) CompleteAt(ctx context.Context, id int, completeTime time.Time) error {
 	data := sqlboiler.M{sqlboiler.AuthenticationStepColumns.CompleteAt: null.TimeFrom(completeTime)}
 	rowsAff, err := sqlboiler.AuthenticationSteps(sqlboiler.AuthenticationStepWhere.ID.EQ(id)).UpdateAll(ctx, repo.db, data)
 	if rowsAff == 0 {
@@ -52,7 +52,7 @@ func (repo AuthenticationStepSQLBoiler) CompleteAt(ctx context.Context, id int, 
 	return err
 }
 
-func (repo AuthenticationStepSQLBoiler) Last(
+func (repo AuthnStepSQLBoiler) Last(
 	ctx context.Context,
 	identityID string,
 	methodName authn.MethodRef,
@@ -87,7 +87,18 @@ func (repo AuthenticationStepSQLBoiler) Last(
 	return authnStep, nil
 }
 
-func (repo AuthenticationStepSQLBoiler) Delete(ctx context.Context, stepID int) error {
+func (repo AuthnStepSQLBoiler) DeleteIncomplete(ctx context.Context, identityID string) error {
+	mods := []qm.QueryMod{
+		sqlboiler.AuthenticationStepWhere.IdentityID.EQ(identityID),
+		sqlboiler.AuthenticationStepWhere.CompleteAt.IsNull(),
+	}
+	// ignore no rows affected since not incomplete step deleted means
+	// no incomplete steps anymore in storage: the method did its job
+	_, err := sqlboiler.AuthenticationSteps(mods...).DeleteAll(ctx, repo.db)
+	return err
+}
+
+func (repo AuthnStepSQLBoiler) Delete(ctx context.Context, stepID int) error {
 	mod := sqlboiler.AuthenticationStepWhere.ID.EQ(stepID)
 
 	rowsAff, err := sqlboiler.AuthenticationSteps(mod).DeleteAll(ctx, repo.db)

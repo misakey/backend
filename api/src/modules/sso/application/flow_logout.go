@@ -14,5 +14,10 @@ func (sso SSOService) Logout(ctx context.Context) error {
 	if acc == nil {
 		return merror.Forbidden()
 	}
-	return sso.authFlowService.Logout(ctx, acc.Subject, acc.Token)
+	if err := sso.authFlowService.Logout(ctx, acc.Subject, acc.Token); err != nil {
+		return merror.Transform(err).Describe("logging out on auth")
+	}
+
+	// expire all current authentication steps for the logged out subject
+	return sso.authenticationService.ExpireAll(ctx, acc.Subject)
 }

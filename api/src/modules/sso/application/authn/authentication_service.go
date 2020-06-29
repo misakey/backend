@@ -27,6 +27,7 @@ type stepRepo interface {
 	CompleteAt(ctx context.Context, stepID int, completeTime time.Time) error
 	Last(ctx context.Context, identityID string, methodName authn.MethodRef) (authn.Step, error)
 	Delete(ctx context.Context, stepID int) error
+	DeleteIncomplete(ctx context.Context, identityID string) error
 }
 
 func NewService(
@@ -67,6 +68,10 @@ func (as *Service) AssertAuthnStep(ctx context.Context, assertion authn.Step) (a
 	}
 	amr.Add(assertion.MethodName)
 	return acr, amr, metadataErr
+}
+
+func (as *Service) ExpireAll(ctx context.Context, identityID string) error {
+	return as.steps.DeleteIncomplete(ctx, identityID)
 }
 
 // GetRememberFor as an integer corresponding to seconds, according to the authentication context class
