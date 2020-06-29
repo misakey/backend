@@ -71,7 +71,7 @@ type IdentityAuthableCmd struct {
 func (cmd IdentityAuthableCmd) Validate() error {
 	// validate nested structure separately
 	if err := v.ValidateStruct(&cmd.Identifier,
-		v.Field(&cmd.Identifier.Value, v.Required, is.Email.Error("only emails are supported")),
+		v.Field(&cmd.Identifier.Value, v.Required, is.EmailFormat),
 	); err != nil {
 		return err
 	}
