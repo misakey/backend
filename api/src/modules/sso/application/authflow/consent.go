@@ -29,6 +29,12 @@ func (afs AuthFlowService) ConsentAccept(ctx context.Context, consentChallenge s
 	return redirect.To
 }
 
+// ConsentRequiredErr helper
+func (afs AuthFlowService) ConsentRequiredErr(err error) string {
+	var codeErr merror.Code = "consent_required"
+	return oauth.BuildRedirectErr(codeErr, err.Error(), afs.consentPageURL)
+}
+
 // ConsentRedirectErr helper
 func (afs AuthFlowService) ConsentRedirectErr(err error) string {
 	return oauth.BuildRedirectErr(merror.InvalidFlowCode, err.Error(), afs.consentPageURL)
@@ -36,8 +42,8 @@ func (afs AuthFlowService) ConsentRedirectErr(err error) string {
 
 // buildConsentURL
 func (afs AuthFlowService) BuildConsentURL(consentChallenge string) string {
-	// build the authentication URL
-	authenticationURL, err := url.ParseRequestURI(afs.consentPageURL)
+	// build the consent URL
+	consentURL, err := url.ParseRequestURI(afs.consentPageURL)
 	if err != nil {
 		return afs.ConsentRedirectErr(err)
 	}
@@ -47,7 +53,7 @@ func (afs AuthFlowService) BuildConsentURL(consentChallenge string) string {
 	query.Set("consent_challenge", consentChallenge)
 
 	// escape query parameters
-	authenticationURL.RawQuery = query.Encode()
-	return authenticationURL.String()
+	consentURL.RawQuery = query.Encode()
+	return consentURL.String()
 
 }

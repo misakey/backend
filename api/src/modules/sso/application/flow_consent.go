@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
@@ -93,20 +94,16 @@ func (sso SSOService) ConsentAccept(ctx context.Context, cmd ConsentAcceptCmd) (
 		}
 	}
 
-	// ensure tos and privacy policy have been accepted
+	// ensure all legal scopes have been accepted
 	// NOTE: we might make optional these scopes for external RPs
 	// it is currently mandatory for all of them
-	var tosOK, ppOK bool
-	for _, consentScope := range cmd.ConsentedScopes {
-		tosOK = (tosOK || (consentScope == "tos"))
-		ppOK = (ppOK || (consentScope == "privacy_policy"))
-	}
-	if !tosOK || !ppOK {
+	if !containsAllLegalScopes(cmd.ConsentedScopes) {
 		return redirect, merror.Forbidden().
 			Describe("tos and privacy_policy scopes must be consented").
 			Detail("tos", merror.DVRequired).
 			Detail("privacy_policy", merror.DVRequired)
 	}
+
 	consentScopes = append(consentScopes, cmd.ConsentedScopes...)
 	acceptance := consent.Acceptance{
 		GrantScope:  consentScopes,
@@ -144,17 +141,20 @@ func (sso SSOService) ConsentInit(ctx context.Context, consentChallenge string) 
 		return sso.authFlowService.ConsentRedirectErr(err)
 	}
 
-	scopes := consentCtx.RequestedScope
-	scopes = append(scopes, []string{"tos", "privacy_policy"}...)
 	// 3. Check tos and privacy_policy consents
+	// we are obliged to check the legal scopes have been requested otherwise no consent_required error
+	// will be returned in all cases by hydra - whereas we always want theses scopes to be consented by the end-user
+	if !containsAllLegalScopes(consentCtx.RequestedScope) {
+		return sso.authFlowService.ConsentRequiredErr(fmt.Errorf("tos and privacy_policy scope are mandatory to be requested"))
+	}
+
 	if identity.AccountID.IsZero() {
 		// get consents for the identity
 		sessions, err := sso.authFlowService.ConsentGetSessions(ctx, identity.ID)
 		if err != nil {
 			return sso.authFlowService.ConsentRedirectErr(err)
 		}
-		tosOK, privacyPolicyOK := checkLegalScopes(consentCtx.Client.ID, sessions)
-		if !tosOK || !privacyPolicyOK {
+		if !clientHasLegalScopes(consentCtx.Client.ID, sessions) {
 			return sso.authFlowService.BuildConsentURL(consentCtx.Challenge)
 		}
 	} else {
@@ -166,29 +166,28 @@ func (sso SSOService) ConsentInit(ctx context.Context, consentChallenge string) 
 		if err != nil {
 			return sso.authFlowService.ConsentRedirectErr(err)
 		}
-		var tosOK, privacyPolicyOK bool
+		var legalOK bool
 		for _, accountIdentity := range identities {
 			sessions, err := sso.authFlowService.ConsentGetSessions(ctx, accountIdentity.ID)
 			if err != nil {
 				return sso.authFlowService.ConsentRedirectErr(err)
 			}
-			idTosOK, idPrivacyPolicyOK := checkLegalScopes(consentCtx.Client.ID, sessions)
-			tosOK = idTosOK || tosOK
-			privacyPolicyOK = idPrivacyPolicyOK || privacyPolicyOK
+			if legalOK = clientHasLegalScopes(consentCtx.Client.ID, sessions); legalOK {
+				break
+			}
 		}
-
-		if !tosOK || !privacyPolicyOK {
+		if !legalOK {
 			return sso.authFlowService.BuildConsentURL(consentCtx.Challenge)
 		}
 	}
 
 	// 4. build consent accept request directly
 	acceptance := consent.Acceptance{
-		GrantScope:  scopes, // accept all requested scopes
+		GrantScope:  consentCtx.RequestedScope, // accept all requested scopes
 		Remember:    true,
 		RememberFor: 0, // remember for ever the user consent
 	}
-	acceptance.Session.IDTokenClaims.Scope = strings.Join(scopes, " ")
+	acceptance.Session.IDTokenClaims.Scope = strings.Join(consentCtx.RequestedScope, " ")
 	acceptance.Session.IDTokenClaims.Email = identifier.Value
 	acceptance.Session.IDTokenClaims.AMR = consentCtx.AuthnContext.GetAMR()
 	acceptance.Session.AccessTokenClaims.ACR = consentCtx.ACR
@@ -198,29 +197,28 @@ func (sso SSOService) ConsentInit(ctx context.Context, consentChallenge string) 
 }
 
 // checkLegalScopes
-func checkLegalScopes(clientID string, sessions []consent.Session) (tosOK, privacyPolicyOK bool) {
+func clientHasLegalScopes(clientID string, sessions []consent.Session) (ok bool) {
 	for _, session := range sessions {
 		if session.ConsentRequest.Client.ID != clientID {
 			continue
 		}
-		for _, scope := range session.GrantScope {
-			if scope == "tos" {
-				tosOK = true
-				if privacyPolicyOK {
-					// we don’t need to continue
-					// if all the scopes are here
-					return
-				}
-			}
-			if scope == "privacy_policy" {
-				privacyPolicyOK = true
-				if tosOK {
-					// we don’t need to continue
-					// if all the scopes are here
-					return
-				}
-			}
+		return containsAllLegalScopes(session.GrantScope)
+	}
+	return false
+}
+
+func containsAllLegalScopes(grantScope []string) bool {
+	var tosOK, privacyPolicyOK bool
+	for _, scope := range grantScope {
+		switch scope {
+		case "tos":
+			tosOK = true
+		case "privacy_policy":
+			privacyPolicyOK = true
+		}
+		if tosOK && privacyPolicyOK {
+			return true
 		}
 	}
-	return
+	return false
 }

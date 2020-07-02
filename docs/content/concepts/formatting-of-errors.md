@@ -43,6 +43,8 @@ We use this link as general specifications for errors and not just for http requ
 **Redirect codes**: _code encountered in query parameter `error_code` on redirections_
 * `invalid_flow`
 * `invalid_url`
+* `login_required`: while an auth flow was inited with `prompt=none` parameter but could not be respected because of authentication is required.
+* `consent_required`: while an auth flow was inited with `prompt=none` parameter but could not be respected because of consent is required.
 * `missing_parameter`
 * `forbidden_role`
 * `auth_process_required`
