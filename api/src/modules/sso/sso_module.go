@@ -117,6 +117,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 		identifierService,
 		authFlowService,
 		authenticationService,
+		viper.GetString("authflow.self_client_id"),
 	)
 	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(
 		viper.GetString("authflow.self_client_id"),

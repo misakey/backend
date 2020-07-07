@@ -14,16 +14,20 @@ type SSOService struct {
 	identifierService     identifier.IdentifierService
 	authFlowService       authflow.AuthFlowService
 	authenticationService authn.Service
+
+	selfCliID string
 }
 
 func NewSSOService(
 	as account.AccountService, ids identity.IdentityService, idfs identifier.IdentifierService,
 	afs authflow.AuthFlowService,
 	authns authn.Service,
+	selfCliID string,
 ) SSOService {
 	return SSOService{
 		accountService: as, identityService: ids, identifierService: idfs,
 		authFlowService:       afs,
 		authenticationService: authns,
+		selfCliID:             selfCliID,
 	}
 }

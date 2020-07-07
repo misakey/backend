@@ -561,7 +561,7 @@ _JSON Body:_
 
 - `consent_challenge` (string): can be found in previous redirect URL.
 - `identity_id` (uuid string): the subject of the flow.
-- `consented_scopes` (list of string) (one of: _tos_, _privacy\_policy_): the accepted scopes
+- `consented_scopes` (list of string) (one of: _tos_, _privacy\_policy_): the accepted scopes.
 
 ### Success Response
 
@@ -585,7 +585,8 @@ _JSON Body:_
 
 **1 - A mandatory scope is missing from consent**
 
-At least both `tos` and `privacy_policy` scopes must be consented on this request.
+If some legal scopes have been requested at the init of the auth flow, they
+must be consented in all cases on this request.
 
 Here is the error to expect if the client didn't send these scopes:
 ```json
@@ -593,13 +594,11 @@ Here is the error to expect if the client didn't send these scopes:
      "code": "forbidden",
      "origin": "unknown",
      "details": {
-       "tos": "required",
-       "privacy_policy": "required"
-     },
+       "requested_legal_scope": "{space-limited list of legal scope requested}",
+       "consented_legal_scope": "{space-limited list of legal scope consented}"
+     }
 }
 ```
-
-Both `tos` and `privacy_policy` are returned, there is no granularity about which one is missing or if it is both of them.
 
 ## Logout
 

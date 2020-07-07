@@ -117,7 +117,8 @@ def get_credentials(email=None):
     check_response(
         r,
         [
-            lambda r: assert_fn('error=' not in r.history[0].headers['location'])
+            lambda r: assert_fn(
+                'error=' not in r.history[0].headers['location'])
         ]
     )
 

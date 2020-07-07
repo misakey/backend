@@ -78,21 +78,22 @@ on top of [OAuth 2.0][] to generates an [ID Token][] aside the access token.
 
 `tos` and `privacy_policy` are legal scopes that ensure
 the user has consented to Term of Services and Privacy Policy.
-They are required for Misakey App.
 
 ### 3.4. TOS and Privacy Policy
 
-A user must have consented to TOS and Privacy Policy to access the application.
-For this we use scopes `tos` and `privacy_policy`. These must be requested when initializing
-the authorization code flow.
+`tos` and `privacy_policy` scopes can be requested during the init of the authorization code flow using the parameter `scope`.
 
-These scopes are managed for a given account. It means that if one identity of an account
+In the Misakey app, these scopes are managed for a given account. It means that if one identity of an account
 has an existing valid session with those scopes, these will be automatically accepted
 for all identities of the account.
 
-If the scopes have never been accepted, the user will be redirected to a frontend page
+For all other External Relying Parties, these scopes are managed for a given identity.
+
+If the scopes have been requested but have never been accepted, the user will be redirected to a frontend page
 during the consent flow and the route `POST /auth/consent` must be used to
 publish their consent.
+
+If requested, the legal scopes must be consented by the end-user during the consent flow.
 
 ## 4. Authentication
 
