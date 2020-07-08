@@ -26,6 +26,8 @@ type KeyShare struct {
 	InvitationHash string    `boil:"invitation_hash" json:"invitation_hash" toml:"invitation_hash" yaml:"invitation_hash"`
 	Share          string    `boil:"share" json:"share" toml:"share" yaml:"share"`
 	CreatedAt      time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	BoxID          string    `boil:"box_id" json:"box_id" toml:"box_id" yaml:"box_id"`
+	CreatorID      string    `boil:"creator_id" json:"creator_id" toml:"creator_id" yaml:"creator_id"`
 
 	R *keyShareR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L keyShareL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -35,10 +37,14 @@ var KeyShareColumns = struct {
 	InvitationHash string
 	Share          string
 	CreatedAt      string
+	BoxID          string
+	CreatorID      string
 }{
 	InvitationHash: "invitation_hash",
 	Share:          "share",
 	CreatedAt:      "created_at",
+	BoxID:          "box_id",
+	CreatorID:      "creator_id",
 }
 
 // Generated where
@@ -47,10 +53,14 @@ var KeyShareWhere = struct {
 	InvitationHash whereHelperstring
 	Share          whereHelperstring
 	CreatedAt      whereHelpertime_Time
+	BoxID          whereHelperstring
+	CreatorID      whereHelperstring
 }{
 	InvitationHash: whereHelperstring{field: "\"key_share\".\"invitation_hash\""},
 	Share:          whereHelperstring{field: "\"key_share\".\"share\""},
 	CreatedAt:      whereHelpertime_Time{field: "\"key_share\".\"created_at\""},
+	BoxID:          whereHelperstring{field: "\"key_share\".\"box_id\""},
+	CreatorID:      whereHelperstring{field: "\"key_share\".\"creator_id\""},
 }
 
 // KeyShareRels is where relationship names are stored.
@@ -70,8 +80,8 @@ func (*keyShareR) NewStruct() *keyShareR {
 type keyShareL struct{}
 
 var (
-	keyShareAllColumns            = []string{"invitation_hash", "share", "created_at"}
-	keyShareColumnsWithoutDefault = []string{"invitation_hash", "share", "created_at"}
+	keyShareAllColumns            = []string{"invitation_hash", "share", "created_at", "box_id", "creator_id"}
+	keyShareColumnsWithoutDefault = []string{"invitation_hash", "share", "created_at", "box_id", "creator_id"}
 	keyShareColumnsWithDefault    = []string{}
 	keySharePrimaryKeyColumns     = []string{"invitation_hash"}
 )

@@ -12,9 +12,9 @@ import (
 
 func Create(
 	ctx context.Context, exec boil.ContextExecutor,
-	invitHash, share string,
+	invitHash, share, boxID, creatorID string,
 ) error {
-	ks := KeyShare{invitHash, share}
+	ks := KeyShare{invitHash, share, boxID, creatorID}
 	return ks.toSQLBoiler().Insert(ctx, exec, boil.Infer())
 }
 

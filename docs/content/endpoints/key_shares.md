@@ -45,6 +45,7 @@ _JSON Body:_
 
 - `share` (string) (base64): one of the shares.
 - `invitation_hash` (string) (unpadded url-safe base64): a hash of the other share.
+- `box_id` (string) (uuid): the box id linked to the key shares.
 
 ### Response
 
@@ -84,3 +85,4 @@ _JSON Body:_
 
 - `share` (string) (base64): one of the shares.
 - `invitation_hash` (string) (unpadded url-safe base64): a hash of the other share.
+- `box_id` (string) (uuid): the box id linked to the key shares.

@@ -21,6 +21,7 @@ func (cmd createKeyShareCmd) validate() error {
 	return v.ValidateStruct(&cmd,
 		v.Field(&cmd.InvitationHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 		v.Field(&cmd.Share, v.Required, is.Base64),
+		v.Field(&cmd.BoxID, v.Required, is.UUIDv4),
 	)
 }
 
@@ -28,7 +29,8 @@ func (h *handler) createKeyShare(eCtx echo.Context) error {
 	ctx := eCtx.Request().Context()
 
 	// user must be connected
-	if ajwt.GetAccesses(ctx) == nil {
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
 		return merror.Forbidden()
 	}
 
@@ -41,7 +43,9 @@ func (h *handler) createKeyShare(eCtx echo.Context) error {
 		return merror.Transform(err).From(merror.OriBody)
 	}
 
-	if err := keyshare.Create(ctx, h.repo.DB(), cmd.InvitationHash, cmd.Share); err != nil {
+	if err := keyshare.Create(
+		ctx, h.repo.DB(),
+		cmd.InvitationHash, cmd.Share, cmd.BoxID, acc.Subject); err != nil {
 		return merror.Transform(err).Describe("creating key share")
 	}
 
