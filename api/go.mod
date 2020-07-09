@@ -9,6 +9,7 @@ require (
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/go-playground/assert/v2 v2.0.1
+	github.com/go-redis/redis/v7 v7.4.0
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/google/uuid v1.1.1
 	github.com/labstack/echo/v4 v4.1.16

@@ -13,6 +13,8 @@ func initConfig() {
 	mandatoryFields := []string{
 		"authflow.self_client_id",
 		"hydra.admin_endpoint",
+		"redis.address",
+		"redis.port",
 	}
 	switch os.Getenv("ENV") {
 	case "production":

@@ -11,6 +11,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/types"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
@@ -101,6 +102,20 @@ func (h *handler) createEvent(
 
 	if err := e.ToSQLBoiler().Insert(ctx, h.repo.DB(), boil.Infer()); err != nil {
 		return view, merror.Transform(err).Describe("inserting event in DB")
+	}
+
+	// increment count for all identities except the sender
+	// only if this is not a lifecycle event
+	if e.Type != "state.lifecycle" {
+		identities, err := boxes.GetActorsExcept(ctx, h.repo.DB(), e.BoxID, sender.ID)
+		if err != nil {
+			return view, merror.Transform(err).Describe("fetching list of actors")
+		}
+
+		if err := h.repo.EventsCounts().Incr(ctx, identities, e.BoxID); err != nil {
+			// we log the error but we don’t return it
+			logger.FromCtx(ctx).Warn().Err(err).Msg("could not increment new events count")
+		}
 	}
 
 	return events.ToView(e, sender), nil

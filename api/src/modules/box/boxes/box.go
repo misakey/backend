@@ -18,8 +18,9 @@ type Box struct {
 	Lifecycle string    `json:"lifecycle"`
 
 	// aggregated data
-	Creator   events.SenderView `json:"creator"`
-	LastEvent events.View       `json:"last_event"`
+	EventsCount int               `json:"events_count"`
+	Creator     events.SenderView `json:"creator"`
+	LastEvent   events.View       `json:"last_event"`
 }
 
 func MustBeOpen(
@@ -82,4 +83,32 @@ func MustBeCreatorIfClosed(
 	}
 	return merror.Forbidden().Describe("restricted to creator since box is closed").
 		Detail("sender_id", merror.DVForbidden)
+}
+
+func GetActorsExcept(
+	ctx context.Context,
+	exec boil.ContextExecutor,
+	boxID, exceptID string,
+) ([]string, error) {
+	// we build a set to find all uniq actors
+	uniqActors := make(map[string]bool)
+	events, err := events.ListByBoxID(ctx, exec, boxID)
+	if err != nil {
+		return nil, err
+	}
+	for _, event := range events {
+		if event.SenderID != exceptID {
+			uniqActors[event.SenderID] = true
+		}
+	}
+
+	// we return the list
+	actors := make([]string, len(uniqActors))
+	idx := 0
+	for actor := range uniqActors {
+		actors[idx] = actor
+		idx += 1
+	}
+
+	return actors, nil
 }

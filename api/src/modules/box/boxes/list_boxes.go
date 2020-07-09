@@ -23,8 +23,8 @@ func ListForSender(
 	repo repositories.Contextual,
 	senderID string,
 	limit, offset int,
-) ([]Box, error) {
-	boxes := []Box{}
+) ([]*Box, error) {
+	boxes := []*Box{}
 
 	// 1. retrieve box IDs
 	boxIDs, err := latestIDsForSender(ctx, repo.DB(), senderID)
@@ -45,13 +45,31 @@ func ListForSender(
 	}
 
 	// 3. compute all boxes
-	boxes = make([]Box, len(boxIDs))
+	boxes = make([]*Box, len(boxIDs))
 	for i, boxID := range boxIDs {
-		boxes[i], err = Compute(ctx, boxID, repo)
+		box, err := Compute(ctx, boxID, repo)
 		if err != nil {
 			return boxes, merror.Transform(err).Describef("computing box %s", boxID)
 		}
+		boxes[i] = &box
 	}
+
+	// 4. add the new events count for the requesting identity
+	eventsCount, err := repo.EventsCounts().GetIdentityEventsCount(ctx, senderID)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("getting new events count")
+	}
+	for _, box := range boxes {
+		// if there is no value for a given box
+		// that means no new event since last visit
+		count, ok := eventsCount[box.ID]
+		if !ok {
+			box.EventsCount = 0
+		}
+		box.EventsCount = count
+	}
+
+	// 5. eventually return the boxes list
 	return boxes, nil
 }
 

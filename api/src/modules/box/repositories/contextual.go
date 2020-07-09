@@ -16,6 +16,7 @@ type Contextual interface {
 	DB() boil.ContextExecutor
 	Identities() entrypoints.IdentityIntraprocessInterface
 	Files() fileRepo
+	EventsCounts() eventsCountRepo
 }
 
 type fileRepo interface {
@@ -24,22 +25,31 @@ type fileRepo interface {
 	Delete(context.Context, string, string) error
 }
 
+type eventsCountRepo interface {
+	Incr(ctx context.Context, identityIDs []string, boxID string) error
+	Del(ctx context.Context, identityID, boxID string) error
+	GetIdentityEventsCount(ctx context.Context, identityID string) (map[string]int, error)
+}
+
 // RealWorld implementation of the Contextual repository using real infrastructure storage
 type RealWorld struct {
 	db           *sql.DB
 	identityRepo entrypoints.IdentityIntraprocessInterface
 	files        fileRepo
+	eventsCounts eventsCountRepo
 }
 
 func NewRealWorld(
 	db *sql.DB,
 	identityRepo entrypoints.IdentityIntraprocessInterface,
 	files fileRepo,
+	eventsCounts eventsCountRepo,
 ) RealWorld {
 	return RealWorld{
 		db:           db,
 		identityRepo: identityRepo,
 		files:        files,
+		eventsCounts: eventsCounts,
 	}
 }
 
@@ -51,4 +61,7 @@ func (r RealWorld) Identities() entrypoints.IdentityIntraprocessInterface {
 }
 func (r RealWorld) Files() fileRepo {
 	return r.files
+}
+func (r RealWorld) EventsCounts() eventsCountRepo {
+	return r.eventsCounts
 }

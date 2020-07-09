@@ -1,8 +1,10 @@
 package box
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -33,6 +35,16 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 		log.Fatal().Err(err).Msg("could not connect to db")
 	}
 
+	// init redis connection
+	redConn := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", viper.GetString("redis.address"), viper.GetString("redis.port")),
+		Password: "",
+		DB:       0,
+	})
+	if _, err := redConn.Ping().Result(); err != nil {
+		log.Fatal().Err(err).Msg("could not connect to redis")
+	}
+
 	adminHydraFORM := http.NewClient(
 		viper.GetString("hydra.admin_endpoint"),
 		viper.GetBool("hydra.secure"),
@@ -52,6 +64,9 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 			dbConn,
 			identityIntraprocess,
 			repositories.NewBoxFileSystem(viper.GetString("server.encrypted_files")),
+			repositories.NewEventsCountRedis(
+				redConn,
+			),
 		)
 	} else if env == "production" {
 		repo = repositories.NewRealWorld(
@@ -60,6 +75,9 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 			repositories.NewBoxFileAmazonS3(
 				viper.GetString("aws.s3_region"),
 				viper.GetString("aws.encrypted_files_bucket"),
+			),
+			repositories.NewEventsCountRedis(
+				redConn,
 			),
 		)
 	} else {

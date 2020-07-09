@@ -130,7 +130,7 @@ _Code:_
 A list of event is returned.
 ```json
 [
-  {{% include "include/box.json" %}}
+  {{% include "include/box-list.json" %}}
 ]
 ```
 
@@ -293,7 +293,7 @@ _Code:_
 ### Request
 
 ```bash
-  GET https://www.api.misakey.com/boxes/:bid/encrypted-files/:eid
+  GET https://api.misakey.com/boxes/:bid/encrypted-files/:eid
 ```
 
 _Path Parameters:_
@@ -316,4 +316,38 @@ _Headers:_
 _Octect Stream Body:_
 ```
   (the raw data of the encrypted file)
+```
+
+## Reset the new events count for an identity
+
+This endpoint allows to reset the new events count of a box for a given identity.
+
+It is a kind of an acknowledgement and it must be used when the user want to mark the box as "read".
+
+### Request
+
+```bash
+  PUT https://api.misakey.com/boxes/:id/new-events-count/ack
+```
+
+_Path Parameter:_
+- `id` (string) (uuid): the box id to mark as "read"
+
+_JSON Body:_
+```json
+    {
+        "identity_id": "e2e49259-f840-4991-a9f7-97c5f267bd18"
+    }
+```
+
+where `identity_id` is the identity of the requester who wants to acknowledge.
+
+_Headers:_
+- `Authorization` (opaque token) (ACR >= 1): a valid access token corresponding to the identity of the body
+
+### Success Response
+
+_Code:_
+```bash
+  HTTP 204 NO CONTENT
 ```
