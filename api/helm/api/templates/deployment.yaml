@@ -24,6 +24,7 @@ spec:
       annotations:
         ad.datadoghq.com/api.logs: '[{"source":"golang","service":"api"}]'
         tier: backend
+        rollme: {{ randAlphaNum 5 | quote }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
@@ -88,3 +89,4 @@ spec:
       tolerations:
 {{ toYaml . | indent 8 }}
     {{- end }}
+# 
