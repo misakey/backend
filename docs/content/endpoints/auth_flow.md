@@ -114,7 +114,9 @@ _JSON Body_:
       "client": {
           "id": "c001d00d-5ecc-beef-ca4e-b00b1e54a111",
           "name": "Misakey App",
-          "logo_uri": "https://media.glassdoor.com/sqll/2449676/misakey-squarelogo-1549446114307.png"
+          "logo_uri": "https://media.glassdoor.com/sqll/2449676/misakey-squarelogo-1549446114307.png",
+          "tos_uri": "https://about.misakey.com/#/fr/legals/tos/",
+          "policy_uri": "https://media.glassdoor.com/sqll/2449676/misakey-squarelogo-1549446114307.png"
       },
       "scope": [
           "openid"
@@ -127,7 +129,9 @@ _JSON Body_:
 - `client` (object): information about the SSO client involved in the auth flow:
   - `id` (uuid string): the unique id.
   - `name` (string): the name.
-  - `url` (string) (nullable): web-address of the logo file.
+  - `logo_uri` (string) (nullable): web-address of the logo file.
+  - `policy_uri` (string) (nullable): web-address of client privacy policy.
+  - `tos_uri` (string) (nullable): web-address of the client TOS.
 - `scope` (string): list of scope sent during the auth flow init.
 - `acr_values` (string) (nullable): list of acr values sent during the auth flow init.
 - `login_hint` (string): the login_hint sent during the auth flow init.

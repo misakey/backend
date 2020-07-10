@@ -45,9 +45,11 @@ func (h HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (
 		Subject        string   `json:"subject"`
 		RequestedScope []string `json:"requested_scope"`
 		Client         struct { // concerned relying party
-			ID      string `json:"client_id"`
-			Name    string `json:"client_name"`
-			LogoURI string `json:"logo_uri"`
+			ID        string `json:"client_id"`
+			Name      string `json:"client_name"`
+			LogoURI   string `json:"logo_uri"`
+			TosURI    string `json:"tos_uri"`
+			PolicyURI string `json:"policy_uri"`
 		} `json:"client"`
 		OIDCContext struct { // OIDC context of the current request
 			ACRValues []string `json:"acr_values"`
@@ -77,6 +79,12 @@ func (h HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (
 	logCtx.Client.Name = hydraLogReq.Client.Name
 	if hydraLogReq.Client.LogoURI != "" {
 		logCtx.Client.LogoURL = null.StringFrom(hydraLogReq.Client.LogoURI)
+	}
+	if hydraLogReq.Client.TosURI != "" {
+		logCtx.Client.TosURL = null.StringFrom(hydraLogReq.Client.TosURI)
+	}
+	if hydraLogReq.Client.PolicyURI != "" {
+		logCtx.Client.PolicyURL = null.StringFrom(hydraLogReq.Client.PolicyURI)
 	}
 	logCtx.OIDCContext.ACRValues = hydraLogReq.OIDCContext.ACRValues
 	logCtx.OIDCContext.LoginHint = hydraLogReq.OIDCContext.LoginHint

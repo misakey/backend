@@ -22,9 +22,11 @@ type ConsentInfoView struct {
 	RequestedScope []string      `json:"scope"`
 	AuthnContext   authn.Context `json:"context"`
 	Client         struct {
-		ID      string      `json:"client_id"`
-		Name    string      `json:"name"`
-		LogoURL null.String `json:"logo_uri"`
+		ID        string      `json:"client_id"`
+		Name      string      `json:"name"`
+		LogoURL   null.String `json:"logo_uri"`
+		TosURL    null.String `json:"tos_uri"`
+		PolicyURL null.String `json:"policy_uri"`
 	} `json:"client"`
 }
 
@@ -44,6 +46,8 @@ func (sso SSOService) ConsentInfo(ctx context.Context, loginChallenge string) (C
 	view.Client.ID = consentCtx.Client.ID
 	view.Client.Name = consentCtx.Client.Name
 	view.Client.LogoURL = consentCtx.Client.LogoURL
+	view.Client.TosURL = consentCtx.Client.TosURL
+	view.Client.PolicyURL = consentCtx.Client.PolicyURL
 	return view, nil
 }
 

@@ -19,9 +19,11 @@ func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) stri
 // LoginInfoView bears data about current user authentication status
 type LoginInfoView struct {
 	Client struct { // concerned relying party
-		ID      string      `json:"id"`
-		Name    string      `json:"name"`
-		LogoURL null.String `json:"logo_uri"`
+		ID        string      `json:"id"`
+		Name      string      `json:"name"`
+		LogoURL   null.String `json:"logo_uri"`
+		TosURL    null.String `json:"tos_uri"`
+		PolicyURL null.String `json:"policy_uri"`
 	} `json:"client"`
 	RequestedScope []string `json:"scope"`
 	ACRValues      []string `json:"acr_values"`
@@ -40,6 +42,8 @@ func (sso SSOService) LoginInfo(ctx context.Context, loginChallenge string) (Log
 	view.Client.ID = logCtx.Client.ID
 	view.Client.Name = logCtx.Client.Name
 	view.Client.LogoURL = logCtx.Client.LogoURL
+	view.Client.TosURL = logCtx.Client.TosURL
+	view.Client.PolicyURL = logCtx.Client.PolicyURL
 	view.RequestedScope = logCtx.RequestedScope
 	view.ACRValues = logCtx.OIDCContext.ACRValues
 	view.LoginHint = logCtx.OIDCContext.LoginHint

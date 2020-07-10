@@ -23,9 +23,11 @@ type Context struct {
 	RequestedScope []string      `json:"requested_scope"`
 	AuthnContext   authn.Context `json:"context"`
 	Client         struct {
-		ID      string      `json:"client_id"`
-		Name    string      `json:"name"`
-		LogoURL null.String `json:"logo_uri"`
+		ID        string      `json:"client_id"`
+		Name      string      `json:"name"`
+		LogoURL   null.String `json:"logo_uri"`
+		TosURL    null.String `json:"tos_uri"`
+		PolicyURL null.String `json:"policy_uri"`
 	} `json:"client"`
 }
 

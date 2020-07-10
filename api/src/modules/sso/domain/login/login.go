@@ -12,9 +12,11 @@ type Context struct {
 	Subject        string   `json:"subject"`
 	RequestedScope []string `json:"requested_scope"`
 	Client         struct { // concerned relying party
-		ID      string      `json:"id"`
-		Name    string      `json:"name"`
-		LogoURL null.String `json:"logo_uri"`
+		ID        string      `json:"id"`
+		Name      string      `json:"name"`
+		LogoURL   null.String `json:"logo_uri"`
+		TosURL    null.String `json:"tos_uri"`
+		PolicyURL null.String `json:"policy_uri"`
 	} `json:"client"`
 	OIDCContext struct { // OIDC context of the current request
 		ACRValues []string `json:"acr_values"`
