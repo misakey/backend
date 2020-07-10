@@ -10,6 +10,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/keyshare"
 )
 
@@ -66,7 +67,8 @@ func (h *handler) getKeyShare(eCtx echo.Context) error {
 	ctx := eCtx.Request().Context()
 
 	// user must be connected
-	if ajwt.GetAccesses(ctx) == nil {
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
 		return merror.Forbidden()
 	}
 
@@ -80,6 +82,10 @@ func (h *handler) getKeyShare(eCtx echo.Context) error {
 	ks, err := keyshare.Get(ctx, h.repo.DB(), query.invitationHash)
 	if err != nil {
 		return merror.Transform(err).Describe("getting key share")
+	}
+
+	if err := events.StoreJoin(ctx, h.repo.DB(), ks.BoxID, acc.Subject); err != nil {
+		return err
 	}
 
 	return eCtx.JSON(http.StatusOK, ks)

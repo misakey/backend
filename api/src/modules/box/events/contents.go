@@ -15,6 +15,7 @@ var contentTypeGetters = map[string]func() anyContent{
 	"state.lifecycle": func() anyContent { return &StateLifecycleContent{} },
 	"msg.text":        func() anyContent { return &msgTextContent{} },
 	"msg.file":        func() anyContent { return &msgFileContent{} },
+	"join":            func() anyContent { return &JoinContent{} },
 }
 
 type anyContent interface {

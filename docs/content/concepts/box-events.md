@@ -19,7 +19,7 @@ An event has the following fields:
   ```
   {{% include "include/event-sender.json" 2 %}}
   ```
-- `type`, one of `create`, `msg.txt`, `msg.file`, `state.lifecycle`
+- `type`, one of `create`, `msg.txt`, `msg.file`, `state.lifecycle`, `join`
 - `content`, an object which shape depends on `type`
 
 ## “Create”-type event
@@ -30,6 +30,13 @@ when the box is created:
 - the `server_event_created_at` field is the time of creation of the box itself
 - the `sender` of the event is the user who created the box
 - for `content`, see below
+
+## "Join"-type event
+
+An event of type `join` is automatically added to the box by the backend
+when a user joins the box with an invitation link.
+
+Only one `join` event can exist per couple box/sender.
 
 ## Content of Each Type of Event
 
@@ -55,3 +62,5 @@ For `msg.file` event, there is an additionnal information:
 Messages of type `state.lifecycle` have the following content fields:
 
 - `state` (string): for which the only allowed value for now is `closed`.
+
+Messages of type `join` have no content field.

@@ -68,6 +68,31 @@ func ListByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 	return events, nil
 }
 
+func ListByTypeAndBoxIDAndSenderID(ctx context.Context, exec boil.ContextExecutor, eventType, boxID, senderID string) ([]Event, error) {
+	mods := []qm.QueryMod{
+		sqlboiler.EventWhere.BoxID.EQ(boxID),
+		sqlboiler.EventWhere.Type.EQ(eventType),
+		sqlboiler.EventWhere.SenderID.EQ(senderID),
+		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " DESC"),
+	}
+
+	dbEvents, err := sqlboiler.Events(mods...).All(ctx, exec)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("retrieving db events")
+	}
+
+	events := make([]Event, len(dbEvents))
+	for i, record := range dbEvents {
+		events[i] = FromSQLBoiler(record)
+	}
+
+	if len(events) == 0 {
+		return events, merror.NotFound().Detail("id", merror.DVNotFound)
+	}
+
+	return events, nil
+}
+
 func newWithAnyContent(eType string, content anyContent, boxID string, senderID string) (Event, error) {
 	contentBytes, err := json.Marshal(content)
 	if err != nil {
