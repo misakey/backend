@@ -4,16 +4,16 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 )
 
-type KeyShare struct {
-	InvitationHash string `json:"invitation_hash"`
+type BoxKeyShare struct {
+	OtherShareHash string `json:"other_share_hash"`
 	Share          string `json:"share"`
 	BoxID          string `json:"box_id"`
 	creatorID      string
 }
 
-func (src KeyShare) toSQLBoiler() *sqlboiler.KeyShare {
-	dest := sqlboiler.KeyShare{
-		InvitationHash: src.InvitationHash,
+func (src BoxKeyShare) toSQLBoiler() *sqlboiler.BoxKeyShare {
+	dest := sqlboiler.BoxKeyShare{
+		OtherShareHash: src.OtherShareHash,
 		Share:          src.Share,
 		BoxID:          src.BoxID,
 		CreatorID:      src.creatorID,
@@ -21,9 +21,9 @@ func (src KeyShare) toSQLBoiler() *sqlboiler.KeyShare {
 	return &dest
 }
 
-func fromSQLBoiler(src *sqlboiler.KeyShare) KeyShare {
-	dest := KeyShare{
-		InvitationHash: src.InvitationHash,
+func fromSQLBoiler(src *sqlboiler.BoxKeyShare) BoxKeyShare {
+	dest := BoxKeyShare{
+		OtherShareHash: src.OtherShareHash,
 		Share:          src.Share,
 		BoxID:          src.BoxID,
 		creatorID:      src.CreatorID,

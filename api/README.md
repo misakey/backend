@@ -12,8 +12,4 @@ API is the Misakey backend service
 
 ## Migrations
 
-After running the migration with Goose,
-here is the SQLBoiler command you should run to update the SQLBoiler model:
-
-    $ # You should be located in 'api/'
-    $ sqlboiler psql --config config/sqlboiler.toml --output src/sqlboiler
+The migrations steps are explained in each module.

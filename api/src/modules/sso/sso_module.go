@@ -1,8 +1,10 @@
 package sso
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -16,6 +18,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/account"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/backupkeyshare"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
@@ -35,6 +38,16 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	)
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not connect to db")
+	}
+
+	// init redis connection
+	redConn := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", viper.GetString("redis.address"), viper.GetString("redis.port")),
+		Password: "",
+		DB:       0,
+	})
+	if _, err := redConn.Ping().Result(); err != nil {
+		log.Fatal().Err(err).Msg("could not connect to redis")
 	}
 
 	// init self authenticator for hydra rester
@@ -67,6 +80,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	identifierRepo := repositories.NewIdentifierSQLBoiler(dbConn)
 	identityRepo := repositories.NewIdentitySQLBoiler(dbConn)
 	authnStepRepo := repositories.NewAuthnStepSQLBoiler(dbConn)
+	backupKeyRepo := repositories.NewSimpleKeyRedis(redConn, viper.GetDuration("backup_key_share.expiration"))
 	hydraRepo := repositories.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
 	templateRepo := email.NewTemplateFileSystem(viper.GetString("mail.templates"))
 	var emailRepo email.Sender
@@ -111,12 +125,14 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 		accountService,
 		emailRenderer, emailRepo,
 	)
+	backupKeyShareService := backupkeyshare.NewBackupKeyShareService(backupKeyRepo)
 	ssoService := application.NewSSOService(
 		accountService,
 		identityService,
 		identifierService,
 		authFlowService,
 		authenticationService,
+		backupKeyShareService,
 		viper.GetString("authflow.self_client_id"),
 	)
 	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(

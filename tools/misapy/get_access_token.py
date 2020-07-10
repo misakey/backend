@@ -9,6 +9,7 @@ from urllib.parse import parse_qs as parse_query_string
 
 from . import http
 from .check_response import check_response, assert_fn
+from .password_hashing import hash_password
 
 
 def get_emailed_code(identity_id):
@@ -42,6 +43,7 @@ def login_flow(s, login_challenge, email):
     )
     identity_id = r.json()['authn_step']['identity_id']
     preferred_method = r.json()['authn_step']['method_name']
+    account_id = r.json()['identity'].get('account_id')
 
     # create the emailed code authn step
     # if the preferred method is not emailed code by default
@@ -74,7 +76,7 @@ def login_flow(s, login_challenge, email):
     )
 
     manual_redirection = r.json()['redirect_to']
-    return identity_id, manual_redirection
+    return identity_id, manual_redirection, account_id
 
 
 def consent_flow(s, consent_challenge, identity_id):
@@ -93,7 +95,9 @@ def consent_flow(s, consent_challenge, identity_id):
     return manual_redirection
 
 
-def get_credentials(email=None):
+def get_credentials(email=None, require_account=False):
+    '''if no email is passed, a random one will be used.'''
+
     if not email:
         email = hexlify(os.urandom(3)).decode() + '-test@misakey.com'
 
@@ -124,7 +128,7 @@ def get_credentials(email=None):
 
     login_url_query = urlparse(r.request.url).query
     login_challenge = parse_query_string(login_url_query)['login_challenge'][0]
-    identity_id, manual_redirection = login_flow(s, login_challenge, email)
+    identity_id, manual_redirection, account_id = login_flow(s, login_challenge, email)
     r = s.get(manual_redirection, raise_for_status=False)
 
     # this redirection leads either to consent flow or the final access token
@@ -144,15 +148,38 @@ def get_credentials(email=None):
     access_token = tokens['access_token'][0]
     id_token = tokens['id_token'][0]
 
+    if require_account:
+        r = http.get(
+            f'https://api.misakey.com.local/identities/{identity_id}',
+            headers={
+                'Authorization': f'Bearer {access_token}'
+            }
+        )
+        account_id = r.json()['account_id']
+        if not account_id:
+            salt_base64 = b64encode(os.urandom(8)).decode()
+            r = http.post(
+                f'https://api.misakey.com.local/identities/{identity_id}/account',
+                headers={
+                    'Authorization': f'Bearer {access_token}'
+                },
+                json={
+                    'prehashed_password': hash_password('password', salt_base64),
+                    'backup_data': b64encode(b'fake backup data').decode(),
+                }
+            )
+            account_id = r.json()['id']
+
     return namedtuple(
         'OAuth2Creds',
-        ['email', 'access_token', 'identity_id', 'id_token', 'consent_done'],
-    )(email, access_token, identity_id, id_token, consent_done)
+        ['email', 'access_token', 'identity_id', 'id_token', 'consent_done', 'account_id'],
+    )(email, access_token, identity_id, id_token, consent_done, account_id)
 
 
-def get_authenticated_session(email=None):
-    creds = get_credentials(email)
+def get_authenticated_session(email=None, require_account=False):
+    creds = get_credentials(email, require_account)
     session = http.Session()
     session.headers.update({'Authorization': f'Bearer {creds.access_token}'})
     session.email = creds.email
+    session.account_id = creds.account_id
     return session

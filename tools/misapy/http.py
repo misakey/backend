@@ -29,7 +29,7 @@ class UnexpectedResponseStatus(Exception):
 def call_request_fn_decorated(fn, *args, expected_status_code=None, raise_for_status=True, **kwargs):
     '''`raise_for_status` only has effect when there is no `expected_status_code`'''
     try:
-        response = fn(*args, **kwargs)
+        response = fn(*args, verify=False, **kwargs)
     except requests.exceptions.ConnectionError as error:
         host = urlparse(error.request.url).netloc
         sys.exit(f'Connection error: is "{host}" up?')

@@ -22,6 +22,9 @@ func initConfig() {
 		"authflow.token_redirect_url",
 		"mail.templates",
 		"mail.from",
+		"redis.address",
+		"redis.port",
+		"backup_key_share.expiration",
 	}
 	switch os.Getenv("ENV") {
 	case "production":

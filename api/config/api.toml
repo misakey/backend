@@ -6,7 +6,7 @@
   avatar_url = "https://api.misakey.com.local/avatars"
   # optional location of box encrypted files (in case of ENV=development - storage on the file system instead of remote aws s3)
   encrypted_files = "/etc/encrypted-files"
-  
+
 [authflow]
   # frontend location to ask for user to authenticate
   login_page_url = "https://app.misakey.com.local/auth/login"
@@ -40,6 +40,9 @@
 [redis]
   address = "redis"
   port = 6379
+
+[backup_key_share]
+  expiration = "1h"
 
 # only used if ENV=production
 # [aws]

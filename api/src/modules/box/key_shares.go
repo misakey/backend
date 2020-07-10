@@ -15,12 +15,12 @@ import (
 )
 
 type createKeyShareCmd struct {
-	keyshare.KeyShare
+	keyshare.BoxKeyShare
 }
 
 func (cmd createKeyShareCmd) validate() error {
 	return v.ValidateStruct(&cmd,
-		v.Field(&cmd.InvitationHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
+		v.Field(&cmd.OtherShareHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 		v.Field(&cmd.Share, v.Required, is.Base64),
 		v.Field(&cmd.BoxID, v.Required, is.UUIDv4),
 	)
@@ -46,7 +46,7 @@ func (h *handler) createKeyShare(eCtx echo.Context) error {
 
 	if err := keyshare.Create(
 		ctx, h.repo.DB(),
-		cmd.InvitationHash, cmd.Share, cmd.BoxID, acc.Subject); err != nil {
+		cmd.OtherShareHash, cmd.Share, cmd.BoxID, acc.Subject); err != nil {
 		return merror.Transform(err).Describe("creating key share")
 	}
 
@@ -54,12 +54,12 @@ func (h *handler) createKeyShare(eCtx echo.Context) error {
 }
 
 type keyShareQuery struct {
-	invitationHash string
+	otherShareHash string
 }
 
 func (query keyShareQuery) validate() error {
 	return v.ValidateStruct(&query,
-		v.Field(&query.invitationHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
+		v.Field(&query.otherShareHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 	)
 }
 
@@ -73,13 +73,13 @@ func (h *handler) getKeyShare(eCtx echo.Context) error {
 	}
 
 	query := keyShareQuery{
-		invitationHash: eCtx.Param("invitation-hash"),
+		otherShareHash: eCtx.Param("other-share-hash"),
 	}
 	if err := query.validate(); err != nil {
 		return err
 	}
 
-	ks, err := keyshare.Get(ctx, h.repo.DB(), query.invitationHash)
+	ks, err := keyshare.Get(ctx, h.repo.DB(), query.otherShareHash)
 	if err != nil {
 		return merror.Transform(err).Describe("getting key share")
 	}

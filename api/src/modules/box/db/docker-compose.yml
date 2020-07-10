@@ -6,14 +6,14 @@ services:
       context: ../../../../
       dockerfile: Dockerfile
     depends_on:
-      api_db:
+      box_db:
         condition: service_healthy
     environment:
-      - DSN_BOX=postgres://misakey:secret@api_db:5432/box-migration-test?sslmode=disable
+      - DSN_BOX=postgres://misakey:secret@box_db:5432/box-migration-test?sslmode=disable
       - ENV=development
     command: "box-migrate --goose=up"
 
-  api_db:
+  box_db:
     image: postgres:11.4
     ports:
       - 127.0.0.1:5502:5432

@@ -13,6 +13,7 @@ func Launch() {
 	initAddEventsTable()
 	initCreateKeyShareTable()
 	initAddBoxIDColumnToKeyShareTable()
+	initRenameKeyShareTable()
 
 	migration.StartGoose(os.Getenv("DSN_BOX"))
 }

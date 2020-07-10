@@ -19,6 +19,7 @@ func initRoutes(
 	authFlowHTTP := entrypoints.NewAuthFlowHTTP(ssoService)
 	authnHTTP := entrypoints.NewAuthnHTTP(ssoService)
 	identityHTTP := entrypoints.NewIdentityHTTP(ssoService)
+	backupKeyShareHTTP := entrypoints.NewBackupKeyShareHTTP(ssoService)
 
 	routes := router.Group("")
 	routes.POST("/authn-steps", authnHTTP.InitAuthnStep)
@@ -49,4 +50,8 @@ func initRoutes(
 	identityRoutes.DELETE("/:id/avatar", identityHTTP.DeleteAvatar, authzMidlw)
 	identityRoutes.POST("/:id/account", identityHTTP.CreateAccount, authzMidlw)
 	identityRoutes.PUT("/authable", identityHTTP.RequireAuthableIdentity)
+
+	backupKeyShareRoutes := router.Group("/backup-key-shares")
+	backupKeyShareRoutes.GET("/:other-share-hash", backupKeyShareHTTP.GetBackupKeyShare, authzMidlw)
+	backupKeyShareRoutes.POST("", backupKeyShareHTTP.CreateBackupKeyShare, authzMidlw)
 }

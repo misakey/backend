@@ -5,7 +5,7 @@ title: Box - Key Shares (Key Splitting)
 Key Splitting consists in splitting a secret key in several (currently, always two) *key shares*.
 One share alone is completely useless, but by combining two shares of a key one can recover the secret key.
 
-For now we only use this technique for invitation links in boxes:
+We use this technique for invitation links in boxes:
 instead of sending the box secret key to the guest, we send a share of the key.
 This makes the link less sensitive: it mitigates the security consequences of an invitation link ending up in malicious hands.
 
@@ -27,12 +27,12 @@ A key share has another attribute than its value,
 it has an `invitation_hash` which is used for the guest frontend to identify which share it wants to retrieve.
 Technically speaking, the invitation hash is the SHA-512 hash of the share sent in the invitation.
 
-## Creating a Key Share
+## Creating a Box Key Share
 
 ### Request
 
 ```bash
-    POST https://api.misakey.com/key-shares
+    POST https://api.misakey.com/box-key-shares
 ```
 
 _Headers:_
@@ -40,11 +40,11 @@ _Headers:_
 
 _JSON Body:_
 ```json
-{{% include "include/key-share.json" %}}
+{{% include "include/box-key-share.json" %}}
 ```
 
 - `share` (string) (base64): one of the shares.
-- `invitation_hash` (string) (unpadded url-safe base64): a hash of the other share.
+- `other_share_hash` (string) (unpadded url-safe base64): a hash of the other share.
 - `box_id` (string) (uuid): the box id linked to the key shares.
 
 ### Response
@@ -56,22 +56,22 @@ _Code:_
 
 _JSON Body:_
 ```json
-{{% include "include/key-share.json" %}}
+{{% include "include/box-key-share.json" %}}
 ```
 
-## Getting a Key Share
+## Getting a Box Key Share
 
 ### Request
 
 ```bash
-    GET https://api.misakey.com/key-shares/:invitation-hash
+    GET https://api.misakey.com/box-key-shares/:other-share-hash
 ```
 
 _Headers:_
 - `Authorization` (opaque token) (ACR >= 1): no identity check, just a valid token is required.
 
 _Path Parameters:_
-- `invitation-hash` (string): the invitation hash of the key share.
+- `other-share-hash` (string): the invitation hash of the key share.
 
 _Code:_
 ```bash
@@ -80,9 +80,9 @@ _Code:_
 
 _JSON Body:_
 ```json
-{{% include "include/key-share.json" %}}
+{{% include "include/box-key-share.json" %}}
 ```
 
 - `share` (string) (base64): one of the shares.
-- `invitation_hash` (string) (unpadded url-safe base64): a hash of the other share.
+- `other-share-hash` (string) (unpadded url-safe base64): a hash of the other share.
 - `box_id` (string) (uuid): the box id linked to the key shares.
