@@ -22,7 +22,7 @@ type boxCreationRequest struct {
 func (req boxCreationRequest) Validate() error {
 	return validation.ValidateStruct(&req,
 		validation.Field(&req.PublicKey, validation.Required),
-		validation.Field(&req.Title, validation.Required, validation.Length(5, 50)),
+		validation.Field(&req.Title, validation.Required, validation.Length(1, 50)),
 	)
 }
 

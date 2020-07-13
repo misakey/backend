@@ -23,7 +23,7 @@ func (c *CreationContent) Unmarshal(json types.JSON) error {
 func (c CreationContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.PublicKey, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
-		v.Field(&c.Title, v.Required, v.Length(5, 50)),
+		v.Field(&c.Title, v.Required, v.Length(1, 50)),
 	)
 }
 
