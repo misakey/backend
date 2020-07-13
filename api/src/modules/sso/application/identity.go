@@ -109,7 +109,7 @@ func (sso SSOService) RequireIdentityAuthable(ctx context.Context, cmd IdentityA
 	view := IdentityAuthableView{}
 
 	// 0. check the login challenge exists
-	_, err = sso.authFlowService.LoginGetContext(ctx, cmd.LoginChallenge)
+	_, err = sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
 	if err != nil {
 		return view, err
 	}
@@ -139,7 +139,6 @@ func (sso SSOService) RequireIdentityAuthable(ctx context.Context, cmd IdentityA
 			IdentifierID: identifier.ID,
 			DisplayName:  cmd.Identifier.Value,
 			IsAuthable:   true,
-			Confirmed:    false,
 		}
 		if err := sso.identityService.Create(ctx, &identity); err != nil {
 			return view, err

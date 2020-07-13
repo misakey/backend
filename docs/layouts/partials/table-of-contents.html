@@ -1,0 +1,38 @@
+<!-- ignore empty links with + -->
+{{ $headers := findRE "<h[2-6].*?>(.|\n])+?</h[2-6]>" .Content }}
+<!-- at least one header to link to -->
+{{ $has_headers := ge (len $headers) 1 }}
+<!-- a post can explicitly disable Table of Contents with toc: false -->
+{{ if $has_headers }}
+<a class="toc_a" style="font-size:24px;" name="toc" href="http://localhost:1313/">:arrow_left: to :house:</a>
+<div>
+    <!-- TOC header -->
+    <h4>Table of Contents</h4>
+
+    {{ range $headers }}
+    {{ $header := . }}
+    {{ range first 1 (findRE "<h[2-6]" $header 1) }}
+    {{ range findRE "[2-6]" . 1 }}
+    {{ $next_heading := (int .) }}
+
+    <!-- generate li array of the proper depth -->
+    {{ range seq $next_heading }}
+    <ul>
+        {{end}}
+        {{ $base := ($.Page.File.LogicalName) }}
+        {{ $anchorId := ($header | plainify | htmlUnescape | anchorize) }}
+        {{ $href := delimit (slice $base $anchorId) "#" | string }}
+        <li class="toc_li">
+            <a class="toc_a" href="{{ relref $.Page $href }}">
+                {{ $header | plainify | htmlUnescape | emojify }}
+            </a>
+        </li>
+        <!-- close list -->
+        {{ range seq $next_heading }}
+    </ul>
+    {{end}}
+    {{end}}
+    {{end}}
+    {{ end }}
+</div>
+{{ end }}

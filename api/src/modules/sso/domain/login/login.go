@@ -7,21 +7,29 @@ import (
 
 // Context bears internal data about current user authentication request
 type Context struct {
-	Challenge      string   `json:"challenge"`
-	Skip           bool     `json:"skip"`
-	Subject        string   `json:"subject"`
-	RequestedScope []string `json:"requested_scope"`
-	Client         struct { // concerned relying party
-		ID        string      `json:"id"`
-		Name      string      `json:"name"`
-		LogoURL   null.String `json:"logo_uri"`
-		TosURL    null.String `json:"tos_uri"`
-		PolicyURL null.String `json:"policy_uri"`
-	} `json:"client"`
+	Challenge      string
+	Subject        string
+	RequestedScope []string
+
+	Client struct { // involved relying party
+		ID        string
+		Name      string
+		LogoURL   null.String
+		TosURL    null.String
+		PolicyURL null.String
+	}
+
+	RequestURL string
+
 	OIDCContext struct { // OIDC context of the current request
-		ACRValues []string `json:"acr_values"`
-		LoginHint string   `json:"login_hint"`
-	} `json:"oidc_context"`
+		ACRValues authn.ClassRefs
+		AMRs      authn.MethodRefs
+		LoginHint string
+	}
+
+	// login session
+	Skip      bool
+	SessionID string
 }
 
 // Redirect information for the user's agent
@@ -31,11 +39,11 @@ type Redirect struct {
 
 // Acceptance contains data about the user authentication approval
 type Acceptance struct {
-	Subject     string        `json:"subject"`
-	ACR         string        `json:"acr"`
-	Remember    bool          `json:"remember"`
-	RememberFor int           `json:"remember_for"`
-	Context     authn.Context `json:"context"`
+	Subject     string         `json:"subject"`
+	ACR         authn.ClassRef `json:"acr"`
+	Remember    bool           `json:"remember"`
+	RememberFor int            `json:"remember_for"`
+	Context     authn.Context  `json:"context"`
 }
 
 // // LogoutRequest contains the id of the user

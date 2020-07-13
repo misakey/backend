@@ -1,8 +1,15 @@
+{{/*  {{ define "h1" .}}
+<h1>{{ .Title }}</h1>
+{{ end }} */}}
+
 {{ define "main" }}
 <main>
-    <article>
-        {{ .TableOfContents }}
-        {{ .Content }}
-    </article>
+    {{ partial "table-of-contents" . | emojify }}
+    <div class="content">
+        <!-- supports emoji -->
+        {{ .Content | emojify }}
+    </div>
+    </div>
 </main>
+<script src="/js/main.js"></script>
 {{ end }}

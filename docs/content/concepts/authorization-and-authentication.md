@@ -188,7 +188,7 @@ to the requested `acr_values`.
 
 Table of correspondance between ACR and Authentication methods:
 
-- `browser_cookie`: ACR 0.
+- `browser_cookie`: depends of the authentication method used to generate the session.
 - `emailed_code`: ACR 1.
 - `prehashed_password`: ACR 2.
 
@@ -198,17 +198,17 @@ Browser Cookie allows the client to not re-ask to the end-user to login, it
 also make possible silent authentication to get a new access token smoothly.
 
 Long-lived browser cookies aren't a decent authentication method to ensure
-the connected user is the owner of the identity, so the corresponding `acr` is 0.
-
-This is based on [Nist Assurance Levels][] specification.
+the connected user is the owner of the identity, still the corresponding `acr`
+if set accoridng to the authentication method used to generate the session.
 
 #### 4.3.3. Emailed Code
 
 Emailed Code method is a randomly generated 6 digits code sent to the user
 using a external channel.
 
-To enforce it:
-- `acr_values` query parameter must be set to `1` during auth flow first request.
+To enforce it, during the init of the auth flow:
+- `acr_values` query parameter must be set to `1`.
+- `prompt` query parameter must be set to `login`.
 
 To perform it:
 - The auth step method name must be: `emailed_code`.
@@ -222,8 +222,9 @@ Used alone, its final corresponding `acr` is 1.
 
 Password method is a hashed password comparison, using [Argon2 server relief][].
 
-To enforce it:
-- `acr_values` query parameter must be set to `2` during auth flow first request.
+To enforce it, during the init of the auth flow:
+- `acr_values` query parameter must be set to `2`.
+- `prompt` query parameter must be set to `login`.
 
 To perform it:
 - The auth step method name must be: `prehashed_password`.
@@ -271,4 +272,3 @@ while initing the auth flow to access the resource.
 [the authentication request]: https://openid.net/specs/openid-connect-core-1_0.html#ImplicitAuthRequest
 [Level of Assurance]: https://www.itu.int/rec/T-REC-X.1254-201209-I/en
 [Argon2 server relief]: https://password-hashing.net/submissions/specs/Argon-v3.pdf
-[Nist Assurance Levels]: https://openid.net/specs/openid-provider-authentication-policy-extension-1_0.html#anchor11

@@ -80,7 +80,8 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	identifierRepo := repositories.NewIdentifierSQLBoiler(dbConn)
 	identityRepo := repositories.NewIdentitySQLBoiler(dbConn)
 	authnStepRepo := repositories.NewAuthnStepSQLBoiler(dbConn)
-	backupKeyRepo := repositories.NewSimpleKeyRedis(redConn, viper.GetDuration("backup_key_share.expiration"))
+	backupKeyRepo := backupkeyshare.NewRedisRepo(redConn, viper.GetDuration("backup_key_share.expiration"))
+	sessionRepo := authn.NewAuthSessionRedis(redConn)
 	hydraRepo := repositories.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
 	templateRepo := email.NewTemplateFileSystem(viper.GetString("mail.templates"))
 	var emailRepo email.Sender
@@ -114,12 +115,13 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	identifierService := identifier.NewIdentifierService(identifierRepo)
 	identityService := identity.NewIdentityService(identityRepo, avatarRepo, identifierService)
 	authFlowService := authflow.NewAuthFlowService(
-		hydraRepo,
+		identityService, hydraRepo,
 		viper.GetString("authflow.login_page_url"),
 		viper.GetString("authflow.consent_page_url"),
+		viper.GetString("authflow.self_client_id"),
 	)
 	authenticationService := authn.NewService(
-		authnStepRepo,
+		authnStepRepo, sessionRepo,
 		identifierService,
 		identityService,
 		accountService,
@@ -133,7 +135,6 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 		authFlowService,
 		authenticationService,
 		backupKeyShareService,
-		viper.GetString("authflow.self_client_id"),
 	)
 	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(
 		viper.GetString("authflow.self_client_id"),

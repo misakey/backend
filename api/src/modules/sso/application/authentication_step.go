@@ -43,7 +43,7 @@ func (sso SSOService) InitAuthnStep(ctx context.Context, cmd AuthenticationStepC
 	}
 
 	// 1. check login challenge
-	_, err = sso.authFlowService.LoginGetContext(ctx, cmd.LoginChallenge)
+	_, err = sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
 	if err != nil {
 		return merror.NotFound().Describe("finding login challenge").Detail("login_challenge", merror.DVNotFound)
 	}

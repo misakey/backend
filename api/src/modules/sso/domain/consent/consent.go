@@ -16,13 +16,22 @@ type Session struct {
 
 // Context bears internal data about current user consent request
 type Context struct {
-	Subject        string        `json:"subject"`
-	Challenge      string        `json:"challenge"`
-	Skip           bool          `json:"skip"`
-	ACR            string        `json:"acr"`
-	RequestedScope []string      `json:"requested_scope"`
-	AuthnContext   authn.Context `json:"context"`
-	Client         struct {
+	// oidc
+	RequestURL string `json:"request_url"`
+	Subject    string `json:"subject"`
+
+	// consent
+	Challenge      string   `json:"challenge"`
+	Skip           bool     `json:"skip"`
+	RequestedScope []string `json:"requested_scope"`
+
+	// authentication during the login flow
+	ACR            authn.ClassRef `json:"acr"`
+	AuthnContext   authn.Context  `json:"context"`
+	LoginSessionID string         `json:"login_session_id"`
+
+	// involved client
+	Client struct {
 		ID        string      `json:"client_id"`
 		Name      string      `json:"name"`
 		LogoURL   null.String `json:"logo_uri"`
@@ -45,7 +54,7 @@ type Acceptance struct {
 		} `json:"id_token"`
 		AccessTokenClaims struct {
 			// extra instropection claims on Access Token
-			ACR string `json:"acr"`
+			ACR authn.ClassRef `json:"acr"`
 		} `json:"access_token"`
 	} `json:"session"`
 }

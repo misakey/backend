@@ -2,6 +2,8 @@
 title: Box - Boxes
 ---
 
+## Introduction
+
 Boxes contain *events* that have a *type*.
 In practice, most events will be of type `msg.text` or `msg.file`,
 corresponding to the sending of messages (with either text or files in it) to the box.
@@ -15,11 +17,11 @@ most of them describing a change of the *state* of the box.
 ### Request
 
 ```bash
-    POST https://api.misakey.com/boxes
+  POST https://api.misakey.com/boxes
 ```
 
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): no identity check, just a valid token is required.
+- :key: `Authorization` (opaque token) (ACR >= 1): no identity check, just a valid token is required.
 
 _JSON Body:_
 ```json
@@ -38,7 +40,7 @@ of type `create` that contains all the information about the creation of the box
 
 _
 ```bash
-    HTTP 201 Created
+HTTP 201 Created
 ```
 
 _JSON Body:_
@@ -54,11 +56,11 @@ which must be used to interact with the box.
 ### Request
 
 ```bash
-    GET https://api.misakey.com/boxes/:id
+  GET https://api.misakey.com/boxes/:id
 ```
 
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): no identity check, just a valid token is required.
+- :key: `Authorization` (opaque token) (ACR >= 1): no identity check, just a valid token is required.
 
 _Path Parameters:_
 - `id` (uuid string): the box id wished to be retrieved.
@@ -67,7 +69,7 @@ _Path Parameters:_
 
 _Code:_
 ```bash
-    HTTP 200 OK
+HTTP 200 OK
 ```
 
 _JSON Body:_
@@ -88,13 +90,13 @@ Today only the total count of boxes is returned as an response header.
 ```
 
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): a valid token.
+- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
 
 ### Response
 
 _Code:_
 ```bash
-  HTTP 204 NO CONTENT
+HTTP 204 NO CONTENT
 ```
 
 _Headers:_
@@ -110,11 +112,11 @@ The returned list is automatically computed from the server according to the aut
 provided by the received bearer token.
 
 ```bash
-  GET https://api.misakey.com/boxes
+GET https://api.misakey.com/boxes
 ```
 
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): a valid token.
+- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
 
 _Query Parameters:_
 
@@ -124,7 +126,7 @@ Pagination ([more info](/concepts/pagination)) with default limit set to 10.
 
 _Code:_
 ```bash
-  HTTP 200 OK
+HTTP 200 OK
 ```
 
 A list of event is returned.
@@ -139,7 +141,7 @@ A list of event is returned.
 ### Request
 
 ```bash
-    POST https://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/events
+  POST https://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/events
 ```
 
 _JSON Body:_
@@ -159,7 +161,7 @@ List of events that cannot be posted by clients:
 ### Response
 
 ```bash
-    HTTP 201 Created
+HTTP 201 Created
 ```
 
 ```json
@@ -181,7 +183,7 @@ List of events that cannot be posted by clients:
 A box that has received a lifecycle closed event cannot received new events.
 
 ```bash
-  HTTP 409 CONFLICT
+HTTP 409 CONFLICT
 ```
 
 _JSON Body:_
@@ -201,14 +203,14 @@ _JSON Body:_
 ### Request
 
 ```bash
-    GET https://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/events
+  GET https://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/events
 ```
 
 ### Response
 
 _Code_:
 ```bash
-    HTTP 200 OK
+HTTP 200 OK
 ```
 
 ```json
@@ -226,10 +228,10 @@ The upload of an encrypted file triggers the creation of a `msg.file` event then
 ### Request
 
 ```bash
-  POST https://api.misakey.com.local/boxes/:id/encrypted-files
+POST https://api.misakey.com.local/boxes/:id/encrypted-files
 ```
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): just a valid access token.
+- :key: `Authorization` (opaque token) (ACR >= 1): just a valid access token.
 
 _Path Parameters:_
 - `id` (uuid string): the box unique id the file is uploaded in.
@@ -242,7 +244,7 @@ _Multipart Form Data Body:_
 
 _Code:_
 ```bash
-  HTTP 201 CREATED
+HTTP 201 CREATED
 ```
 
 _JSON Body_:
@@ -274,7 +276,7 @@ The file size is limited to 8MB.
 
 _Code:_
 ```bash
-  HTTP 400 BAD REQUEST
+HTTP 400 BAD REQUEST
 ```
 
 ```json
@@ -293,7 +295,7 @@ _Code:_
 ### Request
 
 ```bash
-  GET https://api.misakey.com/boxes/:bid/encrypted-files/:eid
+GET https://api.misakey.com/boxes/:bid/encrypted-files/:eid
 ```
 
 _Path Parameters:_
@@ -301,13 +303,13 @@ _Path Parameters:_
 - `eid` (string) (uuid): the encrypted file id contained in the content of the `msg.file` event.
 
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): a valid access token.
+- :key: `Authorization` (opaque token) (ACR >= 1): a valid access token.
 
 ### Response
 
 _Code:_
 ```bash
-  HTTP 200 OK
+HTTP 200 OK
 ```
 
 _Headers:_
@@ -327,7 +329,7 @@ It is a kind of an acknowledgement and it must be used when the user want to mar
 ### Request
 
 ```bash
-  PUT https://api.misakey.com/boxes/:id/new-events-count/ack
+PUT https://api.misakey.com/boxes/:id/new-events-count/ack
 ```
 
 _Path Parameter:_
@@ -343,11 +345,11 @@ _JSON Body:_
 where `identity_id` is the identity of the requester who wants to acknowledge.
 
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): a valid access token corresponding to the identity of the body
+- :key: `Authorization` (opaque token) (ACR >= 1): a valid access token corresponding to the identity of the body
 
 ### Success Response
 
 _Code:_
 ```bash
-  HTTP 204 NO CONTENT
+HTTP 204 NO CONTENT
 ```

@@ -11,20 +11,18 @@ import (
 // SimpleKeyRedis manages operations with simple key/value
 // storage in redis
 type SimpleKeyRedis struct {
-	redConn       *redis.Client
-	keyExpiration time.Duration
+	redConn *redis.Client
 }
 
 // NewSimpleKeyRedis handles the creation of a SimpleKeyRedis object
-func NewSimpleKeyRedis(redConn *redis.Client, keyExpiration time.Duration) *SimpleKeyRedis {
-	return &SimpleKeyRedis{
-		redConn:       redConn,
-		keyExpiration: keyExpiration,
+func NewSimpleKeyRedis(redConn *redis.Client) SimpleKeyRedis {
+	return SimpleKeyRedis{
+		redConn: redConn,
 	}
 }
 
-func (skr *SimpleKeyRedis) Set(ctx context.Context, key string, value []byte) error {
-	if _, err := skr.redConn.Set(key, value, skr.keyExpiration).Result(); err != nil {
+func (skr *SimpleKeyRedis) Set(ctx context.Context, key string, value []byte, keyExpiration time.Duration) error {
+	if _, err := skr.redConn.Set(key, value, keyExpiration).Result(); err != nil {
 		return err
 	}
 	return nil

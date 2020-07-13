@@ -41,17 +41,15 @@ We use this link as general specifications for errors and not just for http requ
 * `...`
 
 **Redirect codes**: _code encountered in query parameter `error_code` on redirections_
-* `invalid_flow`
-* `invalid_url`
+* `invalid_flow`: the authorization server has raised en error, please check the description to know more about it.
 * `login_required`: while an auth flow was inited with `prompt=none` parameter but could not be respected because of authentication is required.
 * `consent_required`: while an auth flow was inited with `prompt=none` parameter but could not be respected because of consent is required.
-* `missing_parameter`
-* `forbidden_role`
-* `auth_process_required`
+* `missing_parameter`: a required parameter is missing from the request.
+* `internal`
 * `...`
 
 **Special codes:** _special codes that should not be encountered externally_
-/!\ Thanks to contact the backend team if you receive one these codes.
+:warning: Thanks to contact the backend team if you receive one these codes.
 * `unknown_code`: 500, something internal to the service has failed.
 * `no_code`: xxx, no specific code defined.
 
@@ -67,7 +65,7 @@ Origin is an information about where the error does come from.
 * `...`
 
 **Special origins:** _special origins that should not be encountered externally_
-/!\ Thanks to contact the backend team if you receive one these origins.
+:warning: Thanks to contact the backend team if you receive one these origins.
 * `not_defined`: the error has no origin defined yet
 
 ## Details
@@ -96,7 +94,7 @@ Each detail object is built with a DetailKey and a DetailValue:
 * `unauthorized`: authorization is missing
 
 **Special detail values:**
-/!\ Thanks to contact the backend team if you receive one these detail values.
+:warning: Thanks to contact the backend team if you receive one these detail values.
 * `unknown`: unknown detail code
 * `no_code`: no specific code
 

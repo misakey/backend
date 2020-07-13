@@ -2,16 +2,13 @@ package backupkeyshare
 
 import (
 	"context"
-	"encoding/json"
-
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 )
 
 type backupKeyShareRepo interface {
-	Set(context.Context, string, []byte) error
-	Get(context.Context, string) ([]byte, error)
+	Insert(context.Context, domain.BackupKeyShare) error
+	Get(context.Context, string) (domain.BackupKeyShare, error)
 }
 
 type BackupKeyShareService struct {
@@ -27,22 +24,10 @@ func NewBackupKeyShareService(
 }
 
 func (bkr BackupKeyShareService) CreateBackupKeyShare(ctx context.Context, backupKeyShare domain.BackupKeyShare) error {
-	key := backupKeyShare.OtherShareHash
-	value, err := json.Marshal(backupKeyShare)
-	if err != nil {
-		return merror.Internal().Describe("encoding backup key share").Describe(err.Error())
-	}
-	return bkr.backupKeyShares.Set(ctx, key, value)
+	return bkr.backupKeyShares.Insert(ctx, backupKeyShare)
 }
 
 func (bkr BackupKeyShareService) GetBackupKeyShare(ctx context.Context, otherShareHash string) (*domain.BackupKeyShare, error) {
-	value, err := bkr.backupKeyShares.Get(ctx, otherShareHash)
-	if err != nil {
-		return nil, err
-	}
-	backupKeyShare := domain.BackupKeyShare{}
-	if err := json.Unmarshal(value, &backupKeyShare); err != nil {
-		return nil, merror.Internal().Describe("encoding backup key share").Describe(err.Error())
-	}
-	return &backupKeyShare, nil
+	backupKeyShare, err := bkr.backupKeyShares.Get(ctx, otherShareHash)
+	return &backupKeyShare, err
 }

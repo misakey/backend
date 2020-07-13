@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/volatiletech/null"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
@@ -42,8 +43,10 @@ func (h HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (
 	hydraLogReq := struct {
 		Challenge      string   `json:"challenge"`
 		Skip           bool     `json:"skip"`
+		SessionID      string   `json:"session_id"`
 		Subject        string   `json:"subject"`
 		RequestedScope []string `json:"requested_scope"`
+		RequestURL     string   `json:"request_url"`
 		Client         struct { // concerned relying party
 			ID        string `json:"client_id"`
 			Name      string `json:"client_name"`
@@ -52,8 +55,8 @@ func (h HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (
 			PolicyURI string `json:"policy_uri"`
 		} `json:"client"`
 		OIDCContext struct { // OIDC context of the current request
-			ACRValues []string `json:"acr_values"`
-			LoginHint string   `json:"login_hint"`
+			ACRValues authn.ClassRefs `json:"acr_values"`
+			LoginHint string          `json:"login_hint"`
 		} `json:"oidc_context"`
 	}{}
 	// query parameters
@@ -73,6 +76,7 @@ func (h HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (
 	// 3. fill domain model using the DTO
 	logCtx.Challenge = hydraLogReq.Challenge
 	logCtx.Skip = hydraLogReq.Skip
+	logCtx.SessionID = hydraLogReq.SessionID
 	logCtx.Subject = hydraLogReq.Subject
 	logCtx.RequestedScope = hydraLogReq.RequestedScope
 	logCtx.Client.ID = hydraLogReq.Client.ID

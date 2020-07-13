@@ -2,6 +2,8 @@
 title: Box - Key Shares (Key Splitting)
 ---
 
+## Introduction
+
 Key Splitting consists in splitting a secret key in several (currently, always two) *key shares*.
 One share alone is completely useless, but by combining two shares of a key one can recover the secret key.
 
@@ -32,7 +34,7 @@ Technically speaking, the invitation hash is the SHA-512 hash of the share sent 
 ### Request
 
 ```bash
-    POST https://api.misakey.com/box-key-shares
+  POST https://api.misakey.com/box-key-shares
 ```
 
 _Headers:_
@@ -51,7 +53,7 @@ _JSON Body:_
 
 _Code:_
 ```bash
-    HTTP 201 CREATED
+HTTP 201 CREATED
 ```
 
 _JSON Body:_
@@ -64,7 +66,7 @@ _JSON Body:_
 ### Request
 
 ```bash
-    GET https://api.misakey.com/box-key-shares/:other-share-hash
+  GET https://api.misakey.com/box-key-shares/:other-share-hash
 ```
 
 _Headers:_
@@ -73,9 +75,11 @@ _Headers:_
 _Path Parameters:_
 - `other-share-hash` (string): the invitation hash of the key share.
 
+### Response
+
 _Code:_
 ```bash
-    HTTP 200 OK
+HTTP 200 OK
 ```
 
 _JSON Body:_

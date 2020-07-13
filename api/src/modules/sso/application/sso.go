@@ -16,8 +16,6 @@ type SSOService struct {
 	authFlowService       authflow.AuthFlowService
 	authenticationService authn.Service
 	backupKeyShareService backupkeyshare.BackupKeyShareService
-
-	selfCliID string
 }
 
 func NewSSOService(
@@ -25,13 +23,11 @@ func NewSSOService(
 	afs authflow.AuthFlowService,
 	authns authn.Service,
 	bks backupkeyshare.BackupKeyShareService,
-	selfCliID string,
 ) SSOService {
 	return SSOService{
 		accountService: as, identityService: ids, identifierService: idfs,
 		authFlowService:       afs,
 		authenticationService: authns,
 		backupKeyShareService: bks,
-		selfCliID:             selfCliID,
 	}
 }

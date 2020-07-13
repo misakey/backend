@@ -14,6 +14,7 @@ import (
 
 type Service struct {
 	steps             stepRepo
+	sessions          sessionRepo
 	identifierService identifier.IdentifierService
 	identityService   identity.IdentityService
 	accountService    account.AccountService
@@ -30,15 +31,21 @@ type stepRepo interface {
 	DeleteIncomplete(ctx context.Context, identityID string) error
 }
 
+type sessionRepo interface {
+	Upsert(ctx context.Context, session authn.Session, lifetime time.Duration) error
+	Get(ctx context.Context, sessionID string) (authn.Session, error)
+}
+
 func NewService(
-	steps stepRepo,
+	steps stepRepo, sessions sessionRepo,
 	identifierService identifier.IdentifierService,
 	identityService identity.IdentityService,
 	accountService account.AccountService,
-	templates email.Renderer,
-	emails email.Sender) Service {
+	templates email.Renderer, emails email.Sender,
+) Service {
 	return Service{
 		steps:             steps,
+		sessions:          sessions,
 		identifierService: identifierService,
 		identityService:   identityService,
 		accountService:    accountService,
@@ -50,9 +57,8 @@ func NewService(
 
 // AssertStep considering the method name and the received metadata
 // Return no error in case of success
-func (as *Service) AssertAuthnStep(ctx context.Context, assertion authn.Step) (authn.ClassRef, authn.MethodRefs, error) {
+func (as *Service) AssertAuthnStep(ctx context.Context, assertion authn.Step) (authn.ClassRef, error) {
 	acr := authn.ACR0
-	amr := authn.MethodRefs{}
 
 	// check the metadata
 	var metadataErr error
@@ -66,21 +72,9 @@ func (as *Service) AssertAuthnStep(ctx context.Context, assertion authn.Step) (a
 	default:
 		metadataErr = merror.BadRequest().Detail("method_name", merror.DVMalformed)
 	}
-	amr.Add(assertion.MethodName)
-	return acr, amr, metadataErr
+	return acr, metadataErr
 }
 
 func (as *Service) ExpireAll(ctx context.Context, identityID string) error {
 	return as.steps.DeleteIncomplete(ctx, identityID)
-}
-
-// GetRememberFor as an integer corresponding to seconds, according to the authentication context class
-func (as *Service) GetRememberFor(acr authn.ClassRef) int {
-	switch acr {
-	case authn.ACR1:
-		return 3600 // 1h
-	case authn.ACR2:
-		return 2592000 // 30d
-	}
-	return 1
 }

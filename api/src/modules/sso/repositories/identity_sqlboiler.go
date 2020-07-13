@@ -32,7 +32,6 @@ func (repo IdentitySQLBoiler) toSQLBoiler(domModel *domain.Identity) *sqlboiler.
 		DisplayName:   domModel.DisplayName,
 		Notifications: domModel.Notifications,
 		AvatarURL:     domModel.AvatarURL,
-		Confirmed:     domModel.Confirmed,
 	}
 }
 
@@ -45,7 +44,6 @@ func (repo IdentitySQLBoiler) toDomain(boilModel *sqlboiler.Identity) *domain.Id
 		DisplayName:   boilModel.DisplayName,
 		Notifications: boilModel.Notifications,
 		AvatarURL:     boilModel.AvatarURL,
-		Confirmed:     boilModel.Confirmed,
 	}
 
 	if boilModel.R != nil {
@@ -96,26 +94,6 @@ func (repo *IdentitySQLBoiler) Update(ctx context.Context, identity *domain.Iden
 	if rowsAff == 0 {
 		return merror.NotFound().Describe("no rows affected").Detail("id", merror.DVNotFound)
 	}
-	return nil
-}
-
-func (repo *IdentitySQLBoiler) Confirm(ctx context.Context, identityID string) error {
-	// try to get identity
-	identity, err := sqlboiler.Identities(sqlboiler.IdentityWhere.ID.EQ(identityID)).One(ctx, repo.db)
-	if err != nil {
-		return merror.NotFound().Detail("id", merror.DVNotFound)
-	}
-
-	identity.Confirmed = true
-
-	rowsAff, err := identity.Update(ctx, repo.db, boil.Infer())
-	if err != nil {
-		return err
-	}
-	if rowsAff == 0 {
-		return merror.NotFound().Describe("could not find identity")
-	}
-
 	return nil
 }
 

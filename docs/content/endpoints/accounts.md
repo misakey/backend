@@ -18,69 +18,9 @@ to many (identities) relationship.
 
 ## Create an account on an identity
 
-This route allows the creation of an account on an existing identity.
+The creation of an account linked to an identity can be done in an auth flow.
 
-The identity must have no registered linked account.
-
-The `prehashed_password` contains information following [Argon2 server relief concepts](../../concepts/server-relief/).
-
-### Request
-
-```bash
-  POST https://api.misakey.com.local/identities/:id/account
-```
-
-_Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
-
-_Path Parameters:_
-- `id` (uuid string): the identity linked to the created account.
-
-_JSON Body:_
-```json
-{
-	"prehashed_password": {{% include "include/passwordHash.json" 4 %}},
-	"backup_data": "[STRINGIFIED JSON]"
-}
-```
-
-- `prehashed_password` (object): prehashed password using argon2:
-  - `params` (object): argon2 parameters:
-    - `memory` (integer).
-    - `parallelism` (integer).
-    - `iterations` (integer).
-    - `salt_base64` (base64 string).
-  - `hash_base64` (base64 string): the prehashed password.
-- `backup_data` (string): the user backup data.
-
-### Success Response
-
-_Code:_
-```bash
-  HTTP 201 CREATED
-```
-
-_JSON Body:_
-```json
-  {
-    "id": "5f80b4ec-b42a-4554-a738-4fb532ba2ee4",
-    "prehashed_password": {
-      "params": {{% include "include/hashParameters.json" 8 %}}
-    },
-    "backup_data": "[STRINGIFIED JSON]",
-    "backup_version": 1,
-  }
-```
-
-- `id` (uuid string): an unique id.
-- `prehashed_password` (object): prehashed password using argon2:
-  - `params` (object): argon2 parameters:
-    - `memory` (integer).
-    - `parallelism` (integer).
-    - `iterations` (integer).
-    - `salt_base64` (base64 string).
-- `backup_data` (string): the stored backup data.
-- `backup_version` (integer): the backup version - always 1 on creation.
+More information in the [auth flow section](../auth_flow/#method-name-account_creation-bust_in_silhouette).
 
 ## Change password
 
@@ -91,10 +31,10 @@ The `old_prehashed_password` and `new_prehashed_password` contain information fo
 ### Request
 
 ```bash
-  PUT https://api.misakey.com.local/account/:id/password
+PUT https://api.misakey.com.local/account/:id/password
 ```
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): `subject` claim as the identity id.
+- :key: `Authorization` (opaque token) (ACR >= 2): `subject` claim as the identity id.
 
 _Path Parameters:_
 - `id` (uuid string): the account id.
@@ -130,7 +70,7 @@ _JSON Body:_
 
 _Code:_
 ```bash
-  HTTP 204 NO CONTENT
+HTTP 204 NO CONTENT
 ```
 
 ## Reset password
@@ -149,7 +89,7 @@ following [Argon2 server relief concepts](../../concepts/server-relief/).
 ### Request
 
 ```bash
-  GET https://api.misakey.com.local/accounts/:id/pwd-params
+GET https://api.misakey.com.local/accounts/:id/pwd-params
 ```
 
 _Headers:_
@@ -159,7 +99,7 @@ _Headers:_
 
 _Code:_
 ```bash
-  HTTP 200 OK
+HTTP 200 OK
 ```
 
 ```json
@@ -178,10 +118,10 @@ This route allows the retrieval of the account backup using the unique account i
 ### Request
 
 ```bash
-  GET https://api.misakey.com.local/accounts/:id/backup
+GET https://api.misakey.com.local/accounts/:id/backup
 ```
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): `subject` claim as an identity id linked to the account.
+- :key: `Authorization` (opaque token) (ACR >= 2): `subject` claim as an identity id linked to the account.
 
 _Path Parameters:_
 - `id` (uuid string): the unique account id.
@@ -190,7 +130,7 @@ _Path Parameters:_
 
 _Code:_
 ```bash
-  HTTP 200 OK
+HTTP 200 OK
 ```
 
 _JSON Body:_
@@ -212,10 +152,10 @@ This route allows the update of the account backup using the unique account id.
 ### Request
 
 ```bash
-  PUT https://api.misakey.com.local/accounts/:id/backup
+PUT https://api.misakey.com.local/accounts/:id/backup
 ```
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): `subject` claim as an identity id linked to the account.
+- :key: `Authorization` (opaque token) (ACR >= 2): `subject` claim as an identity id linked to the account.
 
 _Path Parameters:_
 - `id` (uuid string): the unique account id.
@@ -236,10 +176,10 @@ The client informs the server it increase the version number by updating the bac
 
 _Code:_
 ```bash
-  HTTP 204 NO CONTENT
+HTTP 204 NO CONTENT
 ```
 
-### Notable Error Response
+### Notable Error Responses
 
 On errors, some information should be displayed to the end-user.
 
@@ -253,7 +193,7 @@ is expected from the server considering the current backup version.
 
 _Code:_
 ```bash
-  HTTP 409 CONFLICT
+HTTP 409 CONFLICT
 ```
 
 _JSON Body:_

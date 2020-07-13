@@ -8,12 +8,44 @@ import (
 	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
 )
 
+// Init a user authentication stage (a.k.a. login flow)
+// It interacts with hydra and login sessions to know either user is already authenticated or not
+// It returns a URL user's agent should be redirected to
 func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) string {
-	return sso.authFlowService.LoginInit(ctx, loginChallenge)
+	// get info about current login session
+	loginCtx, err := sso.authFlowService.GetLoginContext(ctx, loginChallenge)
+	if err != nil {
+		return sso.authFlowService.LoginRedirectErr(err)
+	}
+
+	// skip indicates if an active session has been detected
+	// we check if login session ACR are high enough to accept authentication
+	if loginCtx.Skip {
+		session, err := sso.authenticationService.GetSession(ctx, loginCtx.SessionID)
+		if err == nil {
+			// if the session ACR is higher or equivalent to the expected ACR, we accept the login
+			if session.ACR >= loginCtx.OIDCContext.ACRValues.Get() {
+				// set browser cookie as authentication method
+				// TODO add it to login flow
+				loginCtx.OIDCContext.AMRs.Add(authn.AMRBrowserCookie)
+				loginCtx.OIDCContext.ACRValues.Set(session.ACR)
+				redirect, err := sso.authFlowService.BuildAndAcceptLogin(ctx, loginCtx)
+				if err != nil {
+					return sso.authFlowService.LoginRedirectErr(err)
+				}
+				return redirect.To
+			}
+		}
+		if authflow.NonePrompt(loginCtx.RequestURL) {
+			return sso.authFlowService.LoginRequiredErr()
+		}
+	}
+	return sso.authFlowService.BuildLoginURL(loginChallenge)
 }
 
 // LoginInfoView bears data about current user authentication status
@@ -25,15 +57,15 @@ type LoginInfoView struct {
 		TosURL    null.String `json:"tos_uri"`
 		PolicyURL null.String `json:"policy_uri"`
 	} `json:"client"`
-	RequestedScope []string `json:"scope"`
-	ACRValues      []string `json:"acr_values"`
-	LoginHint      string   `json:"login_hint"`
+	RequestedScope []string        `json:"scope"`
+	ACRValues      authn.ClassRefs `json:"acr_values"`
+	LoginHint      string          `json:"login_hint"`
 }
 
 func (sso SSOService) LoginInfo(ctx context.Context, loginChallenge string) (LoginInfoView, error) {
 	view := LoginInfoView{}
 
-	logCtx, err := sso.authFlowService.LoginGetContext(ctx, loginChallenge)
+	logCtx, err := sso.authFlowService.GetLoginContext(ctx, loginChallenge)
 	if err != nil {
 		return view, merror.Transform(err).Describe("could not get context")
 	}
@@ -86,7 +118,7 @@ func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd)
 	redirect := login.Redirect{}
 
 	// 1. ensure the login challenge is correct and the identity is authable
-	logCtx, err := sso.authFlowService.LoginGetContext(ctx, cmd.LoginChallenge)
+	logCtx, err := sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
 	if err != nil {
 		return redirect, err
 	}
@@ -99,17 +131,13 @@ func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd)
 	}
 
 	// 2. try to assert the authentication step
-	acr, amr, err := sso.authenticationService.AssertAuthnStep(ctx, cmd.Step)
+	acr, err := sso.authenticationService.AssertAuthnStep(ctx, cmd.Step)
 	if err != nil {
 		return redirect, err
 	}
 
-	// 3. if the authn step was emailed_code - we confirm the identity
-	if amr.Has(authn.AMREmailedCode) {
-		if err := sso.identityService.Confirm(ctx, cmd.Step.IdentityID); err != nil {
-			return redirect, err
-		}
-
+	// 3. if the authn step is emailed_code - we confirm the identity
+	if cmd.Step.MethodName == authn.AMREmailedCode {
 		// handle the reset password extension only if the emailed_code method has been used
 		if cmd.PasswordResetExt != nil {
 			if err := sso.resetPassword(ctx, *cmd.PasswordResetExt, cmd.Step.IdentityID); err != nil {
@@ -120,15 +148,8 @@ func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd)
 	}
 
 	// 4. accept the login session
-	acceptance := login.Acceptance{
-		// TODO: handle session for identity ID corresponding to same accounts
-		Subject: cmd.Step.IdentityID,
-
-		Remember:    true,
-		RememberFor: sso.authenticationService.GetRememberFor(acr),
-
-		ACR:     acr.String(),
-		Context: authn.NewContext().SetAMR(amr),
-	}
-	return sso.authFlowService.LoginAccept(ctx, logCtx.Challenge, acceptance)
+	logCtx.Subject = cmd.Step.IdentityID
+	logCtx.OIDCContext.ACRValues.Set(acr)
+	logCtx.OIDCContext.AMRs.Add(cmd.Step.MethodName)
+	return sso.authFlowService.BuildAndAcceptLogin(ctx, logCtx)
 }

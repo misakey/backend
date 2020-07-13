@@ -44,7 +44,7 @@ This route allows the retrieval of the information related to an identity.
 ### Request
 
 ```bash
-  GET https://api.misakey.com.local/identities/:id
+GET https://api.misakey.com.local/identities/:id
 ```
 _Headers:_
 - `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
@@ -56,7 +56,7 @@ _Path Parameters:_
 
 _Code:_
 ```bash
-  HTTP 200 CREATED
+HTTP 200 CREATED
 ```
 
 _JSON Body:_
@@ -100,7 +100,7 @@ The request must be authenticated with a token corresponding to the updated iden
 ### Request
 
 ```bash
-  PATCH https://api.misakey.com.local/identities/:id
+PATCH https://api.misakey.com.local/identities/:id
 ```
 _Headers:_
 - `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
@@ -116,7 +116,7 @@ _Body Parameters:_
 
 _Code:_
 ```bash
-  HTTP 204 No Content
+HTTP 204 No Content
 ```
 
 ## Upload an avatar
@@ -126,7 +126,7 @@ The request must be authenticated with a token corresponding to the identity on 
 ### Request
 
 ```bash
-  PUT https://api.misakey.com.local/identities/:id/avatar
+PUT https://api.misakey.com.local/identities/:id/avatar
 ```
 _Headers:_
 - `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
@@ -141,7 +141,7 @@ _Body Parameters (multipart/form\_data):_
 
 _Code:_
 ```bash
-  HTTP 204 No Content
+HTTP 204 No Content
 ```
 
 ## Delete an avatar
@@ -153,7 +153,7 @@ If no avatar is set on the identity, the request will return a `409 CONFLICT`.
 ### Request
 
 ```bash
-  DELETE https://api.misakey.com.local/identities/:id/avatar
+DELETE https://api.misakey.com.local/identities/:id/avatar
 ```
 _Headers:_
 - `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
@@ -165,5 +165,5 @@ _Path Parameters:_
 
 _Code:_
 ```bash
-  HTTP 204 No Content
+HTTP 204 No Content
 ```
