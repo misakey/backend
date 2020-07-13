@@ -22,7 +22,7 @@ type ConsentInfoView struct {
 	RequestedScope []string      `json:"scope"`
 	AuthnContext   authn.Context `json:"context"`
 	Client         struct {
-		ID        string      `json:"client_id"`
+		ID        string      `json:"id"`
 		Name      string      `json:"name"`
 		LogoURL   null.String `json:"logo_uri"`
 		TosURL    null.String `json:"tos_uri"`
