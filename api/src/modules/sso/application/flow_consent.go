@@ -65,58 +65,6 @@ func (cmd ConsentAcceptCmd) Validate() error {
 	)
 }
 
-func (sso SSOService) ConsentAccept(ctx context.Context, cmd ConsentAcceptCmd) (login.Redirect, error) {
-	redirect := login.Redirect{}
-	// 1. get consent context
-	consentCtx, err := sso.authFlowService.ConsentGetContext(ctx, cmd.ConsentChallenge)
-	if err != nil {
-		return redirect, err
-	}
-
-	// 2. retrieve subject information to put it in ID tokens as claims
-	identity, err := sso.identityService.Get(ctx, consentCtx.Subject)
-	if err != nil {
-		return redirect, err
-	}
-	if identity.ID != cmd.IdentityID {
-		return redirect, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
-	}
-	identifier, err := sso.identifierService.Get(ctx, identity.IdentifierID)
-	if err != nil {
-		return redirect, err
-	}
-
-	// 3. build consent accept
-	var consentScopes []string
-	for _, reqScope := range consentCtx.RequestedScope {
-		// automatically add openid scope
-		// because there is no need to consent to this one
-		if reqScope == "openid" {
-			consentScopes = append(consentScopes, reqScope)
-		}
-	}
-
-	// ensure requested legal scopes have been consented
-	if err := assertLegalScopes(consentCtx.RequestedScope, cmd.ConsentedScopes); err != nil {
-		return redirect, err
-	}
-
-	consentScopes = append(consentScopes, cmd.ConsentedScopes...)
-	acceptance := consent.Acceptance{
-		GrantScope:  consentScopes,
-		Remember:    true,
-		RememberFor: 0, // remember for ever the user consent
-	}
-	acceptance.Session.IDTokenClaims.Scope = strings.Join(consentScopes, " ")
-	acceptance.Session.IDTokenClaims.Email = identifier.Value
-	acceptance.Session.IDTokenClaims.AMR = consentCtx.AuthnContext.GetAMR()
-	acceptance.Session.AccessTokenClaims.ACR = consentCtx.ACR
-
-	// 4. tell hydra the consent contract
-	redirect.To = sso.authFlowService.ConsentAccept(ctx, cmd.ConsentChallenge, acceptance)
-	return redirect, nil
-}
-
 // Init a user consent stage (a.k.a. consent flow)
 // It interacts with hydra to know either user has already consented to share data with the RP
 // It returns a URL user's agent should be redirected to
@@ -190,6 +138,58 @@ func (sso SSOService) ConsentInit(ctx context.Context, consentChallenge string) 
 
 	// 5. tell hydra the consent contract
 	return sso.authFlowService.ConsentAccept(ctx, consentChallenge, acceptance)
+}
+
+func (sso SSOService) ConsentAccept(ctx context.Context, cmd ConsentAcceptCmd) (login.Redirect, error) {
+	redirect := login.Redirect{}
+	// 1. get consent context
+	consentCtx, err := sso.authFlowService.ConsentGetContext(ctx, cmd.ConsentChallenge)
+	if err != nil {
+		return redirect, err
+	}
+
+	// 2. retrieve subject information to put it in ID tokens as claims
+	identity, err := sso.identityService.Get(ctx, consentCtx.Subject)
+	if err != nil {
+		return redirect, err
+	}
+	if identity.ID != cmd.IdentityID {
+		return redirect, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
+	}
+	identifier, err := sso.identifierService.Get(ctx, identity.IdentifierID)
+	if err != nil {
+		return redirect, err
+	}
+
+	// 3. build consent accept
+	var consentScopes []string
+	for _, reqScope := range consentCtx.RequestedScope {
+		// automatically add openid scope
+		// because there is no need to consent to this one
+		if reqScope == "openid" {
+			consentScopes = append(consentScopes, reqScope)
+		}
+	}
+
+	// ensure requested legal scopes have been consented
+	if err := assertLegalScopes(consentCtx.RequestedScope, cmd.ConsentedScopes); err != nil {
+		return redirect, err
+	}
+
+	consentScopes = append(consentScopes, cmd.ConsentedScopes...)
+	acceptance := consent.Acceptance{
+		GrantScope:  consentScopes,
+		Remember:    true,
+		RememberFor: 0, // remember for ever the user consent
+	}
+	acceptance.Session.IDTokenClaims.Scope = strings.Join(consentScopes, " ")
+	acceptance.Session.IDTokenClaims.Email = identifier.Value
+	acceptance.Session.IDTokenClaims.AMR = consentCtx.AuthnContext.GetAMR()
+	acceptance.Session.AccessTokenClaims.ACR = consentCtx.ACR
+
+	// 4. tell hydra the consent contract
+	redirect.To = sso.authFlowService.ConsentAccept(ctx, cmd.ConsentChallenge, acceptance)
+	return redirect, nil
 }
 
 func assertLegalScopes(requested []string, consented []string) error {
