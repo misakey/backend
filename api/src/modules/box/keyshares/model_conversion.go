@@ -1,4 +1,4 @@
-package keyshare
+package keyshares
 
 import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"

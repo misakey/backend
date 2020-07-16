@@ -2,22 +2,24 @@ package boxes
 
 import (
 	"context"
+	"database/sql"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/identities"
 )
 
 type computer struct {
 	// binding of event type - play func
 	ePlayer map[string]func(context.Context, events.Event) error
 
-	// repositories
-	repo repositories.Contextual
-
 	events []events.Event
+
+	dbConn     *sql.DB
+	identities entrypoints.IdentityIntraprocessInterface
 
 	// the output
 	box Box
@@ -28,20 +30,22 @@ type computer struct {
 }
 
 // ComputeBox box according to the received boxID.
-// The function retrieves events linked to the boxID using received repository actors.
+// The function retrieves events linked to the boxID using received db connector.
 // The function can takes optionally events, only these events will be used to compute
 // the box if there are some.
 func Compute(
 	ctx context.Context,
 	boxID string,
-	repo repositories.Contextual,
+	dbConn *sql.DB,
+	identities entrypoints.IdentityIntraprocessInterface,
 	buildEvents ...events.Event,
 ) (Box, error) {
 	// init the computer system
 	computer := &computer{
-		repo:   repo,
-		box:    Box{ID: boxID},
-		events: buildEvents,
+		dbConn:     dbConn,
+		identities: identities,
+		box:        Box{ID: boxID},
+		events:     buildEvents,
 	}
 	computer.ePlayer = map[string]func(context.Context, events.Event) error{
 		"create":          computer.playCreate,
@@ -62,7 +66,7 @@ func Compute(
 
 func (c *computer) retrieveEvents(ctx context.Context) error {
 	var err error
-	c.events, err = events.ListByBoxID(ctx, c.repo.DB(), c.box.ID)
+	c.events, err = events.ListByBoxID(ctx, c.dbConn, c.box.ID)
 	return err
 }
 
@@ -101,7 +105,7 @@ func (c *computer) playEvent(ctx context.Context, e events.Event, last bool) err
 		}
 
 		// get the sender information
-		identity, err := c.repo.Identities().Get(ctx, e.SenderID)
+		identity, err := identities.Get(ctx, c.identities, e.SenderID)
 		if err != nil {
 			return merror.Transform(err).Describe("retrieving last sender")
 		}
@@ -125,7 +129,7 @@ func (c *computer) playCreate(ctx context.Context, e events.Event) error {
 	c.creatorID = e.SenderID
 
 	// set the creator information
-	identity, err := c.repo.Identities().Get(ctx, e.SenderID)
+	identity, err := identities.Get(ctx, c.identities, e.SenderID)
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving creator")
 	}

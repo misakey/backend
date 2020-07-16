@@ -2,11 +2,14 @@ package boxes
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/volatiletech/sqlboiler/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 )
 
 // Box is a volatile object built based on events linked to its ID
@@ -111,4 +114,19 @@ func GetActorsExcept(
 	}
 
 	return actors, nil
+}
+
+func CheckBoxExists(ctx context.Context, boxID string, exec boil.ContextExecutor) (bool, error) {
+	_, err := sqlboiler.Events(
+		sqlboiler.EventWhere.BoxID.EQ(boxID),
+		sqlboiler.EventWhere.Type.EQ("create"),
+	).One(ctx, exec)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		} else {
+			return false, merror.Transform(err).Describe("retrieving box creation event")
+		}
+	}
+	return true, nil
 }

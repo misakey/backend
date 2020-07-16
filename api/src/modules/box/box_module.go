@@ -13,12 +13,9 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/db"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/rester/http"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/application"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
-
-type handler struct {
-	repo repositories.RealWorld
-}
 
 func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntraprocessInterface) {
 	// init the box module configuration
@@ -45,6 +42,21 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 		log.Fatal().Err(err).Msg("could not connect to redis")
 	}
 
+	var filesRepo files.FileRepo
+	env := os.Getenv("ENV")
+	if env == "development" {
+		filesRepo = files.NewBoxFileSystem(viper.GetString("server.encrypted_files"))
+	} else if env == "production" {
+		filesRepo = files.NewBoxFileAmazonS3(
+			viper.GetString("aws.s3_region"),
+			viper.GetString("aws.encrypted_files_bucket"),
+		)
+	} else {
+		log.Fatal().Msg("unknown ENV value (should be production|development)")
+	}
+
+	boxService := application.NewBoxApplication(dbConn, redConn, identityIntraprocess, filesRepo)
+
 	adminHydraFORM := http.NewClient(
 		viper.GetString("hydra.admin_endpoint"),
 		viper.GetBool("hydra.secure"),
@@ -57,33 +69,5 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 		adminHydraFORM,
 	)
 
-	var repo repositories.RealWorld
-	env := os.Getenv("ENV")
-	if env == "development" {
-		repo = repositories.NewRealWorld(
-			dbConn,
-			identityIntraprocess,
-			repositories.NewBoxFileSystem(viper.GetString("server.encrypted_files")),
-			repositories.NewEventsCountRedis(
-				redConn,
-			),
-		)
-	} else if env == "production" {
-		repo = repositories.NewRealWorld(
-			dbConn,
-			identityIntraprocess,
-			repositories.NewBoxFileAmazonS3(
-				viper.GetString("aws.s3_region"),
-				viper.GetString("aws.encrypted_files_bucket"),
-			),
-			repositories.NewEventsCountRedis(
-				redConn,
-			),
-		)
-	} else {
-		log.Fatal().Msg("unknown ENV value (should be production|development)")
-	}
-
-	h := handler{repo: repo}
-	bindRoutes(router, h, authzMidlw)
+	bindRoutes(router, boxService, authzMidlw)
 }

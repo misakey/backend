@@ -2,16 +2,23 @@ package boxes
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/eventscounts"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 )
+
+func Get(ctx context.Context, dbConn *sql.DB, identities entrypoints.IdentityIntraprocessInterface, boxID string) (Box, error) {
+	return Compute(ctx, boxID, dbConn, identities)
+}
 
 func CountForSender(ctx context.Context, exec boil.ContextExecutor, senderID string) (int, error) {
 	boxIDs, err := latestIDsForSender(ctx, exec, senderID)
@@ -20,14 +27,16 @@ func CountForSender(ctx context.Context, exec boil.ContextExecutor, senderID str
 
 func ListForSender(
 	ctx context.Context,
-	repo repositories.Contextual,
+	dbConn *sql.DB,
+	redConn *redis.Client,
+	identities entrypoints.IdentityIntraprocessInterface,
 	senderID string,
 	limit, offset int,
 ) ([]*Box, error) {
 	boxes := []*Box{}
 
 	// 1. retrieve box IDs
-	boxIDs, err := latestIDsForSender(ctx, repo.DB(), senderID)
+	boxIDs, err := latestIDsForSender(ctx, dbConn, senderID)
 	if err != nil {
 		return boxes, merror.Transform(err).Describe("listing box ids")
 	}
@@ -47,7 +56,7 @@ func ListForSender(
 	// 3. compute all boxes
 	boxes = make([]*Box, len(boxIDs))
 	for i, boxID := range boxIDs {
-		box, err := Compute(ctx, boxID, repo)
+		box, err := Compute(ctx, boxID, dbConn, identities)
 		if err != nil {
 			return boxes, merror.Transform(err).Describef("computing box %s", boxID)
 		}
@@ -55,7 +64,7 @@ func ListForSender(
 	}
 
 	// 4. add the new events count for the requesting identity
-	eventsCount, err := repo.EventsCounts().GetIdentityEventsCount(ctx, senderID)
+	eventsCount, err := eventscounts.GetForIdentity(ctx, redConn, senderID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting new events count")
 	}

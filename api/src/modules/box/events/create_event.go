@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"database/sql"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -48,4 +49,19 @@ func GetCreateEvent(
 	boxID string,
 ) (Event, error) {
 	return findByTypeContent(ctx, exec, boxID, "create", nil)
+}
+
+func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, dbConn *sql.DB) (Event, error) {
+	event, err := NewCreate(title, publicKey, senderID)
+	if err != nil {
+		return Event{}, merror.Transform(err).Describe("creating create event")
+	}
+
+	// persist the event in storage
+	if err = event.ToSQLBoiler().Insert(ctx, dbConn, boil.Infer()); err != nil {
+		return Event{}, merror.Transform(err).Describe("inserting event")
+	}
+
+	return event, nil
+
 }

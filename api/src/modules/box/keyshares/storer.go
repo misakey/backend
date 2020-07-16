@@ -1,4 +1,4 @@
-package keyshare
+package keyshares
 
 import (
 	"context"
