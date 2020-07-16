@@ -14,7 +14,7 @@ import (
 // Information must be passed through a bearer token in Authorization HTTP Header
 // The opaque token is instropected and information are set inside current context
 // to be checked later by different actors (modules...)
-func NewTokenIntrospectionMidlw(misakeyAudience string, tokenRester rester.Client) echo.MiddlewareFunc {
+func NewTokenIntrospectionMidlw(misakeyAudience string, selfRestrict bool, tokenRester rester.Client) echo.MiddlewareFunc {
 	tokens := newTokenIntroHTTP(tokenRester)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -79,6 +79,11 @@ func NewTokenIntrospectionMidlw(misakeyAudience string, tokenRester rester.Clien
 
 			if ac.Subject == "" {
 				return merror.Unauthorized().Describe("subject is empty")
+			}
+
+			// only Misakey client can access our API routes
+			if selfRestrict && ac.ClientID != misakeyAudience {
+				return merror.Unauthorized().Describe("unauthorized client")
 			}
 
 			// set access claims in request context

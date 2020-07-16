@@ -150,11 +150,18 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	// init authorization middleware
 	authzMidlw := authz.NewTokenIntrospectionMidlw(
 		viper.GetString("authflow.self_client_id"),
+		true,
+		adminHydraFORM,
+	)
+
+	externalAuthzMidlw := authz.NewTokenIntrospectionMidlw(
+		viper.GetString("authflow.self_client_id"),
+		false,
 		adminHydraFORM,
 	)
 
 	// bind all routes to the router
-	initRoutes(router, authzMidlw, ssoService, *oauthCodeFlow)
+	initRoutes(router, authzMidlw, externalAuthzMidlw, ssoService, *oauthCodeFlow)
 	// bind static assets for avatars only if configuration has been set up
 	avatarLocation := viper.GetString("server.avatars")
 	if len(avatarLocation) > 0 {

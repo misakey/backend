@@ -11,6 +11,7 @@ import (
 func initRoutes(
 	router *echo.Echo,
 	authzMidlw echo.MiddlewareFunc,
+	externalAuthzMidlw echo.MiddlewareFunc,
 	ssoService application.SSOService,
 	oauthCodeFlow oauth.AuthorizationCodeFlow,
 ) {
@@ -34,7 +35,7 @@ func initRoutes(
 	authRoutes.GET("/login", authFlowHTTP.LoginInit)
 	authRoutes.GET("/login/info", authFlowHTTP.LoginInfo)
 	authRoutes.POST("/login/authn-step", authFlowHTTP.LoginAuthnStep)
-	authRoutes.POST("/logout", authFlowHTTP.Logout, authzMidlw)
+	authRoutes.POST("/logout", authFlowHTTP.Logout, externalAuthzMidlw)
 	authRoutes.GET("/consent", authFlowHTTP.ConsentInit)
 	authRoutes.GET("/consent/info", authFlowHTTP.ConsentInfo)
 	authRoutes.POST("/consent", authFlowHTTP.ConsentAccept)

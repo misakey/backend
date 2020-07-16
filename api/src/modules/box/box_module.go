@@ -66,6 +66,7 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 	// init authorization middleware
 	authzMidlw := authz.NewTokenIntrospectionMidlw(
 		viper.GetString("authflow.self_client_id"),
+		true,
 		adminHydraFORM,
 	)
 
