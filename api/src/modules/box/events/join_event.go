@@ -32,6 +32,15 @@ func StoreJoin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID s
 	if !merror.HasCode(err, merror.NotFoundCode) {
 		return err
 	}
+	// check that the current sender is not
+	// the box creator
+	createEvent, err := GetCreateEvent(ctx, exec, boxID)
+	if err != nil {
+		return merror.Transform(err).Describe("getting create event")
+	}
+	if createEvent.SenderID == senderID {
+		return nil
+	}
 
 	// create and store the new join event
 	event, err := newWithAnyContent("join", nil, boxID, senderID)
