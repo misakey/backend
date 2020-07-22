@@ -77,6 +77,37 @@ _JSON Body:_
 {{% include "include/box.json" %}}
 ```
 
+## Getting Public Info about a Box
+
+This endpoint does not need any valid token, but it needs a valid `other_share_hash`
+corresponding to the box to get.
+
+### Request
+
+```bash
+  GET https://api.misakey.com/boxes/:id/public?other_share_hash=
+```
+
+_Path Parameters:_
+- `id` (uuid string): the box id wished to be retrieved.
+
+_Query Parameters:_
+- `other_share_hash` (string) (unpadded url-safe base64): a hash of the other share.
+
+### Response
+
+_Code:_
+```bash
+HTTP 200 OK
+```
+
+_JSON Body:_
+```json
+{
+    "title": "<title of the box>"
+}
+```
+
 ## Get the total count of boxes for the current user
 
 ### Request

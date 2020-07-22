@@ -31,6 +31,7 @@ func ResponseBlob(eCtx echo.Context, data interface{}) error {
 
 func NewHTTPEntrypoint(
 	initReq func() Request,
+	checkAccesses bool,
 	appFunc func(context.Context, Request) (interface{}, error),
 	responseFunc func(echo.Context, interface{}) error,
 	afterOpts ...func(echo.Context, interface{}) error,
@@ -41,10 +42,10 @@ func NewHTTPEntrypoint(
 		req := initReq()
 		ctx := eCtx.Request().Context()
 
-		// retrieve accesses
-		acc := ajwt.GetAccesses(ctx)
-		if acc == nil {
-			return merror.Forbidden()
+		if checkAccesses {
+			if acc := ajwt.GetAccesses(ctx); acc == nil {
+				return merror.Forbidden()
+			}
 		}
 
 		// bind - validate the request

@@ -94,12 +94,10 @@ func (c *computer) playEvent(ctx context.Context, e events.Event, last bool) err
 	// take care of binding the last event in the box
 	if last {
 		acc := ajwt.GetAccesses(ctx)
-		if acc == nil {
-			return merror.Internal().Describe("unexpected empty accesses")
-		}
-		// if the box has been closed and the viewer is not the creator
+
+		// if the box has been closed and the viewer is not the creator or has no token
 		// we force the last event to be the close event
-		if acc.Subject != c.creatorID && c.closeEvent != nil {
+		if (acc == nil || acc.Subject != c.creatorID) && c.closeEvent != nil {
 			e = *c.closeEvent
 			c.box.PublicKey = ""
 		}
