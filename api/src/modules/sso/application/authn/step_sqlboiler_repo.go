@@ -1,4 +1,4 @@
-package repositories
+package authn
 
 import (
 	"context"
@@ -10,21 +10,21 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories/sqlboiler"
 )
 
-type AuthnStepSQLBoiler struct {
+type StepSQLBoiler struct {
 	db *sql.DB
 }
 
-func NewAuthnStepSQLBoiler(db *sql.DB) *AuthnStepSQLBoiler {
-	return &AuthnStepSQLBoiler{
+func NewAuthnStepSQLBoiler(db *sql.DB) *StepSQLBoiler {
+	return &StepSQLBoiler{
 		db: db,
 	}
 }
 
-func (repo AuthnStepSQLBoiler) Create(ctx context.Context, authnStep *authn.Step) error {
+func (repo StepSQLBoiler) Create(ctx context.Context, authnStep *Step) error {
 	// convert domain to sql model
 	sqlAuthnStep := sqlboiler.AuthenticationStep{
 		IdentityID: authnStep.IdentityID,
@@ -43,7 +43,7 @@ func (repo AuthnStepSQLBoiler) Create(ctx context.Context, authnStep *authn.Step
 	return nil
 }
 
-func (repo AuthnStepSQLBoiler) CompleteAt(ctx context.Context, id int, completeTime time.Time) error {
+func (repo StepSQLBoiler) CompleteAt(ctx context.Context, id int, completeTime time.Time) error {
 	data := sqlboiler.M{sqlboiler.AuthenticationStepColumns.CompleteAt: null.TimeFrom(completeTime)}
 	rowsAff, err := sqlboiler.AuthenticationSteps(sqlboiler.AuthenticationStepWhere.ID.EQ(id)).UpdateAll(ctx, repo.db, data)
 	if rowsAff == 0 {
@@ -52,13 +52,13 @@ func (repo AuthnStepSQLBoiler) CompleteAt(ctx context.Context, id int, completeT
 	return err
 }
 
-func (repo AuthnStepSQLBoiler) Last(
+func (repo StepSQLBoiler) Last(
 	ctx context.Context,
 	identityID string,
-	methodName authn.MethodRef,
-) (authn.Step, error) {
+	methodName oidc.MethodRef,
+) (Step, error) {
 
-	authnStep := authn.Step{}
+	authnStep := Step{}
 
 	mods := []qm.QueryMod{
 		sqlboiler.AuthenticationStepWhere.IdentityID.EQ(identityID),
@@ -79,7 +79,7 @@ func (repo AuthnStepSQLBoiler) Last(
 	// build domain model based on sql data
 	authnStep.ID = sqlAuthnStep.ID
 	authnStep.IdentityID = sqlAuthnStep.IdentityID
-	authnStep.MethodName = authn.MethodRef(sqlAuthnStep.MethodName)
+	authnStep.MethodName = oidc.MethodRef(sqlAuthnStep.MethodName)
 	authnStep.RawJSONMetadata = sqlAuthnStep.Metadata
 	authnStep.CreatedAt = sqlAuthnStep.CreatedAt
 	authnStep.CompleteAt = sqlAuthnStep.CompleteAt
@@ -87,7 +87,7 @@ func (repo AuthnStepSQLBoiler) Last(
 	return authnStep, nil
 }
 
-func (repo AuthnStepSQLBoiler) DeleteIncomplete(ctx context.Context, identityID string) error {
+func (repo StepSQLBoiler) DeleteIncomplete(ctx context.Context, identityID string) error {
 	mods := []qm.QueryMod{
 		sqlboiler.AuthenticationStepWhere.IdentityID.EQ(identityID),
 		sqlboiler.AuthenticationStepWhere.CompleteAt.IsNull(),
@@ -98,7 +98,7 @@ func (repo AuthnStepSQLBoiler) DeleteIncomplete(ctx context.Context, identityID 
 	return err
 }
 
-func (repo AuthnStepSQLBoiler) Delete(ctx context.Context, stepID int) error {
+func (repo StepSQLBoiler) Delete(ctx context.Context, stepID int) error {
 	mod := sqlboiler.AuthenticationStepWhere.ID.EQ(stepID)
 
 	rowsAff, err := sqlboiler.AuthenticationSteps(mod).DeleteAll(ctx, repo.db)

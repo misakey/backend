@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"strings"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow/login"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
 )
 
 type AuthFlowService struct {
@@ -49,7 +49,7 @@ func NewAuthFlowService(
 
 type authFlowRepo interface {
 	GetLoginContext(context.Context, string) (login.Context, error)
-	Login(context.Context, string, login.Acceptance) (login.Redirect, error)
+	Login(context.Context, string, login.Acceptance) (string, error)
 
 	GetConsentContext(context.Context, string) (consent.Context, error)
 	Consent(context.Context, string, consent.Acceptance) (consent.Redirect, error)

@@ -17,27 +17,6 @@ func NewIdentityHTTP(service application.SSOService) IdentityHTTP {
 	return IdentityHTTP{service: service}
 }
 
-// Handles POST /identities/:id/account - create an new account on the identity
-func (entrypoint IdentityHTTP) CreateAccount(ctx echo.Context) error {
-	cmd := application.CreateAccountCmd{}
-
-	if err := ctx.Bind(&cmd); err != nil {
-		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
-	}
-
-	cmd.SetIdentityID(ctx.Param("id"))
-
-	if err := cmd.Validate(); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
-	}
-
-	view, err := entrypoint.service.CreateAccount(ctx.Request().Context(), cmd)
-	if err != nil {
-		return merror.Transform(err).Describe("create account").From(merror.OriBody)
-	}
-	return ctx.JSON(http.StatusCreated, view)
-}
-
 // Handles GET /identities/:id - retrieve an existing identity
 func (entrypoint IdentityHTTP) GetIdentity(ctx echo.Context) error {
 	query := application.IdentityQuery{
@@ -66,7 +45,7 @@ func (entrypoint IdentityHTTP) RequireAuthableIdentity(ctx echo.Context) error {
 		return merror.Transform(err).From(merror.OriBody)
 	}
 
-	identity, err := entrypoint.service.RequireIdentityAuthable(ctx.Request().Context(), cmd)
+	identity, err := entrypoint.service.RequireAuthableIdentity(ctx.Request().Context(), cmd)
 	if err != nil {
 		return merror.Transform(err).Describe("could not require authable identity").From(merror.OriBody)
 	}

@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"net/url"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow/login"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/oauth"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
 )
 
 // LoginGetContext using a login challenge
@@ -19,15 +18,15 @@ func (afs AuthFlowService) GetLoginContext(ctx context.Context, loginChallenge s
 
 // BuildAndAcceptLogin takes the OIDCContext as the one used to login
 // It builds the acceptance object and sends it as accepted to the authorization server
-func (afs AuthFlowService) BuildAndAcceptLogin(ctx context.Context, loginCtx login.Context) (login.Redirect, error) {
+func (afs AuthFlowService) BuildAndAcceptLogin(ctx context.Context, loginCtx login.Context) (string, error) {
 	if len(loginCtx.OIDCContext.ACRValues) == 0 {
-		return login.Redirect{}, fmt.Errorf("acr values are empty")
+		return "", fmt.Errorf("acr values are empty")
 	}
 	acr := loginCtx.OIDCContext.ACRValues.Get()
 	acceptance := login.Acceptance{
 		Subject: loginCtx.Subject,
 		ACR:     acr,
-		Context: authn.NewContext().SetAMR(loginCtx.OIDCContext.AMRs),
+		Context: oidc.NewContext().SetAMR(loginCtx.OIDCContext.AMRs),
 
 		Remember:    (acr.RememberFor() > 0),
 		RememberFor: acr.RememberFor(),

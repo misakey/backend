@@ -498,6 +498,33 @@ _JSON Body:_
 }
 ```
 
+**3. The Authorization headers do not correspond to the login_challenge:**
+
+Situation when the error is returned:
+1. The end-user has performed an authentication step in a login flow A.
+2. The end-user refreshes their agent, it inits a new login flow B.
+3. The client has still the access token bound to the login flow A in headers.
+
+The access token is valid for the login flow A but cannot be used in the login flow B.
+
+_Code:_
+```bash
+HTTP 403 FORBIDDEN
+```
+
+_JSON Body:_
+```json
+{
+  "code": "forbidden",
+  "origin": "headers",
+  "desc": "...",
+  "details": {
+    "Authorization": "conflict",
+    "login_challenge": "conflict"
+  }
+}
+```
+
 ## Init a new authentication step
 
 This request allows to init an authentication step:

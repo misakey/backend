@@ -1,4 +1,4 @@
-package repositories
+package authflow
 
 import (
 	"context"
@@ -6,11 +6,12 @@ import (
 	"net/url"
 
 	"github.com/volatiletech/null"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/rester"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow/login"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
 )
 
 // HTTP implements Hydra repository interface using HTTP REST
@@ -55,8 +56,8 @@ func (h HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (
 			PolicyURI string `json:"policy_uri"`
 		} `json:"client"`
 		OIDCContext struct { // OIDC context of the current request
-			ACRValues authn.ClassRefs `json:"acr_values"`
-			LoginHint string          `json:"login_hint"`
+			ACRValues oidc.ClassRefs `json:"acr_values"`
+			LoginHint string         `json:"login_hint"`
 		} `json:"oidc_context"`
 	}{}
 	// query parameters
@@ -96,8 +97,10 @@ func (h HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (
 }
 
 // Login user to hydra
-func (h HydraHTTP) Login(ctx context.Context, loginChallenge string, acceptance login.Acceptance) (login.Redirect, error) {
-	redirect := login.Redirect{}
+func (h HydraHTTP) Login(ctx context.Context, loginChallenge string, acceptance login.Acceptance) (string, error) {
+	redirect := struct {
+		To string `json:"redirect_to"`
+	}{}
 	params := url.Values{}
 	params.Add("login_challenge", loginChallenge)
 	err := h.adminJSONRester.Put(ctx, "/oauth2/auth/requests/login/accept", params, acceptance, &redirect)
@@ -105,9 +108,9 @@ func (h HydraHTTP) Login(ctx context.Context, loginChallenge string, acceptance 
 		if merror.HasCode(err, merror.NotFoundCode) {
 			err = merror.Transform(err).Detail("challenge", merror.DVNotFound)
 		}
-		return redirect, err
+		return "", err
 	}
-	return redirect, nil
+	return redirect.To, nil
 }
 
 // GetConsentContext from hydra

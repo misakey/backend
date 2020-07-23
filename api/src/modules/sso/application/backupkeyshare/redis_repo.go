@@ -41,7 +41,7 @@ func (rr RedisRepo) Get(ctx context.Context, otherShareHash string) (domain.Back
 		return keyShare, err
 	}
 	if err := json.Unmarshal(value, &keyShare); err != nil {
-		return keyShare, merror.Internal().Describe("encoding backup key share").Describe(err.Error())
+		return keyShare, merror.Transform(err).Describe("unmarshaling backup key share")
 	}
 	return keyShare, nil
 }

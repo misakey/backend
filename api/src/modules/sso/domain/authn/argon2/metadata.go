@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/volatiletech/sqlboiler/types"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 type pwdMetadata struct {
@@ -14,7 +15,7 @@ type pwdMetadata struct {
 func ToMetadata(msg types.JSON) (ret pwdMetadata, err error) {
 	msgJSON, err := msg.MarshalJSON()
 	if err != nil {
-		return ret, err
+		return ret, merror.Transform(err).Describe("password metadata")
 	}
 	err = json.Unmarshal(msgJSON, &ret)
 	return ret, err

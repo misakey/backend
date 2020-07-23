@@ -33,7 +33,6 @@ func NewSenderView(identity domain.Identity) SenderView {
 
 // View represent an event as it is represented in JSON responses
 type View struct {
-	// TODO factorize with other type definitions
 	Type      string     `json:"type"`
 	Content   types.JSON `json:"content"`
 	ID        string     `json:"id"`

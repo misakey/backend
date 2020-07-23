@@ -2,7 +2,7 @@ package consent
 
 import (
 	"github.com/volatiletech/null"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 )
 
 type Session struct {
@@ -26,9 +26,9 @@ type Context struct {
 	RequestedScope []string `json:"requested_scope"`
 
 	// authentication during the login flow
-	ACR            authn.ClassRef `json:"acr"`
-	AuthnContext   authn.Context  `json:"context"`
-	LoginSessionID string         `json:"login_session_id"`
+	ACR            oidc.ClassRef `json:"acr"`
+	AuthnContext   oidc.Context  `json:"context"`
+	LoginSessionID string        `json:"login_session_id"`
 
 	// involved client
 	Client struct {
@@ -54,7 +54,7 @@ type Acceptance struct {
 		} `json:"id_token"`
 		AccessTokenClaims struct {
 			// extra instropection claims on Access Token
-			ACR authn.ClassRef `json:"acr"`
+			ACR oidc.ClassRef `json:"acr"`
 		} `json:"access_token"`
 	} `json:"session"`
 }

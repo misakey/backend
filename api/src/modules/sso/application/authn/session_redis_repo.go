@@ -6,34 +6,34 @@ import (
 
 	"github.com/go-redis/redis/v7"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
 )
 
-type AuthnSessionRedis struct {
+type SessionRedisRepo struct {
 	repositories.SimpleKeyRedis
 }
 
-func NewAuthSessionRedis(redConn *redis.Client) AuthnSessionRedis {
-	return AuthnSessionRedis{repositories.NewSimpleKeyRedis(redConn)}
+func NewAuthnSessionRedis(redConn *redis.Client) SessionRedisRepo {
+	return SessionRedisRepo{repositories.NewSimpleKeyRedis(redConn)}
 }
 
-func (ars AuthnSessionRedis) key(sessionID string) string {
+func (srr SessionRedisRepo) key(sessionID string) string {
 	return "authn_session:" + sessionID
 }
 
-func (ars AuthnSessionRedis) Upsert(ctx context.Context, session authn.Session, lifetime time.Duration) error {
-	return ars.SimpleKeyRedis.Set(ctx, ars.key(session.ID), []byte(session.ACR), lifetime)
+func (srr SessionRedisRepo) Upsert(ctx context.Context, session Session, lifetime time.Duration) error {
+	return srr.SimpleKeyRedis.Set(ctx, srr.key(session.ID), []byte(session.ACR), lifetime)
 }
 
-func (ars AuthnSessionRedis) Get(ctx context.Context, sessionID string) (authn.Session, error) {
-	session := authn.Session{
+func (srr SessionRedisRepo) Get(ctx context.Context, sessionID string) (Session, error) {
+	session := Session{
 		ID: sessionID,
 	}
-	secLevelBytes, err := ars.SimpleKeyRedis.Get(ctx, ars.key(sessionID))
+	secLevelBytes, err := srr.SimpleKeyRedis.Get(ctx, srr.key(sessionID))
 	if err != nil {
 		return session, err
 	}
-	session.ACR = authn.ClassRef(secLevelBytes)
+	session.ACR = oidc.ClassRef(secLevelBytes)
 	return session, nil
 }

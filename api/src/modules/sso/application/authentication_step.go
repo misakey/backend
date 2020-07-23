@@ -5,9 +5,9 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
 )
 
 // AuthenticationStepCmd orders:
@@ -49,12 +49,5 @@ func (sso SSOService) InitAuthnStep(ctx context.Context, cmd AuthenticationStepC
 	}
 
 	// 2. we try to init the authentication step
-	switch cmd.Step.MethodName {
-	case authn.AMREmailedCode:
-		return sso.authenticationService.CreateEmailedCode(ctx, cmd.Step.IdentityID)
-	case authn.AMRPrehashedPassword:
-		return sso.authenticationService.AssertPasswordExistence(ctx, cmd.Step.IdentityID)
-	default:
-		return merror.BadRequest().Describe("unknown method name").Detail("method_name", merror.DVInvalid)
-	}
+	return sso.authenticationService.InitStep(ctx, identity, cmd.Step.MethodName)
 }

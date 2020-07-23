@@ -1,8 +1,6 @@
 package authz
 
 import (
-	"strings"
-
 	"github.com/labstack/echo/v4"
 
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
@@ -10,32 +8,20 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/rester"
 )
 
-// NewTokenIntrospectionMidlw used to declare a route require authorization
+// NewOIDCIntrospector used to declare a route require OIDC authorization
 // Information must be passed through a bearer token in Authorization HTTP Header
 // The opaque token is instropected and information are set inside current context
 // to be checked later by different actors (modules...)
-func NewTokenIntrospectionMidlw(misakeyAudience string, selfRestrict bool, tokenRester rester.Client) echo.MiddlewareFunc {
-	tokens := newTokenIntroHTTP(tokenRester)
+func NewOIDCIntrospector(misakeyAudience string, selfRestrict bool, tokenRester rester.Client) echo.MiddlewareFunc {
+	tokens := newOIDCIntroHTTP(tokenRester)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-
-			// get authorization header
-			bearerTok := ctx.Request().Header.Get("Authorization")
-			if len(bearerTok) == 0 {
-				return merror.Unauthorized().From(merror.OriHeaders).
-					Detail("Authorization", merror.DVRequired)
+			// handle bearer token
+			opaqueTok, err := GetBearerTok(ctx)
+			if err != nil {
+				return err
 			}
-
-			// verify authorization header value is a bearer token and extract it
-			tokSplit := strings.SplitAfter(bearerTok, "Bearer ")
-			if len(tokSplit) != 2 {
-				return merror.Unauthorized().
-					From(merror.OriHeaders).
-					Describef("token should be of form `Bearer {token}`").
-					Detail("Authorization", merror.DVMalformed)
-			}
-			opaqueTok := tokSplit[1]
 
 			// introspect the token
 			introTok, err := tokens.Introspect(ctx.Request().Context(), opaqueTok)

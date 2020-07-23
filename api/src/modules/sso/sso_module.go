@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/db"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/oauth"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/oidc"
@@ -23,7 +24,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 )
 
 func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
@@ -79,10 +79,10 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	accountRepo := repositories.NewAccountSQLBoiler(dbConn)
 	identifierRepo := repositories.NewIdentifierSQLBoiler(dbConn)
 	identityRepo := repositories.NewIdentitySQLBoiler(dbConn)
-	authnStepRepo := repositories.NewAuthnStepSQLBoiler(dbConn)
+	authnStepRepo := authn.NewAuthnStepSQLBoiler(dbConn)
 	backupKeyRepo := backupkeyshare.NewRedisRepo(redConn, viper.GetDuration("backup_key_share.expiration"))
-	sessionRepo := authn.NewAuthSessionRedis(redConn)
-	hydraRepo := repositories.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
+	authnSessionRepo, authnProcessRepo := authn.NewAuthnSessionRedis(redConn), authn.NewAuthnProcessRedis(redConn)
+	hydraRepo := authflow.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
 	templateRepo := email.NewTemplateFileSystem(viper.GetString("mail.templates"))
 	var emailRepo email.Sender
 	var avatarRepo identity.AvatarRepo
@@ -121,7 +121,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 		viper.GetString("authflow.self_client_id"),
 	)
 	authenticationService := authn.NewService(
-		authnStepRepo, sessionRepo,
+		authnStepRepo, authnSessionRepo, authnProcessRepo,
 		identifierService,
 		identityService,
 		accountService,
@@ -149,20 +149,22 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	}
 
 	// init authorization middleware
-	authzMidlw := authz.NewTokenIntrospectionMidlw(
+	oidcAuthzMidlw := authz.NewOIDCIntrospector(
 		viper.GetString("authflow.self_client_id"),
 		true,
 		adminHydraFORM,
 	)
 
-	externalAuthzMidlw := authz.NewTokenIntrospectionMidlw(
+	extOIDCAuthzMidlw := authz.NewOIDCIntrospector(
 		viper.GetString("authflow.self_client_id"),
 		false,
 		adminHydraFORM,
 	)
 
+	authnProcessAuthzMidlw := authn.NewProcessIntrospector(viper.GetString("authflow.self_client_id"), authnProcessRepo)
+
 	// bind all routes to the router
-	initRoutes(router, authzMidlw, externalAuthzMidlw, ssoService, *oauthCodeFlow)
+	initRoutes(router, authnProcessAuthzMidlw, oidcAuthzMidlw, extOIDCAuthzMidlw, ssoService, *oauthCodeFlow)
 	// bind static assets for avatars only if configuration has been set up
 	avatarLocation := viper.GetString("server.avatars")
 	if len(avatarLocation) > 0 {

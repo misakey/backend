@@ -7,21 +7,21 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/rester"
 )
 
-// tokenIntroHTTP implements Token repository interface using HTTP REST
-type tokenIntroHTTP struct {
+// oidcIntroHTTP implements Token repository interface using HTTP REST
+type oidcIntroHTTP struct {
 	formAdminRester rester.Client
 }
 
-// newTokenIntroHTTP is the tokenIntroHTTP structure constructor
-func newTokenIntroHTTP(
+// newOIDCIntroHTTP is the oidcIntroHTTP structure constructor
+func newOIDCIntroHTTP(
 	formAdminRester rester.Client,
-) tokenIntroHTTP {
-	return tokenIntroHTTP{
+) oidcIntroHTTP {
+	return oidcIntroHTTP{
 		formAdminRester: formAdminRester,
 	}
 }
 
-func (h tokenIntroHTTP) Introspect(ctx context.Context, opaqueTok string) (instropection, error) {
+func (h oidcIntroHTTP) Introspect(ctx context.Context, opaqueTok string) (instropection, error) {
 	introTok := instropection{}
 	route := "/oauth2/introspect"
 

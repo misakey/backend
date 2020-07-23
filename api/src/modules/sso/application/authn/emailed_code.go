@@ -8,14 +8,15 @@ import (
 	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/code"
 )
 
 // CreateEmailedCode authentication step
-func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) error {
+func (as *Service) CreateEmailedCode(ctx context.Context, identity domain.Identity) error {
 	// try to retrieve an existing code for this identity
-	existing, err := as.steps.Last(ctx, identityID, authn.AMREmailedCode)
+	existing, err := as.steps.Last(ctx, identity.ID, oidc.AMREmailedCode)
 	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
 		return err
 	}
@@ -34,9 +35,9 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 		return err
 	}
 
-	flow := authn.Step{
-		IdentityID:      identityID,
-		MethodName:      authn.AMREmailedCode,
+	flow := Step{
+		IdentityID:      identity.ID,
+		MethodName:      oidc.AMREmailedCode,
 		RawJSONMetadata: codeRawJSON,
 
 		CreatedAt: time.Now(),
@@ -48,28 +49,17 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 		return err
 	}
 
-	// retrieve the identifier
-	identity, err := as.identityService.Get(ctx, identityID)
-	if err != nil {
-		return merror.Transform(err).Describe("get identity")
-	}
-
-	identifier, err := as.identifierService.Get(ctx, identity.IdentifierID)
-	if err != nil {
-		return merror.Transform(err).Describe("get identifier")
-	}
-
 	decodedCode, err := code.ToMetadata(codeRawJSON)
 	if err != nil {
 		return err
 	}
 
 	data := map[string]interface{}{
-		"to":   identifier.Value,
+		"to":   identity.Identifier.Value,
 		"code": decodedCode.Code,
 	}
 	subject := fmt.Sprintf("Votre code de confirmation - %s", decodedCode.Code)
-	content, err := as.templates.NewEmail(ctx, identifier.Value, subject, "code", data)
+	content, err := as.templates.NewEmail(ctx, identity.Identifier.Value, subject, "code", data)
 	if err != nil {
 		return err
 	}
@@ -82,9 +72,21 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identityID string) err
 	return nil
 }
 
+func (as *Service) prepareEmailedCode(ctx context.Context, identity domain.Identity, step *Step) error {
+	step.MethodName = oidc.AMREmailedCode
+	// we ignore the conflict error code - if a code already exist, we still want to return authable identity information
+	err := as.CreateEmailedCode(ctx, identity)
+	// set the error to nil on conflict because we want to fail silently
+	// if an emailed code was already generated
+	if err != nil && merror.HasCode(err, merror.ConflictCode) {
+		return nil
+	}
+	return err
+}
+
 func (as *Service) assertEmailedCode(
 	ctx context.Context,
-	assertion authn.Step,
+	assertion Step,
 ) error {
 	// always take the most recent step as the current one - ignore others
 	currentStep, err := as.steps.Last(ctx, assertion.IdentityID, assertion.MethodName)

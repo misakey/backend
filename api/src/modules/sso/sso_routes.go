@@ -10,8 +10,9 @@ import (
 
 func initRoutes(
 	router *echo.Echo,
-	authzMidlw echo.MiddlewareFunc,
-	externalAuthzMidlw echo.MiddlewareFunc,
+	authnProcessAuthzMidlw echo.MiddlewareFunc,
+	oidcAuthzMidlw echo.MiddlewareFunc,
+	extOIDCAuthzMidlw echo.MiddlewareFunc,
 	ssoService application.SSOService,
 	oauthCodeFlow oauth.AuthorizationCodeFlow,
 ) {
@@ -26,16 +27,16 @@ func initRoutes(
 	routes.POST("/authn-steps", authnHTTP.InitAuthnStep)
 
 	accountRoutes := router.Group("/accounts")
-	accountRoutes.GET("/:id/backup", accountHTTP.GetBackup, authzMidlw)
-	accountRoutes.PUT("/:id/backup", accountHTTP.UpdateBackup, authzMidlw)
+	accountRoutes.GET("/:id/backup", accountHTTP.GetBackup, oidcAuthzMidlw)
+	accountRoutes.PUT("/:id/backup", accountHTTP.UpdateBackup, oidcAuthzMidlw)
 	accountRoutes.GET("/:id/pwd-params", accountHTTP.GetPwdParams)
-	accountRoutes.PUT("/:id/password", accountHTTP.ChangePassword, authzMidlw)
+	accountRoutes.PUT("/:id/password", accountHTTP.ChangePassword, oidcAuthzMidlw)
 
 	authRoutes := router.Group("/auth")
 	authRoutes.GET("/login", authFlowHTTP.LoginInit)
 	authRoutes.GET("/login/info", authFlowHTTP.LoginInfo)
-	authRoutes.POST("/login/authn-step", authFlowHTTP.LoginAuthnStep)
-	authRoutes.POST("/logout", authFlowHTTP.Logout, externalAuthzMidlw)
+	authRoutes.POST("/login/authn-step", authFlowHTTP.LoginAuthnStep, authnProcessAuthzMidlw)
+	authRoutes.POST("/logout", authFlowHTTP.Logout, extOIDCAuthzMidlw)
 	authRoutes.GET("/consent", authFlowHTTP.ConsentInit)
 	authRoutes.GET("/consent/info", authFlowHTTP.ConsentInfo)
 	authRoutes.POST("/consent", authFlowHTTP.ConsentAccept)
@@ -45,14 +46,13 @@ func initRoutes(
 	})
 
 	identityRoutes := router.Group("/identities")
-	identityRoutes.GET("/:id", identityHTTP.GetIdentity, authzMidlw)
-	identityRoutes.PATCH("/:id", identityHTTP.PartiallyUpdateIdentity, authzMidlw)
-	identityRoutes.PUT("/:id/avatar", identityHTTP.UploadAvatar, authzMidlw)
-	identityRoutes.DELETE("/:id/avatar", identityHTTP.DeleteAvatar, authzMidlw)
-	identityRoutes.POST("/:id/account", identityHTTP.CreateAccount, authzMidlw)
-	identityRoutes.PUT("/authable", identityHTTP.RequireAuthableIdentity)
+	identityRoutes.GET("/:id", identityHTTP.GetIdentity, oidcAuthzMidlw)
+	identityRoutes.PATCH("/:id", identityHTTP.PartiallyUpdateIdentity, oidcAuthzMidlw)
+	identityRoutes.PUT("/:id/avatar", identityHTTP.UploadAvatar, oidcAuthzMidlw)
+	identityRoutes.DELETE("/:id/avatar", identityHTTP.DeleteAvatar, oidcAuthzMidlw)
+	identityRoutes.PUT("/authable", identityHTTP.RequireAuthableIdentity, authnProcessAuthzMidlw)
 
 	backupKeyShareRoutes := router.Group("/backup-key-shares")
-	backupKeyShareRoutes.GET("/:other-share-hash", backupKeyShareHTTP.GetBackupKeyShare, authzMidlw)
-	backupKeyShareRoutes.POST("", backupKeyShareHTTP.CreateBackupKeyShare, authzMidlw)
+	backupKeyShareRoutes.GET("/:other-share-hash", backupKeyShareHTTP.GetBackupKeyShare, oidcAuthzMidlw)
+	backupKeyShareRoutes.POST("", backupKeyShareHTTP.CreateBackupKeyShare, oidcAuthzMidlw)
 }

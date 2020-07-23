@@ -3,22 +3,24 @@ package application
 import (
 	"context"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
+
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/login"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 )
 
 // ConsentInfoView bears data about current user authentication status
 type ConsentInfoView struct {
-	Subject        string         `json:"subject"`
-	ACR            authn.ClassRef `json:"acr"`
-	RequestedScope []string       `json:"scope"`
-	AuthnContext   authn.Context  `json:"context"`
+	Subject        string        `json:"subject"`
+	ACR            oidc.ClassRef `json:"acr"`
+	RequestedScope []string      `json:"scope"`
+	AuthnContext   oidc.Context  `json:"context"`
 	Client         struct {
 		ID        string      `json:"id"`
 		Name      string      `json:"name"`
@@ -113,8 +115,8 @@ func (sso SSOService) ConsentInit(ctx context.Context, consentChallenge string) 
 	return sso.authFlowService.BuildConsentURL(consentCtx.Challenge)
 }
 
-func (sso SSOService) ConsentAccept(ctx context.Context, cmd ConsentAcceptCmd) (login.Redirect, error) {
-	redirect := login.Redirect{}
+func (sso SSOService) ConsentAccept(ctx context.Context, cmd ConsentAcceptCmd) (consent.Redirect, error) {
+	redirect := consent.Redirect{}
 	// 1. get consent context
 	consentCtx, err := sso.authFlowService.GetConsentContext(ctx, cmd.ConsentChallenge)
 	if err != nil {

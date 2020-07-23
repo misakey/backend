@@ -2,7 +2,7 @@ package login
 
 import (
 	"github.com/volatiletech/null"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 )
 
 // Context bears internal data about current user authentication request
@@ -22,8 +22,8 @@ type Context struct {
 	RequestURL string
 
 	OIDCContext struct { // OIDC context of the current request
-		ACRValues authn.ClassRefs
-		AMRs      authn.MethodRefs
+		ACRValues oidc.ClassRefs
+		AMRs      oidc.MethodRefs
 		LoginHint string
 	}
 
@@ -39,11 +39,11 @@ type Redirect struct {
 
 // Acceptance contains data about the user authentication approval
 type Acceptance struct {
-	Subject     string         `json:"subject"`
-	ACR         authn.ClassRef `json:"acr"`
-	Remember    bool           `json:"remember"`
-	RememberFor int            `json:"remember_for"`
-	Context     authn.Context  `json:"context"`
+	Subject     string        `json:"subject"`
+	ACR         oidc.ClassRef `json:"acr"`
+	Remember    bool          `json:"remember"`
+	RememberFor int           `json:"remember_for"`
+	Context     oidc.Context  `json:"context"`
 }
 
 // // LogoutRequest contains the id of the user

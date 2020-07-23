@@ -8,13 +8,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/account"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 )
 
 type Service struct {
 	steps             stepRepo
 	sessions          sessionRepo
+	processes         processRepo
 	identifierService identifier.IdentifierService
 	identityService   identity.IdentityService
 	accountService    account.AccountService
@@ -24,20 +24,20 @@ type Service struct {
 }
 
 type stepRepo interface {
-	Create(ctx context.Context, step *authn.Step) error
+	Create(ctx context.Context, step *Step) error
 	CompleteAt(ctx context.Context, stepID int, completeTime time.Time) error
-	Last(ctx context.Context, identityID string, methodName authn.MethodRef) (authn.Step, error)
+	Last(ctx context.Context, identityID string, methodName oidc.MethodRef) (Step, error)
 	Delete(ctx context.Context, stepID int) error
 	DeleteIncomplete(ctx context.Context, identityID string) error
 }
 
 type sessionRepo interface {
-	Upsert(ctx context.Context, session authn.Session, lifetime time.Duration) error
-	Get(ctx context.Context, sessionID string) (authn.Session, error)
+	Upsert(context.Context, Session, time.Duration) error
+	Get(context.Context, string) (Session, error)
 }
 
 func NewService(
-	steps stepRepo, sessions sessionRepo,
+	steps stepRepo, sessions sessionRepo, processes processRepo,
 	identifierService identifier.IdentifierService,
 	identityService identity.IdentityService,
 	accountService account.AccountService,
@@ -46,6 +46,7 @@ func NewService(
 	return Service{
 		steps:             steps,
 		sessions:          sessions,
+		processes:         processes,
 		identifierService: identifierService,
 		identityService:   identityService,
 		accountService:    accountService,
@@ -53,28 +54,4 @@ func NewService(
 		emails:            emails,
 		codeValidity:      5 * time.Minute,
 	}
-}
-
-// AssertStep considering the method name and the received metadata
-// Return no error in case of success
-func (as *Service) AssertAuthnStep(ctx context.Context, assertion authn.Step) (authn.ClassRef, error) {
-	acr := authn.ACR0
-
-	// check the metadata
-	var metadataErr error
-	switch assertion.MethodName {
-	case authn.AMREmailedCode:
-		metadataErr = as.assertEmailedCode(ctx, assertion)
-		acr = authn.ACR1
-	case authn.AMRPrehashedPassword:
-		metadataErr = as.assertPassword(ctx, assertion)
-		acr = authn.ACR2
-	default:
-		metadataErr = merror.BadRequest().Detail("method_name", merror.DVMalformed)
-	}
-	return acr, metadataErr
-}
-
-func (as *Service) ExpireAll(ctx context.Context, identityID string) error {
-	return as.steps.DeleteIncomplete(ctx, identityID)
 }

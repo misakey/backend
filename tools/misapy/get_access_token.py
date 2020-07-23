@@ -128,7 +128,8 @@ def get_credentials(email=None, require_account=False):
 
     login_url_query = urlparse(r.request.url).query
     login_challenge = parse_query_string(login_url_query)['login_challenge'][0]
-    identity_id, manual_redirection, account_id = login_flow(s, login_challenge, email)
+    identity_id, manual_redirection, account_id = login_flow(
+        s, login_challenge, email)
     r = s.get(manual_redirection, raise_for_status=False)
 
     # this redirection leads either to consent flow or the final access token
@@ -172,7 +173,8 @@ def get_credentials(email=None, require_account=False):
 
     return namedtuple(
         'OAuth2Creds',
-        ['email', 'access_token', 'identity_id', 'id_token', 'consent_done', 'account_id'],
+        ['email', 'access_token', 'identity_id',
+            'id_token', 'consent_done', 'account_id'],
     )(email, access_token, identity_id, id_token, consent_done, account_id)
 
 

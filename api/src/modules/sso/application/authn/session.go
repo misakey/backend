@@ -6,10 +6,20 @@ import (
 
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 )
 
-func (as *Service) UpsertSession(ctx context.Context, new authn.Session) error {
+// Session is bound to login session id in hydra
+// it has the same ID and is expired automatically
+// the same moment as hydra's session
+// RememberFor is expressed in seconds
+type Session struct {
+	ID          string
+	ACR         oidc.ClassRef
+	RememberFor int
+}
+
+func (as *Service) UpsertSession(ctx context.Context, new Session) error {
 	// if session musn't be kept, return directly
 	if new.RememberFor <= 0 {
 		return nil
@@ -30,6 +40,6 @@ func (as *Service) UpsertSession(ctx context.Context, new authn.Session) error {
 	return as.sessions.Upsert(ctx, new, lifetime)
 }
 
-func (as *Service) GetSession(ctx context.Context, sessionID string) (authn.Session, error) {
+func (as *Service) GetSession(ctx context.Context, sessionID string) (Session, error) {
 	return as.sessions.Get(ctx, sessionID)
 }

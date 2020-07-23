@@ -3,19 +3,14 @@ package authn
 import (
 	"context"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/argon2"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 // AssertPasswordExistence
-func (as *Service) AssertPasswordExistence(ctx context.Context, identityID string) error {
-	// retrieve the identity to then get the account
-	identity, err := as.identityService.Get(ctx, identityID)
-	if err != nil {
-		return merror.Transform(err).Describe("get identity")
-	}
-
+func (as *Service) AssertPasswordExistence(ctx context.Context, identity domain.Identity) error {
 	if identity.AccountID.String == "" {
 		return merror.Conflict().Describe("identity has no linked account").
 			Detail("identity_id", merror.DVConflict).
@@ -24,18 +19,29 @@ func (as *Service) AssertPasswordExistence(ctx context.Context, identityID strin
 	return nil
 }
 
-func (as *Service) assertPassword(ctx context.Context, assertion authn.Step) error {
+// prepare password step by setting password hash information
+func (as *Service) preparePassword(ctx context.Context, identity domain.Identity, step *Step) error {
+	step.MethodName = oidc.AMRPrehashedPassword
+	account, err := as.accountService.Get(ctx, identity.AccountID.String)
+	if err != nil {
+		return err
+	}
+	params, err := argon2.DecodeParams(account.Password)
+	if err != nil {
+		return err
+	}
+	if err := step.RawJSONMetadata.Marshal(params); err != nil {
+		return merror.Transform(err).Describe("marshaling password metadata")
+	}
+	return nil
+}
+
+func (as *Service) assertPassword(ctx context.Context, identity domain.Identity, assertion Step) error {
 	// transform metadata into argon2 password metadata structure
 	pwdMetadata, err := argon2.ToMetadata(assertion.RawJSONMetadata)
 	if err != nil {
 		return merror.Forbidden().From(merror.OriBody).
 			Describe(err.Error()).Detail("metadata", merror.DVMalformed)
-	}
-
-	// retrieve the identity
-	identity, err := as.identityService.Get(ctx, assertion.IdentityID)
-	if err != nil {
-		return err
 	}
 
 	if identity.AccountID.String == "" {
