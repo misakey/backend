@@ -29,6 +29,7 @@ _JSON Body:_
 - `account_id` (string) (uuid): the account for which the shares has been created.
 - `share` (string) (base64): one of the shares.
 - `other_share_hash` (string) (unpadded url-safe base64): a hash of the other share.
+- `salt_base64` (string) (base64): the salt corresponding to the backup encryption.
 
 ### Response
 
@@ -72,3 +73,4 @@ _JSON Body:_
 - `account_id` (string) (uuid): the account for which the shares has been created.
 - `share` (string) (base64): one of the shares.
 - `other-share-hash` (string) (unpadded url-safe base64): a hash of the other share.
+- `salt_base64` (string) (base64): the salt corresponding to the backup encryption.

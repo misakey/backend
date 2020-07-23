@@ -14,6 +14,7 @@ import (
 
 type CreateBackupKeyShareCmd struct {
 	AccountID      string `json:"account_id"`
+	SaltBase64     string `json:"salt_base64"`
 	Share          string `json:"share"`
 	OtherShareHash string `json:"other_share_hash"`
 }
@@ -22,6 +23,7 @@ func (cmd CreateBackupKeyShareCmd) Validate() error {
 
 	if err := v.ValidateStruct(&cmd,
 		v.Field(&cmd.AccountID, v.Required, is.UUIDv4.Error("account_id must be an UUIDv4")),
+		v.Field(&cmd.SaltBase64, is.Base64),
 		v.Field(&cmd.OtherShareHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 		v.Field(&cmd.Share, v.Required, is.Base64),
 	); err != nil {
@@ -50,6 +52,7 @@ func (sso SSOService) BackupKeyShareCreate(ctx context.Context, cmd CreateBackup
 
 	backupKeyShare := domain.BackupKeyShare{
 		AccountID:      cmd.AccountID,
+		SaltBase64:     cmd.SaltBase64,
 		Share:          cmd.Share,
 		OtherShareHash: cmd.OtherShareHash,
 	}
