@@ -37,19 +37,14 @@ func (sso SSOService) BackupKeyShareGet(ctx context.Context, query BackupKeyShar
 		return nil, err
 	}
 
-	// retrieve the concerned identity
-	identity, err := sso.identityService.Get(ctx, acc.Subject)
-	if err != nil {
-		return nil, err
-	}
-	// the identity must have an account
-	if identity.AccountID.IsZero() {
+	// the request must bear authorization for an account
+	if acc.AccountID.IsZero() {
 		return nil, merror.Conflict().
-			Describe("identity must have a linked account").
+			Describe("no account id in authorization").
 			Detail("account_id", merror.DVConflict)
 	}
 	// the account id must be the same than the identity linked account
-	if identity.AccountID.String != backupKeyShare.AccountID {
+	if acc.AccountID.String != backupKeyShare.AccountID {
 		return nil, merror.NotFound()
 	}
 

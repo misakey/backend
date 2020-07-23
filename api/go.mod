@@ -11,7 +11,6 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-redis/redis/v7 v7.4.0
-	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/google/uuid v1.1.1
 	github.com/labstack/echo/v4 v4.1.16
 	github.com/lib/pq v1.7.0
@@ -27,10 +26,9 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.6.1
-	github.com/volatiletech/inflect v0.0.1 // indirect
 	github.com/volatiletech/null v8.0.0+incompatible
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
-	gitlab.misakey.dev/misakey/msk-sdk-go v1.11.0
+	gitlab.misakey.dev/misakey/msk-sdk-go v1.12.0
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect

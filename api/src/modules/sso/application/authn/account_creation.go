@@ -31,7 +31,7 @@ func (am accountMetadata) Validate() error {
 }
 
 // assertAccountCreation
-func (as *Service) assertAccountCreation(ctx context.Context, challenge string, identity domain.Identity, step Step) error {
+func (as *Service) assertAccountCreation(ctx context.Context, challenge string, identity *domain.Identity, step Step) error {
 	acc := ajwt.GetAccesses(ctx)
 	if acc == nil ||
 		oidc.ClassRef(acc.ACR).LessThan(oidc.ACR1) {
@@ -42,6 +42,10 @@ func (as *Service) assertAccountCreation(ctx context.Context, challenge string, 
 		return merror.Forbidden().From(merror.OriHeaders).
 			Describe("authorization header must correspond to the login_challenge").
 			Detail("Authorization", merror.DVConflict).Detail("login_challenge", merror.DVConflict)
+	}
+
+	if acc.IdentityID != identity.ID {
+		return merror.Forbidden().Describe("wrong identity id")
 	}
 
 	// transform metadata into account metadata structure
@@ -76,7 +80,7 @@ func (as *Service) assertAccountCreation(ctx context.Context, challenge string, 
 
 	// update the identity's account id column
 	identity.AccountID = null.StringFrom(account.ID)
-	if err := as.identityService.Update(ctx, &identity); err != nil {
+	if err := as.identityService.Update(ctx, identity); err != nil {
 		return err
 	}
 	return nil

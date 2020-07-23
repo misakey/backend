@@ -43,16 +43,14 @@ func NewProcessIntrospector(selfCliID string, tokens processRepo) echo.Middlewar
 				IssuedAt:  process.IssuedAt,
 				NotBefore: process.IssuedAt,
 
-				Subject: process.LoginChallenge,
-				ACR:     ajwt.ACRSecLvl(process.CompleteAMRs.ToACR()),
+				Subject:    process.LoginChallenge,
+				ACR:        ajwt.ACRSecLvl(process.CompleteAMRs.ToACR()),
+				IdentityID: process.IdentityID, // potentially empty
 
 				Token: opaqueTok,
 			}
 
-			if ac.Subject == "" {
-				return merror.Unauthorized().Describe("subject is empty")
-			}
-
+			// valid the access claim
 			if err := ac.Valid(); err != nil {
 				return err
 			}

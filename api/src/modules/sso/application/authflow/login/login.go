@@ -21,11 +21,7 @@ type Context struct {
 
 	RequestURL string
 
-	OIDCContext struct { // OIDC context of the current request
-		ACRValues oidc.ClassRefs
-		AMRs      oidc.MethodRefs
-		LoginHint string
-	}
+	OIDCContext oidc.Context
 
 	// login session
 	Skip      bool

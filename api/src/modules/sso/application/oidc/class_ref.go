@@ -48,12 +48,9 @@ func (acrs ClassRefs) Get() ClassRef {
 }
 
 // Multiple ACRValues capability is ignored
+// the full slice is replaced
 func (acrs *ClassRefs) Set(acr ClassRef) {
-	if acrs == nil {
-		*acrs = []ClassRef{acr}
-	} else {
-		(*acrs) = append(*acrs, acr)
-	}
+	*acrs = ClassRefs([]ClassRef{acr})
 }
 
 // RememberFor return an integer corresponding to seconds, according to the authentication context class

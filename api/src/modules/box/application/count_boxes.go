@@ -22,7 +22,7 @@ func (bs *BoxApplication) CountBoxes(ctx context.Context, _ entrypoints.Request)
 	// retrieve accesses to filters boxes to return
 	acc := ajwt.GetAccesses(ctx)
 
-	count, err := boxes.CountForSender(ctx, bs.db, acc.Subject)
+	count, err := boxes.CountForSender(ctx, bs.db, acc.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("counting sender boxes")
 	}

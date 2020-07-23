@@ -26,7 +26,7 @@ func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) stri
 	}
 
 	sessionACR := oidc.ACR0
-	expectedACR := loginCtx.OIDCContext.ACRValues.Get()
+	expectedACR := loginCtx.OIDCContext.ACRValues().Get()
 
 	// skip indicates if an active session has been detected
 	// we check if login session ACR are high enough to accept authentication
@@ -37,8 +37,10 @@ func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) stri
 			// if the session ACR is higher or equivalent to the expected ACR, we accept the login
 			if session.ACR >= expectedACR {
 				// set browser cookie as authentication method
-				loginCtx.OIDCContext.AMRs.Add(oidc.AMRBrowserCookie)
-				loginCtx.OIDCContext.ACRValues.Set(session.ACR)
+				loginCtx.OIDCContext.AddAMR(oidc.AMRBrowserCookie)
+				loginCtx.OIDCContext.SetACRValue(session.ACR)
+				loginCtx.OIDCContext.SetMID(loginCtx.OIDCContext.MID())
+				loginCtx.OIDCContext.SetAID(loginCtx.OIDCContext.AID())
 				redirectTo, err := sso.authFlowService.BuildAndAcceptLogin(ctx, loginCtx)
 				if err != nil {
 					return sso.authFlowService.LoginRedirectErr(err)
@@ -157,7 +159,7 @@ func (sso SSOService) RequireAuthableIdentity(ctx context.Context, cmd IdentityA
 
 	// get the appropriate authn step
 	// NOTE: not handled - authnsession ACR
-	step, err := sso.authenticationService.NextStep(ctx, identity, oidc.ACR0, logCtx.OIDCContext.ACRValues)
+	step, err := sso.authenticationService.NextStep(ctx, identity, oidc.ACR0, logCtx.OIDCContext.ACRValues())
 	if err != nil {
 		return view, merror.Transform(err).Describe("getting next authn step")
 	}
@@ -198,8 +200,8 @@ func (sso SSOService) LoginInfo(ctx context.Context, loginChallenge string) (Log
 	view.Client.TosURL = logCtx.Client.TosURL
 	view.Client.PolicyURL = logCtx.Client.PolicyURL
 	view.RequestedScope = logCtx.RequestedScope
-	view.ACRValues = logCtx.OIDCContext.ACRValues
-	view.LoginHint = logCtx.OIDCContext.LoginHint
+	view.ACRValues = logCtx.OIDCContext.ACRValues()
+	view.LoginHint = logCtx.OIDCContext.LoginHint()
 	return view, nil
 }
 
@@ -261,7 +263,7 @@ func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd)
 	}
 
 	// try to assert the authentication step
-	if err := sso.authenticationService.AssertStep(ctx, logCtx.Challenge, identity, cmd.Step); err != nil {
+	if err := sso.authenticationService.AssertStep(ctx, logCtx.Challenge, &identity, cmd.Step); err != nil {
 		return view, err
 	}
 
@@ -295,10 +297,12 @@ func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd)
 
 	// finally accept the login!
 
-	// accept the login flow
-	logCtx.Subject = cmd.Step.IdentityID
-	logCtx.OIDCContext.ACRValues.Set(process.CurrentACR)
-	logCtx.OIDCContext.AMRs = process.CompleteAMRs
+	// set subject to the identifier id
+	logCtx.Subject = identity.IdentifierID
+	logCtx.OIDCContext.SetACRValue(process.CompleteAMRs.ToACR())
+	logCtx.OIDCContext.SetAMRs(process.CompleteAMRs)
+	logCtx.OIDCContext.SetMID(identity.ID)
+	logCtx.OIDCContext.SetAID(identity.AccountID)
 
 	view.Next = "redirect"
 	redirectTo, err := sso.authFlowService.BuildAndAcceptLogin(ctx, logCtx)

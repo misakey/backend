@@ -20,7 +20,7 @@ type ConsentInfoView struct {
 	Subject        string        `json:"subject"`
 	ACR            oidc.ClassRef `json:"acr"`
 	RequestedScope []string      `json:"scope"`
-	AuthnContext   oidc.Context  `json:"context"`
+	OIDCContext    oidc.Context  `json:"context"`
 	Client         struct {
 		ID        string      `json:"id"`
 		Name      string      `json:"name"`
@@ -42,7 +42,7 @@ func (sso SSOService) ConsentInfo(ctx context.Context, loginChallenge string) (C
 	view.Subject = consentCtx.Subject
 	view.ACR = consentCtx.ACR
 	view.RequestedScope = consentCtx.RequestedScope
-	view.AuthnContext = consentCtx.AuthnContext
+	view.OIDCContext = consentCtx.OIDCContext
 	view.Client.ID = consentCtx.Client.ID
 	view.Client.Name = consentCtx.Client.Name
 	view.Client.LogoURL = consentCtx.Client.LogoURL
@@ -58,7 +58,6 @@ type ConsentAcceptCmd struct {
 }
 
 func (cmd ConsentAcceptCmd) Validate() error {
-
 	return v.ValidateStruct(&cmd,
 		v.Field(&cmd.IdentityID, v.Required, is.UUIDv4.Error("identity id should be an uuid v4")),
 		v.Field(&cmd.ConsentChallenge, v.Required),
@@ -77,7 +76,7 @@ func (sso SSOService) ConsentInit(ctx context.Context, consentChallenge string) 
 	}
 
 	// 2. retrieve subject information to put it in ID tokens as claims
-	identity, err := sso.identityService.Get(ctx, consentCtx.Subject)
+	identity, err := sso.identityService.Get(ctx, consentCtx.OIDCContext.MID())
 	if err != nil {
 		return sso.authFlowService.ConsentRedirectErr(err)
 	}
@@ -124,7 +123,7 @@ func (sso SSOService) ConsentAccept(ctx context.Context, cmd ConsentAcceptCmd) (
 	}
 
 	// 2. retrieve subject information to put it in ID tokens as claims
-	identity, err := sso.identityService.Get(ctx, consentCtx.Subject)
+	identity, err := sso.identityService.Get(ctx, consentCtx.OIDCContext.MID())
 	if err != nil {
 		return redirect, err
 	}

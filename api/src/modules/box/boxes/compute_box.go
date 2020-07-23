@@ -97,7 +97,7 @@ func (c *computer) playEvent(ctx context.Context, e events.Event, last bool) err
 
 		// if the box has been closed and the viewer is not the creator or has no token
 		// we force the last event to be the close event
-		if (acc == nil || acc.Subject != c.creatorID) && c.closeEvent != nil {
+		if (acc == nil || acc.IdentityID != c.creatorID) && c.closeEvent != nil {
 			e = *c.closeEvent
 			c.box.PublicKey = ""
 		}

@@ -150,6 +150,17 @@ ID Token example:
 }
 ```
 
+:warning: If the involved SSO Client is Misakey, there are additional claims in the ID Token:
+```json
+{
+  "mid": "33345c7d5-dbe1-41ea-8d89-f8d4359958b9",
+  "aid": "218234bb-7cd5-4211-a25d-3ee3337cd03fd"
+}
+```
+
+- `mid` (string) (uuid): the identity id bound to the token (mid stands for Misakey ID since it is the main ID in Misakey).
+- `aid` (string) (uuid) (nullable): the account id bound to the token.
+
 Tokens (ID & access tokens) lifetime is one hour.
 
 ### 4.2. Authentication Request

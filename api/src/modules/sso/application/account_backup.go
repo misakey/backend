@@ -29,8 +29,11 @@ func (sso SSOService) GetBackup(ctx context.Context, query AccountQuery) (Backup
 	view := BackupView{}
 
 	// check access using context
-	if err := sso.hasAccountAccess(ctx, query.AccountID); err != nil {
-		return view, err
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil ||
+		acc.AccountID.IsZero() ||
+		acc.AccountID.String != query.AccountID {
+		return view, merror.Forbidden()
 	}
 
 	account, err := sso.accountService.Get(ctx, query.AccountID)
@@ -62,9 +65,12 @@ func (cmd UpdateBackupCmd) Validate() error {
 }
 
 func (sso SSOService) UpdateBackup(ctx context.Context, cmd UpdateBackupCmd) error {
-	// check access
-	if err := sso.hasAccountAccess(ctx, cmd.accountID); err != nil {
-		return err
+	// check access using context
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil ||
+		acc.AccountID.IsZero() ||
+		acc.AccountID.String != cmd.accountID {
+		return merror.Forbidden()
 	}
 
 	// retrieve the current state of the account
@@ -84,32 +90,4 @@ func (sso SSOService) UpdateBackup(ctx context.Context, cmd UpdateBackupCmd) err
 	currentAccount.BackupData = cmd.Data
 	currentAccount.BackupVersion = cmd.NewVersion
 	return sso.accountService.Update(ctx, &currentAccount)
-}
-
-// hasAccountAccess returns a forbidden error if the current context doesn't include
-// an access claims with a subject identity linked to the given account ID
-func (sso SSOService) hasAccountAccess(ctx context.Context, accountID string) error {
-	// retrieve access claims
-	acc := ajwt.GetAccesses(ctx)
-	if acc == nil {
-		return merror.Forbidden()
-	}
-
-	// the identity inside the accesses should be linked to the received account
-	identity, err := sso.identityService.Get(ctx, acc.Subject)
-	if err != nil {
-		return err
-	}
-
-	// the identity should not be volatile
-	if identity.AccountID.String == "" {
-		return merror.Forbidden()
-	}
-
-	// the identity linked account must match the received account id
-	if identity.AccountID.String != accountID {
-		return merror.Forbidden()
-	}
-
-	return nil
 }

@@ -7,6 +7,7 @@ import (
 )
 
 func (afs AuthFlowService) Logout(ctx context.Context, subject string, token string) error {
+	// TODOA think about this for shared identifier
 	if err := afs.authFlow.DeleteSession(ctx, subject); err != nil {
 		return merror.Transform(err).Describe("delete session")
 	}

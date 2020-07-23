@@ -59,13 +59,8 @@ func (sso SSOService) ChangePassword(ctx context.Context, cmd ChangePasswordCmd)
 		return merror.Forbidden()
 	}
 
-	// verify authenticated identity id is linked to the given account id
-	identity, err := sso.identityService.Get(ctx, acc.Subject)
-	if err != nil {
-		return merror.Forbidden().Describe("invalid token subject")
-	}
-
-	if identity.AccountID.String != cmd.AccountID {
+	// verify authenticated account id is linked to the given account id
+	if acc.AccountID.IsZero() || acc.AccountID.String != cmd.AccountID {
 		return merror.Forbidden().Detail("account_id", merror.DVForbidden)
 	}
 

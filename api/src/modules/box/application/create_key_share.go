@@ -35,7 +35,8 @@ func (bs *BoxApplication) CreateKeyShare(ctx context.Context, genReq entrypoints
 
 	if err := keyshares.Create(
 		ctx, bs.db,
-		req.OtherShareHash, req.Share, req.BoxID, acc.Subject); err != nil {
+		req.OtherShareHash, req.Share, req.BoxID, acc.IdentityID,
+	); err != nil {
 		return nil, merror.Transform(err).Describe("creating key share")
 	}
 

@@ -33,7 +33,7 @@ func (bs *BoxApplication) CreateBox(ctx context.Context, genReq entrypoints.Requ
 
 	access := ajwt.GetAccesses(ctx)
 
-	event, err := events.CreateCreateEvent(ctx, req.Title, req.PublicKey, access.Subject, bs.db)
+	event, err := events.CreateCreateEvent(ctx, req.Title, req.PublicKey, access.IdentityID, bs.db)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating create event")
 	}

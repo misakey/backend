@@ -41,7 +41,7 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 	req := genReq.(*CreateEventRequest)
 	acc := ajwt.GetAccesses(ctx)
 
-	event, err := events.New(req.Type, req.Content, req.boxID, acc.Subject)
+	event, err := events.New(req.Type, req.Content, req.boxID, acc.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).From(merror.OriBody)
 	}

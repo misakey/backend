@@ -37,7 +37,7 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq entr
 	acc := ajwt.GetAccesses(ctx)
 
 	// if the box is closed, only the creator can download a file from it
-	if err := boxes.MustBeCreatorIfClosed(ctx, bs.db, req.boxID, acc.Subject); err != nil {
+	if err := boxes.MustBeCreatorIfClosed(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 

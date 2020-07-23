@@ -37,15 +37,16 @@ func (as *Service) InitStep(ctx context.Context, identity domain.Identity, metho
 }
 
 // AssertStep considering the method name and the received metadata
+// It takes a pointer on the identity since the identity might be atlered by the authn step
 // Return a nil error in case of success
-func (as *Service) AssertStep(ctx context.Context, challenge string, identity domain.Identity, assertion Step) error {
+func (as *Service) AssertStep(ctx context.Context, challenge string, identity *domain.Identity, assertion Step) error {
 	// check the metadata
 	var metadataErr error
 	switch assertion.MethodName {
 	case oidc.AMREmailedCode:
 		metadataErr = as.assertEmailedCode(ctx, assertion)
 	case oidc.AMRPrehashedPassword:
-		metadataErr = as.assertPassword(ctx, identity, assertion)
+		metadataErr = as.assertPassword(ctx, *identity, assertion)
 	case oidc.AMRAccountCreation:
 		metadataErr = as.assertAccountCreation(ctx, challenge, identity, assertion)
 	default:

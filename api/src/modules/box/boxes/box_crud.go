@@ -20,7 +20,7 @@ func Get(ctx context.Context, dbConn *sql.DB, identities entrypoints.IdentityInt
 	return Compute(ctx, boxID, dbConn, identities)
 }
 
-func CountForSender(ctx context.Context, exec boil.ContextExecutor, senderID string) (int, error) {
+func CountForSender(ctx context.Context, exec boil.Executor, senderID string) (int, error) {
 	boxIDs, err := latestIDsForSender(ctx, exec, senderID)
 	return len(boxIDs), err
 }

@@ -63,7 +63,7 @@ func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq entryp
 	defer encData.Close()
 
 	// create the new msg file that will described the upload action
-	e, fileID, err := events.NewMsgFile(ctx, req.boxID, acc.Subject, req.MsgEncContent, req.MsgPubKey)
+	e, fileID, err := events.NewMsgFile(ctx, req.boxID, acc.IdentityID, req.MsgEncContent, req.MsgPubKey)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating msg file event")
 	}

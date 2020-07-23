@@ -37,19 +37,14 @@ func (sso SSOService) BackupKeyShareCreate(ctx context.Context, cmd CreateBackup
 		return merror.Forbidden()
 	}
 
-	// retrieve the concerned identity
-	identity, err := sso.identityService.Get(ctx, acc.Subject)
-	if err != nil {
-		return err
-	}
-	// the identity must have an account
-	if identity.AccountID.IsZero() {
+	// the request must bear authorization for an account
+	if acc.AccountID.IsZero() {
 		return merror.Conflict().
-			Describe("identity must have a linked account").
+			Describe("no account id in authorization").
 			Detail("account_id", merror.DVConflict)
 	}
 	// the account id must be the same than the identity linked account
-	if identity.AccountID.String != cmd.AccountID {
+	if acc.AccountID.String != cmd.AccountID {
 		return merror.Forbidden().Describe("account_id does not match the querier account").Detail("account_id", merror.DVForbidden)
 	}
 

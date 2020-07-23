@@ -3,7 +3,6 @@ package argon2
 import (
 	"encoding/json"
 
-	"github.com/volatiletech/sqlboiler/types"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
@@ -12,7 +11,7 @@ type pwdMetadata struct {
 }
 
 // ToMetadata password conversion from a RawJSON message
-func ToMetadata(msg types.JSON) (ret pwdMetadata, err error) {
+func ToMetadata(msg json.Marshaler) (ret pwdMetadata, err error) {
 	msgJSON, err := msg.MarshalJSON()
 	if err != nil {
 		return ret, merror.Transform(err).Describe("password metadata")

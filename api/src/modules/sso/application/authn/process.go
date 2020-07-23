@@ -25,13 +25,14 @@ type Process struct {
 	SessionACR     oidc.ClassRef   `json:"sacr"`
 	ExpectedACR    oidc.ClassRef   `json:"eacr"`
 	CompleteAMRs   oidc.MethodRefs `json:"camr"`
-	AccessToken    string          `json:"tok"`
-	ExpiresAt      int64           `json:"exp"`
-	IssuedAt       int64           `json:"iat"`
+	IdentityID     string          `json:"iid"`
+
+	AccessToken string `json:"tok"`
+	ExpiresAt   int64  `json:"exp"`
+	IssuedAt    int64  `json:"iat"`
 
 	// not stored
-	CurrentACR oidc.ClassRef `json:"-"`
-	NextStep   *Step         `json:"-"`
+	NextStep *Step `json:"-"`
 }
 
 type processRepo interface {
@@ -42,7 +43,7 @@ type processRepo interface {
 }
 
 func (as *Service) computeNextStep(ctx context.Context, identity domain.Identity, p Process) (Process, error) {
-	s, err := as.NextStep(ctx, identity, p.CurrentACR, oidc.NewClassRefs(p.ExpectedACR))
+	s, err := as.NextStep(ctx, identity, p.CompleteAMRs.ToACR(), oidc.NewClassRefs(p.ExpectedACR))
 	if err != nil {
 		return p, merror.Transform(err).Describe("getting next step")
 	}
@@ -52,6 +53,9 @@ func (as *Service) computeNextStep(ctx context.Context, identity domain.Identity
 
 // InitProcess and store it
 // Set an AMR "BrowserCookie" if sessionACR is not empty.
+// NOTE: the identityID is not set by the init of a process today
+// in a near future it should be done using the authn session
+// today there is no case where the authn session in used in a multi auth step process so there is no need
 func (as *Service) InitProcess(ctx context.Context, challenge string, sessionACR, expectedACR oidc.ClassRef) error {
 	tok, err := genTok()
 	if err != nil {
@@ -61,9 +65,10 @@ func (as *Service) InitProcess(ctx context.Context, challenge string, sessionACR
 		LoginChallenge: challenge,
 		SessionACR:     sessionACR,
 		ExpectedACR:    expectedACR,
-		AccessToken:    tok,
-		ExpiresAt:      time.Now().Add(time.Hour).Unix(),
-		IssuedAt:       time.Now().Unix(),
+
+		AccessToken: tok,
+		ExpiresAt:   time.Now().Add(time.Hour).Unix(),
+		IssuedAt:    time.Now().Unix(),
 	}
 	if sessionACR != oidc.ACR0 {
 		p.CompleteAMRs.Add(oidc.AMRBrowserCookie)
@@ -80,29 +85,31 @@ func (as *Service) UpgradeProcess(
 	identity domain.Identity,
 	amr oidc.MethodRef,
 ) (Process, error) {
-	process := Process{
-		CurrentACR: oidc.ACR0,
-	}
+	process := Process{}
 	// retrieve the process
 	process, err := as.processes.Get(ctx, challenge)
 	if err != nil {
 		return process, merror.Transform(err).Describe("getting process")
 	}
 
-	process.CompleteAMRs.Add(amr)
-	process.CurrentACR = process.CompleteAMRs.ToACR()
-
-	// ACR OK
-	if process.CurrentACR >= process.ExpectedACR {
-		return process, nil
+	// if the process already has an identityID bound to it, check its consistency
+	if process.IdentityID != "" && identity.ID != process.IdentityID {
+		return process, merror.Forbidden().Describe("cannot change identity id during a process")
 	}
 
-	// ACR KO - update the process
+	// update the process
+	process.CompleteAMRs.Add(amr)
+	process.IdentityID = identity.ID
 	if err := as.processes.Update(ctx, process); err != nil {
 		return process, merror.Transform(err).Describe("updating process")
 	}
 
-	// compute then return the next authn step
+	// ACR OK
+	if process.CompleteAMRs.ToACR() >= process.ExpectedACR {
+		return process, nil
+	}
+
+	// ACR KO -  compute then return the next authn step
 	process, err = as.computeNextStep(ctx, identity, process)
 	if err != nil {
 		return process, merror.Transform(err).Describe("computing next step")

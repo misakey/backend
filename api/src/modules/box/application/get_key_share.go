@@ -36,8 +36,7 @@ func (bs *BoxApplication) GetKeyShare(ctx context.Context, genReq entrypoints.Re
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting key share")
 	}
-
-	if err := events.StoreJoin(ctx, bs.db, ks.BoxID, acc.Subject); err != nil {
+	if err := events.StoreJoin(ctx, bs.db, ks.BoxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 

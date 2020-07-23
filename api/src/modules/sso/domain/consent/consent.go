@@ -27,7 +27,7 @@ type Context struct {
 
 	// authentication during the login flow
 	ACR            oidc.ClassRef `json:"acr"`
-	AuthnContext   oidc.Context  `json:"context"`
+	OIDCContext    oidc.Context  `json:"context"`
 	LoginSessionID string        `json:"login_session_id"`
 
 	// involved client
@@ -48,14 +48,14 @@ type Acceptance struct {
 	Session     struct {
 		IDTokenClaims struct {
 			// extra self-contained claims on ID Token
-			Scope string   `json:"sco"`
-			Email string   `json:"email"`
-			AMR   []string `json:"amr"`
+			Scope string          `json:"sco"`
+			Email string          `json:"email"`
+			AMR   oidc.MethodRefs `json:"amr"`
+			// optional ID token claims field only for Misakey SSO Client
+			MID null.String `json:"mid,omitempty"`
+			AID null.String `json:"aid,omitempty"`
 		} `json:"id_token"`
-		AccessTokenClaims struct {
-			// extra instropection claims on Access Token
-			ACR oidc.ClassRef `json:"acr"`
-		} `json:"access_token"`
+		AccessTokenClaims oidc.Context `json:"access_token"`
 	} `json:"session"`
 }
 

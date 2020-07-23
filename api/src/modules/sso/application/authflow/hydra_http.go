@@ -91,8 +91,11 @@ func (h HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (
 	if hydraLogReq.Client.PolicyURI != "" {
 		logCtx.Client.PolicyURL = null.StringFrom(hydraLogReq.Client.PolicyURI)
 	}
-	logCtx.OIDCContext.ACRValues = hydraLogReq.OIDCContext.ACRValues
-	logCtx.OIDCContext.LoginHint = hydraLogReq.OIDCContext.LoginHint
+	// we must init ourselves the context which is a map
+	// in most of other cases it is automatically initiated by the json unmarshaler
+	logCtx.OIDCContext = oidc.NewContext()
+	logCtx.OIDCContext.SetACRValues(hydraLogReq.OIDCContext.ACRValues)
+	logCtx.OIDCContext.SetLoginHint(hydraLogReq.OIDCContext.LoginHint)
 	return logCtx, nil
 }
 

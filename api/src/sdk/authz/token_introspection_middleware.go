@@ -2,6 +2,7 @@ package authz
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/volatiletech/null"
 
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
@@ -45,6 +46,11 @@ func NewOIDCIntrospector(misakeyAudience string, selfRestrict bool, tokenRester 
 					Detail("Authorization", merror.DVInvalid)
 			}
 
+			// only Misakey client can access our API routes
+			if selfRestrict && introTok.ClientID != misakeyAudience {
+				return merror.Unauthorized().Describe("unauthorized client")
+			}
+
 			// fill a claim structure with introspection
 			ac := ajwt.AccessClaims{
 				Issuer: introTok.Issuer,
@@ -56,20 +62,19 @@ func NewOIDCIntrospector(misakeyAudience string, selfRestrict bool, tokenRester 
 				IssuedAt:  introTok.IssuedAt,
 				NotBefore: introTok.NotBefore,
 
-				Subject: introTok.Subject,
-				Scope:   introTok.Scope,
-				ACR:     introTok.Ext.ACR,
+				Subject:    introTok.Subject,
+				IdentityID: introTok.Ext.MID,
+				AccountID:  null.StringFrom(introTok.Ext.AID),
+
+				Scope: introTok.Scope,
+				ACR:   introTok.Ext.ACR,
 
 				Token: opaqueTok,
 			}
 
-			if ac.Subject == "" {
-				return merror.Unauthorized().Describe("subject is empty")
-			}
-
-			// only Misakey client can access our API routes
-			if selfRestrict && ac.ClientID != misakeyAudience {
-				return merror.Unauthorized().Describe("unauthorized client")
+			// valid the access claim
+			if err := ac.Valid(); err != nil {
+				return err
 			}
 
 			// set access claims in request context
@@ -99,5 +104,7 @@ type instropection struct {
 	// Additional custom claims
 	Ext struct {
 		ACR ajwt.ACRSecLvl `json:"acr"`
+		MID string         `json:"mid"`
+		AID string         `json:"aid"`
 	} `json:"ext"`
 }

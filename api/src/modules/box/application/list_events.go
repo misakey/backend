@@ -35,7 +35,7 @@ func (bs *BoxApplication) ListEvents(ctx context.Context, genReq entrypoints.Req
 	acc := ajwt.GetAccesses(ctx)
 
 	// if the box is closed, only the creator can list its events
-	if err := boxes.MustBeCreatorIfClosed(ctx, bs.db, req.boxID, acc.Subject); err != nil {
+	if err := boxes.MustBeCreatorIfClosed(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 

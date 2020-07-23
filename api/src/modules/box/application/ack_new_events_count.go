@@ -34,7 +34,7 @@ func (bs *BoxApplication) AckNewEventsCount(ctx context.Context, genReq entrypoi
 	req := genReq.(*AckNewEventsCountRequest)
 
 	acc := ajwt.GetAccesses(ctx)
-	if acc.Subject != req.IdentityID {
+	if acc.IdentityID != req.IdentityID {
 		return nil, merror.Forbidden()
 	}
 

@@ -39,7 +39,7 @@ func (sso SSOService) GetIdentity(ctx context.Context, query IdentityQuery) (Ide
 		return view, merror.Forbidden()
 	}
 
-	if acc.Subject != query.IdentityID {
+	if acc.IdentityID != query.IdentityID {
 		return view, merror.Forbidden()
 	}
 
@@ -75,7 +75,7 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, cmd PartialUpd
 	acc := ajwt.GetAccesses(ctx)
 
 	// verify requested user id and authenticated user id are the same.
-	if acc == nil || acc.Subject != cmd.IdentityID {
+	if acc == nil || acc.IdentityID != cmd.IdentityID {
 		return merror.Forbidden()
 	}
 
@@ -117,7 +117,7 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, cmd UploadAvatarCmd) er
 	acc := ajwt.GetAccesses(ctx)
 
 	// verify requested user id and authenticated user id are the same.
-	if acc == nil || acc.Subject != cmd.IdentityID {
+	if acc == nil || acc.IdentityID != cmd.IdentityID {
 		return merror.Forbidden()
 	}
 
@@ -177,7 +177,7 @@ func (sso *SSOService) DeleteAvatar(ctx context.Context, cmd DeleteAvatarCmd) er
 	acc := ajwt.GetAccesses(ctx)
 
 	// verify requested user id and authenticated user id are the same.
-	if acc == nil || acc.Subject != cmd.IdentityID {
+	if acc == nil || acc.IdentityID != cmd.IdentityID {
 		return merror.Forbidden()
 	}
 

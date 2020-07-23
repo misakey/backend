@@ -8,7 +8,6 @@ import (
 	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/oauth"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
@@ -34,11 +33,17 @@ func (afs AuthFlowService) BuildAndAcceptConsent(
 	}
 	acceptance.Session.IDTokenClaims.Scope = strings.Join(consentCtx.RequestedScope, " ")
 	acceptance.Session.IDTokenClaims.Email = identifierValue
-	acceptance.Session.IDTokenClaims.AMR = consentCtx.AuthnContext.GetAMR()
-	acceptance.Session.AccessTokenClaims.ACR = consentCtx.ACR
+	acceptance.Session.IDTokenClaims.AMR = consentCtx.OIDCContext.AMRs()
+	// Add IdentityID and Account ID in ID Token for the Misakey Application to be able to use it
+	// External RPs are not able to access this information so the involved ClientID is checked
+	if consentCtx.Client.ID == afs.selfCliID {
+		acceptance.Session.IDTokenClaims.MID = null.StringFrom(consentCtx.OIDCContext.MID())
+		acceptance.Session.IDTokenClaims.AID = consentCtx.OIDCContext.AID()
+	}
+	acceptance.Session.AccessTokenClaims = consentCtx.OIDCContext
 	redirect, err := afs.authFlow.Consent(ctx, consentCtx.Challenge, acceptance)
 	if err != nil {
-		return oauth.BuildRedirectErr(merror.InvalidFlowCode, err.Error(), afs.consentPageURL)
+		return buildRedirectErr(merror.InvalidFlowCode, err.Error(), afs.consentPageURL)
 	}
 	return redirect.To
 }
@@ -102,12 +107,12 @@ func (afs AuthFlowService) ShouldSkipConsent(
 
 // ConsentRequiredErr helper
 func (afs AuthFlowService) ConsentRequiredErr() string {
-	return oauth.BuildRedirectErr(merror.ConsentRequiredCode, "forbidden prompt=none", afs.consentPageURL)
+	return buildRedirectErr(merror.ConsentRequiredCode, "forbidden prompt=none", afs.consentPageURL)
 }
 
 // ConsentRedirectErr helper
 func (afs AuthFlowService) ConsentRedirectErr(err error) string {
-	return oauth.BuildRedirectErr(merror.InvalidFlowCode, err.Error(), afs.consentPageURL)
+	return buildRedirectErr(merror.InvalidFlowCode, err.Error(), afs.consentPageURL)
 }
 
 // buildConsentURL

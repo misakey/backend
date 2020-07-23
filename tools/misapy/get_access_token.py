@@ -95,7 +95,7 @@ def consent_flow(s, consent_challenge, identity_id):
     return manual_redirection
 
 
-def get_credentials(email=None, require_account=False):
+def get_credentials(email=None, require_account=False, acr_values=None):
     '''if no email is passed, a random one will be used.'''
 
     if not email:
@@ -114,6 +114,7 @@ def get_credentials(email=None, require_account=False):
             'response_type': 'code',
             'scope': 'openid tos privacy_policy',
             'state': 'shouldBeRandom',
+            'acr_values': acr_values,
         },
         raise_for_status=False,
     )
@@ -178,8 +179,8 @@ def get_credentials(email=None, require_account=False):
     )(email, access_token, identity_id, id_token, consent_done, account_id)
 
 
-def get_authenticated_session(email=None, require_account=False):
-    creds = get_credentials(email, require_account)
+def get_authenticated_session(email=None, require_account=False, acr_values=None):
+    creds = get_credentials(email, require_account, acr_values)
     session = http.Session()
     session.headers.update({'Authorization': f'Bearer {creds.access_token}'})
     session.email = creds.email
