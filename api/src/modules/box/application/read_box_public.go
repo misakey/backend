@@ -16,7 +16,7 @@ import (
 
 type ReadBoxPublicRequest struct {
 	boxID          string
-	OtherShareHash string `json:"other_share_hash"`
+	OtherShareHash string `query:"other_share_hash"`
 }
 
 func (req *ReadBoxPublicRequest) BindAndValidate(eCtx echo.Context) error {
