@@ -39,8 +39,8 @@ func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) stri
 				// set browser cookie as authentication method
 				loginCtx.OIDCContext.AddAMR(oidc.AMRBrowserCookie)
 				loginCtx.OIDCContext.SetACRValue(session.ACR)
-				loginCtx.OIDCContext.SetMID(loginCtx.OIDCContext.MID())
-				loginCtx.OIDCContext.SetAID(loginCtx.OIDCContext.AID())
+				loginCtx.OIDCContext.SetMID(session.IdentityID)
+				loginCtx.OIDCContext.SetAID(session.AccountID)
 				redirectTo, err := sso.authFlowService.BuildAndAcceptLogin(ctx, loginCtx)
 				if err != nil {
 					return sso.authFlowService.LoginRedirectErr(err)

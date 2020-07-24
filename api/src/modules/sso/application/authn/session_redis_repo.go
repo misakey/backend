@@ -2,12 +2,13 @@ package authn
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/go-redis/redis/v7"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 type SessionRedisRepo struct {
@@ -23,17 +24,23 @@ func (srr SessionRedisRepo) key(sessionID string) string {
 }
 
 func (srr SessionRedisRepo) Upsert(ctx context.Context, session Session, lifetime time.Duration) error {
-	return srr.SimpleKeyRedis.Set(ctx, srr.key(session.ID), []byte(session.ACR), lifetime)
+	value, err := json.Marshal(session)
+	if err != nil {
+		return merror.Transform(err).Describe("marshaling sesion")
+	}
+	return srr.SimpleKeyRedis.Set(ctx, srr.key(session.ID), value, lifetime)
 }
 
 func (srr SessionRedisRepo) Get(ctx context.Context, sessionID string) (Session, error) {
-	session := Session{
-		ID: sessionID,
-	}
-	secLevelBytes, err := srr.SimpleKeyRedis.Get(ctx, srr.key(sessionID))
+	session := Session{}
+
+	value, err := srr.SimpleKeyRedis.Get(ctx, srr.key(sessionID))
 	if err != nil {
 		return session, err
 	}
-	session.ACR = oidc.ClassRef(secLevelBytes)
+	if err := json.Unmarshal(value, &session); err != nil {
+		return session, merror.Transform(err).Describe("unmarshaling session")
+	}
+	session.ID = sessionID
 	return session, nil
 }

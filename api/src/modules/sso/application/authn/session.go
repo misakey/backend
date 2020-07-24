@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
@@ -15,7 +16,9 @@ import (
 // RememberFor is expressed in seconds
 type Session struct {
 	ID          string
-	ACR         oidc.ClassRef
+	ACR         oidc.ClassRef `json:"acr"`
+	IdentityID  string        `json:"mid"`
+	AccountID   null.String   `json:"aid"`
 	RememberFor int
 }
 
