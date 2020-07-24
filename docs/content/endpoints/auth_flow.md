@@ -740,7 +740,7 @@ account in this case.
 ### Request
 
 ```bash
-POST https://api.misakey.com.local/logout
+POST https://api.misakey.com.local/auth/logout
 ```
 
 _Headers_:
@@ -754,3 +754,44 @@ _Code:_
 ```bash
 HTTP 204 No Content
 ```
+
+## Get Backup
+
+This endpoint allows to get the account backup
+during the auth flow.
+
+This endpoint needs a valid process token.
+
+### Request
+
+```bash
+GET https://api.misakey.com.local/auth/backup
+```
+
+_Query Parameters:_
+- `login_challenge` (string): the login challenge corresponding to the current auth flow.
+- `identity_id` (string) (uuid4): the id of the identity corresponding to the current auth flow.
+
+_Headers_:
+- :key: `Authorization` (opaque token) (ACR >= 2): the `login_challenge` token’s claim must be the login challenge sent in query.
+
+### Success Response
+
+_Code:_
+```bash
+HTTP 200 OK
+```
+
+_JSON Body:_
+```json
+{
+    "data": "[STRINGIFIED JSON]",
+    "version": 3,
+    "account_id": "d8aa7d0f-81fe-4e66-99d5-fe2b31360ae0"
+}
+```
+
+- `data` (string): the user backup data.
+- `version` (integer): the current backup version.
+- `account_id` (string) (uuid4): the id of the account owning the backup.
+

@@ -117,7 +117,7 @@ func (as *Service) UpgradeProcess(
 	return process, nil
 }
 
-// AccessRequestToken returns a URL-safe, base64 encoded
+// genTok returns a URL-safe, base64 encoded
 // securely generated random string.
 // It will return an error if the system's secure random
 // number generator fails to function correctly, in which

@@ -44,6 +44,7 @@ func initRoutes(
 		oauthCodeFlow.ExchangeToken(ctx.Response().Writer, ctx.Request())
 		return nil
 	})
+	authRoutes.GET("/backup", authFlowHTTP.GetBackup, authnProcessAuthzMidlw)
 
 	identityRoutes := router.Group("/identities")
 	identityRoutes.GET("/:id", identityHTTP.GetIdentity, oidcAuthzMidlw)

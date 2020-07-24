@@ -120,3 +120,22 @@ func (af AuthFlowHTTP) ConsentAccept(eCtx echo.Context) error {
 	}
 	return eCtx.JSON(http.StatusOK, redirect)
 }
+
+// Handles GET /backup - get backup during auth flow
+func (af AuthFlowHTTP) GetBackup(eCtx echo.Context) error {
+	query := application.GetBackupQuery{}
+	// parse parameters
+	query.LoginChallenge = eCtx.QueryParam("login_challenge")
+	query.IdentityID = eCtx.QueryParam("identity_id")
+
+	if err := query.Validate(); err != nil {
+		return merror.Transform(err).From(merror.OriQuery)
+	}
+
+	backup, err := af.service.GetBackupDuringAuth(eCtx.Request().Context(), query)
+	if err != nil {
+		return merror.Transform(err).Describe("get backup")
+	}
+
+	return eCtx.JSON(http.StatusOK, backup)
+}
