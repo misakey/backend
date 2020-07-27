@@ -2,9 +2,9 @@
 title: SSO - Identities
 ---
 
-## Introduction
+## 1. Introduction
 
-### Concept
+### 1.1. Concept
 
 **Identity** is the core entity used for authorization and authentication at Misakey.
 
@@ -19,7 +19,7 @@ They can be considered both as profiles and concrete identities. Users have many
 - as citizens: having both Korean and Russian nationalities...
 - as internet fellows: having a Travian account and a Mastodon account...
 
-### Resource Access
+### 1.2. Resource Access
 
 Resources access is based on the identity the end-user is logged in.
 
@@ -29,30 +29,30 @@ or in the interface at any moment.
 There is no need to re-authenticate switching identities unless the security level
 of an identity is higher than the current one the end-user is logged in.
 
-## Require an authable identity for a given identifier
+## 2. Require an authable identity for a given identifier
 
-Described in [the auth flow section](../auth_flow/#require-an-authable-identity-for-a-given-identifier).
+Described in [the auth flow section](../auth_flow/#5-require-an-authable-identity-for-a-given-identifier).
 
-## Create an account on an identity
+## 3. Create an account on an identity
 
-Described [in the accounts section](../accounts/#create-an-account-on-an-identity)
+Described [in the accounts section](../accounts/#2-create-an-account-on-an-identity)
 
-## Get an identity
+## 4. Get an identity
 
 This route allows the retrieval of the information related to an identity.
 
-### Request
+### 4.1. request
 
 ```bash
-GET https://api.misakey.com.local/identities/:id
+GET https://api.misakey.com/identities/:id
 ```
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
+- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
 
 _Path Parameters:_
 - `id` (uuid string): the identity unique id.
 
-### Success Response
+### 4.2. success response
 
 _Code:_
 ```bash
@@ -91,19 +91,19 @@ _JSON Body:_
   - `kind` (string) (oneof: _email_): the kind of the identifier.
   - `value` (string): the value of the identifier.
 
-## Update an identity
+## 5. Update an identity
 
 For the moment, only the Display Name and Notifications can be updated.
 
 The request must be authenticated with a token corresponding to the updated identity.
 
-### Request
+### 5.1. request
 
 ```bash
-PATCH https://api.misakey.com.local/identities/:id
+PATCH https://api.misakey.com/identities/:id
 ```
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
+- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
 
 _Path Parameters:_
 - `id` (uuid string): the identity unique id.
@@ -112,24 +112,24 @@ _Body Parameters:_
 - `display_name` (string): the identity display name.
 - `notifications` (string): notification setting. Must be one of `minimal`, `moderate`, `frequent`.
 
-### Success Response
+### 5.2. success response
 
 _Code:_
 ```bash
 HTTP 204 No Content
 ```
 
-## Upload an avatar
+## 6. Upload an avatar
 
 The request must be authenticated with a token corresponding to the identity on which the avatar is uploaded.
 
-### Request
+### 6.1. request
 
 ```bash
-PUT https://api.misakey.com.local/identities/:id/avatar
+PUT https://api.misakey.com/identities/:id/avatar
 ```
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
+- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
 
 _Path Parameters:_
 - `id` (uuid string): the identity unique id.
@@ -137,31 +137,31 @@ _Path Parameters:_
 _Body Parameters (multipart/form\_data):_
 - `avatar` (object): the avatar file.
 
-### Success Response
+### 6.2. success response
 
 _Code:_
 ```bash
 HTTP 204 No Content
 ```
 
-## Delete an avatar
+## 7. Delete an avatar
 
 The request must be authenticated with a token corresponding to the identity on which the avatar is deleted.
 
 If no avatar is set on the identity, the request will return a `409 CONFLICT`.
 
-### Request
+### 7.1. request
 
 ```bash
-DELETE https://api.misakey.com.local/identities/:id/avatar
+DELETE https://api.misakey.com/identities/:id/avatar
 ```
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `subject` claim as the identity id.
+- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
 
 _Path Parameters:_
 - `id` (uuid string): the identity unique id.
 
-### Success Response
+### 7.2. success response
 
 _Code:_
 ```bash

@@ -4,7 +4,7 @@
 {{ $has_headers := ge (len $headers) 1 }}
 <!-- a post can explicitly disable Table of Contents with toc: false -->
 {{ if $has_headers }}
-<a class="toc_a" style="font-size:24px;" name="toc" href="http://localhost:1313/">:arrow_left: to :house:</a>
+<a class="toc_a" style="font-size:24px;" name="toc" href="../../">:arrow_left: to :house:</a>
 <div>
     <!-- TOC header -->
     <h4>Table of Contents</h4>
@@ -31,6 +31,7 @@
         {{ range seq $next_heading }}
     </ul>
     {{end}}
+
     {{end}}
     {{end}}
     {{ end }}

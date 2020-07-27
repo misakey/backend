@@ -2,26 +2,6 @@
 title: Authorization & Authentication
 ---
 
-## Misakey Auth System
-
-## Table of Contents
-
-* [1. Introduction](#1-introduction)
-* [2. Lexicon](#2-lexicon)
-* [3. Authorization](#3-authorization)
-  * [3.1. Basics](#31-basics)
-  * [3.2. Token](#32-token)
-  * [3.3. Scopes](#33-scopes)
-  * [3.3. TOS and Privacy Policy](#33-tos-and-privacy-policy)
-* [4. Authentication](#4-authentication)
-  * [4.1. Token](#41-token)
-  * [4.2. Authentication Request](#42-authentication-request)
-  * [4.3. Methods](#43-methods)
-    * [4.3.1. Introduction](#431-introduction)
-    * [4.3.2. Emailed Code](#432-emailed-code)
-    * [4.3.3. Password](#433-password)
-  * [4.4. ACR Errors Handling](#44-acr-errors-handling)
-
 ## 1. Introduction
 
 _Disclaimer: this document is intended for internal Misakey people and curious fellows
@@ -141,7 +121,7 @@ ID Token example:
   "auth_time": 1568883569,
   "exp": 1568887169,
   "iat": 1568883569,
-  "iss": "https://auth.misakey.com.local/_/",
+  "iss": "https://auth.misakey.com/_/",
   "jti": "8a45c7d5-dbe1-41ea-8d89-f8d4359958b9",
   "nonce": "",
   "rat": 1568883569,
@@ -242,7 +222,7 @@ To perform it:
 
 Used alone, its final corresponding `acr` is 2.
 
-#### 4.4 ACR Errors Handling
+### 4.4 ACR Errors Handling
 
 Aside obvious errors such as "invalid secrets" or "email not existing within our system"
 that may occur during the auth flow, some errors specific to ACR should be known

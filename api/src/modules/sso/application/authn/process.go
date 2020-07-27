@@ -25,7 +25,7 @@ type Process struct {
 	SessionACR     oidc.ClassRef   `json:"sacr"`
 	ExpectedACR    oidc.ClassRef   `json:"eacr"`
 	CompleteAMRs   oidc.MethodRefs `json:"camr"`
-	IdentityID     string          `json:"iid"`
+	IdentityID     string          `json:"mid"`
 
 	AccessToken string `json:"tok"`
 	ExpiresAt   int64  `json:"exp"`

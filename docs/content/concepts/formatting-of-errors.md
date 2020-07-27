@@ -2,7 +2,7 @@
 title: Formatting of errors
 ---
 
-## Error conventions
+## 1. Error conventions
 
 Backend errors follow these two conventions:
 - Always return the HTTP error code that fits the situation.
@@ -21,7 +21,7 @@ Backend errors follow these two conventions:
 
 All "{things}" are described in following sections...
 
-## Code
+## 2. Code
 
 The code is a string used internally and by consumer for better error identifications & reactions.
 
@@ -53,7 +53,7 @@ We use this link as general specifications for errors and not just for http requ
 * `unknown_code`: 500, something internal to the service has failed.
 * `no_code`: xxx, no specific code defined.
 
-## Origin
+## 3. Origin
 Origin is an information about where the error does come from.
 
 **Possible origins:**
@@ -68,7 +68,7 @@ Origin is an information about where the error does come from.
 :warning: Thanks to contact the backend team if you receive one these origins.
 * `not_defined`: the error has no origin defined yet
 
-## Details
+## 4. Details
 
 An object containing a dynamical number of detail objects.
 
