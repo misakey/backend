@@ -45,6 +45,7 @@ func initRoutes(
 		return nil
 	})
 	authRoutes.GET("/backup", authFlowHTTP.GetBackup, authnProcessAuthzMidlw)
+	authRoutes.POST("/backup-key-shares", backupKeyShareHTTP.CreateBackupKeyShare, authnProcessAuthzMidlw)
 
 	identityRoutes := router.Group("/identities")
 	identityRoutes.GET("/:id", identityHTTP.GetIdentity, oidcAuthzMidlw)

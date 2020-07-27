@@ -795,3 +795,36 @@ _JSON Body:_
 - `version` (integer): the current backup version.
 - `account_id` (string) (uuid4): the id of the account owning the backup.
 
+## Creating a Backup Key Share
+
+This endpoint allows to create a backup key share in the auth flow.
+
+### Request
+
+```bash
+  POST https://api.misakey.com/auth/backup-key-shares
+```
+
+_Headers:_
+- `Authorization` (opaque token) (ACR >= 2): the access token is given during the auth flow. It must be generated for an identity id linked to the account id sent in the request.
+
+_JSON Body:_
+```json
+{{% include "include/backup-key-share.json" %}}
+```
+
+- `account_id` (string) (uuid): the account for which the shares has been created.
+- `share` (string) (base64): one of the shares.
+- `other_share_hash` (string) (unpadded url-safe base64): a hash of the other share.
+
+### Response
+
+_Code:_
+```bash
+HTTP 201 CREATED
+```
+
+_JSON Body:_
+```json
+{{% include "include/backup-key-share.json" %}}
+```
