@@ -146,6 +146,8 @@ func (sso SSOService) RequireAuthableIdentity(ctx context.Context, cmd IdentityA
 			IdentifierID: identifier.ID,
 			DisplayName:  cmd.Identifier.Value,
 			IsAuthable:   true,
+			// fill the identifier manually for later use
+			Identifier: identifier,
 		}
 		if err := sso.identityService.Create(ctx, &identity); err != nil {
 			return view, err
