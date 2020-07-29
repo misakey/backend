@@ -32,9 +32,9 @@ We host the platform on a Kubernetes cluster, so everything we build is done to 
 We don't have tools to welcome community for now. 
 
 You want to talk with us, or contribute to the project? 
-You can open an issue or [send us an email](mailto:question.perso@misakey.com)!.
+You can open an issue, or contact us by email at [love@misakey.com](mailto:love@misakey.com)!.
 
-We will answer you quickly and would love to hear what community tools you would like!
+We will answer you quickly and would love to hear feedback from you!
 
 ## License
 
@@ -43,7 +43,7 @@ If subdirectories include a different license, that license applies instead.
 
 ## Source management disclaimer
 
-Misakey uses GitLab for the development of its free softwares. Our Github repositories are only mirrors. If you want to work with us, fork us on gitlab.com (no registration needed, you can sign in with your Github account)
+Misakey uses GitLab for the development of its free softwares. Our Github repositories are only mirrors.
 
 ## Cryptography notice
 
