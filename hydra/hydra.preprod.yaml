@@ -4,7 +4,9 @@ hydra:
   config:
     log:
       level: debug
-      format: json
+      format: text
+      # /!\ log only on preproduction for debugging purpose!
+      leak_sensitive_values: true
 
     serve:
       public:

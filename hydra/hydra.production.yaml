@@ -4,7 +4,7 @@ hydra:
   config:
     log:
       level: debug
-      format: json
+      format: text
 
     serve:
       public:
