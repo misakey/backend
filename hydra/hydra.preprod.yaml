@@ -23,6 +23,9 @@ hydra:
       leak_sensitive_values: true
 
     serve:
+      cookies:
+        same_site_mode: Lax
+
       public:
         port: 4444
 

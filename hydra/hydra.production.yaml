@@ -20,6 +20,9 @@ hydra:
       format: json
 
     serve:
+      cookies:
+        same_site_mode: Lax
+
       public:
         port: 4444
 
