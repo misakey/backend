@@ -1,10 +1,24 @@
 # ORY Hydra Configuration
 
+deployment:
+  annotations:
+    ad.datadoghq.com/hydra.logs: >-
+      [{
+        "source": "hydra",
+        "service": "hydra",
+        "log_processing_rules": [{
+           "type": "multi_line",
+           "name": "json_multi_line",
+           "pattern": "\\{"
+        }]
+      }]
+
+
 hydra:
   config:
     log:
       level: debug
-      format: text
+      format: json
       # /!\ log only on preproduction for debugging purpose!
       leak_sensitive_values: true
 
