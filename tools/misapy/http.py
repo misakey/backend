@@ -5,15 +5,25 @@ and you can provide a "expected_status_code" during calls'''
 import datetime
 import json
 import sys
+import os
 from urllib.parse import urlparse
 
 import requests
 import urllib3; urllib3.disable_warnings()
 
+LATEST_LOGFILE_LINK = '/tmp/misapy-log-latest'
 now = datetime.datetime.now()
-suffix = now.isoformat(timespec='seconds')
+suffix = now.strftime('%Y-%m-%dT%H-%M-%S')
 logfile = f'/tmp/misapy-log-{suffix}'
-print('log file:', logfile)
+with open(logfile, 'w') as f:
+    f.write(f'''Logfile started on {now.strftime('%Y-%m-%d %H:%M:%S')}\n''')
+    f.write('='*40 + '\n'*3)
+try:
+    os.remove(LATEST_LOGFILE_LINK)
+except FileNotFoundError:
+    pass
+os.symlink(logfile, LATEST_LOGFILE_LINK)
+print('log file:', logfile, f'(or {LATEST_LOGFILE_LINK})')
 
 class UnexpectedResponseStatus(Exception):
     def __init__(self, expected_status_code, response):
