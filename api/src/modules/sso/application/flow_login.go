@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"strings"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -144,7 +145,7 @@ func (sso SSOService) RequireAuthableIdentity(ctx context.Context, cmd IdentityA
 		// a. create the Identity without account
 		identity = domain.Identity{
 			IdentifierID: identifier.ID,
-			DisplayName:  cmd.Identifier.Value,
+			DisplayName:  strings.Title(strings.Replace(strings.Split(cmd.Identifier.Value, "@")[0], ".", " ", -1)),
 			IsAuthable:   true,
 			// fill the identifier manually for later use
 			Identifier: identifier,
