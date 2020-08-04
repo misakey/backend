@@ -6,9 +6,11 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/volatiletech/null"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/argon2"
 )
 
@@ -132,6 +134,15 @@ func (sso SSOService) resetPassword(ctx context.Context, cmd PasswordResetCmd, i
 
 	// get account
 	account, err := sso.accountService.Get(ctx, identity.AccountID.String)
+	if err != nil {
+		return err
+	}
+
+	backupArchive := domain.BackupArchive{
+		AccountID: account.ID,
+		Data:      null.StringFrom(account.BackupData),
+	}
+	err = sso.backupArchiveService.CreateBackupArchive(ctx, backupArchive)
 	if err != nil {
 		return err
 	}

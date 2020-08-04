@@ -19,6 +19,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/account"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/backuparchive"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/backupkeyshare"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
@@ -80,6 +81,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	identifierRepo := repositories.NewIdentifierSQLBoiler(dbConn)
 	identityRepo := repositories.NewIdentitySQLBoiler(dbConn)
 	authnStepRepo := authn.NewAuthnStepSQLBoiler(dbConn)
+	backupArchiveRepo := repositories.NewBackupArchiveSQLBoiler(dbConn)
 	backupKeyRepo := backupkeyshare.NewRedisRepo(redConn, viper.GetDuration("backup_key_share.expiration"))
 	authnSessionRepo, authnProcessRepo := authn.NewAuthnSessionRedis(redConn), authn.NewAuthnProcessRedis(redConn)
 	hydraRepo := authflow.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
@@ -114,6 +116,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	accountService := account.NewAccountService(accountRepo)
 	identifierService := identifier.NewIdentifierService(identifierRepo)
 	identityService := identity.NewIdentityService(identityRepo, avatarRepo, identifierService)
+	backupArchiveService := backuparchive.NewBackupArchiveService(backupArchiveRepo)
 	authFlowService := authflow.NewAuthFlowService(
 		identityService, hydraRepo,
 		viper.GetString("authflow.login_page_url"),
@@ -135,6 +138,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 		authFlowService,
 		authenticationService,
 		backupKeyShareService,
+		backupArchiveService,
 	)
 	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(
 		viper.GetString("authflow.self_client_id"),

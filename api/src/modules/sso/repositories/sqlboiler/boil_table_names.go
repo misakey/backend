@@ -6,11 +6,13 @@ package sqlboiler
 var TableNames = struct {
 	Account            string
 	AuthenticationStep string
+	BackupArchive      string
 	Identifier         string
 	Identity           string
 }{
 	Account:            "account",
 	AuthenticationStep: "authentication_step",
+	BackupArchive:      "backup_archive",
 	Identifier:         "identifier",
 	Identity:           "identity",
 }

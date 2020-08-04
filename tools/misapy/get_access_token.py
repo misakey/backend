@@ -34,7 +34,7 @@ def new_password_hash(password):
     salt_base64 = b64encode(os.urandom(8)).decode()
     return hash_password('password', salt_base64)
 
-def login_flow(s, login_challenge, email):
+def login_flow(s, login_challenge, email, reset_password=False):
     r = s.put(
         'https://api.misakey.com.local/identities/authable',
         json={
@@ -63,18 +63,24 @@ def login_flow(s, login_challenge, email):
 
     # retrieve the emailed code then authenticate the user
     emailed_code = get_emailed_code(identity_id)
-    r = s.post(
-        'https://api.misakey.com.local/auth/login/authn-step',
-        json={
-            'login_challenge': login_challenge,
-            'authn_step': {
-                'identity_id': identity_id,
-                'method_name': 'emailed_code',
-                'metadata': {
-                    'code': emailed_code,
-                }
+    confirmation_payload = {
+        'login_challenge': login_challenge,
+        'authn_step': {
+            'identity_id': identity_id,
+            'method_name': 'emailed_code',
+            'metadata': {
+                'code': emailed_code,
             }
         }
+    }
+    if reset_password:
+        confirmation_payload['password_reset'] = {
+            'prehashed_password': new_password_hash('password'),
+            'backup_data': b64encode(b'other fake backup data').decode(),
+        }
+    r = s.post(
+        'https://api.misakey.com.local/auth/login/authn-step',
+        json=confirmation_payload
     )
 
     if r.json()['next'] == 'redirect':
@@ -126,7 +132,7 @@ def consent_flow(s, consent_challenge, identity_id):
     return manual_redirection
 
 
-def get_credentials(email=None, require_account=False, acr_values=None):
+def get_credentials(email=None, require_account=False, acr_values=None, reset_password=False):
     '''if no email is passed, a random one will be used.'''
 
     if require_account:
@@ -134,6 +140,9 @@ def get_credentials(email=None, require_account=False, acr_values=None):
             raise ValueError('cannot use "require_account" and "acr_values"')
         else:
             acr_values = 2
+
+    if reset_password and not email:
+        raise ValueError('"reset password" requires an "email" parameter')
 
     if not email:
         email = hexlify(os.urandom(3)).decode() + '-test@misakey.com'
@@ -166,8 +175,7 @@ def get_credentials(email=None, require_account=False, acr_values=None):
 
     login_url_query = urlparse(r.request.url).query
     login_challenge = parse_query_string(login_url_query)['login_challenge'][0]
-    identity_id, manual_redirection = login_flow(
-        s, login_challenge, email)
+    identity_id, manual_redirection = login_flow(s, login_challenge, email, reset_password)
     r = s.get(manual_redirection, raise_for_status=False)
 
     # detect if the consent flow is required
@@ -199,8 +207,8 @@ def get_credentials(email=None, require_account=False, acr_values=None):
     )(email, access_token, identity_id, id_token, consent_done, account_id)
 
 
-def get_authenticated_session(email=None, require_account=False, acr_values=None):
-    creds = get_credentials(email, require_account, acr_values)
+def get_authenticated_session(email=None, require_account=False, acr_values=None, reset_password=False):
+    creds = get_credentials(email, require_account, acr_values, reset_password)
     session = http.Session()
     session.headers.update({'Authorization': f'Bearer {creds.access_token}'})
     session.email = creds.email
