@@ -122,7 +122,10 @@ func findByTypeContent(ctx context.Context, exec boil.ContextExecutor, boxID, eT
 
 	dbEvent, err := sqlboiler.Events(mods...).One(ctx, exec)
 	if err == sql.ErrNoRows {
-		return e, merror.NotFound().Describef("finding %s by type %s content", boxID, eType)
+		return e, merror.NotFound().
+			Detail("box_id", merror.DVNotFound).
+			Detail("type", merror.DVNotFound).
+			Describef("finding %s by type %s content", boxID, eType)
 	}
 	if err != nil {
 		return e, merror.Transform(err).Describe("retrieving type/content db event")

@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/volatiletech/sqlboiler/queries/qm"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
@@ -30,4 +32,17 @@ func Get(
 		return ret, err
 	}
 	return fromSQLBoiler(record), nil
+}
+
+func EmptyAll(
+	ctx context.Context, exec boil.ContextExecutor,
+	boxID string,
+) error {
+	mods := []qm.QueryMod{
+		sqlboiler.BoxKeyShareWhere.BoxID.EQ(boxID),
+	}
+	// ignore the zero affected rows case since the deletion is a success
+	// if no record exist (it empties all)
+	_, err := sqlboiler.BoxKeyShares(mods...).DeleteAll(ctx, exec)
+	return err
 }

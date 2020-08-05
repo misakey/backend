@@ -29,7 +29,25 @@ func ResponseBlob(eCtx echo.Context, data interface{}) error {
 	return eCtx.Blob(http.StatusOK, "application/octet-stream", data.([]byte))
 }
 
-func NewHTTPEntrypoint(
+func NewPublicHTTP(
+	initReq func() Request,
+	appFunc func(context.Context, Request) (interface{}, error),
+	responseFunc func(echo.Context, interface{}) error,
+	afterOpts ...func(echo.Context, interface{}) error,
+) func(eCtx echo.Context) error {
+	return newHTTPEntrypoint(initReq, false, appFunc, responseFunc, afterOpts...)
+}
+
+func NewProtectedHTTP(
+	initReq func() Request,
+	appFunc func(context.Context, Request) (interface{}, error),
+	responseFunc func(echo.Context, interface{}) error,
+	afterOpts ...func(echo.Context, interface{}) error,
+) func(eCtx echo.Context) error {
+	return newHTTPEntrypoint(initReq, true, appFunc, responseFunc, afterOpts...)
+}
+
+func newHTTPEntrypoint(
 	initReq func() Request,
 	checkAccesses bool,
 	appFunc func(context.Context, Request) (interface{}, error),

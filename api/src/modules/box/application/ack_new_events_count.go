@@ -10,7 +10,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/eventscounts"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
 
 type AckNewEventsCountRequest struct {
@@ -38,7 +38,7 @@ func (bs *BoxApplication) AckNewEventsCount(ctx context.Context, genReq entrypoi
 		return nil, merror.Forbidden()
 	}
 
-	if err := eventscounts.Del(ctx, bs.redConn, req.IdentityID, req.boxID); err != nil {
+	if err := events.DelCounts(ctx, bs.redConn, req.IdentityID, req.boxID); err != nil {
 		return nil, err
 	}
 

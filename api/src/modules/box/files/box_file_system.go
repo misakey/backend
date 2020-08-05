@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
@@ -70,4 +71,18 @@ func (fs *BoxFileSystem) Delete(ctx context.Context, boxID, fileID string) error
 		return err
 	}
 	return os.Remove(path)
+}
+
+func (fs *BoxFileSystem) DeleteAll(ctx context.Context, boxID string) error {
+	path := path.Join(fs.location, fs.getKey(boxID, "*"))
+	files, err := filepath.Glob(path)
+	if err != nil {
+		return merror.Transform(err).Describe("globbing")
+	}
+	for _, f := range files {
+		if err := os.Remove(f); err != nil {
+			return merror.Transform(err).Describe("removing")
+		}
+	}
+	return nil
 }

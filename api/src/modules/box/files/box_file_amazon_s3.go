@@ -77,6 +77,25 @@ func (s *BoxFileAmazonS3) Download(ctx context.Context, boxID, fileID string) ([
 	return data.Bytes(), nil
 }
 
+// DeleteAll data from s3 at {bucket}/{boxID}
+func (s *BoxFileAmazonS3) DeleteAll(ctx context.Context, boxID string) error {
+	if boxID == "" {
+		return merror.Internal().Describe("box id cannot be empty to remove s3 files")
+	}
+
+	// setup BatchDeleteIterator to iterate through a list of objects.
+	iter := s3manager.NewDeleteListIterator(s.session, &s3.ListObjectsInput{
+		Bucket: aws.String(s.bucket),
+		Prefix: aws.String(boxID + "/"),
+	})
+
+	// traverse iterator deleting each object
+	if err := s3manager.NewBatchDeleteWithClient(s.session).Delete(aws.BackgroundContext(), iter); err != nil {
+		return merror.Transform(err).Describef("unable to delete objects %q from %q", boxID, s.bucket)
+	}
+	return nil
+}
+
 // Delete data from s3 at {bucket}/{boxID}/{fileID}
 func (s *BoxFileAmazonS3) Delete(ctx context.Context, boxID, fileID string) error {
 	key := s.getKey(boxID, fileID)

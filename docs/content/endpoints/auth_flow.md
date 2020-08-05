@@ -653,7 +653,7 @@ _JSON Body_:
 }
 ```
 
-- `subject` (uuid string): unique id of the identity getting the token
+- `subject` (uuid string): unique id of the identifier getting the token
 - `acr` (string): the acr level for the current flow
 - `scope` (string): list of scope sent during the auth flow init.
 - `context` (object): context of the current consent flow
@@ -691,7 +691,7 @@ _JSON Body:_
 ```
 
 - `consent_challenge` (string): can be found in previous redirect URL.
-- `identity_id` (uuid string): the subject of the flow.
+- `identity_id` (uuid string): the identity id bound to the identifier of the flow.
 - `consented_scopes` (list of string) (one of: _tos_, _privacy\_policy_): the accepted scopes.
 
 ### 9.2. success response

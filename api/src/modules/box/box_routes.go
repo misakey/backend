@@ -13,25 +13,32 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw ech
 	// Boxes
 	boxRouter := router.Group("/boxes")
 
-	getBox := entrypoints.NewHTTPEntrypoint(
+	// ----------------------
+	// Boxes related routes
+
+	createBox := entrypoints.NewProtectedHTTP(
+		func() entrypoints.Request { return &application.CreateBoxRequest{} },
+		bs.CreateBox,
+		entrypoints.ResponseCreated,
+	)
+	boxRouter.POST("", createBox, authzMidlw)
+
+	getBox := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.ReadBoxRequest{} },
-		true,
 		bs.ReadBox,
 		entrypoints.ResponseOK,
 	)
 	boxRouter.GET("/:id", getBox, authzMidlw)
 
-	getBoxPublic := entrypoints.NewHTTPEntrypoint(
+	getBoxPublic := entrypoints.NewPublicHTTP(
 		func() entrypoints.Request { return &application.ReadBoxPublicRequest{} },
-		false,
 		bs.ReadBoxPublic,
 		entrypoints.ResponseOK,
 	)
 	boxRouter.GET("/:id/public", getBoxPublic)
 
-	countBoxes := entrypoints.NewHTTPEntrypoint(
+	countBoxes := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.CountBoxesRequest{} },
-		true,
 		bs.CountBoxes,
 		entrypoints.ResponseNoContent,
 		func(ctx echo.Context, data interface{}) error {
@@ -41,76 +48,72 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw ech
 	)
 	boxRouter.HEAD("", countBoxes, authzMidlw)
 
-	listBoxes := entrypoints.NewHTTPEntrypoint(
+	listBoxes := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.ListBoxesRequest{} },
-		true,
 		bs.ListBoxes,
 		entrypoints.ResponseOK,
 	)
 	boxRouter.GET("", listBoxes, authzMidlw)
 
-	createBox := entrypoints.NewHTTPEntrypoint(
-		func() entrypoints.Request { return &application.CreateBoxRequest{} },
-		true,
-		bs.CreateBox,
-		entrypoints.ResponseCreated,
+	deleteBox := entrypoints.NewProtectedHTTP(
+		func() entrypoints.Request { return &application.DeleteBoxRequest{} },
+		bs.DeleteBox,
+		entrypoints.ResponseNoContent,
 	)
-	boxRouter.POST("", createBox, authzMidlw)
+	boxRouter.DELETE("/:id", deleteBox, authzMidlw)
 
-	listEvents := entrypoints.NewHTTPEntrypoint(
+	// ----------------------
+	// Events related routes
+
+	listEvents := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.ListEventsRequest{} },
-		true,
 		bs.ListEvents,
 		entrypoints.ResponseOK,
 	)
 	boxRouter.GET("/:id/events", listEvents, authzMidlw)
 
-	postEvents := entrypoints.NewHTTPEntrypoint(
+	postEvents := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.CreateEventRequest{} },
-		true,
 		bs.CreateEvent,
 		entrypoints.ResponseCreated,
 	)
 	boxRouter.POST("/:id/events", postEvents, authzMidlw)
 
-	uploadEncryptedFile := entrypoints.NewHTTPEntrypoint(
+	uploadEncryptedFile := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.UploadEncryptedFileRequest{} },
-		true,
 		bs.UploadEncryptedFile,
 		entrypoints.ResponseCreated,
 	)
 	boxRouter.POST("/:bid/encrypted-files", uploadEncryptedFile, authzMidlw)
 
-	downloadEncryptedFile := entrypoints.NewHTTPEntrypoint(
+	downloadEncryptedFile := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.DownloadEncryptedFileRequest{} },
-		true,
 		bs.DownloadEncryptedFile,
 		entrypoints.ResponseBlob,
 	)
 	boxRouter.GET("/:bid/encrypted-files/:eid", downloadEncryptedFile, authzMidlw)
 
-	newEventsCount := entrypoints.NewHTTPEntrypoint(
+	newEventsCount := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.AckNewEventsCountRequest{} },
-		true,
 		bs.AckNewEventsCount,
 		entrypoints.ResponseNoContent,
 	)
 	boxRouter.PUT("/:id/new-events-count/ack", newEventsCount, authzMidlw)
 
-	// Key Shares
+	// ----------------------
+	// Box Key Shares related routes
+
 	keyShareRouter := router.Group("/box-key-shares", authzMidlw)
 
-	createKeyShare := entrypoints.NewHTTPEntrypoint(
+	createKeyShare := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.CreateKeyShareRequest{} },
-		true,
 		bs.CreateKeyShare,
 		entrypoints.ResponseCreated,
 	)
 	keyShareRouter.POST("", createKeyShare)
 
-	getKeyShare := entrypoints.NewHTTPEntrypoint(
+	getKeyShare := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.GetKeyShareRequest{} },
-		true,
 		bs.GetKeyShare,
 		entrypoints.ResponseOK,
 	)

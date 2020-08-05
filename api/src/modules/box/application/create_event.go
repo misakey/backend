@@ -15,7 +15,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/eventscounts"
 )
 
 type CreateEventRequest struct {
@@ -87,7 +86,7 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 			return view, merror.Transform(err).Describe("fetching list of actors")
 		}
 
-		if err := eventscounts.Incr(ctx, bs.redConn, identities, event.BoxID); err != nil {
+		if err := events.IncrCounts(ctx, bs.redConn, identities, event.BoxID); err != nil {
 			// we log the error but we don’t return it
 			logger.FromCtx(ctx).Warn().Err(err).Msg("could not increment new events count")
 		}

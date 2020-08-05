@@ -2,7 +2,8 @@ package boxes
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/volatiletech/sqlboiler/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
@@ -18,7 +19,7 @@ type computer struct {
 
 	events []events.Event
 
-	dbConn     *sql.DB
+	exec       boil.ContextExecutor
 	identities entrypoints.IdentityIntraprocessInterface
 
 	// the output
@@ -36,13 +37,13 @@ type computer struct {
 func Compute(
 	ctx context.Context,
 	boxID string,
-	dbConn *sql.DB,
+	exec boil.ContextExecutor,
 	identities entrypoints.IdentityIntraprocessInterface,
 	buildEvents ...events.Event,
 ) (Box, error) {
 	// init the computer system
 	computer := &computer{
-		dbConn:     dbConn,
+		exec:       exec,
 		identities: identities,
 		box:        Box{ID: boxID},
 		events:     buildEvents,
@@ -66,7 +67,7 @@ func Compute(
 
 func (c *computer) retrieveEvents(ctx context.Context) error {
 	var err error
-	c.events, err = events.ListByBoxID(ctx, c.dbConn, c.box.ID)
+	c.events, err = events.ListByBoxID(ctx, c.exec, c.box.ID)
 	return err
 }
 

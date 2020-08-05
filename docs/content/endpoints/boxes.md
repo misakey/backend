@@ -2,19 +2,22 @@
 title: Box - Boxes
 ---
 
-## 1. Introduction
+# 1. Introduction
 
 Boxes contain *events* that have a *type*.
 In practice, most events will be of type `msg.text` or `msg.file`,
 corresponding to the sending of messages (with either text or files in it) to the box.
 There are however a few other events,
 most of them describing a change of the *state* of the box.
+
 [The shape and rules for box events are described here.](/concepts/box-events)
 
 
-## 2. Creating a Box
+# 2. Boxes
 
-### 2.1. request
+## 2.1. Creating a Box
+
+### 2.1.1. request
 
 ```bash
   POST https://api.misakey.com/boxes
@@ -36,7 +39,7 @@ Where `public_key` must be in **unpadded url-safe base64**.
 Note that when a box is created, it already contains a first event
 of type `create` that contains all the information about the creation of the box.
 
-### 2.2. response
+### 2.1.2. response
 
 _
 ```bash
@@ -51,9 +54,9 @@ _JSON Body:_
 The most important part is the `id` field
 which must be used to interact with the box.
 
-## 3. Getting a Box
+## 2.2. Getting a Box
 
-### 3.1. request
+### 2.2.1. request
 
 ```bash
   GET https://api.misakey.com/boxes/:id
@@ -65,7 +68,7 @@ _Headers:_
 _Path Parameters:_
 - `id` (uuid string): the box id wished to be retrieved.
 
-### 3.2. response
+### 2.2.2. response
 
 _Code:_
 ```bash
@@ -77,12 +80,12 @@ _JSON Body:_
 {{% include "include/box.json" %}}
 ```
 
-## 4. Getting public info about a box
+## 2.3. Getting public info about a box
 
 This endpoint does not need any valid token, but it needs a valid `other_share_hash`
 corresponding to the box to get.
 
-### 4.1. request
+### 2.3.1. request
 
 ```bash
   GET https://api.misakey.com/boxes/:id/public?other_share_hash=
@@ -94,7 +97,7 @@ _Path Parameters:_
 _Query Parameters:_
 - `other_share_hash` (string) (unpadded url-safe base64): a hash of the other share.
 
-### 4.2. response
+### 2.3.1. response
 
 _Code:_
 ```bash
@@ -108,9 +111,9 @@ _JSON Body:_
 }
 ```
 
-## 5. Get the total count of boxes for the current user
+## 2.4 Get the total count of boxes for the current user
 
-### 5.1. request
+### 2.4.1. request
 
 This request allows to retrieval of information about accessible boxes list.
 
@@ -123,7 +126,7 @@ Today only the total count of boxes is returned as an response header.
 _Headers:_
 - :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
 
-### 5.2. response
+### 2.4.2. response
 
 _Code:_
 ```bash
@@ -133,9 +136,9 @@ HTTP 204 NO CONTENT
 _Headers:_
 - `X-Total-Count` (integer): the total count of boxes that the user can access.
 
-## 6. Listing boxes
+## 2.5. Listing boxes
 
-### 6.1. request
+### 2.5.1. request
 
 Users are able to list boxes they have an access to.
 
@@ -153,7 +156,7 @@ _Query Parameters:_
 
 Pagination ([more info](/concepts/pagination)) with default limit set to 10.
 
-### 6.2. response
+### 2.5.2. response
 
 _Code:_
 ```bash
@@ -167,9 +170,47 @@ A list of event is returned.
 ]
 ```
 
-## 7. Sending an Event to a Box
+## 2.6 Delete a box
 
-### 7.1. request
+[Box admins](../../concepts/box-events/#21-admins) only are able to delete corresponding boxes.
+
+A removed box sees its data completely removed from Misakey storage. This action is irreversible.
+
+This action removes all data related to the box (events, key-shares...).
+
+### 2.6.1 request
+
+```bash
+DELETE https://api.misakey.com/boxes/:id
+```
+
+_Headers:_
+- :key: `Authorization` (opaque token) (ACR >= 1): the linked identity must be considered as a [box admin](../concepts/box-events/#21-admins).
+
+_Path Parameters:_
+- `id` (uuid string): the box id wished to be deleted.
+
+_JSON Body:_
+```json
+{
+  "user_confirmation": "delete"
+}
+```
+
+- `user_confirmation` (string) (one of: _delete_, _supprimer_): the input the end-user has entered to confirm the deletion. The server will check if the value corresponds to some expected strings (cf one of).
+
+### 2.6.2. response
+
+_Code:_
+```bash
+HTTP 204 NO CONTENT
+```
+
+# 3. Events on boxes
+
+## 3.1. Sending an Event to a Box
+
+### 3.1.1. request
 
 ```bash
   POST https://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/events
@@ -189,7 +230,7 @@ List of events that cannot be posted by clients:
 - `create`: they are created by the backend during the creation of the box.
 - `msg.file`: they are created by the backend during the upload of an encrypted file.
 
-### 7.2. response
+### 3.1.2. response
 
 ```bash
 HTTP 201 Created
@@ -207,7 +248,7 @@ HTTP 201 Created
     }
 ```
 
-### 7.3. notable error reponses
+### 3.1.3. notable error reponses
 
 **I - The box is closed:**
 
@@ -229,15 +270,15 @@ _JSON Body:_
 }
 ```
 
-## 8. Getting Events in a Box
+## 3.2. Getting Events in a Box
 
-### 8.1. request
+### 3.2.1. request
 
 ```bash
   GET https://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/events
 ```
 
-### 8.2. response
+### 3.2.2. response
 
 _Code_:
 ```bash
@@ -252,11 +293,11 @@ HTTP 200 OK
 
 [Events](/concepts/box-events) are returned in chronological order.
 
-## 9. Upload an encrypted file to a box
+## 3.3. Upload an encrypted file to a box
 
 The upload of an encrypted file triggers the creation of a `msg.file` event then returns it.
 
-### 9.1. request
+### 3.3.1. request
 
 ```bash
 POST https://api.misakey.com/boxes/:id/encrypted-files
@@ -271,7 +312,7 @@ _Multipart Form Data Body:_
 - `encrypted_file` (binary): the encrypted data, this file size must be less than 8MB.
 - `msg_encrypted_content` (string) (base64): encrypted content that will be store in the created `msg.file` event.
 
-### 9.2. success response
+### 3.3.2. success response
 
 _Code:_
 ```bash
@@ -299,7 +340,7 @@ _JSON Body_:
 }
 ```
 
-### 9.3. notable error responses
+### 3.3.3. notable error responses
 
 1 - The file is too big:
 
@@ -321,9 +362,9 @@ HTTP 400 BAD REQUEST
 }
 ```
 
-## 10. Download an encrypted file
+## 3.4. Download an encrypted file
 
-### 10.1. request
+### 3.4.1. request
 
 ```bash
 GET https://api.misakey.com/boxes/:bid/encrypted-files/:eid
@@ -336,7 +377,7 @@ _Path Parameters:_
 _Headers:_
 - :key: `Authorization` (opaque token) (ACR >= 1): a valid access token.
 
-### 10.2. response
+### 3.4.2. response
 
 _Code:_
 ```bash
@@ -351,13 +392,13 @@ _Octect Stream Body:_
   (the raw data of the encrypted file)
 ```
 
-## 11. Reset the new events count for an identity
+## 3.5. Reset the new events count for an identity
 
 This endpoint allows to reset the new events count of a box for a given identity.
 
 It is a kind of an acknowledgement and it must be used when the user want to mark the box as "read".
 
-### 11.1. request
+### 3.5.1. request
 
 ```bash
 PUT https://api.misakey.com/boxes/:id/new-events-count/ack
@@ -378,7 +419,7 @@ where `identity_id` is the identity of the requester who wants to acknowledge.
 _Headers:_
 - :key: `Authorization` (opaque token) (ACR >= 1): a valid access token corresponding to the identity of the body
 
-### 11.2. success response
+### 3.5.2. success response
 
 _Code:_
 ```bash

@@ -2,7 +2,7 @@
 title: Box Events
 ---
 
-## 1. Events
+# 1. Events
 
 *Boxes* objects contain *events*.
 An event represents the messages sent to the box
@@ -89,3 +89,15 @@ Exhaustive list of possible state events:
 Type `state.lifecycle` have the following content fields:
 
 - `state` (string): for which the only allowed value for now is `closed`.
+
+# 2. Accesses
+
+## 2.1. Admins
+
+Admins are considered as the users having the most advanced access on a box.
+
+Today, only the creator of the box is considered as a admin.
+
+## 2.2. Participants
+
+Participants are users that have joined the box via an invitation link.

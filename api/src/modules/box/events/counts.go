@@ -1,4 +1,4 @@
-package eventscounts
+package events
 
 import (
 	"context"
@@ -10,16 +10,16 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
-// Del events count
-func Del(ctx context.Context, redConn *redis.Client, identityID, boxID string) error {
+// DelCounts for couple <identityID, boxID>
+func DelCounts(ctx context.Context, redConn *redis.Client, identityID, boxID string) error {
 	if _, err := redConn.Del(fmt.Sprintf("%s:%s", identityID, boxID)).Result(); err != nil {
 		return err
 	}
 	return nil
 }
 
-// GetIdentityEventsCount and return a map with box IDs and their corresponding new events count for the user
-func GetForIdentity(ctx context.Context, redConn *redis.Client, identityID string) (map[string]int, error) {
+// GetCountsForIdentity and return a map with box IDs and their corresponding new events count for the user
+func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID string) (map[string]int, error) {
 	result := make(map[string]int)
 	keys, err := redConn.Keys(fmt.Sprintf("%s:*", identityID)).Result()
 	if err != nil {
@@ -43,8 +43,8 @@ func GetForIdentity(ctx context.Context, redConn *redis.Client, identityID strin
 	return result, nil
 }
 
-// Incr events count for a given box
-func Incr(ctx context.Context, redConn *redis.Client, identityIDs []string, boxID string) error {
+// IncrCounts for a given box for all received identityIDs
+func IncrCounts(ctx context.Context, redConn *redis.Client, identityIDs []string, boxID string) error {
 	pipe := redConn.TxPipeline()
 	for _, identityID := range identityIDs {
 		if _, err := pipe.Incr(fmt.Sprintf("%s:%s", identityID, boxID)).Result(); err != nil {
