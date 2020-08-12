@@ -46,6 +46,12 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq entrypoints.Requ
 		return nil, merror.Transform(err).Describe("checking admin")
 	}
 
+	// get box files before deleting events
+	boxFileIDs, err := events.ListFilesID(ctx, bs.db, req.boxID)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("getting files")
+	}
+
 	// init a transaction to ensure all entities are removed
 	tr, err := bs.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -63,11 +69,12 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq entrypoints.Requ
 		return nil, merror.Transform(err).Describe("emptying keyshares")
 	}
 
-	// 4. Delete orphan files
-	boxFileIDs, err := events.ListFilesID(ctx, bs.db, req.boxID)
-	if err != nil {
-		return nil, merror.Transform(err).Describe("getting files")
+	// run db operations
+	if err := tr.Commit(); err != nil {
+		return nil, err
 	}
+
+	// 4. Delete orphan files
 	for _, fileID := range boxFileIDs {
 		isOrphan, err := files.IsOrphan(ctx, bs.db, fileID)
 		if err != nil {
@@ -80,5 +87,6 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq entrypoints.Requ
 		}
 	}
 
-	return nil, tr.Commit()
+	return nil, nil
+
 }

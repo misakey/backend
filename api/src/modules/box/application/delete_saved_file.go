@@ -39,6 +39,10 @@ func (bs *BoxApplication) DeleteSavedFile(ctx context.Context, genReq entrypoint
 		return nil, merror.Forbidden().Detail("id", merror.DVForbidden)
 	}
 
+	if err := files.DeleteSavedFile(ctx, bs.db, req.ID); err != nil {
+		return nil, err
+	}
+
 	// delete stored file if orphan
 	isOrphan, err := files.IsOrphan(ctx, bs.db, savedFile.EncryptedFileID)
 	if err != nil {
@@ -50,5 +54,5 @@ func (bs *BoxApplication) DeleteSavedFile(ctx context.Context, genReq entrypoint
 		}
 	}
 
-	return nil, files.DeleteSavedFile(ctx, bs.db, req.ID)
+	return nil, nil
 }
