@@ -20,9 +20,6 @@ type DownloadEncryptedFileRequest struct {
 }
 
 func (req *DownloadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) error {
-	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriPath)
-	}
 	req.fileID = eCtx.Param("id")
 	return v.ValidateStruct(req,
 		v.Field(&req.fileID, v.Required, is.UUIDv4),
@@ -43,7 +40,7 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq entr
 
 	// get all entities linked to the file
 	linkedEvents, err := events.FindByEncryptedFileID(ctx, bs.db, req.fileID)
-	if err != nil {
+	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
 		return nil, err
 	}
 	linkedSavedFiles, err := files.ListSavedFilesByFileID(ctx, bs.db, req.fileID)
