@@ -16,7 +16,6 @@ import (
 )
 
 type DownloadEncryptedFileRequest struct {
-	boxID  string
 	fileID string
 }
 
@@ -24,10 +23,8 @@ func (req *DownloadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) erro
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriPath)
 	}
-	req.boxID = eCtx.Param("bid")
-	req.fileID = eCtx.Param("eid")
+	req.fileID = eCtx.Param("id")
 	return v.ValidateStruct(req,
-		v.Field(&req.boxID, v.Required, is.UUIDv4),
 		v.Field(&req.fileID, v.Required, is.UUIDv4),
 	)
 }
@@ -36,19 +33,49 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq entr
 	req := genReq.(*DownloadEncryptedFileRequest)
 	acc := ajwt.GetAccesses(ctx)
 
-	// if the box is closed, only the creator can download a file from it
-	if err := boxes.MustBeCreatorIfClosed(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {
-		return nil, err
-	}
-
-	// check the box and the file does exist - represented by an event
-	_, err := events.GetMsgFile(ctx, bs.db, req.boxID, req.fileID)
+	// check the file does exist
+	_, err := files.Get(ctx, bs.db, req.fileID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("finding msg.file event")
 	}
 
+	isAllowed := false
+
+	// get all entities linked to the file
+	linkedEvents, err := events.FindByEncryptedFileID(ctx, bs.db, req.fileID)
+	if err != nil {
+		return nil, err
+	}
+	linkedSavedFiles, err := files.ListSavedFilesByFileID(ctx, bs.db, req.fileID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, event := range linkedEvents {
+		closedErr := boxes.MustBeCreatorIfClosed(ctx, bs.db, event.BoxID, acc.IdentityID)
+		actorErr := boxes.MustBeActor(ctx, bs.db, event.BoxID, acc.IdentityID)
+		if closedErr == nil && actorErr == nil {
+			isAllowed = true
+			break
+		}
+
+	}
+
+	if !isAllowed {
+		for _, savedFile := range linkedSavedFiles {
+			if savedFile.IdentityID == acc.IdentityID {
+				isAllowed = true
+				break
+			}
+		}
+	}
+
+	if !isAllowed {
+		return nil, merror.Forbidden()
+	}
+
 	// download the file then render it
-	data, err := files.Download(ctx, bs.filesRepo, req.boxID, req.fileID)
+	data, err := files.Download(ctx, bs.filesRepo, req.fileID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("downloading")
 	}

@@ -68,6 +68,26 @@ func ListByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 	return events, nil
 }
 
+func ListByBoxIDAndType(ctx context.Context, exec boil.ContextExecutor, boxID, eventType string) ([]Event, error) {
+	mods := []qm.QueryMod{
+		sqlboiler.EventWhere.BoxID.EQ(boxID),
+		sqlboiler.EventWhere.Type.EQ(eventType),
+		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " DESC"),
+	}
+
+	dbEvents, err := sqlboiler.Events(mods...).All(ctx, exec)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("retrieving db events")
+	}
+
+	events := make([]Event, len(dbEvents))
+	for i, record := range dbEvents {
+		events[i] = FromSQLBoiler(record)
+	}
+
+	return events, nil
+}
+
 func ListByTypeAndBoxIDAndSenderID(ctx context.Context, exec boil.ContextExecutor, eventType, boxID, senderID string) ([]Event, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.EventWhere.BoxID.EQ(boxID),
@@ -131,4 +151,48 @@ func findByTypeContent(ctx context.Context, exec boil.ContextExecutor, boxID, eT
 		return e, merror.Transform(err).Describe("retrieving type/content db event")
 	}
 	return FromSQLBoiler(dbEvent), nil
+}
+
+func FindByEncryptedFileID(ctx context.Context, exec boil.ContextExecutor, encryptedFileID string) ([]Event, error) {
+	// build query
+	jsonQuery := `{"encrypted_file_id": "` + encryptedFileID + `"}`
+	mods := []qm.QueryMod{
+		sqlboiler.EventWhere.Type.EQ("msg.file"),
+		qm.Where(`content::jsonb @> ?`, jsonQuery),
+	}
+
+	dbEvents, err := sqlboiler.Events(mods...).All(ctx, exec)
+	if err != nil {
+		return nil, err
+	}
+
+	events := make([]Event, len(dbEvents))
+	for i, record := range dbEvents {
+		events[i] = FromSQLBoiler(record)
+	}
+
+	if len(events) == 0 {
+		return events, merror.NotFound().Detail("id", merror.DVNotFound)
+	}
+
+	return events, nil
+}
+
+func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]string, error) {
+	events, err := ListByBoxIDAndType(ctx, exec, boxID, "msg.file")
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, len(events))
+	var content msgFileContent
+	for idx, event := range events {
+		err = json.Unmarshal(event.Content, &content)
+		if err != nil {
+			return nil, merror.Internal().Describe("unmarshaling content json")
+		}
+		ids[idx] = content.EncryptedFileID
+	}
+
+	return ids, nil
 }

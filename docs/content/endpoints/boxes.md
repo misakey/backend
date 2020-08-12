@@ -367,12 +367,11 @@ HTTP 400 BAD REQUEST
 ### 3.4.1. request
 
 ```bash
-GET https://api.misakey.com/boxes/:bid/encrypted-files/:eid
+GET https://api.misakey.com/encrypted-files/:id
 ```
 
 _Path Parameters:_
-- `bid` (string) (uuid): the box id where the file has been initially uploaded.
-- `eid` (string) (uuid): the encrypted file id contained in the content of the `msg.file` event.
+- `id` (string) (uuid): the encrypted file id contained in the content of the `msg.file` event.
 
 _Headers:_
 - :key: `Authorization` (opaque token) (ACR >= 1): a valid access token.

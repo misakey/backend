@@ -19,7 +19,7 @@ func Get(ctx context.Context, exec boil.ContextExecutor, identities entrypoints.
 }
 
 func CountForSender(ctx context.Context, exec boil.ContextExecutor, senderID string) (int, error) {
-	boxIDs, err := latestIDsForSender(ctx, exec, senderID)
+	boxIDs, err := LatestIDsForSender(ctx, exec, senderID)
 	return len(boxIDs), err
 }
 
@@ -34,7 +34,7 @@ func ListForSender(
 	boxes := []*Box{}
 
 	// 1. retrieve box IDs
-	boxIDs, err := latestIDsForSender(ctx, exec, senderID)
+	boxIDs, err := LatestIDsForSender(ctx, exec, senderID)
 	if err != nil {
 		return boxes, merror.Transform(err).Describe("listing box ids")
 	}
@@ -80,7 +80,7 @@ func ListForSender(
 	return boxes, nil
 }
 
-func latestIDsForSender(
+func LatestIDsForSender(
 	ctx context.Context,
 	exec boil.ContextExecutor,
 	senderID string,

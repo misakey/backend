@@ -88,6 +88,30 @@ func MustBeCreatorIfClosed(
 		Detail("sender_id", merror.DVForbidden)
 }
 
+func MustBeActor(
+	ctx context.Context,
+	exec boil.ContextExecutor,
+	boxID, senderID string,
+) error {
+	// if creator, returns immediatly
+	if err := MustBeCreator(ctx, exec, boxID, senderID); err == nil {
+		return err
+	}
+
+	events, err := events.ListByBoxIDAndType(ctx, exec, boxID, "join")
+	if err != nil {
+		return merror.Transform(err).Describe("getting join events")
+	}
+
+	for _, event := range events {
+		if event.SenderID == senderID {
+			return nil
+		}
+	}
+
+	return merror.Forbidden().Describe("restricted to actor").Detail("sender_id", merror.DVForbidden)
+}
+
 func GetActorsExcept(
 	ctx context.Context,
 	exec boil.ContextExecutor,

@@ -68,8 +68,17 @@ func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq entryp
 		return nil, merror.Transform(err).Describe("creating msg file event")
 	}
 
+	// create the encrypted file entity
+	eFile := files.EncryptedFile{
+		ID:   fileID,
+		Size: req.size,
+	}
+	if err := files.Create(ctx, bs.db, eFile); err != nil {
+		return nil, merror.Transform(err).Describe("creating file")
+	}
+
 	// upload the encrypted data
-	if err := files.Upload(ctx, bs.filesRepo, e.BoxID, fileID, encData); err != nil {
+	if err := files.Upload(ctx, bs.filesRepo, fileID, encData); err != nil {
 		return nil, merror.Transform(err).Describe("uploading file")
 	}
 
@@ -82,7 +91,7 @@ func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq entryp
 	view, err := bs.CreateEvent(ctx, &eReq)
 	if err != nil {
 		err = merror.Transform(err).Describe("inserting event in DB")
-		if delErr := files.Delete(ctx, bs.filesRepo, e.BoxID, fileID); delErr != nil {
+		if delErr := files.Delete(ctx, bs.db, bs.filesRepo, fileID); delErr != nil {
 			return nil, merror.Transform(err).Describef("deleting file: %v", delErr)
 		}
 		return nil, err

@@ -13,10 +13,10 @@ type BoxApplication struct {
 	db         *sql.DB
 	redConn    *redis.Client
 	identities entrypoints.IdentityIntraprocessInterface
-	filesRepo  files.FileRepo
+	filesRepo  files.FileStorageRepo
 }
 
-func NewBoxApplication(db *sql.DB, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, filesRepo files.FileRepo) BoxApplication {
+func NewBoxApplication(db *sql.DB, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, filesRepo files.FileStorageRepo) BoxApplication {
 	return BoxApplication{
 		db:         db,
 		redConn:    redConn,

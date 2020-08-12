@@ -14,6 +14,8 @@ func Launch() {
 	initCreateKeyShareTable()
 	initAddBoxIDColumnToKeyShareTable()
 	initRenameKeyShareTable()
+	initCreateEncryptedFileTable()
+	initCreateSavedFileTable()
 
 	migration.StartGoose(os.Getenv("DSN_BOX"))
 }

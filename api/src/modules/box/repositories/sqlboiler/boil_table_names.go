@@ -4,9 +4,13 @@
 package sqlboiler
 
 var TableNames = struct {
-	BoxKeyShare string
-	Event       string
+	BoxKeyShare   string
+	EncryptedFile string
+	Event         string
+	SavedFile     string
 }{
-	BoxKeyShare: "box_key_share",
-	Event:       "event",
+	BoxKeyShare:   "box_key_share",
+	EncryptedFile: "encrypted_file",
+	Event:         "event",
+	SavedFile:     "saved_file",
 }

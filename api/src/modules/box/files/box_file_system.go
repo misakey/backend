@@ -6,42 +6,35 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
-// BoxFileSystem
-type BoxFileSystem struct {
+// FileSystem
+type FileSystem struct {
 	location string
 }
 
-// NewBoxFileSystem's constructor - /!\ not safe to use in production
-func NewBoxFileSystem(location string) *BoxFileSystem {
-	// create box files directory
+// NewFileSystem's constructor - /!\ not safe to use in production
+func NewFileSystem(location string) *FileSystem {
+	// create files directory
 	if _, err := os.Stat(location); os.IsNotExist(err) {
 		_ = os.Mkdir(location, os.ModePerm)
 	}
-	return &BoxFileSystem{
+	return &FileSystem{
 		location: location,
 	}
 }
 
-// getKey by concatenating some info
-func (fs *BoxFileSystem) getKey(boxID, fileID string) string {
-	return boxID + "_" + fileID
-}
-
-// Upload an boxFile in file system directory and return its path
-func (fs *BoxFileSystem) Upload(ctx context.Context, boxID, fileID string, data io.Reader,
+// Upload an file in file system directory and return its path
+func (fs *FileSystem) Upload(ctx context.Context, fileID string, data io.Reader,
 ) error {
 	body, err := ioutil.ReadAll(data)
 	if err != nil {
 		return err
 	}
 
-	key := fs.getKey(boxID, fileID)
-	filePath := path.Join(fs.location, key)
+	filePath := path.Join(fs.location, fileID)
 	f, err := os.Create(filePath)
 	if err != nil {
 		return err
@@ -54,16 +47,16 @@ func (fs *BoxFileSystem) Upload(ctx context.Context, boxID, fileID string, data 
 	return f.Close()
 }
 
-// Download a box file from local storage and return its raw data
-func (fs *BoxFileSystem) Download(ctx context.Context, boxID, fileID string) ([]byte, error) {
+// Download a file from local storage and return its raw data
+func (fs *FileSystem) Download(ctx context.Context, fileID string) ([]byte, error) {
 	// read the file
-	filePath := path.Join(fs.location, fs.getKey(boxID, fileID))
+	filePath := path.Join(fs.location, fileID)
 	return ioutil.ReadFile(filePath)
 }
 
-// Delete a box file from the file system
-func (fs *BoxFileSystem) Delete(ctx context.Context, boxID, fileID string) error {
-	path := path.Join(fs.location, fs.getKey(boxID, fileID))
+// Delete a file from the file system
+func (fs *FileSystem) Delete(ctx context.Context, fileID string) error {
+	path := path.Join(fs.location, fileID)
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			return merror.NotFound().Describe(err.Error())
@@ -71,18 +64,4 @@ func (fs *BoxFileSystem) Delete(ctx context.Context, boxID, fileID string) error
 		return err
 	}
 	return os.Remove(path)
-}
-
-func (fs *BoxFileSystem) DeleteAll(ctx context.Context, boxID string) error {
-	path := path.Join(fs.location, fs.getKey(boxID, "*"))
-	files, err := filepath.Glob(path)
-	if err != nil {
-		return merror.Transform(err).Describe("globbing")
-	}
-	for _, f := range files {
-		if err := os.Remove(f); err != nil {
-			return merror.Transform(err).Describe("removing")
-		}
-	}
-	return nil
 }

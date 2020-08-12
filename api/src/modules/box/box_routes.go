@@ -86,13 +86,6 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw ech
 	)
 	boxRouter.POST("/:bid/encrypted-files", uploadEncryptedFile, authzMidlw)
 
-	downloadEncryptedFile := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.DownloadEncryptedFileRequest{} },
-		bs.DownloadEncryptedFile,
-		entrypoints.ResponseBlob,
-	)
-	boxRouter.GET("/:bid/encrypted-files/:eid", downloadEncryptedFile, authzMidlw)
-
 	newEventsCount := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.AckNewEventsCountRequest{} },
 		bs.AckNewEventsCount,
@@ -118,4 +111,41 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw ech
 		entrypoints.ResponseOK,
 	)
 	keyShareRouter.GET("/:other-share-hash", getKeyShare)
+
+	// ----------------------
+	// Saved Files related routes
+
+	savedFileRouter := router.Group("/saved-files", authzMidlw)
+
+	createSavedFile := entrypoints.NewProtectedHTTP(
+		func() entrypoints.Request { return &application.CreateSavedFileRequest{} },
+		bs.CreateSavedFile,
+		entrypoints.ResponseCreated,
+	)
+	savedFileRouter.POST("", createSavedFile)
+
+	deleteSavedFile := entrypoints.NewProtectedHTTP(
+		func() entrypoints.Request { return &application.DeleteSavedFileRequest{} },
+		bs.DeleteSavedFile,
+		entrypoints.ResponseNoContent,
+	)
+	savedFileRouter.DELETE("/:id", deleteSavedFile)
+
+	listSavedFiles := entrypoints.NewProtectedHTTP(
+		func() entrypoints.Request { return &application.ListSavedFilesRequest{} },
+		bs.ListSavedFiles,
+		entrypoints.ResponseOK,
+	)
+	savedFileRouter.GET("", listSavedFiles)
+
+	// ----------------------
+	// Encrypted Files related routes
+	encryptedFileRouter := router.Group("/encrypted-files", authzMidlw)
+
+	downloadEncryptedFile := entrypoints.NewProtectedHTTP(
+		func() entrypoints.Request { return &application.DownloadEncryptedFileRequest{} },
+		bs.DownloadEncryptedFile,
+		entrypoints.ResponseBlob,
+	)
+	encryptedFileRouter.GET("/:id", downloadEncryptedFile, authzMidlw)
 }

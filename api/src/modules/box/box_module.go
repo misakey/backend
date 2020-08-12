@@ -42,12 +42,12 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 		log.Fatal().Err(err).Msg("could not connect to redis")
 	}
 
-	var filesRepo files.FileRepo
+	var filesRepo files.FileStorageRepo
 	env := os.Getenv("ENV")
 	if env == "development" {
-		filesRepo = files.NewBoxFileSystem(viper.GetString("server.encrypted_files"))
+		filesRepo = files.NewFileSystem(viper.GetString("server.encrypted_files"))
 	} else if env == "production" {
-		filesRepo = files.NewBoxFileAmazonS3(
+		filesRepo = files.NewFileAmazonS3(
 			viper.GetString("aws.s3_region"),
 			viper.GetString("aws.encrypted_files_bucket"),
 		)

@@ -12,7 +12,6 @@ require (
 	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/google/uuid v1.1.1
-	github.com/labstack/echo v3.3.10+incompatible // indirect
 	github.com/labstack/echo/v4 v4.1.16
 	github.com/lib/pq v1.7.0
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
