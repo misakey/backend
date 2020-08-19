@@ -28,7 +28,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/volatiletech/null v8.0.0+incompatible
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
-	gitlab.misakey.dev/misakey/msk-sdk-go v1.12.0
+	gitlab.misakey.dev/misakey/msk-sdk-go v1.13.0
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect

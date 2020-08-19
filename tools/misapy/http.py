@@ -69,6 +69,8 @@ post = lambda *args, **kwargs: call_request_fn_decorated(requests.post, *args, *
 patch = lambda *args, **kwargs: call_request_fn_decorated(requests.patch, *args, **kwargs)
 put = lambda *args, **kwargs: call_request_fn_decorated(requests.put, *args, **kwargs)
 get = lambda *args, **kwargs: call_request_fn_decorated(requests.get, *args, **kwargs)
+delete = lambda *args, **kwargs: call_request_fn_decorated(requests.delete, *args, **kwargs)
+
 
 class Session(requests.Session):
     '''requests.Session but with decorated HTTP methods (get, post, etc ...)'''
@@ -78,6 +80,9 @@ class Session(requests.Session):
         return call_request_fn_decorated(super().post, *args, **kwargs)
     def put(self, *args, **kwargs):
         return call_request_fn_decorated(super().put, *args, **kwargs)
+    def delete(self, *args, **kwargs):
+        return call_request_fn_decorated(super().delete, *args, **kwargs)
+
 
 def pretty_string_of_response(response):
     try:

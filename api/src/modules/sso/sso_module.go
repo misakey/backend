@@ -168,7 +168,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	authnProcessAuthzMidlw := authn.NewProcessIntrospector(viper.GetString("authflow.self_client_id"), authnProcessRepo)
 
 	// bind all routes to the router
-	initRoutes(router, authnProcessAuthzMidlw, oidcAuthzMidlw, extOIDCAuthzMidlw, ssoService, *oauthCodeFlow)
+	initRoutes(router, authnProcessAuthzMidlw, oidcAuthzMidlw, extOIDCAuthzMidlw, ssoService, *oauthCodeFlow, backupArchiveService)
 	// bind static assets for avatars only if configuration has been set up
 	avatarLocation := viper.GetString("server.avatars")
 	if len(avatarLocation) > 0 {

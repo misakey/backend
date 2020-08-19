@@ -5,6 +5,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/oauth"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/backuparchive"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
@@ -15,6 +16,7 @@ func initRoutes(
 	extOIDCAuthzMidlw echo.MiddlewareFunc,
 	ssoService application.SSOService,
 	oauthCodeFlow oauth.AuthorizationCodeFlow,
+	backupArchiveService backuparchive.BackupArchiveService,
 ) {
 	// init entrypoints
 	accountHTTP := entrypoints.NewAccountHTTP(ssoService)
@@ -22,6 +24,7 @@ func initRoutes(
 	authnHTTP := entrypoints.NewAuthnHTTP(ssoService)
 	identityHTTP := entrypoints.NewIdentityHTTP(ssoService)
 	backupKeyShareHTTP := entrypoints.NewBackupKeyShareHTTP(ssoService)
+	backupArchiveHTTP := entrypoints.NewBackupArchiveHTTP(ssoService)
 
 	routes := router.Group("")
 	routes.POST("/authn-steps", authnHTTP.InitAuthnStep)
@@ -57,4 +60,9 @@ func initRoutes(
 	backupKeyShareRoutes := router.Group("/backup-key-shares")
 	backupKeyShareRoutes.GET("/:other-share-hash", backupKeyShareHTTP.GetBackupKeyShare, oidcAuthzMidlw)
 	backupKeyShareRoutes.POST("", backupKeyShareHTTP.CreateBackupKeyShare, oidcAuthzMidlw)
+
+	backupArchiveRoutes := router.Group("/backup-archives")
+	backupArchiveRoutes.GET("", backupArchiveHTTP.ListBackupArchives, oidcAuthzMidlw)
+	backupArchiveRoutes.GET("/:id/data", backupArchiveHTTP.GetArchiveData, oidcAuthzMidlw)
+	backupArchiveRoutes.DELETE("/:id", backupArchiveHTTP.DeleteArchive, oidcAuthzMidlw)
 }

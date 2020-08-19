@@ -285,9 +285,8 @@ github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
 gitlab.misakey.dev/misakey/backend v0.0.4-0.20200728073924-56ff4ff77843 h1:fG9VQ3OgDphnoWG4c3Tj3EyjOUBB7lCkCnU8CKr+/DQ=
 gitlab.misakey.dev/misakey/backend v0.1.1-0.20200805142712-f865571b4b2c h1:5elVLvICR108BQQ/oCp/NIrxUYNFuwDSmc8n/xFEAlk=
-gitlab.misakey.dev/misakey/msk-sdk-go v1.12.0 h1:Q/cbBbQEpiQ7EwtuXWZNAc3Q2nSp91KPndmG5jNdjdI=
-gitlab.misakey.dev/misakey/msk-sdk-go v1.12.0/go.mod h1:Gk71diHNh+Wms/yYaV+TPjJZjZL6zXCZ5fKk4eMqtec=
 gitlab.misakey.dev/misakey/msk-sdk-go v1.13.0 h1:NWWmkqCgW22W/fUF4Iu9hT3edfEkxxXeyUNjx5OzZHs=
+gitlab.misakey.dev/misakey/msk-sdk-go v1.13.0/go.mod h1:Gk71diHNh+Wms/yYaV+TPjJZjZL6zXCZ5fKk4eMqtec=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
