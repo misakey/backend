@@ -23,10 +23,11 @@ import (
 
 // Account is an object representing the database table.
 type Account struct {
-	ID            string `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Password      string `boil:"password" json:"password" toml:"password" yaml:"password"`
-	BackupData    string `boil:"backup_data" json:"backup_data" toml:"backup_data" yaml:"backup_data"`
-	BackupVersion int    `boil:"backup_version" json:"backup_version" toml:"backup_version" yaml:"backup_version"`
+	ID            string    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Password      string    `boil:"password" json:"password" toml:"password" yaml:"password"`
+	BackupData    string    `boil:"backup_data" json:"backup_data" toml:"backup_data" yaml:"backup_data"`
+	BackupVersion int       `boil:"backup_version" json:"backup_version" toml:"backup_version" yaml:"backup_version"`
+	CreatedAt     time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 
 	R *accountR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L accountL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -37,11 +38,13 @@ var AccountColumns = struct {
 	Password      string
 	BackupData    string
 	BackupVersion string
+	CreatedAt     string
 }{
 	ID:            "id",
 	Password:      "password",
 	BackupData:    "backup_data",
 	BackupVersion: "backup_version",
+	CreatedAt:     "created_at",
 }
 
 // Generated where
@@ -78,16 +81,39 @@ func (w whereHelperint) IN(slice []int) qm.QueryMod {
 	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
 }
 
+type whereHelpertime_Time struct{ field string }
+
+func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertime_Time) NEQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertime_Time) LT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertime_Time) LTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertime_Time) GT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var AccountWhere = struct {
 	ID            whereHelperstring
 	Password      whereHelperstring
 	BackupData    whereHelperstring
 	BackupVersion whereHelperint
+	CreatedAt     whereHelpertime_Time
 }{
 	ID:            whereHelperstring{field: "\"account\".\"id\""},
 	Password:      whereHelperstring{field: "\"account\".\"password\""},
 	BackupData:    whereHelperstring{field: "\"account\".\"backup_data\""},
 	BackupVersion: whereHelperint{field: "\"account\".\"backup_version\""},
+	CreatedAt:     whereHelpertime_Time{field: "\"account\".\"created_at\""},
 }
 
 // AccountRels is where relationship names are stored.
@@ -114,9 +140,9 @@ func (*accountR) NewStruct() *accountR {
 type accountL struct{}
 
 var (
-	accountAllColumns            = []string{"id", "password", "backup_data", "backup_version"}
+	accountAllColumns            = []string{"id", "password", "backup_data", "backup_version", "created_at"}
 	accountColumnsWithoutDefault = []string{"id", "password"}
-	accountColumnsWithDefault    = []string{"backup_data", "backup_version"}
+	accountColumnsWithDefault    = []string{"backup_data", "backup_version", "created_at"}
 	accountPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -645,6 +671,13 @@ func (o *Account) Insert(ctx context.Context, exec boil.ContextExecutor, columns
 	}
 
 	var err error
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+	}
 
 	nzDefaults := queries.NonZeroDefaultSet(accountColumnsWithDefault, o)
 
@@ -842,6 +875,13 @@ func (o AccountSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, 
 func (o *Account) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("sqlboiler: no account provided for upsert")
+	}
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(accountColumnsWithDefault, o)

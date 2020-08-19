@@ -32,6 +32,7 @@ type Identity struct {
 	Notifications string      `boil:"notifications" json:"notifications" toml:"notifications" yaml:"notifications"`
 	AvatarURL     null.String `boil:"avatar_url" json:"avatar_url,omitempty" toml:"avatar_url" yaml:"avatar_url,omitempty"`
 	Confirmed     bool        `boil:"confirmed" json:"confirmed" toml:"confirmed" yaml:"confirmed"`
+	CreatedAt     time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 
 	R *identityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L identityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -46,6 +47,7 @@ var IdentityColumns = struct {
 	Notifications string
 	AvatarURL     string
 	Confirmed     string
+	CreatedAt     string
 }{
 	ID:            "id",
 	AccountID:     "account_id",
@@ -55,6 +57,7 @@ var IdentityColumns = struct {
 	Notifications: "notifications",
 	AvatarURL:     "avatar_url",
 	Confirmed:     "confirmed",
+	CreatedAt:     "created_at",
 }
 
 // Generated where
@@ -77,6 +80,7 @@ var IdentityWhere = struct {
 	Notifications whereHelperstring
 	AvatarURL     whereHelpernull_String
 	Confirmed     whereHelperbool
+	CreatedAt     whereHelpertime_Time
 }{
 	ID:            whereHelperstring{field: "\"identity\".\"id\""},
 	AccountID:     whereHelpernull_String{field: "\"identity\".\"account_id\""},
@@ -86,6 +90,7 @@ var IdentityWhere = struct {
 	Notifications: whereHelperstring{field: "\"identity\".\"notifications\""},
 	AvatarURL:     whereHelpernull_String{field: "\"identity\".\"avatar_url\""},
 	Confirmed:     whereHelperbool{field: "\"identity\".\"confirmed\""},
+	CreatedAt:     whereHelpertime_Time{field: "\"identity\".\"created_at\""},
 }
 
 // IdentityRels is where relationship names are stored.
@@ -115,9 +120,9 @@ func (*identityR) NewStruct() *identityR {
 type identityL struct{}
 
 var (
-	identityAllColumns            = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "notifications", "avatar_url", "confirmed"}
+	identityAllColumns            = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "notifications", "avatar_url", "confirmed", "created_at"}
 	identityColumnsWithoutDefault = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "avatar_url"}
-	identityColumnsWithDefault    = []string{"notifications", "confirmed"}
+	identityColumnsWithDefault    = []string{"notifications", "confirmed", "created_at"}
 	identityPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -759,6 +764,13 @@ func (o *Identity) Insert(ctx context.Context, exec boil.ContextExecutor, column
 	}
 
 	var err error
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+	}
 
 	nzDefaults := queries.NonZeroDefaultSet(identityColumnsWithDefault, o)
 
@@ -956,6 +968,13 @@ func (o IdentitySlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 func (o *Identity) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("sqlboiler: no identity provided for upsert")
+	}
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(identityColumnsWithDefault, o)
