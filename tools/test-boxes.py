@@ -24,7 +24,6 @@ def create_box_and_post_some_events_to_it(session, close=True):
         }
     )
     creator = r.json()['creator']
-    assert creator['display_name'] == s.email
     assert creator['identifier']['value'] == s.email
 
     box_id = r.json()['id']
@@ -66,7 +65,6 @@ def create_box_and_post_some_events_to_it(session, close=True):
         assert 'content' in event
 
         sender = event['sender']
-        assert sender['display_name'] == s.email
         assert sender['identifier']['value'] == s.email
 
     return box_id
