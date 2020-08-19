@@ -1,6 +1,6 @@
 # Create a migration
 
-1. Run in this folder the command `goose -dir=./migration/ create {migration_name}`
+1. Run in this folder the command `goose -dir=./migration/ create {migration_name}` :warning: Goose will place your migration in a `migrations` package instead of `migration`, don't forget to remove the "s".
 2. Change the `init()` function name to `init{migration_name}()`.
 3. Add the call of this newly named function in the `migrate.go` file at the end of other migration calls.
 
