@@ -18,6 +18,7 @@ func Launch() {
 	initAddBackupVersionToAccount()
 	initCreateBackupArchiveTable()
 	initCreatedAtToEntities()
+	initAddColorToUserIdentity()
 
 	migration.StartGoose(os.Getenv("DSN_SSO"))
 }

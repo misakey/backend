@@ -10,6 +10,7 @@ type Identity struct {
 	DisplayName   string      `json:"display_name"`
 	Notifications string      `json:"notifications"`
 	AvatarURL     null.String `json:"avatar_url"`
+	Color         string       `json:"color"`
 
 	// Identifier is always returned within the identity entity as a nested JSON object
 	Identifier Identifier `json:"identifier"`

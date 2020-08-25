@@ -56,6 +56,7 @@ type PartialUpdateIdentityCmd struct {
 	IdentityID    string
 	DisplayName   string `json:"display_name"`
 	Notifications string `json:"notifications"`
+	Color         string `json:"color"`
 }
 
 // Validate the IdentityAuthableCmd
@@ -64,6 +65,7 @@ func (cmd PartialUpdateIdentityCmd) Validate() error {
 		v.Field(&cmd.IdentityID, v.Required, is.UUIDv4),
 		v.Field(&cmd.Notifications, v.In("minimal", "moderate", "frequent")),
 		v.Field(&cmd.DisplayName, v.Length(3, 21)),
+		v.Field(&cmd.Color, v.Length(7, 7)),
 	); err != nil {
 		return err
 	}
@@ -90,6 +92,10 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, cmd PartialUpd
 
 	if cmd.Notifications != "" {
 		identity.Notifications = cmd.Notifications
+	}
+
+	if cmd.Color != "" {
+		identity.Color = cmd.Color
 	}
 
 	return sso.identityService.Update(ctx, &identity)
