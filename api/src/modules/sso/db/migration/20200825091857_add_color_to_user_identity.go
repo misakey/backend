@@ -11,7 +11,7 @@ func initAddColorToUserIdentity() {
 
 func upAddColorToUserIdentity(tx *sql.Tx) error {
 	_, err := tx.Exec(`ALTER TABLE identity
-	ADD COLUMN color VARCHAR(8) NOT NULL DEFAULT '';
+	ADD COLUMN color VARCHAR(8);
 `)
 	return err
 }

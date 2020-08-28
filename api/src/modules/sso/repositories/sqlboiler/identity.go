@@ -33,7 +33,7 @@ type Identity struct {
 	AvatarURL     null.String `boil:"avatar_url" json:"avatar_url,omitempty" toml:"avatar_url" yaml:"avatar_url,omitempty"`
 	Confirmed     bool        `boil:"confirmed" json:"confirmed" toml:"confirmed" yaml:"confirmed"`
 	CreatedAt     time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	Color         string      `boil:"color" json:"color" toml:"color" yaml:"color"`
+	Color         null.String 			`boil:"color" json:"color,omitempty" toml:"color" yaml:"color,omitempty"`
 
 	R *identityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L identityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -84,7 +84,7 @@ var IdentityWhere = struct {
 	AvatarURL     whereHelpernull_String
 	Confirmed     whereHelperbool
 	CreatedAt     whereHelpertime_Time
-	Color         whereHelperstring
+	Color         whereHelpernull_String
 }{
 	ID:            whereHelperstring{field: "\"identity\".\"id\""},
 	AccountID:     whereHelpernull_String{field: "\"identity\".\"account_id\""},
@@ -95,7 +95,7 @@ var IdentityWhere = struct {
 	AvatarURL:     whereHelpernull_String{field: "\"identity\".\"avatar_url\""},
 	Confirmed:     whereHelperbool{field: "\"identity\".\"confirmed\""},
 	CreatedAt:     whereHelpertime_Time{field: "\"identity\".\"created_at\""},
-	Color:         whereHelperstring{field: "\"identity\".\"color\""},
+	Color:         whereHelpernull_String{field: "\"identity\".\"color\""},
 }
 
 // IdentityRels is where relationship names are stored.
@@ -126,8 +126,8 @@ type identityL struct{}
 
 var (
 	identityAllColumns            = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "notifications", "avatar_url", "confirmed", "created_at", "color"}
-	identityColumnsWithoutDefault = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "avatar_url"}
-	identityColumnsWithDefault    = []string{"notifications", "confirmed", "created_at", "color"}
+	identityColumnsWithoutDefault = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "avatar_url", "color"}
+	identityColumnsWithDefault    = []string{"notifications", "confirmed", "created_at"}
 	identityPrimaryKeyColumns     = []string{"id"}
 )
 

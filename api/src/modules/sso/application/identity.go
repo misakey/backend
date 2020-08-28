@@ -56,7 +56,7 @@ type PartialUpdateIdentityCmd struct {
 	IdentityID    string
 	DisplayName   string `json:"display_name"`
 	Notifications string `json:"notifications"`
-	Color         string `json:"color"`
+	Color         null.String `json:"color"`
 }
 
 // Validate the IdentityAuthableCmd
@@ -94,7 +94,7 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, cmd PartialUpd
 		identity.Notifications = cmd.Notifications
 	}
 
-	if cmd.Color != "" {
+	if !cmd.Color.Valid {
 		identity.Color = cmd.Color
 	}
 
