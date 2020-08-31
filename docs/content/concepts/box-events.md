@@ -67,13 +67,19 @@ Messages are events with type `msg.txt` or `msg.file`. They allow the transfer o
 
 For all `msg.*`:
 
-- `encrypted` (string) (base64): the encrypted message.
+- `encrypted` (string) (base64) (optional): the encrypted message.
   Recall that files are sent separately from the message,
   so the size of a message event stays rather small.
+- `deleted` (object) (optional): indicates that the message was deleted
+  and gives info about its deletion via attributes `at_time` and `by_identifier_id`.
 
-For `msg.file` event, there is an additionnal information:
+For `msg.file` events only:
 
 - `encrypted_file_id` (string) (uuid): a unique identifier used to store and download the file
+
+For `msg.text` events only:
+
+- `last_edited_at` (time): indicates that the message was edited, and when 
 
 ## 1.4. "State" type event
 

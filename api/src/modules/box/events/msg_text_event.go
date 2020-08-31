@@ -3,19 +3,21 @@ package events
 import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/types"
 )
 
-type msgTextContent struct {
-	Encrypted string `json:"encrypted"`
-	PublicKey string `json:"public_key"`
+type MsgTextContent struct {
+	Encrypted    string    `json:"encrypted"`
+	PublicKey    string    `json:"public_key"`
+	LastEditedAt null.Time `json:"last_edited_at"`
 }
 
-func (c *msgTextContent) Unmarshal(content types.JSON) error {
+func (c *MsgTextContent) Unmarshal(content types.JSON) error {
 	return content.Unmarshal(c)
 }
 
-func (c msgTextContent) Validate() error {
+func (c MsgTextContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.Encrypted, v.Required, is.Base64),
 		v.Field(&c.PublicKey, v.Required),

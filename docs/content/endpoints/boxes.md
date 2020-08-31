@@ -424,3 +424,137 @@ _Code:_
 ```bash
 HTTP 204 NO CONTENT
 ```
+
+## 3.6. Deleting a Message Event
+
+A message (text or file) can be deleted by its author or by the box admin.
+
+The event is still present in the box but the encrypted content is removed
+and replaced by who deleted it and when.
+
+Note that, contrary to what the endpoint may suggest,
+no new event is added to the box with this call.
+
+### 3.6.1. Request
+
+```bash
+POST /boxes/:id/events
+```
+
+```json
+{
+  "type": "msg.delete",
+  "content": {
+    "event_id": "f17169e0-61d8-4211-bb9f-bac29fe46d2d"
+  }
+}
+```
+
+Where `event_id` is the ID of the event to delete.
+
+- The sender's account must be the one that sent the event to delete,
+  or the sender must be the box creator.
+- the message must not be already deleted
+- the box must be not be closed
+
+### 3.6.2. Success Response
+
+```bash
+HTTP 201 Created
+
+{
+    "type": "msg.text",
+    "content": {
+        "deleted": {
+            "at_time": "2020-08-25T15:58:28.259977262Z",
+            "by_identifier_id": "1bcdd455-f42c-43ce-8109-6a8c1eb9d4c0"
+        }
+    },
+    "id": "c53d6334-a853-4f23-a143-d15a5a60340c",
+    "server_event_created_at": "2020-08-25T15:58:28.246201Z",
+    "sender": {
+        "display_name": "38a241-Test",
+        "avatar_url": null,
+        "identifier": {
+            "value": "38a241-test@misakey.com",
+            "kind": "email"
+        }
+    }
+}
+```
+
+### 3.6.3 Notable Message Errors
+
+Already deleted:
+
+```bash
+HTTP 410 Gone
+```
+
+```json
+{
+    "code": "gone",
+    "origin": "not_defined",
+    "desc": "event is already deleted",
+    "details": {}
+}
+```
+
+## 3.7. Editing a Message
+
+Users can edit their own message
+
+### 3.7.1 Request
+
+```bash
+POST /boxes/a7f7a0c5-3061-41e0-bf83-123b8e5fd3d0/events
+```
+
+```json
+{
+    "type": "msg.edit",
+    "content": {
+        "event_id": "7410feae-637e-40a8-ab59-badeaf479c63",
+        "new_encrypted": "EditedXXB64dcc9PhJTeyUS2K04zeHKLMW8fviUkmyBjWdGvwwo=",
+        "new_public_key": "EditedXXa75RO1FzZpskiKHAggyB7YNJoz4R24dnMFvHfMzu4wQ="
+    }
+}
+```
+
+Where `event_id` is the ID of the event to edit.
+
+- The sender's account must be the one that sent the event to edit.
+- the message must not be already deleted
+- the box must be not be closed
+
+### 3.7.2 Success Response
+
+```bash
+HTTP 201 Created
+```
+
+```json
+{
+    "type": "msg.text",
+    "content": {
+        "encrypted": "EditedXXB64dcc9PhJTeyUS2K04zeHKLMW8fviUkmyBjWdGvwwo=",
+        "public_key": "EditedXXa75RO1FzZpskiKHAggyB7YNJoz4R24dnMFvHfMzu4wQ=",
+        "last_edited_at": "2020-08-25T15:58:27.79441082Z"
+    },
+    "id": "7410feae-637e-40a8-ab59-badeaf479c63",
+    "server_event_created_at": "2020-08-25T15:58:27.751261Z",
+    "sender": {
+        "display_name": "326b00-Test",
+        "avatar_url": null,
+        "identifier": {
+            "value": "326b00-test@misakey.com",
+            "kind": "email"
+        }
+    }
+}
+```
+
+### 3.7.3 Notable Error Responses
+
+- type cannot be edited: `HTTP 401 Unauthorized`
+- event has been deleted: `HTTP 410 Gone`

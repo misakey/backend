@@ -103,12 +103,17 @@ func (c *computer) playEvent(ctx context.Context, e events.Event, last bool) err
 			c.box.PublicKey = ""
 		}
 
-		// get the sender information
-		identity, err := identities.Get(ctx, c.identities, e.SenderID)
+		identityMap, err := events.MapSenderIdentities(ctx, []events.Event{e}, c.identities)
 		if err != nil {
-			return merror.Transform(err).Describe("retrieving last sender")
+			return merror.Transform(err).Describe("retrieving identities for view")
 		}
-		c.box.LastEvent = events.ToView(e, identity)
+
+		view, err := events.ToView(e, identityMap)
+		if err != nil {
+			return merror.Transform(err).Describe("computing view of last event")
+		}
+
+		c.box.LastEvent = view
 
 	}
 	return nil

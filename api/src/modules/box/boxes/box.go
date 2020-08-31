@@ -61,6 +61,15 @@ func MustBeCreator(
 	return nil
 }
 
+func GetCreatorID(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
+	createEvent, err := events.GetCreateEvent(ctx, exec, boxID)
+	if err != nil {
+		return "", merror.Transform(err).Describe("getting create event")
+	}
+
+	return createEvent.SenderID, err
+}
+
 func MustBeCreatorIfClosed(
 	ctx context.Context,
 	exec boil.ContextExecutor,

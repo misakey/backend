@@ -11,17 +11,17 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
-type msgFileContent struct {
+type MsgFileContent struct {
 	Encrypted       string `json:"encrypted"`
 	PublicKey       string `json:"public_key"`
 	EncryptedFileID string `json:"encrypted_file_id"`
 }
 
-func (c *msgFileContent) Unmarshal(json types.JSON) error {
+func (c *MsgFileContent) Unmarshal(json types.JSON) error {
 	return json.Unmarshal(c)
 }
 
-func (c msgFileContent) Validate() error {
+func (c MsgFileContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.Encrypted, v.Required, is.Base64),
 		v.Field(&c.PublicKey, v.Required),
@@ -43,7 +43,7 @@ func NewMsgFile(
 	}
 
 	// build the event content
-	content := msgFileContent{
+	content := MsgFileContent{
 		Encrypted:       encContent,
 		PublicKey:       pubKey,
 		EncryptedFileID: fileID,

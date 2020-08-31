@@ -4,11 +4,13 @@ import json
 import os
 import sys
 from time import sleep
-from base64 import b64encode
+from base64 import b64encode, b64decode
 
 from misapy import http
 from misapy.get_access_token import get_authenticated_session
 from misapy.test_context import testContext
+from misapy.container_access import list_encrypted_files
+from misapy.check_response import check_response, assert_fn
 
 URL_PREFIX = 'http://127.0.0.1:5020'
 
@@ -75,7 +77,31 @@ with testContext():
     s1 = get_authenticated_session()
     s2 = get_authenticated_session()
 
-    box1_id = create_box_and_post_some_events_to_it(session=s1)
+    box1_id = create_box_and_post_some_events_to_it(session=s1, close=False)
+
+    print('Testing file upload')
+    r = s1.post(
+        f'{URL_PREFIX}/boxes/{box1_id}/encrypted-files',
+        files={
+            'encrypted_file': os.urandom(64),
+            'msg_encrypted_content': (None, b64encode(os.urandom(32)).decode()),
+            'msg_public_key': (None, b64encode(os.urandom(32)).decode()),
+        },
+        expected_status_code=201,
+    )
+
+    print(f'Testing box closing')
+    r = s1.post(
+        f'{URL_PREFIX}/boxes/{box1_id}/events',
+        json={
+            'type': 'state.lifecycle',
+            'content': {
+                'state': 'closed'
+            }
+        },
+        expected_status_code=201,
+    )
+
     # Testing posting event on unexisting box id
     r = s1.post(
         f'{URL_PREFIX}/boxes/457d5c70-03c2-4179-92a5-f945e666b922/events',
@@ -137,14 +163,13 @@ with testContext():
     )
 
     # Another identity creates other boxes
-    sleep(0.5)  # TODO disable rate limiting in test environment
     box2_id = create_box_and_post_some_events_to_it(session=s2, close=False)
     box3_id = create_box_and_post_some_events_to_it(session=s2)
     box4_id = create_box_and_post_some_events_to_it(session=s2)
 
     print('Testing identity 1 (non-creator) can list all events on open box')
     r = s1.get(f'{URL_PREFIX}/boxes/{box1_id}/events')
-    assert len(r.json()) == 3
+    assert len(r.json()) == 4
 
     print('Testing identity 1 (non-creator) posts to box 2 a legit event')
     r = s1.post(
@@ -209,5 +234,225 @@ with testContext():
 
     boxes = r.json()
     assert boxes == []
+
+    # Message Edition & Deletion
+    # Note that for now message edition and deletion return a HTTP 201 Created
+    # but this is likely to change soon
+
+    r = s1.post(
+        f'{URL_PREFIX}/boxes',
+        json={
+            'public_key': 'ShouldBeUnpaddedUrlSafeBase64',
+            'title': 'Test Box',
+        }
+    )
+    box5_id = r.json()['id']
+
+    r = s1.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.text',
+            'content': {
+                'encrypted': b64encode(os.urandom(32)).decode(),
+                'public_key': b64encode(os.urandom(32)).decode()
+            }
+        },
+        expected_status_code=201
+    )
+    text_msg_id = r.json()['id']
+
+    r = s1.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/encrypted-files',
+        files={
+            'encrypted_file': os.urandom(64),
+            'msg_encrypted_content': (None, b64encode(os.urandom(32)).decode()),
+            'msg_public_key': (None, b64encode(os.urandom(32)).decode()),
+        },
+    )
+    file_msg_id = r.json()['id']
+    encrypted_file_id = r.json()['content']['encrypted_file_id']
+
+    print('Testing message edition')
+    s1.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.edit',
+            'content': {
+                'event_id': text_msg_id,
+                'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
+                'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
+            }
+        },
+        expected_status_code=201,
+    )
+
+    box5_events = s1.get(f'{URL_PREFIX}/boxes/{box5_id}/events').json()
+
+    assert box5_events[1]['content']['encrypted'].startswith("Edited")
+    assert box5_events[1]['content']['public_key'].startswith("Edited")
+    assert box5_events[1]['content']['last_edited_at']
+
+    print('Testing cannot edit message of type not "msg.text"')
+    s1.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.edit',
+            'content': {
+                # Oldest event (last in the list) is the box creation event
+                'event_id': box5_events[-1]['id'],
+                'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
+                'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
+            }
+        },
+        expected_status_code=401,
+    )
+
+    print('Testing cannot edit message of type "msg.file"')
+    s1.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.edit',
+            'content': {
+                'event_id': file_msg_id,
+                'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
+                'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
+            }
+        },
+        expected_status_code=401,
+    )
+
+    print('Testing user cannot edit message she does not own')
+    s2.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.edit',
+            'content': {
+                'event_id': text_msg_id,
+                'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
+                'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
+            }
+        },
+        expected_status_code=401,
+    )
+
+    print("Testing (non-admin) user cannot delete message she doesn't own")
+    # message is owned by s1, not s2
+    s2.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.delete',
+            'content': {
+                'event_id': text_msg_id,
+            }
+        },
+        expected_status_code=401,
+    )
+
+    print('Testing "create"-type events cannot be deleted')
+    r = s1.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.delete',
+            'content': {
+                # oldest event is last in the list
+                'event_id': box5_events[-1]['id'],
+            }
+        },
+        expected_status_code=403,
+    )
+
+    print('Testing deletion of text messages')
+    r = s1.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.delete',
+            'content': {
+                'event_id': text_msg_id,
+            }
+        },
+        expected_status_code=201,
+    )
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(r.json()['content']['deleted']['by_identity']['identifier']['value'] == s1.email)
+        ]
+    )
+
+    print('Testing deletion of file messages')
+    all_encrypted_files = list_encrypted_files()
+    assert encrypted_file_id in all_encrypted_files
+
+    r = s1.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.delete',
+            'content': {
+                'event_id': file_msg_id,
+            }
+        },
+        expected_status_code=201,
+    )
+
+    all_encrypted_files = list_encrypted_files()
+    assert encrypted_file_id not in all_encrypted_files
+
+
+    print('Testing cannot delete a message twice')
+    r = s1.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.delete',
+            'content': {
+                'event_id': text_msg_id,
+            }
+        },
+        expected_status_code=410,
+    )
+
+    print('Testing cannot edit a deleted message')
+    s1.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.edit',
+            'content': {
+                'event_id': text_msg_id,
+                'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
+                'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
+            }
+        },
+        expected_status_code=410,
+    )
+
+    print('Testing box admin can delete any message')
+    # Message posted by s2 but deleted by s1 (box creator)
+    r = s2.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.text',
+            'content': {
+                'encrypted': b64encode(os.urandom(32)).decode(),
+                'public_key': b64encode(os.urandom(32)).decode()
+            }
+        },
+    )
+    msg_id = r.json()['id']
+
+    r = s1.post(
+        f'{URL_PREFIX}/boxes/{box5_id}/events',
+        json={
+            'type': 'msg.delete',
+            'content': {
+                'event_id': msg_id,
+            }
+        },
+    )
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(r.json()['content']['deleted']['by_identity']['identifier']['value'] == s1.email)
+        ]
+    )
+
 
     print('All OK')

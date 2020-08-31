@@ -185,7 +185,7 @@ func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 	}
 
 	ids := make([]string, len(events))
-	var content msgFileContent
+	var content MsgFileContent
 	for idx, event := range events {
 		err = json.Unmarshal(event.Content, &content)
 		if err != nil {

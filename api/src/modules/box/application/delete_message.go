@@ -1,0 +1,143 @@
+package application
+
+import (
+	"context"
+	"encoding/json"
+	"time"
+
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+)
+
+var deletableTypes = map[string]bool{
+	"msg.text": true,
+	"msg.file": true,
+}
+
+// deleteMessage is called by function "CreateEvent"
+// when the event is of type "msg.delete"
+func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent events.Event) (result events.View, err error) {
+	var content events.MsgDeleteContent
+	err = json.Unmarshal(receivedEvent.Content, &content)
+	if err != nil {
+		return result, merror.Transform(err).Describe("unmarshaling content json")
+	}
+
+	toDelete, err := sqlboiler.FindEvent(ctx, bs.db, content.EventID)
+	if err != nil {
+		return result, merror.Transform(err).Describe("retrieving event to delete")
+	}
+
+	// Authorization-related checks should come as soon as possible
+	// so we put them first.
+	if receivedEvent.SenderID != toDelete.SenderID {
+		// Box creator can delete events even if she is not the author
+		boxCreatorID, err := boxes.GetCreatorID(ctx, bs.db, toDelete.BoxID)
+		if err != nil {
+			return result, merror.Transform(err).Describe("retrieving box creator ID")
+		}
+
+		if receivedEvent.SenderID != boxCreatorID {
+			return result, merror.Unauthorized().
+				Describe("user is neither message owner nor box creator")
+		}
+	}
+
+	isDeleted, err := events.IsDeleted(toDelete)
+	if err != nil {
+		return result, merror.Transform(err).Describe("checking if event is already deleted")
+	}
+	if isDeleted {
+		return result, merror.Gone().Describe("event is already deleted")
+	}
+
+	if !deletableTypes[toDelete.Type] {
+		return result, merror.Forbidden().
+			Describef("cannot delete events of type \"%s\"", toDelete.Type)
+	}
+
+	var fileID string
+	if toDelete.Type == "msg.file" {
+		// Retrieval of fileID is done *before* we delete the message content
+		// but removal of the file is done *after*
+		// because file will not be "orphan" before we apply the removal.
+		msgFileContent := &events.MsgFileContent{}
+		err = json.Unmarshal(toDelete.Content.JSON, &msgFileContent)
+		if err != nil {
+			return result, merror.Transform(err).Describe("unmarshaling content of event to delete")
+		}
+		fileID = msgFileContent.EncryptedFileID
+	}
+
+	newContentJSON := events.DeletedContent{}
+	newContentJSON.Deleted.AtTime = time.Now()
+	newContentJSON.Deleted.ByIdentityID = receivedEvent.SenderID
+
+	newContentBytes, err := json.Marshal(newContentJSON)
+	if err != nil {
+		return result, merror.Transform(err).Describe("marshalling new event content")
+	}
+	toDelete.Content = null.JSONFrom(newContentBytes)
+
+	tx, err := bs.db.BeginTx(ctx, nil)
+	if err != nil {
+		return result, merror.Transform(err).Describe("creating DB transaction")
+	}
+
+	rowsAff, err := toDelete.Update(ctx, tx, boil.Infer())
+	if err != nil {
+		atomic.SQLRollback(ctx, tx, err)
+		return result, merror.Transform(err).Describe("updating event")
+	}
+	if rowsAff != 1 {
+		atomic.SQLRollback(ctx, tx, err)
+		return result, merror.Transform(err).Describef("%d rows affected", rowsAff)
+	}
+
+	err = toDelete.Reload(ctx, tx)
+	if err != nil {
+		atomic.SQLRollback(ctx, tx, err)
+		return result, merror.Transform(err).Describe("reloading event")
+	}
+
+	// (potential) removal of the actual encrypted file (on S3)
+	// is done at the very end because the operation cannot be rolled back
+	if fileID != "" {
+		isOrphan, err := files.IsOrphan(ctx, tx, fileID)
+		if err != nil {
+			atomic.SQLRollback(ctx, tx, err)
+			return result, merror.Transform(err).Describe("checking if file is orphan")
+		}
+		if isOrphan {
+			if err := files.Delete(ctx, tx, bs.filesRepo, fileID); err != nil {
+				atomic.SQLRollback(ctx, tx, err)
+				return result, merror.Transform(err).Describe("deleting stored file")
+			}
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return result, merror.Transform(err).Describe("committing transaction")
+	}
+
+	event := events.FromSQLBoiler(toDelete)
+
+	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.identities)
+	if err != nil {
+		return result, merror.Transform(err).Describe("retrieving identities for view")
+	}
+
+	view, err := events.ToView(event, identityMap)
+	if err != nil {
+		return view, merror.Transform(err).Describe("computing event view")
+	}
+
+	return view, nil
+}

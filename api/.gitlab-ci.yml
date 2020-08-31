@@ -43,22 +43,21 @@ api:lint_code:
   needs:
     - api:install_mod
 
-
-      #api:unit_tests:
-      #  extends:
-      #    - .only-branches
-      #    - .only-api
-      #    - .except-wip-or-non-api-tags
-      #  stage: test
-      #  image: golang:1.13
-      #  dependencies:
-      #    - api:install_mod
-      #  tags:
-      #    - misakey_go
-      #  script:
-      #    - make -C api test
-      #  needs:
-      #    - api:install_mod
+api:unit_tests:
+ extends:
+   - .only-branches
+   - .only-api
+   - .except-wip-or-non-api-tags
+ stage: test
+ image: golang:1.13
+ dependencies:
+   - api:install_mod
+ tags:
+   - misakey_go
+ script:
+   - make -C api test
+ needs:
+   - api:install_mod
 
 api:build:
   extends:

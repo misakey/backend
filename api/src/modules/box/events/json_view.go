@@ -1,11 +1,15 @@
 package events
 
 import (
+	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 // SenderView is how an event sender (or box creator)
@@ -41,14 +45,87 @@ type View struct {
 }
 
 // ToView transforms an event into its JSON view.
-func ToView(e Event, senderIdentity domain.Identity) View {
+func ToView(e Event, identityMap map[string]domain.Identity) (View, error) {
 	view := View{
 		Type:      e.Type,
 		Content:   e.Content,
 		ID:        e.ID,
 		CreatedAt: e.CreatedAt,
-		Sender:    NewSenderView(senderIdentity),
+		Sender:    NewSenderView(identityMap[e.SenderID]),
 	}
 
-	return view
+	// For deleted messages
+	// we put the deletor identifier in the content
+	if e.Type == "msg.text" || e.Type == "msg.file" {
+		var content DeletedContent
+		err := json.Unmarshal(e.Content, &content)
+		if err != nil {
+			return view, merror.Transform(err).Describe("unmarshaling content json")
+		}
+
+		if content != (DeletedContent{}) {
+			deletor := NewSenderView(identityMap[content.Deleted.ByIdentityID])
+			content.Deleted.ByIdentity = &deletor
+			content.Deleted.ByIdentityID = ""
+			marshalledContent, err := json.Marshal(content)
+			if err != nil {
+				return view, merror.Transform(err).Describe("marshalling event content")
+			}
+			view.Content = marshalledContent
+		}
+	}
+
+	return view, nil
+}
+
+func MapSenderIdentities(ctx context.Context, events []Event, identityRepo entrypoints.IdentityIntraprocessInterface) (map[string]domain.Identity, error) {
+	// getting senders IDs without duplicates
+	// we build both a set (map to bool) and a list
+	// because we need a list in "domain.IdentityFilters"
+	var senderIDs []string
+	idMap := make(map[string]bool)
+	for _, event := range events {
+		IDsInEvent, err := getIdentityIDs(event)
+		if err != nil {
+			return nil, merror.Transform(err).Describe("getting identity IDs in event")
+		}
+
+		for _, ID := range IDsInEvent {
+			_, alreadyPresent := idMap[ID]
+			if !alreadyPresent {
+				senderIDs = append(senderIDs, ID)
+				idMap[ID] = true
+			}
+		}
+	}
+
+	identities, err := identityRepo.List(ctx, domain.IdentityFilters{IDs: senderIDs})
+	if err != nil {
+		return nil, merror.Transform(err).Describe("retrieving Identities from IDs")
+	}
+
+	var sendersMap = make(map[string]domain.Identity, len(identities))
+	for _, identity := range identities {
+		sendersMap[identity.ID] = *identity
+	}
+
+	return sendersMap, nil
+}
+
+func getIdentityIDs(event Event) ([]string, error) {
+	IDs := []string{event.SenderID}
+
+	if event.Type == "msg.text" || event.Type == "msg.file" {
+		var content DeletedContent
+		err := json.Unmarshal(event.Content, &content)
+		if err != nil {
+			return IDs, merror.Transform(err).Describe("unmarshaling content json")
+		}
+
+		if content.Deleted.ByIdentityID != "" {
+			IDs = append(IDs, content.Deleted.ByIdentityID)
+		}
+	}
+
+	return IDs, nil
 }

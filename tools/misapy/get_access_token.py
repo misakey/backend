@@ -10,25 +10,7 @@ from urllib.parse import parse_qs as parse_query_string
 from . import http
 from .check_response import check_response, assert_fn
 from .password_hashing import hash_password
-
-
-def get_emailed_code(identity_id):
-    proc = subprocess.run(
-        (
-            'docker exec test-and-run_api_db_1  psql -t -d sso -U misakey -h localhost -c'.split()
-            + [
-                "SELECT metadata "
-                "FROM authentication_step "
-                f"WHERE identity_id = '{identity_id}' "
-                "ORDER BY created_at DESC LIMIT 1;"
-            ]
-        ),
-        capture_output=True,
-    )
-    proc.check_returncode()
-    output = proc.stdout.decode()
-    emailed_code = json.loads(output)['code']
-    return emailed_code
+from .container_access import get_emailed_code
 
 def new_password_hash(password):
     salt_base64 = b64encode(os.urandom(8)).decode()

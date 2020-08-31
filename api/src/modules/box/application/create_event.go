@@ -31,7 +31,7 @@ func (req *CreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 	return v.ValidateStruct(req,
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
-		v.Field(&req.Type, v.Required, v.In("msg.text", "state.lifecycle")),
+		v.Field(&req.Type, v.Required, v.In("msg.text", "state.lifecycle", "msg.delete", "msg.edit")),
 		v.Field(&req.Content, v.Required),
 	)
 }
@@ -69,6 +69,15 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 		}
 	}
 
+	// events in the HTTP API
+	// that are not meant to be appended in DB
+	if event.Type == "msg.delete" {
+		return bs.deleteMessage(ctx, event)
+	}
+	if event.Type == "msg.edit" {
+		return bs.editMessage(ctx, event)
+	}
+
 	sender, err := bs.identities.Get(ctx, event.SenderID)
 	if err != nil {
 		return view, merror.Transform(err).Describe("fetching sender identity")
@@ -92,5 +101,15 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 		}
 	}
 
-	return events.ToView(event, sender), nil
+	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.identities)
+	if err != nil {
+		return view, merror.Transform(err).Describe("retrieving identities for view")
+	}
+
+	view, err = events.ToView(event, identityMap)
+	if err != nil {
+		return view, merror.Transform(err).Describe("computing event view")
+	}
+
+	return view, nil
 }
