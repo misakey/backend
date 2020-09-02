@@ -2,13 +2,16 @@ package events
 
 import (
 	"context"
+	"database/sql"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/types"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 type CreationContent struct {
@@ -63,4 +66,15 @@ func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, e
 
 	return event, nil
 
+}
+
+func MustBoxExists(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
+	_, err := sqlboiler.Events(
+		sqlboiler.EventWhere.BoxID.EQ(boxID),
+		sqlboiler.EventWhere.Type.EQ("create"),
+	).One(ctx, exec)
+	if err != nil && err == sql.ErrNoRows {
+		return merror.NotFound().Detail("box_id", merror.DVNotFound)
+	}
+	return err
 }
