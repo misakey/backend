@@ -72,6 +72,17 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw ech
 	)
 	boxRouter.GET("/:id/events", listEvents, authzMidlw)
 
+	countEvents := entrypoints.NewProtectedHTTP(
+		func() entrypoints.Request { return &application.CountEventsRequest{} },
+		bs.CountEvents,
+		entrypoints.ResponseNoContent,
+		func(ctx echo.Context, data interface{}) error {
+			ctx.Response().Header().Set("X-Total-Count", strconv.Itoa(data.(int)))
+			return nil
+		},
+	)
+	boxRouter.HEAD("/:id/events", countEvents, authzMidlw)
+
 	postEvents := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.CreateEventRequest{} },
 		bs.CreateEvent,

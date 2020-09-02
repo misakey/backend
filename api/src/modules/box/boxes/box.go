@@ -1,8 +1,8 @@
 package boxes
 
 import (
-	"time"
 	"context"
+	"time"
 
 	"github.com/volatiletech/sqlboiler/boil"
 

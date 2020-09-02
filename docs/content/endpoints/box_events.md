@@ -89,6 +89,14 @@ _JSON Body:_
   GET https://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/events
 ```
 
+_Headers:_
+- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
+
+_Query Parameters:_
+
+Pagination ([more info](/concepts/pagination)). No pagination by default.
+
+
 ### 2.2.2. response
 
 _Code_:

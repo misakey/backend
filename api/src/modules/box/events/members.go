@@ -15,7 +15,7 @@ func getMemberIDsExcept(
 ) ([]string, error) {
 	// we build a set to find all uniq actors
 	uniqActors := make(map[string]bool)
-	events, err := ListByBoxID(ctx, exec, boxID)
+	events, err := ListByBoxID(ctx, exec, boxID, nil, nil)
 	if err != nil {
 		return nil, err
 	}

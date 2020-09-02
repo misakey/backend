@@ -47,10 +47,18 @@ func New(eType string, jsonContent types.JSON, boxID string, senderID string) (E
 	return event, nil
 }
 
-func ListByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {
+func ListByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string, offset, limit *int) ([]Event, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.EventWhere.BoxID.EQ(boxID),
 		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " DESC"),
+	}
+
+	if offset != nil {
+		mods = append(mods, qm.Offset(*offset))
+	}
+
+	if limit != nil {
+		mods = append(mods, qm.Limit(*limit))
 	}
 
 	dbEvents, err := sqlboiler.Events(mods...).All(ctx, exec)
@@ -197,4 +205,13 @@ func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 	}
 
 	return ids, nil
+}
+
+func CountByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (int, error) {
+	count, err := sqlboiler.Events(sqlboiler.EventWhere.BoxID.EQ(boxID)).Count(ctx, exec)
+	if err != nil {
+		return 0, merror.Transform(err).Describe("retrieving db events")
+	}
+
+	return int(count), nil
 }

@@ -14,7 +14,9 @@ import (
 )
 
 type ListEventsRequest struct {
-	boxID string
+	boxID  string
+	Offset *int `query:"offset" json:"-"`
+	Limit  *int `query:"limit" json:"-"`
 }
 
 func (req *ListEventsRequest) BindAndValidate(eCtx echo.Context) error {
@@ -23,7 +25,9 @@ func (req *ListEventsRequest) BindAndValidate(eCtx echo.Context) error {
 	}
 	req.boxID = eCtx.Param("id")
 	return v.ValidateStruct(req,
-		v.Field(&req.boxID, is.UUIDv4),
+		v.Field(&req.boxID, v.Required, is.UUIDv4),
+		v.Field(&req.Offset, v.Min(0)),
+		v.Field(&req.Limit, v.Min(0)),
 	)
 }
 
@@ -43,7 +47,7 @@ func (bs *BoxApplication) ListEvents(ctx context.Context, genReq entrypoints.Req
 	}
 
 	// list
-	boxEvents, err := events.ListByBoxID(ctx, bs.db, req.boxID)
+	boxEvents, err := events.ListByBoxID(ctx, bs.db, req.boxID, req.Offset, req.Limit)
 	if err != nil {
 		return nil, err
 	}

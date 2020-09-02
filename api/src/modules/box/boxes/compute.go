@@ -67,7 +67,7 @@ func Compute(
 
 func (c *computer) retrieveEvents(ctx context.Context) error {
 	var err error
-	c.events, err = events.ListByBoxID(ctx, c.exec, c.box.ID)
+	c.events, err = events.ListByBoxID(ctx, c.exec, c.box.ID, nil, nil)
 	return err
 }
 
