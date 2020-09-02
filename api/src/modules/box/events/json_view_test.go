@@ -18,9 +18,9 @@ func TestToView(t *testing.T) {
 		err := json.Marshal(msg)
 		assert.Nil(t, err)
 		e := Event{
-			Type:     "msg.text",
-			Content:  json,
-			SenderID: "user-A",
+			Type:        "msg.text",
+			JSONContent: json,
+			SenderID:    "user-A",
 		}
 		_, err = ToView(e, map[string]domain.Identity{})
 		assert.Nil(t, err)
@@ -33,9 +33,9 @@ func TestToView(t *testing.T) {
 		err := json.Marshal(msg)
 		assert.Nil(t, err)
 		e := Event{
-			Type:     "msg.text",
-			Content:  json,
-			SenderID: "user-A",
+			Type:        "msg.text",
+			JSONContent: json,
+			SenderID:    "user-A",
 		}
 		_, err = ToView(e, map[string]domain.Identity{})
 		assert.Nil(t, err)
@@ -48,9 +48,9 @@ func TestToView(t *testing.T) {
 		err := json.Marshal(msg)
 		assert.Nil(t, err)
 		e := Event{
-			Type:     "msg.text",
-			Content:  json,
-			SenderID: "identity-A",
+			Type:        "msg.text",
+			JSONContent: json,
+			SenderID:    "identity-A",
 		}
 		view, err := ToView(e, map[string]domain.Identity{
 			"identity-A": domain.Identity{DisplayName: "Arno"},
@@ -58,7 +58,7 @@ func TestToView(t *testing.T) {
 		assert.Nilf(t, err, "to view")
 		assert.Equal(t, view.Sender.DisplayName, "Arno")
 
-		err = e.Content.Marshal(&msg)
+		err = e.JSONContent.Marshal(&msg)
 		assert.Nilf(t, err, "marshal deleted content")
 	})
 }

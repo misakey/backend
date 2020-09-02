@@ -16,19 +16,19 @@ func (e *Event) ToSQLBoiler() *sqlboiler.Event {
 		CreatedAt: e.CreatedAt,
 
 		Type:    e.Type,
-		Content: null.JSONFrom(bytes.TrimSpace([]byte(e.Content))),
+		Content: null.JSONFrom(bytes.TrimSpace([]byte(e.JSONContent))),
 	}
 	return &result
 }
 
 func FromSQLBoiler(src *sqlboiler.Event) Event {
 	dst := Event{
-		ID:        src.ID,
-		CreatedAt: src.CreatedAt,
-		SenderID:  src.SenderID,
-		Type:      src.Type,
-		Content:   src.Content.JSON,
-		BoxID:     src.BoxID,
+		ID:          src.ID,
+		CreatedAt:   src.CreatedAt,
+		SenderID:    src.SenderID,
+		Type:        src.Type,
+		JSONContent: src.Content.JSON,
+		BoxID:       src.BoxID,
 	}
 	return dst
 }

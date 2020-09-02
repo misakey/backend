@@ -9,7 +9,6 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
@@ -49,9 +48,14 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq entr
 	}
 
 	for _, event := range linkedEvents {
-		closedErr := boxes.MustBeCreatorIfClosed(ctx, bs.db, event.BoxID, acc.IdentityID)
-		actorErr := boxes.MustBeActor(ctx, bs.db, event.BoxID, acc.IdentityID)
-		if closedErr == nil && actorErr == nil {
+		// if the box is closed, only the admins can download file linked to it
+		closed, err := events.IsClosed(ctx, bs.db, event.BoxID)
+		if err != nil {
+			return nil, err
+		}
+		adminErr := events.MustBeAdmin(ctx, bs.db, event.BoxID, acc.IdentityID)
+		actorErr := events.MustBeMember(ctx, bs.db, event.BoxID, acc.IdentityID)
+		if (!closed && adminErr == nil) && actorErr == nil {
 			isAllowed = true
 			break
 		}

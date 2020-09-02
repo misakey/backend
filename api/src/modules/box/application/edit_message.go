@@ -17,7 +17,7 @@ import (
 // when the event is of type "msg.edit"
 func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.Event) (result events.View, err error) {
 	var content events.MsgEditContent
-	err = json.Unmarshal(receivedEvent.Content, &content)
+	err = json.Unmarshal(receivedEvent.JSONContent, &content)
 	if err != nil {
 		return result, merror.Internal().Describe("unmarshaling content json")
 	}

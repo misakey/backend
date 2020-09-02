@@ -9,7 +9,6 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
@@ -32,9 +31,15 @@ func (bs *BoxApplication) ListEvents(ctx context.Context, genReq entrypoints.Req
 	req := genReq.(*ListEventsRequest)
 	acc := ajwt.GetAccesses(ctx)
 
-	// if the box is closed, only the creator can list its events
-	if err := boxes.MustBeCreatorIfClosed(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {
+	// if the box is closed, only the admins can list events
+	closed, err := events.IsClosed(ctx, bs.db, req.boxID)
+	if err != nil {
 		return nil, err
+	}
+	if closed {
+		if err := events.MustBeAdmin(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {
+			return nil, err
+		}
 	}
 
 	// list

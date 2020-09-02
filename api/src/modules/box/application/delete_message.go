@@ -7,7 +7,6 @@ import (
 
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
@@ -24,7 +23,7 @@ var deletableTypes = map[string]bool{
 // when the event is of type "msg.delete"
 func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent events.Event) (result events.View, err error) {
 	var content events.MsgDeleteContent
-	err = json.Unmarshal(receivedEvent.Content, &content)
+	err = json.Unmarshal(receivedEvent.JSONContent, &content)
 	if err != nil {
 		return result, merror.Transform(err).Describe("unmarshaling content json")
 	}
@@ -37,15 +36,9 @@ func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent event
 	// Authorization-related checks should come as soon as possible
 	// so we put them first.
 	if receivedEvent.SenderID != toDelete.SenderID {
-		// Box creator can delete events even if she is not the author
-		boxCreatorID, err := boxes.GetCreatorID(ctx, bs.db, toDelete.BoxID)
-		if err != nil {
-			return result, merror.Transform(err).Describe("retrieving box creator ID")
-		}
-
-		if receivedEvent.SenderID != boxCreatorID {
-			return result, merror.Unauthorized().
-				Describe("user is neither message owner nor box creator")
+		// box admins can delete messages even if they are not the author
+		if err := events.MustBeAdmin(ctx, bs.db, toDelete.BoxID, receivedEvent.SenderID); err != nil {
+			return result, merror.Transform(err).Describe("checking admins")
 		}
 	}
 

@@ -28,6 +28,12 @@ COPY --from=builder /bin/api /bin/api
 ARG VERSION=unset
 ENV VERSION $VERSION
 
+# add all migrations to corresponding modules dir
+COPY ./src/modules/box/db/migration /etc/box-migration
+COPY ./src/modules/sso/db/migration /etc/sso-migration
+ENV MIGRATION_DIR_BOX /etc/box-migration
+ENV MIGRATION_DIR_SSO /etc/sso-migration
+
 EXPOSE 5000
 
 ENTRYPOINT ["/bin/api"]

@@ -11,7 +11,6 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
@@ -42,7 +41,7 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq entrypoints.Requ
 	acc := ajwt.GetAccesses(ctx)
 
 	// 1. verify the deletion sender is an admin of the box
-	if err := boxes.MustBeCreator(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustBeAdmin(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")
 	}
 

@@ -20,5 +20,5 @@ func Launch() {
 	initCreatedAtToEntities()
 	initAddColorToUserIdentity()
 
-	migration.StartGoose(os.Getenv("DSN_SSO"))
+	migration.StartGoose(os.Getenv("DSN_SSO"), os.Getenv("MIGRATION_DIR_SSO"))
 }

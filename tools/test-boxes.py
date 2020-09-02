@@ -345,7 +345,7 @@ with testContext():
                 'event_id': text_msg_id,
             }
         },
-        expected_status_code=401,
+        expected_status_code=403,
     )
 
     print('Testing "create"-type events cannot be deleted')

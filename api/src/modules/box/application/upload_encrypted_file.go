@@ -10,7 +10,6 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
@@ -51,7 +50,7 @@ func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq entryp
 	acc := ajwt.GetAccesses(ctx)
 
 	// upload files works only on open boxes
-	if err := boxes.MustBeOpen(ctx, bs.db, req.boxID); err != nil {
+	if err := events.MustBoxBeOpen(ctx, bs.db, req.boxID); err != nil {
 		return nil, merror.Transform(err).Describe("checking open")
 	}
 
@@ -86,7 +85,7 @@ func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq entryp
 	eReq := CreateEventRequest{
 		boxID:   e.BoxID,
 		Type:    e.Type,
-		Content: e.Content,
+		Content: e.JSONContent,
 	}
 	view, err := bs.CreateEvent(ctx, &eReq)
 	if err != nil {

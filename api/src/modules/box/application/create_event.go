@@ -12,7 +12,6 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
@@ -48,39 +47,27 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 	view := events.View{}
 
 	// check the box does exist
-	boxExists, err := boxes.CheckBoxExists(ctx, event.BoxID, bs.db)
-	if err != nil {
+	if err := events.MustBoxExists(ctx, bs.db, event.BoxID); err != nil {
 		return view, merror.Transform(err).Describe("checking existence of box")
-	}
-	if !boxExists {
-		return view, merror.NotFound().Detail("id", merror.DVNotFound).
-			Describef("no box with id %s", event.BoxID)
 	}
 
 	// check the box is not closed
-	if err := boxes.MustBeOpen(ctx, bs.db, event.BoxID); err != nil {
+	if err := events.MustBoxBeOpen(ctx, bs.db, event.BoxID); err != nil {
 		return view, merror.Transform(err).Describe("checking open")
 	}
 
-	// check the sender is creator of the box for state.lifecycle events
-	if event.Type == "state.lifecycle" {
-		if err := boxes.MustBeCreator(ctx, bs.db, event.BoxID, event.SenderID); err != nil {
-			return view, merror.Transform(err).Describe("checking creator")
-		}
+	// call the proper event handler
+	if err := events.Handler(event.Type)(ctx, &event, bs.db, bs.redConn); err != nil {
+		return view, merror.Transform(err).Describef("handling %s event", event.Type)
 	}
 
-	// events in the HTTP API
-	// that are not meant to be appended in DB
+	// TODO: use handlers
 	if event.Type == "msg.delete" {
 		return bs.deleteMessage(ctx, event)
 	}
+	// TODO: use handlers
 	if event.Type == "msg.edit" {
 		return bs.editMessage(ctx, event)
-	}
-
-	sender, err := bs.identities.Get(ctx, event.SenderID)
-	if err != nil {
-		return view, merror.Transform(err).Describe("fetching sender identity")
 	}
 
 	if err := event.ToSQLBoiler().Insert(ctx, bs.db, boil.Infer()); err != nil {
@@ -88,16 +75,12 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 	}
 
 	// increment count for all identities except the sender
-	// only if this is not a lifecycle event
+	// only if the event concerns them - today we consider not wished to be notified:
+	// - state.lifecycle events
 	if event.Type != "state.lifecycle" {
-		identities, err := boxes.GetActorsExcept(ctx, bs.db, event.BoxID, sender.ID)
-		if err != nil {
-			return view, merror.Transform(err).Describe("fetching list of actors")
-		}
-
-		if err := events.IncrCounts(ctx, bs.redConn, identities, event.BoxID); err != nil {
+		if err := events.NotifyMembers(ctx, bs.db, bs.redConn, event.SenderID, event.BoxID); err != nil {
 			// we log the error but we don’t return it
-			logger.FromCtx(ctx).Warn().Err(err).Msg("could not increment new events count")
+			logger.FromCtx(ctx).Warn().Err(err).Msg("could not notify members")
 		}
 	}
 

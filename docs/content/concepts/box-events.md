@@ -9,101 +9,223 @@ An event represents the messages sent to the box
 as well as changes made to the state of the box
 (closing the box, and in the future other operations such as changing the title etc ...).
 
-[Events are mainly used in the “boxes” endpoint described here.](/endpoints/boxes)
+[Events are mainly used in the "boxes” endpoint described here.](/endpoints/boxes)
 
 An event has the following fields:
 
-- `id`, a UUID, (set by the server)
-- `server_event_created_at` (format: `"2020-04-01T20:22:45.691Z"`)
-  the time at which it was received by the server (set by the server)
-- `sender`, an object representing the sender (set by the server)
-  with the following shape:
-  ```
-  {{% include "include/event-sender.json" 2 %}}
-  ```
-- `type`, one of `create`, `msg.txt`, `msg.file`, `state.lifecycle`, `join`
-- `content`, an object which shape depends on `type`
+```json
+{
+  "id": "(string) (uuid formatted): unique id set by the server",
+  "server_event_created_at": "(RFC3339 time): when the event was received by the server",
+  "sender": {
+    "display_name": "(string) the display name of the sender",
+    "avatar_url": "(string) (nullable) the potential avatar url of the sender",
+    "identifier": {
+      "value": "(string) the value of the identifier",
+      "kind": "(string) (one of: email): the kind of the identifier"
+    }
+  },
+  "type": "(string) (one of: create, msg.txt, msg.file, state.lifecycle, join): the type of the event",
+  "content": "(json object) (nullable): its shape depends on the type of event - see definitions below"
+}
+```
 
-## 1.1. “Create” type event
-
-**Purpose:**
+## 1.1. `Create` type event
 
 A box starts with a `create` event
 which is not posted by the client
 but is instead inserted automatically by the backend
 at the creation of the box.
 
-- the `server_event_created_at` field is the time of creation of the box itself
-- the `sender` of the event is the user who created the box
-- for `content`, see below
-
-**Content:**
-
 An event of type `create` has the following content fields:
 
-- `public_key` (string): the public key that must be used to encrypt messages for this box
-- `title` (string): the title of the box
+```json
+{
+  "id": "...",
+  "server_event_created_at": "...",
+  "sender": {...},
+  "type": "create",
+  "content": {
+    "public_key": "(string): the public key that must be used to encrypt messages for this box",
+    "title": "(string): the title of the box"
+  }
+}
+```
 
-## 1.2. "Join" type event
-
-**Purpose:**
+## 1.2. `Join` type event
 
 An event of type `join` is automatically added to the box by the backend
 when a user joins the box with an invitation link.
 
 Only one `join` event can exist per couple box/sender.
 
-**Content:**
+Messages of type `join` have no content field:
 
-Messages of type `join` have no content field.
+```json
+{
+  "id": "...",
+  "server_event_created_at": "...",
+  "sender": {...},
+  "type": "join",
+  "content": null,
+}
+```
 
-## 1.3. "Message" type event
+## 1.3. `Message` type events
 
-**Purpose:**
+Messages allow the transfer of encrypted message text or blob data.
 
-Messages are events with type `msg.txt` or `msg.file`. They allow the transfer of blob data or message text.
+### 1.3.1. `Message Text`
+Messages of type `msg.txt` allow the transfer of message text.
 
-**Content:**
+```json
+{
+  "id": "...",
+  "server_event_created_at": "...",
+  "sender": {...},
+  "type": "msg.txt",
+  "content": {
+    "encrypted": "(string) (base64): the encrypted message. Recall that files are sent separately from the message, so the size of a message event stays rather small.",
+    "deleted": { // nullable, indicates the message have been removed
+      "at_time": "indicates the deletion time of the message",
+      "by_identity_id": "indicates who has deleted the message",
+    },
+    "last_edited_at": "(RFC3339 time): indicates that the message was edited, and when"
+}
+```
 
-For all `msg.*`:
+### 1.3.2. `Message File`
 
-- `encrypted` (string) (base64) (optional): the encrypted message.
-  Recall that files are sent separately from the message,
-  so the size of a message event stays rather small.
-- `deleted` (object) (optional): indicates that the message was deleted
-  and gives info about its deletion via attributes `at_time` and `by_identifier_id`.
+Messages of type `msg.file` allow the transfer of blob data.
 
-For `msg.file` events only:
+```json
+{
+  "id": "...",
+  "server_event_created_at": "...",
+  "sender": {...},
+  "type": "msg.file",
+  "content": {
+    "encrypted": "(string) (base64): information about file encryption.",
+    "encrypted_file_id": "(string) (uuid format): a unique identifier used to store and download the file",
+    "deleted": { // nullable, indicates the message have been removed
+      "at_time": "indicates the deletion time of the message",
+      "by_identity_id": "indicates who has deleted the message",
+    },
+}
+```
 
-- `encrypted_file_id` (string) (uuid): a unique identifier used to store and download the file
 
-For `msg.text` events only:
-
-- `last_edited_at` (time): indicates that the message was edited, and when 
-
-## 1.4. "State" type event
-
-**Purpose:**
+## 1.4. `State` type events
 
 State events are meant to update the state of a box: information that can be set to only one value and are overriden when updated.
 
-Exhaustive list of possible state events:
-- `state.lifecycle`: change the lifecycle of a box.
+### 1.4.1. `State Lifecyle`
 
-**Content:**
+The `state.lifecycle` event changes the lifecycle of a box.
 
-Type `state.lifecycle` have the following content fields:
+```json
+{
+  "id": "...",
+  "server_event_created_at": "...",
+  "sender": {...},
+  "type": "state.lifecycle",
+  "content": {
+    "state": "(string) (one of: closed): the new state of the box"
+}
+```
 
-- `state` (string): for which the only allowed value for now is `closed`.
+## 1.5. `Access` type events
 
-# 2. Accesses
+Access events are specific rules defined by the admins and allowing considering their logic who can access the box.
+
+### 1.5.1. Add
+
+The add of an access is represented by this event shape
+```json
+{
+    "id": "...",
+    "server_event_created_at": "...",
+    "sender": {...},
+    "type": "access.add",
+    "content": {
+        "restriction_type": "(string) (one of : invitation_link, identifier or email_domain): the type of restriction the access bears",
+        "value": "(string): a value describing the restriction"
+    }
+}
+```
+
+#### 1.5.1.1. `Access via Invitation Link`
+
+This access allows users to access the box using an invitation link (key shares).
+
+If another kind of access restriction exists, both the invitation link and the other access rules are required to access the box. Otherwise, only the invitation link is required.
+
+```json
+{
+    "id": "...",
+    "server_event_created_at": "...",
+    "sender": {...},
+    "type": "access.add",
+    "content": {
+        "restriction_type": "(string) (must be: invitation_link)",
+        "value": "(string): the other_share_hash of the corresponding key share"
+    }
+}
+```
+
+#### 1.5.1.2. `Access to a specific identifier`
+
+```json
+{
+    "id": "...",
+    "server_event_created_at": "...",
+    "sender": {...},
+    "type": "access.add",
+    "content": {
+        "restriction_type": "(string) (must be: identifier)",
+        "value": "(string): the identifier value"
+    }
+}
+```
+
+#### 1.5.1.3. `Access to an entire email domain`
+
+```json
+{
+    "id": "...",
+    "server_event_created_at": "...",
+    "sender": {...},
+    "type": "access.add",
+    "content": {
+        "restriction_type": "(string) (must be: email_domain)",
+        "value": "(string): the email domain value (with no @)"
+    }
+}
+```
+
+### 1.5.2. Remove
+
+The removal of an access is represented by this event shape:
+```json
+{
+    "id": "...",
+    "server_event_created_at": "...",
+    "sender": {...},
+    "type": "access.rm",
+    "content": {
+        "add_referer": "(string): the uuid of the corresponding access.add event that has been removed"
+    }
+}
+```
+
+# 2. Privileges
 
 ## 2.1. Admins
 
-Admins are considered as the users having the most advanced access on a box.
+Admins are considered as the users having the most advanced privileges on a box.
 
 Today, only the creator of the box is considered as a admin.
 
-## 2.2. Participants
+## 2.2. Members
 
-Participants are users that have joined the box via an invitation link.
+Members are users that have lastly joined the box via an invitation link.

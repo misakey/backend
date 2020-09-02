@@ -122,7 +122,7 @@ func (c *computer) playEvent(ctx context.Context, e events.Event, last bool) err
 func (c *computer) playCreate(ctx context.Context, e events.Event) error {
 	c.box.CreatedAt = e.CreatedAt
 	CreationContent := events.CreationContent{}
-	if err := CreationContent.Unmarshal(e.Content); err != nil {
+	if err := CreationContent.Unmarshal(e.JSONContent); err != nil {
 		return err
 	}
 	c.box.Lifecycle = "open"
@@ -144,7 +144,7 @@ func (c *computer) playCreate(ctx context.Context, e events.Event) error {
 // today, state if only about lifecycle
 func (c *computer) playState(_ context.Context, e events.Event) error {
 	lifecycleContent := events.StateLifecycleContent{}
-	if err := lifecycleContent.Unmarshal(e.Content); err != nil {
+	if err := lifecycleContent.Unmarshal(e.JSONContent); err != nil {
 		return err
 	}
 	c.box.Lifecycle = lifecycleContent.State

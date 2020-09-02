@@ -30,15 +30,15 @@ type anyContent interface {
 	Validate() error
 }
 
-func validateContent(e Event) error {
+func bindAndValidateContent(e *Event) error {
 	contentTypeGet, ok := contentTypeGetters[e.Type]
 	if !ok {
 		return merror.Internal().Describef("unknown content type %s", e.Type)
 	}
 
-	content := contentTypeGet()
-	if err := content.Unmarshal(e.Content); err != nil {
+	e.Content = contentTypeGet()
+	if err := e.Content.Unmarshal(e.JSONContent); err != nil {
 		return err
 	}
-	return content.Validate()
+	return e.Content.Validate()
 }

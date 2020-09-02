@@ -10,7 +10,7 @@ import (
 )
 
 // StartGoose use goose to run imported migrations
-func StartGoose(dsn string) {
+func StartGoose(dsn string, migrationDir string) {
 	// define command - default is up.
 	command := "up"
 	commandArg := false
@@ -31,12 +31,6 @@ func StartGoose(dsn string) {
 		log.Println("no command detected, consider `up` as the default one.")
 	}
 
-	// configure dir where migration belongs
-	dir := os.Getenv("MIGRATION_DIR")
-	if len(dir) == 0 {
-		dir = "./"
-	}
-
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatalf("could not open db (%v)\n", err)
@@ -46,7 +40,7 @@ func StartGoose(dsn string) {
 		log.Fatalf("could not ping db (%v)\n", err)
 	}
 
-	if err := goose.Run(command, db, dir, command); err != nil {
+	if err := goose.Run(command, db, migrationDir, command); err != nil {
 		log.Fatalf("could not run goose (%v : %v)\n", command, err)
 	}
 }

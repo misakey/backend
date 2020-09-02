@@ -48,7 +48,7 @@ type View struct {
 func ToView(e Event, identityMap map[string]domain.Identity) (View, error) {
 	view := View{
 		Type:      e.Type,
-		Content:   e.Content,
+		Content:   e.JSONContent,
 		ID:        e.ID,
 		CreatedAt: e.CreatedAt,
 		Sender:    NewSenderView(identityMap[e.SenderID]),
@@ -58,7 +58,7 @@ func ToView(e Event, identityMap map[string]domain.Identity) (View, error) {
 	// we put the deletor identifier in the content
 	if e.Type == "msg.text" || e.Type == "msg.file" {
 		var content DeletedContent
-		err := json.Unmarshal(e.Content, &content)
+		err := json.Unmarshal(e.JSONContent, &content)
 		if err != nil {
 			return view, merror.Transform(err).Describe("unmarshaling content json")
 		}
@@ -117,7 +117,7 @@ func getIdentityIDs(event Event) ([]string, error) {
 
 	if event.Type == "msg.text" || event.Type == "msg.file" {
 		var content DeletedContent
-		err := json.Unmarshal(event.Content, &content)
+		err := json.Unmarshal(event.JSONContent, &content)
 		if err != nil {
 			return IDs, merror.Transform(err).Describe("unmarshaling content json")
 		}

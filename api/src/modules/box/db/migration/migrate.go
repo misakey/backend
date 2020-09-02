@@ -17,6 +17,7 @@ func Launch() {
 	initCreateEncryptedFileTable()
 	initCreateSavedFileTable()
 	initCreateUniqueIndexOnSavedFileTable()
+	initAddReferColumnOnBoxEvents()
 
-	migration.StartGoose(os.Getenv("DSN_BOX"))
+	migration.StartGoose(os.Getenv("DSN_BOX"), os.Getenv("MIGRATION_DIR_BOX"))
 }

@@ -16,26 +16,28 @@ import (
 )
 
 type Event struct {
-	ID        string
-	CreatedAt time.Time
-	SenderID  string
-	Type      string
-	Content   types.JSON
-	BoxID     string
+	ID          string
+	CreatedAt   time.Time
+	BoxID       string
+	SenderID    string
+	Type        string
+	JSONContent types.JSON
+	Content     anyContent
 }
 
 func New(eType string, jsonContent types.JSON, boxID string, senderID string) (Event, error) {
 	event := Event{
-		CreatedAt: time.Now(),
-		SenderID:  senderID,
-		Type:      eType,
-		BoxID:     boxID,
-		Content:   jsonContent,
+		CreatedAt:   time.Now(),
+		SenderID:    senderID,
+		Type:        eType,
+		BoxID:       boxID,
+		JSONContent: jsonContent,
 	}
-	// validate the shape of the event content
-	err := validateContent(event)
+
+	// bind/validate the shape of the event content
+	err := bindAndValidateContent(&event)
 	if err != nil {
-		return event, merror.Transform(err).Describe("validating content")
+		return event, merror.Transform(err).Describe("binding content")
 	}
 
 	event.ID, err = uuid.NewString()
@@ -187,7 +189,7 @@ func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 	ids := make([]string, len(events))
 	var content MsgFileContent
 	for idx, event := range events {
-		err = json.Unmarshal(event.Content, &content)
+		err = json.Unmarshal(event.JSONContent, &content)
 		if err != nil {
 			return nil, merror.Internal().Describe("unmarshaling content json")
 		}
