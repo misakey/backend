@@ -15,7 +15,7 @@ An event has the following fields:
 
 ```json
 {
-  "id": "(string) (uuid formatted): unique id set by the server",
+  "id": "(string) (uuid): unique id set by the server",
   "server_event_created_at": "(RFC3339 time): when the event was received by the server",
   "sender": {
     "display_name": "(string) the display name of the sender",
@@ -26,7 +26,8 @@ An event has the following fields:
     }
   },
   "type": "(string) (one of: create, msg.txt, msg.file, state.lifecycle, join): the type of the event",
-  "content": "(json object) (nullable): its shape depends on the type of event - see definitions below"
+  "content": "(json object) (nullable): its shape depends on the type of event - see definitions below",
+  "referer_id": "(string) (uuid) (nullable): the uuid of a potential referer event"
 }
 ```
 
@@ -212,9 +213,7 @@ The removal of an access is represented by this event shape:
     "server_event_created_at": "...",
     "sender": {...},
     "type": "access.rm",
-    "content": {
-        "add_referer": "(string): the uuid of the corresponding access.add event that has been removed"
-    }
+    "referer_id": "(string): the uuid of the corresponding access.add event that has been removed"
 }
 ```
 
