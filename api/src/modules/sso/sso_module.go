@@ -23,6 +23,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/backupkeyshare"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/coupon"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
 )
@@ -82,6 +83,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	identityRepo := repositories.NewIdentitySQLBoiler(dbConn)
 	authnStepRepo := authn.NewAuthnStepSQLBoiler(dbConn)
 	backupArchiveRepo := repositories.NewBackupArchiveSQLBoiler(dbConn)
+	usedCouponRepo := repositories.NewUsedCouponSQLBoiler(dbConn)
 	backupKeyRepo := backupkeyshare.NewRedisRepo(redConn, viper.GetDuration("backup_key_share.expiration"))
 	authnSessionRepo, authnProcessRepo := authn.NewAuthnSessionRedis(redConn), authn.NewAuthnProcessRedis(redConn)
 	hydraRepo := authflow.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
@@ -117,6 +119,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	identifierService := identifier.NewIdentifierService(identifierRepo)
 	identityService := identity.NewIdentityService(identityRepo, avatarRepo, identifierService)
 	backupArchiveService := backuparchive.NewBackupArchiveService(backupArchiveRepo)
+	usedCouponService := coupon.NewUsedCouponService(usedCouponRepo)
 	authFlowService := authflow.NewAuthFlowService(
 		identityService, hydraRepo,
 		viper.GetString("authflow.login_page_url"),
@@ -139,6 +142,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 		authenticationService,
 		backupKeyShareService,
 		backupArchiveService,
+		usedCouponService,
 	)
 	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(
 		viper.GetString("authflow.self_client_id"),

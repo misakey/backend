@@ -33,7 +33,8 @@ type Identity struct {
 	AvatarURL     null.String `boil:"avatar_url" json:"avatar_url,omitempty" toml:"avatar_url" yaml:"avatar_url,omitempty"`
 	Confirmed     bool        `boil:"confirmed" json:"confirmed" toml:"confirmed" yaml:"confirmed"`
 	CreatedAt     time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	Color         null.String 			`boil:"color" json:"color,omitempty" toml:"color" yaml:"color,omitempty"`
+	Color         null.String `boil:"color" json:"color,omitempty" toml:"color" yaml:"color,omitempty"`
+	Level         int         `boil:"level" json:"level" toml:"level" yaml:"level"`
 
 	R *identityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L identityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -50,6 +51,7 @@ var IdentityColumns = struct {
 	Confirmed     string
 	CreatedAt     string
 	Color         string
+	Level         string
 }{
 	ID:            "id",
 	AccountID:     "account_id",
@@ -61,6 +63,7 @@ var IdentityColumns = struct {
 	Confirmed:     "confirmed",
 	CreatedAt:     "created_at",
 	Color:         "color",
+	Level:         "level",
 }
 
 // Generated where
@@ -85,6 +88,7 @@ var IdentityWhere = struct {
 	Confirmed     whereHelperbool
 	CreatedAt     whereHelpertime_Time
 	Color         whereHelpernull_String
+	Level         whereHelperint
 }{
 	ID:            whereHelperstring{field: "\"identity\".\"id\""},
 	AccountID:     whereHelpernull_String{field: "\"identity\".\"account_id\""},
@@ -96,6 +100,7 @@ var IdentityWhere = struct {
 	Confirmed:     whereHelperbool{field: "\"identity\".\"confirmed\""},
 	CreatedAt:     whereHelpertime_Time{field: "\"identity\".\"created_at\""},
 	Color:         whereHelpernull_String{field: "\"identity\".\"color\""},
+	Level:         whereHelperint{field: "\"identity\".\"level\""},
 }
 
 // IdentityRels is where relationship names are stored.
@@ -103,10 +108,12 @@ var IdentityRels = struct {
 	Account             string
 	Identifier          string
 	AuthenticationSteps string
+	UsedCoupons         string
 }{
 	Account:             "Account",
 	Identifier:          "Identifier",
 	AuthenticationSteps: "AuthenticationSteps",
+	UsedCoupons:         "UsedCoupons",
 }
 
 // identityR is where relationships are stored.
@@ -114,6 +121,7 @@ type identityR struct {
 	Account             *Account
 	Identifier          *Identifier
 	AuthenticationSteps AuthenticationStepSlice
+	UsedCoupons         UsedCouponSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -125,9 +133,9 @@ func (*identityR) NewStruct() *identityR {
 type identityL struct{}
 
 var (
-	identityAllColumns            = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "notifications", "avatar_url", "confirmed", "created_at", "color"}
+	identityAllColumns            = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "notifications", "avatar_url", "confirmed", "created_at", "color", "level"}
 	identityColumnsWithoutDefault = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "avatar_url", "color"}
-	identityColumnsWithDefault    = []string{"notifications", "confirmed", "created_at"}
+	identityColumnsWithDefault    = []string{"notifications", "confirmed", "created_at", "level"}
 	identityPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -266,6 +274,27 @@ func (o *Identity) AuthenticationSteps(mods ...qm.QueryMod) authenticationStepQu
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"authentication_step\".*"})
+	}
+
+	return query
+}
+
+// UsedCoupons retrieves all the used_coupon's UsedCoupons with an executor.
+func (o *Identity) UsedCoupons(mods ...qm.QueryMod) usedCouponQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"used_coupon\".\"identity_id\"=?", o.ID),
+	)
+
+	query := UsedCoupons(queryMods...)
+	queries.SetFrom(query.Query, "\"used_coupon\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"used_coupon\".*"})
 	}
 
 	return query
@@ -549,6 +578,94 @@ func (identityL) LoadAuthenticationSteps(ctx context.Context, e boil.ContextExec
 	return nil
 }
 
+// LoadUsedCoupons allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (identityL) LoadUsedCoupons(ctx context.Context, e boil.ContextExecutor, singular bool, maybeIdentity interface{}, mods queries.Applicator) error {
+	var slice []*Identity
+	var object *Identity
+
+	if singular {
+		object = maybeIdentity.(*Identity)
+	} else {
+		slice = *maybeIdentity.(*[]*Identity)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &identityR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &identityR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(qm.From(`used_coupon`), qm.WhereIn(`used_coupon.identity_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load used_coupon")
+	}
+
+	var resultSlice []*UsedCoupon
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice used_coupon")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on used_coupon")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for used_coupon")
+	}
+
+	if singular {
+		object.R.UsedCoupons = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &usedCouponR{}
+			}
+			foreign.R.Identity = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.IdentityID {
+				local.R.UsedCoupons = append(local.R.UsedCoupons, foreign)
+				if foreign.R == nil {
+					foreign.R = &usedCouponR{}
+				}
+				foreign.R.Identity = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetAccount of the identity to the related item.
 // Sets o.R.Account to related.
 // Adds o to related.R.Identities.
@@ -720,6 +837,59 @@ func (o *Identity) AddAuthenticationSteps(ctx context.Context, exec boil.Context
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &authenticationStepR{
+				Identity: o,
+			}
+		} else {
+			rel.R.Identity = o
+		}
+	}
+	return nil
+}
+
+// AddUsedCoupons adds the given related objects to the existing relationships
+// of the identity, optionally inserting them as new records.
+// Appends related to o.R.UsedCoupons.
+// Sets related.R.Identity appropriately.
+func (o *Identity) AddUsedCoupons(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*UsedCoupon) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.IdentityID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"used_coupon\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"identity_id"}),
+				strmangle.WhereClause("\"", "\"", 2, usedCouponPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.IdentityID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &identityR{
+			UsedCoupons: related,
+		}
+	} else {
+		o.R.UsedCoupons = append(o.R.UsedCoupons, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &usedCouponR{
 				Identity: o,
 			}
 		} else {

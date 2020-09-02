@@ -56,6 +56,7 @@ func initRoutes(
 	identityRoutes.PUT("/:id/avatar", identityHTTP.UploadAvatar, oidcAuthzMidlw)
 	identityRoutes.DELETE("/:id/avatar", identityHTTP.DeleteAvatar, oidcAuthzMidlw)
 	identityRoutes.PUT("/authable", identityHTTP.RequireAuthableIdentity, authnProcessAuthzMidlw)
+	identityRoutes.POST("/:id/coupons", identityHTTP.AttachCoupon, oidcAuthzMidlw)
 
 	backupKeyShareRoutes := router.Group("/backup-key-shares")
 	backupKeyShareRoutes.GET("/:other-share-hash", backupKeyShareHTTP.GetBackupKeyShare, oidcAuthzMidlw)

@@ -121,3 +121,24 @@ func (entrypoint IdentityHTTP) DeleteAvatar(ctx echo.Context) error {
 
 	return ctx.NoContent(http.StatusNoContent)
 }
+
+// Handles POST /identities/:id/coupons - attach a coupon to identity
+func (entrypoint IdentityHTTP) AttachCoupon(ctx echo.Context) error {
+	cmd := application.AttachCouponCmd{}
+
+	if err := ctx.Bind(&cmd); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
+
+	cmd.IdentityID = ctx.Param("id")
+
+	if err := cmd.Validate(); err != nil {
+		return err
+	}
+
+	if err := entrypoint.service.AttachCoupon(ctx.Request().Context(), cmd); err != nil {
+		return merror.Transform(err).Describe("attach coupon")
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
+}

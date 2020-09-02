@@ -19,6 +19,7 @@ func Launch() {
 	initCreateBackupArchiveTable()
 	initCreatedAtToEntities()
 	initAddColorToUserIdentity()
+	initAddCouponAndIdentityLevel()
 
 	migration.StartGoose(os.Getenv("DSN_SSO"), os.Getenv("MIGRATION_DIR_SSO"))
 }

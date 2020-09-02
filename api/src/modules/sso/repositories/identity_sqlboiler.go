@@ -33,6 +33,7 @@ func (repo IdentitySQLBoiler) toSQLBoiler(domModel *domain.Identity) *sqlboiler.
 		Notifications: domModel.Notifications,
 		AvatarURL:     domModel.AvatarURL,
 		Color:         domModel.Color,
+		Level:         domModel.Level,
 	}
 }
 
@@ -46,6 +47,7 @@ func (repo IdentitySQLBoiler) toDomain(boilModel *sqlboiler.Identity) *domain.Id
 		Notifications: boilModel.Notifications,
 		AvatarURL:     boilModel.AvatarURL,
 		Color:         boilModel.Color,
+		Level:         boilModel.Level,
 	}
 
 	if boilModel.R != nil {

@@ -9,10 +9,12 @@ var TableNames = struct {
 	BackupArchive      string
 	Identifier         string
 	Identity           string
+	UsedCoupon         string
 }{
 	Account:            "account",
 	AuthenticationStep: "authentication_step",
 	BackupArchive:      "backup_archive",
 	Identifier:         "identifier",
 	Identity:           "identity",
+	UsedCoupon:         "used_coupon",
 }

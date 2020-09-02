@@ -8,6 +8,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/backupkeyshare"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/coupon"
 )
 
 type SSOService struct {
@@ -18,6 +19,7 @@ type SSOService struct {
 	authenticationService authn.Service
 	backupKeyShareService backupkeyshare.BackupKeyShareService
 	backupArchiveService  backuparchive.BackupArchiveService
+	usedCouponService     coupon.UsedCouponService
 }
 
 func NewSSOService(
@@ -26,6 +28,7 @@ func NewSSOService(
 	authns authn.Service,
 	bks backupkeyshare.BackupKeyShareService,
 	backupArchiveService backuparchive.BackupArchiveService,
+	usedCouponService coupon.UsedCouponService,
 ) SSOService {
 	return SSOService{
 		accountService: as, identityService: ids, identifierService: idfs,
@@ -33,5 +36,6 @@ func NewSSOService(
 		authenticationService: authns,
 		backupKeyShareService: bks,
 		backupArchiveService:  backupArchiveService,
+		usedCouponService:     usedCouponService,
 	}
 }
