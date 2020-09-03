@@ -36,7 +36,7 @@ func (bs *BoxApplication) ListBoxes(ctx context.Context, genReq entrypoints.Requ
 
 	// retrieve accesses to filters boxes to return
 	acc := ajwt.GetAccesses(ctx)
-	boxes, err := boxes.ListForSender(
+	boxes, err := boxes.ListJoinedAndAccessible(
 		ctx,
 		bs.db, bs.redConn, bs.identities,
 		acc.IdentityID,

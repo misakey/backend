@@ -30,8 +30,7 @@ func (req *CreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 	return v.ValidateStruct(req,
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
-		v.Field(&req.Type, v.Required, v.In("msg.text", "state.lifecycle", "msg.delete", "msg.edit")),
-		v.Field(&req.Content, v.Required),
+		v.Field(&req.Type, v.Required, v.In("msg.text", "state.lifecycle", "msg.delete", "msg.edit", "member.leave")),
 	)
 }
 

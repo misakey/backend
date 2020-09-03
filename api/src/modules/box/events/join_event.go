@@ -4,46 +4,20 @@ import (
 	"context"
 
 	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/types"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
-type JoinContent struct{}
-
-func (c *JoinContent) Unmarshal(json types.JSON) error {
-	return json.Unmarshal(c)
-}
-
-func (c JoinContent) Validate() error {
-	return nil
-}
-
 func StoreJoin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) error {
 
-	// check that the current sender has not already
-	// joined this box
-	_, err := ListByTypeAndBoxIDAndSenderID(ctx, exec, "join", boxID, senderID)
-	if err == nil {
-		// if there is no not found error
-		// then a join already exist for the current sender
-		// and we don’t need to add a new one
-		return nil
-	}
-	if !merror.HasCode(err, merror.NotFoundCode) {
-		return err
-	}
-	// check that the current sender is not
-	// the box creator
-	createEvent, err := GetCreateEvent(ctx, exec, boxID)
-	if err != nil {
-		return merror.Transform(err).Describe("getting create event")
-	}
-	if createEvent.SenderID == senderID {
+	// check that the current sender is not already a box member
+	if err := MustBeMember(ctx, exec, boxID, senderID); err == nil {
+		// user is a box member
+		// so we just return
 		return nil
 	}
 
 	// create and store the new join event
-	event, err := newWithAnyContent("join", nil, boxID, senderID)
+	event, err := newWithAnyContent("member.join", nil, boxID, senderID)
 	if err != nil {
 		return err
 	}

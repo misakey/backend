@@ -115,7 +115,7 @@ This request allows to retrieval of information about accessible boxes list.
 Today only the total count of boxes is returned as an response header.
 
 ```bash
-  HEAD https://api.misakey.com/boxes
+  HEAD https://api.misakey.com/boxes/joined
 ```
 
 _Headers:_
@@ -131,7 +131,7 @@ HTTP 204 NO CONTENT
 _Headers:_
 - `X-Total-Count` (integer): the total count of boxes that the user can access.
 
-## 2.5. Listing boxes
+## 2.5. Listing joined and accessible boxes
 
 ### 2.5.1. request
 
@@ -141,7 +141,7 @@ The returned list is automatically computed from the server according to the aut
 provided by the received bearer token.
 
 ```bash
-GET https://api.misakey.com/boxes
+GET https://api.misakey.com/boxes/joined
 ```
 
 _Headers:_
@@ -235,6 +235,34 @@ _Headers:_
 _Code:_
 ```bash
 HTTP 204 NO CONTENT
+```
+
+## 2.8. Listing box members
+
+### 2.5.1. request
+
+```bash
+GET https://api.misakey.com/boxes/:id/members
+```
+
+_Path Parameter:_
+- `id` (string) (uuid): the box id
+
+_Headers:_
+- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
+
+### 2.5.2. response
+
+_Code:_
+```bash
+HTTP 200 OK
+```
+
+A list of senders is returned.
+```json
+[
+  {{% include "include/event-sender.json" %}}
+]
 ```
 
 # 3. Accesses

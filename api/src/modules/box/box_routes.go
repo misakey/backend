@@ -46,14 +46,21 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw ech
 			return nil
 		},
 	)
-	boxRouter.HEAD("", countBoxes, authzMidlw)
+	boxRouter.HEAD("/joined", countBoxes, authzMidlw)
 
 	listBoxes := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.ListBoxesRequest{} },
 		bs.ListBoxes,
 		entrypoints.ResponseOK,
 	)
-	boxRouter.GET("", listBoxes, authzMidlw)
+	boxRouter.GET("/joined", listBoxes, authzMidlw)
+
+	listBoxMembers := entrypoints.NewProtectedHTTP(
+		func() entrypoints.Request { return &application.ListBoxMembersRequest{} },
+		bs.ListBoxMembers,
+		entrypoints.ResponseOK,
+	)
+	boxRouter.GET("/:id/members", listBoxMembers, authzMidlw)
 
 	deleteBox := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.DeleteBoxRequest{} },

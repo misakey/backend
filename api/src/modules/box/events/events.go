@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/types"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
@@ -20,12 +22,13 @@ type Event struct {
 	CreatedAt   time.Time
 	BoxID       string
 	SenderID    string
+	RefererID   *string
 	Type        string
 	JSONContent types.JSON
 	Content     anyContent
 }
 
-func New(eType string, jsonContent types.JSON, boxID string, senderID string) (Event, error) {
+func New(eType string, jsonContent types.JSON, boxID, senderID string) (Event, error) {
 	event := Event{
 		CreatedAt:   time.Now(),
 		SenderID:    senderID,
@@ -123,7 +126,7 @@ func ListByTypeAndBoxIDAndSenderID(ctx context.Context, exec boil.ContextExecuto
 	return events, nil
 }
 
-func newWithAnyContent(eType string, content anyContent, boxID string, senderID string) (Event, error) {
+func newWithAnyContent(eType string, content anyContent, boxID, senderID string) (Event, error) {
 	contentBytes, err := json.Marshal(content)
 	if err != nil {
 		return Event{}, merror.Transform(err).Describe("marshalling anyContent into bytes")
@@ -214,4 +217,36 @@ func CountByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) 
 	}
 
 	return int(count), nil
+}
+
+func GetLastJoin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (*Event, error) {
+	sCol := sqlboiler.EventColumns.SenderID
+	rCol := sqlboiler.EventColumns.RefererID
+	tCol := sqlboiler.EventColumns.Type
+	bCol := sqlboiler.EventColumns.BoxID
+
+	query := fmt.Sprintf(`
+			SELECT %s FROM event
+			WHERE %s = '%s'
+			AND %s = '%s'
+			AND %s = '%s'
+			AND id NOT IN (SELECT %s FROM event WHERE %s = '%s' AND %s = '%s');
+	`, sCol, bCol, boxID, sCol, senderID, tCol, "member.join",
+		rCol, tCol, "member.leave", bCol, boxID)
+
+	var dbEvents []Event
+	if err := queries.Raw(query).Bind(ctx, exec, &dbEvents); err != nil {
+		return nil, merror.Transform(err).Describe("retrieving last join event")
+	}
+
+	if len(dbEvents) == 0 {
+		return nil, merror.NotFound()
+	}
+
+	// we shouldn’t find more that one join event without associated leave evet
+	if len(dbEvents) > 1 {
+		return nil, merror.Internal().Describe("too many join events in box for this user")
+	}
+
+	return &dbEvents[0], nil
 }

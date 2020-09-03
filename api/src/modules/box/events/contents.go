@@ -7,8 +7,17 @@ package events
 
 import (
 	"github.com/volatiletech/sqlboiler/types"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
+
+type EmptyContent struct{}
+
+func (c *EmptyContent) Unmarshal(json types.JSON) error {
+	return json.Unmarshal(c)
+}
+
+func (c EmptyContent) Validate() error {
+	return nil
+}
 
 var contentTypeGetters = map[string]func() anyContent{
 	"create":          func() anyContent { return &CreationContent{} },
@@ -17,7 +26,6 @@ var contentTypeGetters = map[string]func() anyContent{
 	"msg.file":        func() anyContent { return &MsgFileContent{} },
 	"msg.delete":      func() anyContent { return &MsgDeleteContent{} },
 	"msg.edit":        func() anyContent { return &MsgEditContent{} },
-	"join":            func() anyContent { return &JoinContent{} },
 }
 
 type anyContent interface {
@@ -33,12 +41,16 @@ type anyContent interface {
 func bindAndValidateContent(e *Event) error {
 	contentTypeGet, ok := contentTypeGetters[e.Type]
 	if !ok {
-		return merror.Internal().Describef("unknown content type %s", e.Type)
+		// trick to avoid problems when coming
+		// to unmarshal an "empty" json type
+		_ = e.JSONContent.Marshal(&EmptyContent{})
+		return nil
 	}
 
 	e.Content = contentTypeGet()
 	if err := e.Content.Unmarshal(e.JSONContent); err != nil {
 		return err
 	}
+
 	return e.Content.Validate()
 }

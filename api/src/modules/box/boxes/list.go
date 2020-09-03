@@ -19,11 +19,11 @@ func Get(ctx context.Context, exec boil.ContextExecutor, identities entrypoints.
 }
 
 func CountForSender(ctx context.Context, exec boil.ContextExecutor, senderID string) (int, error) {
-	boxIDs, err := LatestIDsForSender(ctx, exec, senderID)
+	boxIDs, err := LatestJoinedAndAccessibleIDs(ctx, exec, senderID)
 	return len(boxIDs), err
 }
 
-func ListForSender(
+func ListJoinedAndAccessible(
 	ctx context.Context,
 	exec boil.ContextExecutor,
 	redConn *redis.Client,
@@ -34,7 +34,7 @@ func ListForSender(
 	boxes := []*Box{}
 
 	// 1. retrieve box IDs
-	boxIDs, err := LatestIDsForSender(ctx, exec, senderID)
+	boxIDs, err := LatestJoinedAndAccessibleIDs(ctx, exec, senderID)
 	if err != nil {
 		return boxes, merror.Transform(err).Describe("listing box ids")
 	}
@@ -80,7 +80,7 @@ func ListForSender(
 	return boxes, nil
 }
 
-func LatestIDsForSender(
+func LatestJoinedAndAccessibleIDs(
 	ctx context.Context,
 	exec boil.ContextExecutor,
 	senderID string,
@@ -88,11 +88,22 @@ func LatestIDsForSender(
 	bCol := sqlboiler.EventColumns.BoxID
 	cCol := sqlboiler.EventColumns.CreatedAt
 	sCol := sqlboiler.EventColumns.SenderID
+	rCol := sqlboiler.EventColumns.RefererID
+	tCol := sqlboiler.EventColumns.Type
+
 	query := fmt.Sprintf(`
 		SELECT %s, max(%s) latest FROM event WHERE %s IN (
-			SELECT %s FROM event WHERE %s = '%s'
+		    SELECT %s FROM event
+			WHERE %s = '%s'
+			AND type = 'create'
+			UNION
+			SELECT %s FROM event
+			WHERE %s = '%s'
+			AND %s = '%s'
+			AND id NOT IN (SELECT %s FROM event WHERE %s = '%s' AND %s = '%s')
 		) GROUP BY %s ORDER BY latest DESC;
-	`, bCol, cCol, bCol, bCol, sCol, senderID, bCol)
+	`, bCol, cCol, bCol, bCol, sCol, senderID,
+		bCol, tCol, "member.join", sCol, senderID, rCol, tCol, "member.leave", sCol, senderID, bCol)
 
 	var dbEvents []events.Event
 	if err := queries.Raw(query).Bind(ctx, exec, &dbEvents); err != nil {

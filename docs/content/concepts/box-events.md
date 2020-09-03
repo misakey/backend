@@ -25,7 +25,7 @@ An event has the following fields:
       "kind": "(string) (one of: email): the kind of the identifier"
     }
   },
-  "type": "(string) (one of: create, msg.txt, msg.file, state.lifecycle, join): the type of the event",
+  "type": "(string) (one of: create, msg.txt, msg.file, state.lifecycle, member.join, member.leave): the type of the event",
   "content": "(json object) (nullable): its shape depends on the type of event - see definitions below",
   "referer_id": "(string) (uuid) (nullable): the uuid of a potential referer event"
 }
@@ -53,21 +53,32 @@ An event of type `create` has the following content fields:
 }
 ```
 
-## 1.2. `Join` type event
+## 1.2. `Member` type event
 
-An event of type `join` is automatically added to the box by the backend
+An event of type `member.join` is automatically added to the box by the backend
 when a user joins the box with an invitation link.
 
-Only one `join` event can exist per couple box/sender.
-
-Messages of type `join` have no content field:
+Messages of type `member.join` have no content field:
 
 ```json
 {
   "id": "...",
   "server_event_created_at": "...",
   "sender": {...},
-  "type": "join",
+  "type": "member.join",
+  "content": null,
+}
+```
+
+An event of type `member.leave` can be added by the user if they are member of the box. It will automatically refer the previous `member.join` event of the user. An admin can not create a `member.leave` event on their box.
+
+```json
+{
+  "id": "...",
+  "server_event_created_at": "...",
+  "sender": {...},
+  "type": "member.leave",
+  "referer_id": "<member.join id>",
   "content": null,
 }
 ```
