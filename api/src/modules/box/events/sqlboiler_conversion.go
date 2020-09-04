@@ -17,6 +17,8 @@ func (e *Event) ToSQLBoiler() *sqlboiler.Event {
 
 		Type:    e.Type,
 		Content: null.JSONFrom(bytes.TrimSpace([]byte(e.JSONContent))),
+
+		RefererID: null.StringFromPtr(e.RefererID),
 	}
 	return &result
 }
@@ -29,6 +31,7 @@ func FromSQLBoiler(src *sqlboiler.Event) Event {
 		Type:        src.Type,
 		JSONContent: src.Content.JSON,
 		BoxID:       src.BoxID,
+		RefererID:   &src.RefererID.String,
 	}
 	return dst
 }

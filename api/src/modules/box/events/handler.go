@@ -30,9 +30,7 @@ func leaveHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, redC
 
 	// check that the current sender is a box member
 	if err := MustBeMember(ctx, exec, e.BoxID, e.SenderID); err != nil {
-		// user is a not a box member
-		// so we just return
-		return nil
+		return merror.Forbidden().Describe("not member of this box")
 	}
 
 	// check that the current sender is not the admin

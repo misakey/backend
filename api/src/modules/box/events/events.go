@@ -220,6 +220,7 @@ func CountByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) 
 }
 
 func GetLastJoin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (*Event, error) {
+	iCol := sqlboiler.EventColumns.ID
 	sCol := sqlboiler.EventColumns.SenderID
 	rCol := sqlboiler.EventColumns.RefererID
 	tCol := sqlboiler.EventColumns.Type
@@ -231,7 +232,7 @@ func GetLastJoin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID
 			AND %s = '%s'
 			AND %s = '%s'
 			AND id NOT IN (SELECT %s FROM event WHERE %s = '%s' AND %s = '%s');
-	`, sCol, bCol, boxID, sCol, senderID, tCol, "member.join",
+	`, iCol, bCol, boxID, sCol, senderID, tCol, "member.join",
 		rCol, tCol, "member.leave", bCol, boxID)
 
 	var dbEvents []Event
