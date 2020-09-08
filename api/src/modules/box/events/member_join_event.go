@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 
@@ -10,28 +11,19 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
-func StoreJoin(
-	ctx context.Context, exec boil.ContextExecutor, identities entrypoints.IdentityIntraprocessInterface,
-	boxID, senderID string,
-) error {
+func joinHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
 	// check that the current sender is not already a box member
-	isMember, err := isMember(ctx, exec, boxID, senderID)
+	isMember, err := isMember(ctx, exec, e.BoxID, e.SenderID)
 	if err != nil {
-		return err
+		return merror.Transform(err).Describe("checking membership")
 	}
-	// user is already a member so we just return
 	if isMember {
-		return nil
+		return merror.Conflict().Describe("already box member")
 	}
 
-	// create and store the new join event
-	event, err := newWithAnyContent("member.join", nil, boxID, senderID)
-	if err != nil {
-		return err
-	}
-
-	if err := event.ToSQLBoiler().Insert(ctx, exec, boil.Infer()); err != nil {
-		return merror.Transform(err).Describe("inserting event in DB")
+	// check accesses
+	if err := MustHaveAccess(ctx, exec, identities, e.BoxID, e.SenderID); err != nil {
+		return merror.Transform(err).Describe("checking accesses")
 	}
 
 	return nil

@@ -24,7 +24,6 @@ Considering the type of event, side effects will occurs.
 This endpoint does not allow the creation of all type of event though. Some require to use different routes to be created as a side effect:
 - `create` type events are created by the server [during the creation of the box](../boxes/#21-creating-a-box).
 - `msg.file` type events are created by the server [during the upload of an encrypted file](../box_enc_files/#23-upload-an-encrypted-file-to-a-box).
-- `member.join` type events are created by the server [during the access with a key share](../box_key_shares/#3-getting-a-box-key-share)
 
 ### 2.1.1. request
 

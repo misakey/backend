@@ -13,6 +13,11 @@ const (
 	Eaccessrm       = "access.rm"
 )
 
+// Return all event types that can be seen by members
+func memberReadTypes() []string {
+	return []string{Ecreate, Estatelifecycle, Emsgtext, Emsgfile, Emsgedit, Emsgdelete, Ememberjoin, Ememberleave}
+}
+
 func ContentIsRequired(eType string) bool {
 	return eType == Ecreate ||
 		eType == Estatelifecycle ||

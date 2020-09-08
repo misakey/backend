@@ -75,6 +75,44 @@ _JSON Body:_
 {{% include "include/box.json" %}}
 ```
 
+### 2.2.3. notable error reponses
+
+**I - The user has no access to the box
+
+```bash
+HTTP 403 FORBIDDEN
+```
+
+_JSON Body:_
+```json
+{
+    "code": "forbidden",
+    "origin": "not_defined",
+    "desc": "must match a restriction rule",
+    "details": {
+        "reason": "no_access"
+    }
+}
+```
+
+**II - The user is not a box member
+
+```bash
+HTTP 403 FORBIDDEN
+```
+
+_JSON Body:_
+```json
+{
+    "code": "forbidden",
+    "origin": "not_defined",
+    "desc": "must be a member",
+    "details": {
+        "reason": "not_member"
+    }
+}
+```
+
 ## 2.3. Getting public info about a box
 
 This endpoint does not need any valid token, but it needs a valid `other_share_hash`

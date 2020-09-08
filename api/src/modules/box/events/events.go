@@ -55,7 +55,7 @@ func New(eType string, jsonContent types.JSON, boxID, senderID string, referrerI
 func ListForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string, offset, limit *int) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
 		boxID:  null.StringFrom(boxID),
-		eTypes: []string{Ecreate, Estatelifecycle, Emsgtext, Emsgfile, Emsgedit, Emsgdelete, Ememberjoin, Ememberleave},
+		eTypes: memberReadTypes(),
 		offset: offset,
 		limit:  limit,
 	})
@@ -280,7 +280,11 @@ func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 }
 
 func CountByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (int, error) {
-	count, err := sqlboiler.Events(sqlboiler.EventWhere.BoxID.EQ(boxID)).Count(ctx, exec)
+	mods := []qm.QueryMod{
+		sqlboiler.EventWhere.BoxID.EQ(boxID),
+		sqlboiler.EventWhere.Type.IN(memberReadTypes()),
+	}
+	count, err := sqlboiler.Events(mods...).Count(ctx, exec)
 	if err != nil {
 		return 0, merror.Transform(err).Describe("retrieving db events")
 	}

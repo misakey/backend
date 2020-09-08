@@ -55,8 +55,9 @@ An event of type `create` has the following content fields:
 
 ## 1.2. `Member` type event
 
-An event of type `member.join` is automatically added to the box by the backend
-when a user joins the box with an invitation link.
+The `member.join` event is sent by the user when they want to be a member of the box.
+The user must have access to the box to send such an event.
+
 
 Messages of type `member.join` have no content field:
 

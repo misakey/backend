@@ -104,16 +104,21 @@ func MustMemberHaveAccess(
 	exec boil.ContextExecutor, identities entrypoints.IdentityIntraprocessInterface,
 	boxID string, identityID string,
 ) error {
-	// 1. the identity must be a member of the box
+	// 1. the identity must have access to the box
+	if err := MustHaveAccess(ctx, exec, identities, boxID, identityID); err != nil {
+		return err
+	}
+
+	// 2. the identity must be a member of the box
 	isMember, err := isMember(ctx, exec, boxID, identityID)
 	if err != nil {
 		return err
 	}
 	if !isMember {
-		return merror.Forbidden().Describe("must be a member")
+		return merror.Forbidden().Describe("must be a member").Detail("reason", "not_member")
 	}
 
-	return MustHaveAccess(ctx, exec, identities, boxID, identityID)
+	return nil
 }
 
 func MustHaveAccess(
@@ -121,41 +126,44 @@ func MustHaveAccess(
 	exec boil.ContextExecutor, identities entrypoints.IdentityIntraprocessInterface,
 	boxID string, identityID string,
 ) error {
-	// 1. check some access exists for the box
+	// 1. admin is always allowed to see the box
+	isAdmin, err := isAdmin(ctx, exec, boxID, identityID)
+	if err != nil {
+		return err
+	}
+	if isAdmin {
+		return nil
+	}
+
+	// 2. check some access exists for the box
 	accesses, err := FindActiveAccesses(ctx, exec, boxID)
 	if err != nil {
 		return err
 	}
 
-	// 2. if no access exists or the box is closed, only the admins has access to
+	// 3. if no access exists or the box is closed, only the admins has access to
 	closedBox, err := isClosed(ctx, exec, boxID)
 	if err != nil {
 		return err
 	}
 	if len(accesses) == 0 || closedBox {
-		isAdmin, err := isAdmin(ctx, exec, boxID, identityID)
-		if err != nil {
-			return err
-		}
-		if !isAdmin {
-			return merror.Forbidden().Describe("must be an admin")
-		}
+		return merror.Forbidden().Describe("must be an admin").Detail("reason", "no_access")
 	}
 
-	// 3. consider the box can be public to return directly
+	// 4. consider the box can be public to return directly
 	// further security barriers exists because of encryption if the box is public
 	// but was not shared
 	if isPublic(ctx, accesses) {
 		return nil
 	}
 
-	// 3. if the box isn't public, get the identity to check whitelist rules
+	// 5. if the box isn't public, get the identity to check whitelist rules
 	identity, err := identities.Get(ctx, identityID)
 	if err != nil {
 		return merror.Transform(err).Describe("getting identity for access check")
 	}
 
-	// 4. check restriction rules
+	// 6. check restriction rules
 	for _, access := range accesses {
 		c := accessContent{}
 		// on marshal error the box is locked and considered as not public
@@ -174,7 +182,7 @@ func MustHaveAccess(
 			}
 		}
 	}
-	return merror.Forbidden().Describe("must match a restriction rule")
+	return merror.Forbidden().Describe("must match a restriction rule").Detail("reason", "no_access")
 }
 
 func isPublic(ctx context.Context, accesses []Event) bool {

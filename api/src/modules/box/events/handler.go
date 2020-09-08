@@ -42,6 +42,7 @@ var handlers = map[string]handler{
 	"access.rm":  rmAccessHandler,
 
 	"member.leave": leaveHandler,
+	"member.join":  joinHandler,
 }
 
 func Handler(eType string) handler {

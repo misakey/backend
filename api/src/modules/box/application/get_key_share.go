@@ -46,9 +46,5 @@ func (bs *BoxApplication) GetKeyShare(ctx context.Context, genReq entrypoints.Re
 		return nil, err
 	}
 
-	// consider the user has joined the box at this moment
-	if err := events.StoreJoin(ctx, bs.db, bs.identities, ks.BoxID, acc.IdentityID); err != nil {
-		return nil, err
-	}
 	return ks, nil
 }
