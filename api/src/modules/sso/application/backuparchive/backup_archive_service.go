@@ -50,7 +50,7 @@ func (service BackupArchiveService) DeleteBackupArchive(ctx context.Context, arc
 	recoveredAt := null.Time{}
 
 	now := null.TimeFrom(time.Now())
-	// TODO see about using an enum or something like this?
+	// TODO: see about using an enum or something like this?
 	if reason == "deletion" {
 		deletedAt = now
 	} else if reason == "recovery" {

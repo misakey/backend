@@ -11,6 +11,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/keyshares"
 )
 
@@ -31,7 +32,15 @@ func (req *CreateKeyShareRequest) BindAndValidate(eCtx echo.Context) error {
 
 func (bs *BoxApplication) CreateKeyShare(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
 	req := genReq.(*CreateKeyShareRequest)
+
+	// check accesses
 	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merror.Unauthorized()
+	}
+	if err := events.MustMemberHaveAccess(ctx, bs.db, bs.identities, req.BoxID, acc.IdentityID); err != nil {
+		return nil, err
+	}
 
 	if err := keyshares.Create(
 		ctx, bs.db,

@@ -31,15 +31,17 @@ func (req *CreateBoxRequest) BindAndValidate(eCtx echo.Context) error {
 func (bs *BoxApplication) CreateBox(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
 	req := genReq.(*CreateBoxRequest)
 
-	access := ajwt.GetAccesses(ctx)
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merror.Unauthorized()
+	}
 
 	// Check identity level
-
-	if err := boxes.MustBeAtLeastLevel20(ctx, bs.db, bs.identities, access.IdentityID); err != nil {
+	if err := boxes.MustBeAtLeastLevel20(ctx, bs.db, bs.identities, acc.IdentityID); err != nil {
 		return nil, merror.Transform(err).Describe("checking level")
 	}
 
-	event, err := events.CreateCreateEvent(ctx, req.Title, req.PublicKey, access.IdentityID, bs.db)
+	event, err := events.CreateCreateEvent(ctx, req.Title, req.PublicKey, acc.IdentityID, bs.db)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating create event")
 	}

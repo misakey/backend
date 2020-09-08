@@ -39,6 +39,9 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq entrypoints.Requ
 	req := genReq.(*DeleteBoxRequest)
 
 	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merror.Unauthorized()
+	}
 
 	// 1. verify the deletion sender is an admin of the box
 	if err := events.MustBeAdmin(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {

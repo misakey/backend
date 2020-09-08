@@ -2,34 +2,57 @@ package events
 
 import (
 	"context"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"github.com/go-redis/redis/v7"
+	"github.com/volatiletech/null"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/types"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
 type StateLifecycleContent struct {
 	State string `json:"state"`
 }
 
-func (c *StateLifecycleContent) Unmarshal(content types.JSON) error {
-	return content.Unmarshal(c)
-}
+func lifecycleHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redis.Client, _ entrypoints.IdentityIntraprocessInterface) error {
+	// check accesses
+	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
+		return merror.Transform(err).Describe("checking admin")
+	}
 
-func (c StateLifecycleContent) Validate() error {
-	return v.ValidateStruct(&c,
+	// handle content
+	var c StateLifecycleContent
+	if err := e.JSONContent.Unmarshal(&c); err != nil {
+		return merror.Transform(err).Describe("marshalling lifecycle content")
+	}
+
+	// referrer ID cannot be set
+	if err := v.Empty.Validate(&e.ReferrerID); err != nil {
+		return err
+	}
+	// only closed state lifecycle change is allowed today
+	if err := v.ValidateStruct(&c,
 		v.Field(&c.State, v.Required, v.In("closed")),
-	)
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func IsClosed(
+func isClosed(
 	ctx context.Context,
 	exec boil.ContextExecutor,
 	boxID string,
 ) (bool, error) {
 	jsonQuery := `{"state": "closed"}`
-	_, err := findByTypeContent(ctx, exec, boxID, "state.lifecycle", &jsonQuery)
+	_, err := get(ctx, exec, eventFilters{
+		boxID:   null.StringFrom(boxID),
+		eType:   null.StringFrom("state.lifecycle"),
+		content: &jsonQuery,
+	})
 	if err != nil {
 		if merror.HasCode(err, merror.NotFoundCode) {
 			return false, nil
@@ -40,26 +63,13 @@ func IsClosed(
 }
 
 func MustBoxBeOpen(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
-	closed, err := IsClosed(ctx, exec, boxID)
+	closed, err := isClosed(ctx, exec, boxID)
 	if err != nil {
 		return err
 	}
-	if !closed {
-		return nil
-	}
-	return merror.Conflict().Describe("box is closed").
-		Detail("lifecycle", merror.DVConflict)
-}
-
-func MustBeAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) error {
-	// only the creator is an admin so we check the sender ID is the one that has created the box
-	createEvent, err := GetCreateEvent(ctx, exec, boxID)
-	if err != nil {
-		return merror.Transform(err).Describe("getting create event")
-	}
-	if createEvent.SenderID != senderID {
-		return merror.Forbidden().Describe("sender not an admin").
-			Detail("sender_id", merror.DVForbidden)
+	if closed {
+		return merror.Conflict().Describe("box is closed").
+			Detail("lifecycle", merror.DVConflict)
 	}
 	return nil
 }

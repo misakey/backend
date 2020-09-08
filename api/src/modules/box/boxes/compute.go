@@ -49,6 +49,8 @@ func Compute(
 		events:     buildEvents,
 	}
 	computer.ePlayer = map[string]func(context.Context, events.Event) error{
+		// NOTE: to add an new event here should involve attention on the ListForMembersByBoxID method
+		// used to retrieve events to compute the bo
 		"create":          computer.playCreate,
 		"state.lifecycle": computer.playState,
 	}
@@ -67,7 +69,8 @@ func Compute(
 
 func (c *computer) retrieveEvents(ctx context.Context) error {
 	var err error
-	c.events, err = events.ListByBoxID(ctx, c.exec, c.box.ID, nil, nil)
+	// NOTE: Member Events might not be all required to compute the box view at some point
+	c.events, err = events.ListForMembersByBoxID(ctx, c.exec, c.box.ID, nil, nil)
 	return err
 }
 
@@ -143,11 +146,11 @@ func (c *computer) playCreate(ctx context.Context, e events.Event) error {
 
 // today, state if only about lifecycle
 func (c *computer) playState(_ context.Context, e events.Event) error {
-	lifecycleContent := events.StateLifecycleContent{}
-	if err := lifecycleContent.Unmarshal(e.JSONContent); err != nil {
+	content := events.StateLifecycleContent{}
+	if err := e.JSONContent.Unmarshal(&content); err != nil {
 		return err
 	}
-	c.box.Lifecycle = lifecycleContent.State
+	c.box.Lifecycle = content.State
 
 	if c.box.Lifecycle == "closed" {
 		c.closeEvent = &e

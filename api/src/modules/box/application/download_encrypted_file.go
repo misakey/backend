@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"github.com/volatiletech/sqlboiler/boil"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -12,6 +13,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
+	e "gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
 type DownloadEncryptedFileRequest struct {
@@ -27,7 +29,6 @@ func (req *DownloadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) erro
 
 func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
 	req := genReq.(*DownloadEncryptedFileRequest)
-	acc := ajwt.GetAccesses(ctx)
 
 	// check the file does exist
 	_, err := files.Get(ctx, bs.db, req.fileID)
@@ -35,43 +36,16 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq entr
 		return nil, merror.Transform(err).Describe("finding msg.file event")
 	}
 
-	isAllowed := false
-
-	// get all entities linked to the file
-	linkedEvents, err := events.FindByEncryptedFileID(ctx, bs.db, req.fileID)
-	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
-		return nil, err
+	// check accesses
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merror.Unauthorized()
 	}
-	linkedSavedFiles, err := files.ListSavedFilesByFileID(ctx, bs.db, req.fileID)
+	allowed, err := hasAccessToFile(ctx, bs.db, bs.identities, req.fileID, acc.IdentityID)
 	if err != nil {
-		return nil, err
+		return nil, merror.Transform(err).Describe("checking access to file")
 	}
-
-	for _, event := range linkedEvents {
-		// if the box is closed, only the admins can download file linked to it
-		closed, err := events.IsClosed(ctx, bs.db, event.BoxID)
-		if err != nil {
-			return nil, err
-		}
-		adminErr := events.MustBeAdmin(ctx, bs.db, event.BoxID, acc.IdentityID)
-		actorErr := events.MustBeMember(ctx, bs.db, event.BoxID, acc.IdentityID)
-		if (!closed && adminErr == nil) && actorErr == nil {
-			isAllowed = true
-			break
-		}
-
-	}
-
-	if !isAllowed {
-		for _, savedFile := range linkedSavedFiles {
-			if savedFile.IdentityID == acc.IdentityID {
-				isAllowed = true
-				break
-			}
-		}
-	}
-
-	if !isAllowed {
+	if !allowed {
 		return nil, merror.Forbidden()
 	}
 
@@ -82,4 +56,46 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq entr
 	}
 
 	return data, nil
+}
+
+func hasAccessToFile(
+	ctx context.Context,
+	exec boil.ContextExecutor, identities e.IdentityIntraprocessInterface,
+	fileID string, identityID string,
+) (bool, error) {
+	// 1. identity has access to files contained in boxes they have access to
+	// get all entities linked to the file
+	// TODO (perf): list only boxes instead of all events
+	linkedEvents, err := events.FindByEncryptedFileID(ctx, exec, fileID)
+	// not finding an event with the encrypted file id doesn't mean the user doesn't have
+	// an access to it - the file can be a saved file
+	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
+		return false, err
+	}
+	for _, event := range linkedEvents {
+		err := events.MustMemberHaveAccess(ctx, exec, identities, event.BoxID, identityID)
+		// if no error has been raised, the access is allowed
+		if err == nil {
+			return true, nil
+		}
+
+		// if the error is not a forbidden, return it otherwise ignore it and continue checking
+		if !merror.HasCode(err, merror.ForbiddenCode) {
+			return false, err
+		}
+	}
+
+	// 2. identity has access to files they have saved
+	// TODO (perf): filter directly by IdentityID = use a new function files.ListSaved(savedFileFilters{})
+	linkedSavedFiles, err := files.ListSavedFilesByFileID(ctx, exec, fileID)
+	if err != nil {
+		return false, err
+	}
+	for _, savedFile := range linkedSavedFiles {
+		if savedFile.IdentityID == identityID {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

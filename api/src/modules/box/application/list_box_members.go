@@ -14,13 +14,13 @@ import (
 )
 
 type ListBoxMembersRequest struct {
-	BoxID string
+	boxID string
 }
 
 func (req *ListBoxMembersRequest) BindAndValidate(eCtx echo.Context) error {
-	req.BoxID = eCtx.Param("id")
+	req.boxID = eCtx.Param("id")
 	return v.ValidateStruct(req,
-		v.Field(&req.BoxID, v.Required, is.UUIDv4),
+		v.Field(&req.boxID, v.Required, is.UUIDv4),
 	)
 }
 
@@ -29,15 +29,14 @@ func (bs *BoxApplication) ListBoxMembers(ctx context.Context, genReq entrypoints
 
 	// retrieve accesses to filters boxes to return
 	acc := ajwt.GetAccesses(ctx)
-	if err := events.MustBeMember(ctx, bs.db, req.BoxID, acc.IdentityID); err != nil {
-		return nil, merror.Transform(err).Describe("checking membership")
+	if acc == nil {
+		return nil, merror.Unauthorized()
+	}
+	if err := events.MustMemberHaveAccess(ctx, bs.db, bs.identities, req.boxID, acc.IdentityID); err != nil {
+		return nil, err
 	}
 
-	membersIDs, err := events.ListBoxMembers(
-		ctx,
-		bs.db,
-		req.BoxID,
-	)
+	membersIDs, err := events.ListBoxMemberIDs(ctx, bs.db, req.boxID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing box members")
 	}

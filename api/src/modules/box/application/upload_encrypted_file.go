@@ -47,7 +47,15 @@ func (req *UploadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) error 
 
 func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
 	req := genReq.(*UploadEncryptedFileRequest)
+
+	// checking accesses
 	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merror.Unauthorized()
+	}
+	if err := events.MustMemberHaveAccess(ctx, bs.db, bs.identities, req.boxID, acc.IdentityID); err != nil {
+		return nil, err
+	}
 
 	// upload files works only on open boxes
 	if err := events.MustBoxBeOpen(ctx, bs.db, req.boxID); err != nil {

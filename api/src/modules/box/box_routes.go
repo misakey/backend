@@ -47,6 +47,7 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw ech
 		},
 	)
 	boxRouter.HEAD("/joined", countBoxes, authzMidlw)
+	boxRouter.HEAD("", countBoxes, authzMidlw)
 
 	listBoxes := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.ListBoxesRequest{} },
@@ -54,6 +55,7 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw ech
 		entrypoints.ResponseOK,
 	)
 	boxRouter.GET("/joined", listBoxes, authzMidlw)
+	boxRouter.GET("", listBoxes, authzMidlw)
 
 	listBoxMembers := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.ListBoxMembersRequest{} },
@@ -68,6 +70,15 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw ech
 		entrypoints.ResponseNoContent,
 	)
 	boxRouter.DELETE("/:id", deleteBox, authzMidlw)
+
+	// ----------------------
+	// Access related routes
+	listAccesses := entrypoints.NewProtectedHTTP(
+		func() entrypoints.Request { return &application.ListAccessesRequest{} },
+		bs.ListAccesses,
+		entrypoints.ResponseOK,
+	)
+	boxRouter.GET("/:id/accesses", listAccesses, authzMidlw)
 
 	// ----------------------
 	// Events related routes

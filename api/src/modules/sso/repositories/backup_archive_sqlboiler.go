@@ -60,7 +60,7 @@ func (repo BackupArchiveSQLBoiler) Create(ctx context.Context, archive *domain.B
 
 func (repo BackupArchiveSQLBoiler) List(ctx context.Context, accountID string) ([]domain.BackupArchive, error) {
 	records, err := sqlboiler.BackupArchives(
-		// TODO use blacklisting instead
+		// TODO: use blacklisting instead
 		// (see https://github.com/volatiletech/sqlboiler/issues/817)
 		qm.Select(
 			sqlboiler.BackupArchiveColumns.AccountID,

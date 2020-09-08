@@ -27,7 +27,7 @@ An event has the following fields:
   },
   "type": "(string) (one of: create, msg.txt, msg.file, state.lifecycle, member.join, member.leave): the type of the event",
   "content": "(json object) (nullable): its shape depends on the type of event - see definitions below",
-  "referer_id": "(string) (uuid) (nullable): the uuid of a potential referer event"
+  "referrer_id": "(string) (uuid) (nullable): the uuid of a potential referrer event"
 }
 ```
 
@@ -78,7 +78,7 @@ An event of type `member.leave` can be added by the user if they are member of t
   "server_event_created_at": "...",
   "sender": {...},
   "type": "member.leave",
-  "referer_id": "<member.join id>",
+  "referrer_id": "<member.join id>",
   "content": null,
 }
 ```
@@ -166,7 +166,7 @@ The add of an access is represented by this event shape
 }
 ```
 
-#### 1.5.1.1. `Access via Invitation Link`
+#### 1.5.1.1. Via Invitation Link
 
 This access allows users to access the box using an invitation link (key shares).
 
@@ -185,7 +185,7 @@ If another kind of access restriction exists, both the invitation link and the o
 }
 ```
 
-#### 1.5.1.2. `Access to a specific identifier`
+#### 1.5.1.2. To a specific identifier
 
 ```json
 {
@@ -200,7 +200,7 @@ If another kind of access restriction exists, both the invitation link and the o
 }
 ```
 
-#### 1.5.1.3. `Access to an entire email domain`
+#### 1.5.1.3. To an entire email domain
 
 ```json
 {
@@ -224,7 +224,7 @@ The removal of an access is represented by this event shape:
     "server_event_created_at": "...",
     "sender": {...},
     "type": "access.rm",
-    "referer_id": "(string): the uuid of the corresponding access.add event that has been removed"
+    "referrer_id": "(string): the uuid of the corresponding access.add event that has been removed"
 }
 ```
 

@@ -28,13 +28,15 @@ func (bs *BoxApplication) DeleteSavedFile(ctx context.Context, genReq entrypoint
 	req := genReq.(*DeleteSavedFileRequest)
 
 	access := ajwt.GetAccesses(ctx)
+	if access == nil {
+		return nil, merror.Unauthorized()
+	}
 
 	// get saved file
 	savedFile, err := files.GetSavedFile(ctx, bs.db, req.ID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting saved file")
 	}
-
 	if savedFile.IdentityID != access.IdentityID {
 		return nil, merror.Forbidden().Detail("id", merror.DVForbidden)
 	}

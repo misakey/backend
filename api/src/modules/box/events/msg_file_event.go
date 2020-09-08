@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"github.com/volatiletech/null"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -62,5 +63,9 @@ func GetMsgFile(
 	boxID, fileID string,
 ) (Event, error) {
 	jsonQuery := `{"encrypted_file_id": "` + fileID + `"}`
-	return findByTypeContent(ctx, exec, boxID, "msg.file", &jsonQuery)
+	return get(ctx, exec, eventFilters{
+		boxID:   null.StringFrom(boxID),
+		eType:   null.StringFrom("msg.file"),
+		content: &jsonQuery,
+	})
 }

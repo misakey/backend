@@ -7,6 +7,7 @@ package events
 
 import (
 	"github.com/volatiletech/sqlboiler/types"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 type EmptyContent struct{}
@@ -19,15 +20,6 @@ func (c EmptyContent) Validate() error {
 	return nil
 }
 
-var contentTypeGetters = map[string]func() anyContent{
-	"create":          func() anyContent { return &CreationContent{} },
-	"state.lifecycle": func() anyContent { return &StateLifecycleContent{} },
-	"msg.text":        func() anyContent { return &MsgTextContent{} },
-	"msg.file":        func() anyContent { return &MsgFileContent{} },
-	"msg.delete":      func() anyContent { return &MsgDeleteContent{} },
-	"msg.edit":        func() anyContent { return &MsgEditContent{} },
-}
-
 type anyContent interface {
 	// Unmarshal should allow the JSON encoding of the content
 	// into a types.JSON variable
@@ -38,19 +30,28 @@ type anyContent interface {
 	Validate() error
 }
 
+var contentTypeGetters = map[string]func() anyContent{
+	"create":     func() anyContent { return &CreationContent{} },
+	"msg.text":   func() anyContent { return &MsgTextContent{} },
+	"msg.file":   func() anyContent { return &MsgFileContent{} },
+	"msg.delete": func() anyContent { return &MsgDeleteContent{} },
+	"msg.edit":   func() anyContent { return &MsgEditContent{} },
+}
+
 func bindAndValidateContent(e *Event) error {
 	contentTypeGet, ok := contentTypeGetters[e.Type]
 	if !ok {
 		// trick to avoid problems when coming
 		// to unmarshal an "empty" json type
-		_ = e.JSONContent.Marshal(&EmptyContent{})
+		if e.JSONContent.String() == "" {
+			_ = e.JSONContent.Marshal(&EmptyContent{})
+		}
 		return nil
 	}
 
-	e.Content = contentTypeGet()
-	if err := e.Content.Unmarshal(e.JSONContent); err != nil {
-		return err
+	c := contentTypeGet()
+	if err := e.JSONContent.Unmarshal(c); err != nil {
+		return merror.BadRequest().Describef("unmarshalling %s: %v", e.Type, err)
 	}
-
-	return e.Content.Validate()
+	return c.Validate()
 }

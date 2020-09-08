@@ -14,10 +14,10 @@ func initAddReferColumnOnBoxEvents() {
 func upAddReferColumnOnBoxEvents(tx *sql.Tx) error {
 	// This code is executed when the migration is applied.
 	if _, err := tx.Exec(`ALTER TABLE event
-		ADD COLUMN referer_id UUID REFERENCES event DEFAULT NULL,
+		ADD COLUMN referrer_id UUID REFERENCES event DEFAULT NULL,
 		ALTER COLUMN content TYPE JSONB;
 	`); err != nil {
-		return fmt.Errorf("adding referer_id column to event: %v", err)
+		return fmt.Errorf("adding referrer_id column to event: %v", err)
 	}
 	return nil
 }
@@ -25,9 +25,9 @@ func upAddReferColumnOnBoxEvents(tx *sql.Tx) error {
 func downAddReferColumnOnBoxEvents(tx *sql.Tx) error {
 	// This code is executed when the migration is rolled back.
 	if _, err := tx.Exec(`ALTER TABLE event
-		DROP COLUMN referer_id;
+		DROP COLUMN referrer_id;
 	`); err != nil {
-		return fmt.Errorf("dropping referer_id column from event: %v", err)
+		return fmt.Errorf("dropping referrer_id column from event: %v", err)
 	}
 	return nil
 }

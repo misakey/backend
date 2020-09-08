@@ -2,14 +2,13 @@ package events
 
 import (
 	"context"
-	"database/sql"
+	"github.com/volatiletech/null"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/types"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
@@ -50,7 +49,10 @@ func GetCreateEvent(
 	exec boil.ContextExecutor,
 	boxID string,
 ) (Event, error) {
-	return findByTypeContent(ctx, exec, boxID, "create", nil)
+	return get(ctx, exec, eventFilters{
+		boxID: null.StringFrom(boxID),
+		eType: null.StringFrom("create"),
+	})
 }
 
 func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, exec boil.ContextExecutor) (Event, error) {
@@ -65,16 +67,39 @@ func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, e
 	}
 
 	return event, nil
-
 }
 
-func MustBoxExists(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
-	_, err := sqlboiler.Events(
-		sqlboiler.EventWhere.BoxID.EQ(boxID),
-		sqlboiler.EventWhere.Type.EQ("create"),
-	).One(ctx, exec)
-	if err != nil && err == sql.ErrNoRows {
-		return merror.NotFound().Detail("box_id", merror.DVNotFound)
+func ListCreatorBoxIDs(ctx context.Context, exec boil.ContextExecutor, creatorID string) ([]string, error) {
+	createEvents, err := list(ctx, exec, eventFilters{
+		eType:    null.StringFrom("create"),
+		senderID: null.StringFrom(creatorID),
+	})
+	if err != nil {
+		return nil, err
 	}
-	return err
+
+	boxIDs := make([]string, len(createEvents))
+	for i, e := range createEvents {
+		boxIDs[i] = e.BoxID
+	}
+	return boxIDs, nil
+}
+
+func isCreator(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (bool, error) {
+	_, err := get(ctx, exec, eventFilters{
+		eType:    null.StringFrom("create"),
+		senderID: null.StringFrom(senderID),
+		boxID:    null.StringFrom(boxID),
+	})
+	// if no error, the user is the creator
+	if err == nil {
+		return true, nil
+	}
+
+	// not found error means the user is not the creator
+	if merror.HasCode(err, merror.NotFoundCode) {
+		return false, nil
+	}
+	// return the error if unexpected
+	return false, err
 }

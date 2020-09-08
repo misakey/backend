@@ -6,9 +6,12 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
 
 type ReadBoxRequest struct {
@@ -26,10 +29,14 @@ func (req *ReadBoxRequest) BindAndValidate(eCtx echo.Context) error {
 func (bs *BoxApplication) ReadBox(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
 	req := genReq.(*ReadBoxRequest)
 
-	box, err := boxes.Get(ctx, bs.db, bs.identities, req.boxID)
-	if err != nil {
+	// check accesses
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merror.Unauthorized()
+	}
+	if err := events.MustMemberHaveAccess(ctx, bs.db, bs.identities, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 
-	return box, nil
+	return boxes.Get(ctx, bs.db, bs.identities, req.boxID)
 }

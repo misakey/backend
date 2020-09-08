@@ -30,7 +30,7 @@ type Event struct {
 	SenderID  string      `boil:"sender_id" json:"sender_id" toml:"sender_id" yaml:"sender_id"`
 	Type      string      `boil:"type" json:"type" toml:"type" yaml:"type"`
 	Content   null.JSON   `boil:"content" json:"content,omitempty" toml:"content" yaml:"content,omitempty"`
-	RefererID null.String `boil:"referer_id" json:"referer_id,omitempty" toml:"referer_id" yaml:"referer_id,omitempty"`
+	ReferrerID null.String `boil:"referrer_id" json:"referrer_id,omitempty" toml:"referrer_id" yaml:"referrer_id,omitempty"`
 
 	R *eventR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L eventL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -43,7 +43,7 @@ var EventColumns = struct {
 	SenderID  string
 	Type      string
 	Content   string
-	RefererID string
+	ReferrerID string
 }{
 	ID:        "id",
 	BoxID:     "box_id",
@@ -51,7 +51,7 @@ var EventColumns = struct {
 	SenderID:  "sender_id",
 	Type:      "type",
 	Content:   "content",
-	RefererID: "referer_id",
+	ReferrerID: "referrer_id",
 }
 
 // Generated where
@@ -109,7 +109,7 @@ var EventWhere = struct {
 	SenderID  whereHelperstring
 	Type      whereHelperstring
 	Content   whereHelpernull_JSON
-	RefererID whereHelpernull_String
+	ReferrerID whereHelpernull_String
 }{
 	ID:        whereHelperstring{field: "\"event\".\"id\""},
 	BoxID:     whereHelperstring{field: "\"event\".\"box_id\""},
@@ -117,22 +117,22 @@ var EventWhere = struct {
 	SenderID:  whereHelperstring{field: "\"event\".\"sender_id\""},
 	Type:      whereHelperstring{field: "\"event\".\"type\""},
 	Content:   whereHelpernull_JSON{field: "\"event\".\"content\""},
-	RefererID: whereHelpernull_String{field: "\"event\".\"referer_id\""},
+	ReferrerID: whereHelpernull_String{field: "\"event\".\"referrer_id\""},
 }
 
 // EventRels is where relationship names are stored.
 var EventRels = struct {
-	Referer       string
-	RefererEvents string
+	Referrer       string
+	ReferrerEvents string
 }{
-	Referer:       "Referer",
-	RefererEvents: "RefererEvents",
+	Referrer:       "Referrer",
+	ReferrerEvents: "ReferrerEvents",
 }
 
 // eventR is where relationships are stored.
 type eventR struct {
-	Referer       *Event
-	RefererEvents EventSlice
+	Referrer       *Event
+	ReferrerEvents EventSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -144,8 +144,8 @@ func (*eventR) NewStruct() *eventR {
 type eventL struct{}
 
 var (
-	eventAllColumns            = []string{"id", "box_id", "created_at", "sender_id", "type", "content", "referer_id"}
-	eventColumnsWithoutDefault = []string{"id", "box_id", "created_at", "sender_id", "type", "content", "referer_id"}
+	eventAllColumns            = []string{"id", "box_id", "created_at", "sender_id", "type", "content", "referrer_id"}
+	eventColumnsWithoutDefault = []string{"id", "box_id", "created_at", "sender_id", "type", "content", "referrer_id"}
 	eventColumnsWithDefault    = []string{}
 	eventPrimaryKeyColumns     = []string{"id"}
 )
@@ -241,10 +241,10 @@ func (q eventQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool
 	return count > 0, nil
 }
 
-// Referer pointed to by the foreign key.
-func (o *Event) Referer(mods ...qm.QueryMod) eventQuery {
+// Referrer pointed to by the foreign key.
+func (o *Event) Referrer(mods ...qm.QueryMod) eventQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.RefererID),
+		qm.Where("\"id\" = ?", o.ReferrerID),
 	}
 
 	queryMods = append(queryMods, mods...)
@@ -255,15 +255,15 @@ func (o *Event) Referer(mods ...qm.QueryMod) eventQuery {
 	return query
 }
 
-// RefererEvents retrieves all the event's Events with an executor via referer_id column.
-func (o *Event) RefererEvents(mods ...qm.QueryMod) eventQuery {
+// ReferrerEvents retrieves all the event's Events with an executor via referrer_id column.
+func (o *Event) ReferrerEvents(mods ...qm.QueryMod) eventQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"event\".\"referer_id\"=?", o.ID),
+		qm.Where("\"event\".\"referrer_id\"=?", o.ID),
 	)
 
 	query := Events(queryMods...)
@@ -276,9 +276,9 @@ func (o *Event) RefererEvents(mods ...qm.QueryMod) eventQuery {
 	return query
 }
 
-// LoadReferer allows an eager lookup of values, cached into the
+// LoadReferrer allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (eventL) LoadReferer(ctx context.Context, e boil.ContextExecutor, singular bool, maybeEvent interface{}, mods queries.Applicator) error {
+func (eventL) LoadReferrer(ctx context.Context, e boil.ContextExecutor, singular bool, maybeEvent interface{}, mods queries.Applicator) error {
 	var slice []*Event
 	var object *Event
 
@@ -293,8 +293,8 @@ func (eventL) LoadReferer(ctx context.Context, e boil.ContextExecutor, singular 
 		if object.R == nil {
 			object.R = &eventR{}
 		}
-		if !queries.IsNil(object.RefererID) {
-			args = append(args, object.RefererID)
+		if !queries.IsNil(object.ReferrerID) {
+			args = append(args, object.ReferrerID)
 		}
 
 	} else {
@@ -305,13 +305,13 @@ func (eventL) LoadReferer(ctx context.Context, e boil.ContextExecutor, singular 
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.RefererID) {
+				if queries.Equal(a, obj.ReferrerID) {
 					continue Outer
 				}
 			}
 
-			if !queries.IsNil(obj.RefererID) {
-				args = append(args, obj.RefererID)
+			if !queries.IsNil(obj.ReferrerID) {
+				args = append(args, obj.ReferrerID)
 			}
 
 		}
@@ -349,22 +349,22 @@ func (eventL) LoadReferer(ctx context.Context, e boil.ContextExecutor, singular 
 
 	if singular {
 		foreign := resultSlice[0]
-		object.R.Referer = foreign
+		object.R.Referrer = foreign
 		if foreign.R == nil {
 			foreign.R = &eventR{}
 		}
-		foreign.R.RefererEvents = append(foreign.R.RefererEvents, object)
+		foreign.R.ReferrerEvents = append(foreign.R.ReferrerEvents, object)
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if queries.Equal(local.RefererID, foreign.ID) {
-				local.R.Referer = foreign
+			if queries.Equal(local.ReferrerID, foreign.ID) {
+				local.R.Referrer = foreign
 				if foreign.R == nil {
 					foreign.R = &eventR{}
 				}
-				foreign.R.RefererEvents = append(foreign.R.RefererEvents, local)
+				foreign.R.ReferrerEvents = append(foreign.R.ReferrerEvents, local)
 				break
 			}
 		}
@@ -373,9 +373,9 @@ func (eventL) LoadReferer(ctx context.Context, e boil.ContextExecutor, singular 
 	return nil
 }
 
-// LoadRefererEvents allows an eager lookup of values, cached into the
+// LoadReferrerEvents allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (eventL) LoadRefererEvents(ctx context.Context, e boil.ContextExecutor, singular bool, maybeEvent interface{}, mods queries.Applicator) error {
+func (eventL) LoadReferrerEvents(ctx context.Context, e boil.ContextExecutor, singular bool, maybeEvent interface{}, mods queries.Applicator) error {
 	var slice []*Event
 	var object *Event
 
@@ -412,7 +412,7 @@ func (eventL) LoadRefererEvents(ctx context.Context, e boil.ContextExecutor, sin
 		return nil
 	}
 
-	query := NewQuery(qm.From(`event`), qm.WhereIn(`event.referer_id in ?`, args...))
+	query := NewQuery(qm.From(`event`), qm.WhereIn(`event.referrer_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
 	}
@@ -435,24 +435,24 @@ func (eventL) LoadRefererEvents(ctx context.Context, e boil.ContextExecutor, sin
 	}
 
 	if singular {
-		object.R.RefererEvents = resultSlice
+		object.R.ReferrerEvents = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
 				foreign.R = &eventR{}
 			}
-			foreign.R.Referer = object
+			foreign.R.Referrer = object
 		}
 		return nil
 	}
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if queries.Equal(local.ID, foreign.RefererID) {
-				local.R.RefererEvents = append(local.R.RefererEvents, foreign)
+			if queries.Equal(local.ID, foreign.ReferrerID) {
+				local.R.ReferrerEvents = append(local.R.ReferrerEvents, foreign)
 				if foreign.R == nil {
 					foreign.R = &eventR{}
 				}
-				foreign.R.Referer = local
+				foreign.R.Referrer = local
 				break
 			}
 		}
@@ -461,10 +461,10 @@ func (eventL) LoadRefererEvents(ctx context.Context, e boil.ContextExecutor, sin
 	return nil
 }
 
-// SetReferer of the event to the related item.
-// Sets o.R.Referer to related.
-// Adds o to related.R.RefererEvents.
-func (o *Event) SetReferer(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Event) error {
+// SetReferrer of the event to the related item.
+// Sets o.R.Referrer to related.
+// Adds o to related.R.ReferrerEvents.
+func (o *Event) SetReferrer(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Event) error {
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
@@ -474,7 +474,7 @@ func (o *Event) SetReferer(ctx context.Context, exec boil.ContextExecutor, inser
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE \"event\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"referer_id"}),
+		strmangle.SetParamNames("\"", "\"", 1, []string{"referrer_id"}),
 		strmangle.WhereClause("\"", "\"", 2, eventPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
@@ -488,75 +488,75 @@ func (o *Event) SetReferer(ctx context.Context, exec boil.ContextExecutor, inser
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	queries.Assign(&o.RefererID, related.ID)
+	queries.Assign(&o.ReferrerID, related.ID)
 	if o.R == nil {
 		o.R = &eventR{
-			Referer: related,
+			Referrer: related,
 		}
 	} else {
-		o.R.Referer = related
+		o.R.Referrer = related
 	}
 
 	if related.R == nil {
 		related.R = &eventR{
-			RefererEvents: EventSlice{o},
+			ReferrerEvents: EventSlice{o},
 		}
 	} else {
-		related.R.RefererEvents = append(related.R.RefererEvents, o)
+		related.R.ReferrerEvents = append(related.R.ReferrerEvents, o)
 	}
 
 	return nil
 }
 
-// RemoveReferer relationship.
-// Sets o.R.Referer to nil.
+// RemoveReferrer relationship.
+// Sets o.R.Referrer to nil.
 // Removes o from all passed in related items' relationships struct (Optional).
-func (o *Event) RemoveReferer(ctx context.Context, exec boil.ContextExecutor, related *Event) error {
+func (o *Event) RemoveReferrer(ctx context.Context, exec boil.ContextExecutor, related *Event) error {
 	var err error
 
-	queries.SetScanner(&o.RefererID, nil)
-	if _, err = o.Update(ctx, exec, boil.Whitelist("referer_id")); err != nil {
+	queries.SetScanner(&o.ReferrerID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("referrer_id")); err != nil {
 		return errors.Wrap(err, "failed to update local table")
 	}
 
 	if o.R != nil {
-		o.R.Referer = nil
+		o.R.Referrer = nil
 	}
 	if related == nil || related.R == nil {
 		return nil
 	}
 
-	for i, ri := range related.R.RefererEvents {
-		if queries.Equal(o.RefererID, ri.RefererID) {
+	for i, ri := range related.R.ReferrerEvents {
+		if queries.Equal(o.ReferrerID, ri.ReferrerID) {
 			continue
 		}
 
-		ln := len(related.R.RefererEvents)
+		ln := len(related.R.ReferrerEvents)
 		if ln > 1 && i < ln-1 {
-			related.R.RefererEvents[i] = related.R.RefererEvents[ln-1]
+			related.R.ReferrerEvents[i] = related.R.ReferrerEvents[ln-1]
 		}
-		related.R.RefererEvents = related.R.RefererEvents[:ln-1]
+		related.R.ReferrerEvents = related.R.ReferrerEvents[:ln-1]
 		break
 	}
 	return nil
 }
 
-// AddRefererEvents adds the given related objects to the existing relationships
+// AddReferrerEvents adds the given related objects to the existing relationships
 // of the event, optionally inserting them as new records.
-// Appends related to o.R.RefererEvents.
-// Sets related.R.Referer appropriately.
-func (o *Event) AddRefererEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Event) error {
+// Appends related to o.R.ReferrerEvents.
+// Sets related.R.Referrer appropriately.
+func (o *Event) AddReferrerEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Event) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			queries.Assign(&rel.RefererID, o.ID)
+			queries.Assign(&rel.ReferrerID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
 				"UPDATE \"event\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"referer_id"}),
+				strmangle.SetParamNames("\"", "\"", 1, []string{"referrer_id"}),
 				strmangle.WhereClause("\"", "\"", 2, eventPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
@@ -570,38 +570,38 @@ func (o *Event) AddRefererEvents(ctx context.Context, exec boil.ContextExecutor,
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			queries.Assign(&rel.RefererID, o.ID)
+			queries.Assign(&rel.ReferrerID, o.ID)
 		}
 	}
 
 	if o.R == nil {
 		o.R = &eventR{
-			RefererEvents: related,
+			ReferrerEvents: related,
 		}
 	} else {
-		o.R.RefererEvents = append(o.R.RefererEvents, related...)
+		o.R.ReferrerEvents = append(o.R.ReferrerEvents, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &eventR{
-				Referer: o,
+				Referrer: o,
 			}
 		} else {
-			rel.R.Referer = o
+			rel.R.Referrer = o
 		}
 	}
 	return nil
 }
 
-// SetRefererEvents removes all previously related items of the
+// SetReferrerEvents removes all previously related items of the
 // event replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.Referer's RefererEvents accordingly.
-// Replaces o.R.RefererEvents with related.
-// Sets related.R.Referer's RefererEvents accordingly.
-func (o *Event) SetRefererEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Event) error {
-	query := "update \"event\" set \"referer_id\" = null where \"referer_id\" = $1"
+// Sets o.R.Referrer's ReferrerEvents accordingly.
+// Replaces o.R.ReferrerEvents with related.
+// Sets related.R.Referrer's ReferrerEvents accordingly.
+func (o *Event) SetReferrerEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Event) error {
+	query := "update \"event\" set \"referrer_id\" = null where \"referrer_id\" = $1"
 	values := []interface{}{o.ID}
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -614,31 +614,31 @@ func (o *Event) SetRefererEvents(ctx context.Context, exec boil.ContextExecutor,
 	}
 
 	if o.R != nil {
-		for _, rel := range o.R.RefererEvents {
-			queries.SetScanner(&rel.RefererID, nil)
+		for _, rel := range o.R.ReferrerEvents {
+			queries.SetScanner(&rel.ReferrerID, nil)
 			if rel.R == nil {
 				continue
 			}
 
-			rel.R.Referer = nil
+			rel.R.Referrer = nil
 		}
 
-		o.R.RefererEvents = nil
+		o.R.ReferrerEvents = nil
 	}
-	return o.AddRefererEvents(ctx, exec, insert, related...)
+	return o.AddReferrerEvents(ctx, exec, insert, related...)
 }
 
-// RemoveRefererEvents relationships from objects passed in.
-// Removes related items from R.RefererEvents (uses pointer comparison, removal does not keep order)
-// Sets related.R.Referer.
-func (o *Event) RemoveRefererEvents(ctx context.Context, exec boil.ContextExecutor, related ...*Event) error {
+// RemoveReferrerEvents relationships from objects passed in.
+// Removes related items from R.ReferrerEvents (uses pointer comparison, removal does not keep order)
+// Sets related.R.Referrer.
+func (o *Event) RemoveReferrerEvents(ctx context.Context, exec boil.ContextExecutor, related ...*Event) error {
 	var err error
 	for _, rel := range related {
-		queries.SetScanner(&rel.RefererID, nil)
+		queries.SetScanner(&rel.ReferrerID, nil)
 		if rel.R != nil {
-			rel.R.Referer = nil
+			rel.R.Referrer = nil
 		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("referer_id")); err != nil {
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("referrer_id")); err != nil {
 			return err
 		}
 	}
@@ -647,16 +647,16 @@ func (o *Event) RemoveRefererEvents(ctx context.Context, exec boil.ContextExecut
 	}
 
 	for _, rel := range related {
-		for i, ri := range o.R.RefererEvents {
+		for i, ri := range o.R.ReferrerEvents {
 			if rel != ri {
 				continue
 			}
 
-			ln := len(o.R.RefererEvents)
+			ln := len(o.R.ReferrerEvents)
 			if ln > 1 && i < ln-1 {
-				o.R.RefererEvents[i] = o.R.RefererEvents[ln-1]
+				o.R.ReferrerEvents[i] = o.R.ReferrerEvents[ln-1]
 			}
-			o.R.RefererEvents = o.R.RefererEvents[:ln-1]
+			o.R.ReferrerEvents = o.R.ReferrerEvents[:ln-1]
 			break
 		}
 	}
@@ -995,11 +995,11 @@ func (o *Event) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnC
 		returns = queries.PtrsFromMapping(value, cache.retMapping)
 	}
 
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, cache.query)
-		fmt.Fprintln(writer, vals)
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, cache.query)
+		fmt.Fprintln(boil.DebugWriter, vals)
 	}
+
 	if len(cache.retMapping) != 0 {
 		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {

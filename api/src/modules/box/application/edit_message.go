@@ -28,7 +28,7 @@ func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.
 	}
 
 	if receivedEvent.SenderID != toEdit.SenderID {
-		return result, merror.Unauthorized()
+		return result, merror.Forbidden()
 	}
 
 	isDeleted, err := events.IsDeleted(toEdit)

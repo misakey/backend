@@ -21,6 +21,9 @@ func (req *CountBoxesRequest) BindAndValidate(_ echo.Context) error {
 func (bs *BoxApplication) CountBoxes(ctx context.Context, _ entrypoints.Request) (interface{}, error) {
 	// retrieve accesses to filters boxes to return
 	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merror.Unauthorized()
+	}
 
 	count, err := boxes.CountForSender(ctx, bs.db, acc.IdentityID)
 	if err != nil {

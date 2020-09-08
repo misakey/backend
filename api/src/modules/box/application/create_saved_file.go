@@ -39,7 +39,9 @@ func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq entrypoint
 	req := genReq.(*CreateSavedFileRequest)
 
 	access := ajwt.GetAccesses(ctx)
-
+	if access == nil {
+		return nil, merror.Unauthorized()
+	}
 	// check identity
 	if req.IdentityID != access.IdentityID {
 		return nil, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
@@ -51,13 +53,13 @@ func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq entrypoint
 		return nil, merror.Transform(err).Describe("getting events")
 	}
 
-	identityBoxes, err := boxes.LatestJoinedAndAccessibleIDs(ctx, bs.db, access.IdentityID)
+	identityBoxIDs, err := boxes.ListSenderBoxIDs(ctx, bs.db, access.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting identity boxes")
 	}
 	// creating an index to optimize next operation
-	identityBoxesIndex := make(map[string]bool, len(identityBoxes))
-	for _, boxID := range identityBoxes {
+	identityBoxesIndex := make(map[string]bool, len(identityBoxIDs))
+	for _, boxID := range identityBoxIDs {
 		identityBoxesIndex[boxID] = true
 	}
 

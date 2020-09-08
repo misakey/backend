@@ -33,21 +33,16 @@ func (req *ListEventsRequest) BindAndValidate(eCtx echo.Context) error {
 
 func (bs *BoxApplication) ListEvents(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
 	req := genReq.(*ListEventsRequest)
-	acc := ajwt.GetAccesses(ctx)
 
-	// if the box is closed, only the admins can list events
-	closed, err := events.IsClosed(ctx, bs.db, req.boxID)
-	if err != nil {
+	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merror.Unauthorized()
+	}
+	if err := events.MustMemberHaveAccess(ctx, bs.db, bs.identities, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
-	if closed {
-		if err := events.MustBeAdmin(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {
-			return nil, err
-		}
-	}
 
-	// list
-	boxEvents, err := events.ListByBoxID(ctx, bs.db, req.boxID, req.Offset, req.Limit)
+	boxEvents, err := events.ListForMembersByBoxID(ctx, bs.db, req.boxID, req.Offset, req.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +51,6 @@ func (bs *BoxApplication) ListEvents(ctx context.Context, genReq entrypoints.Req
 	if err != nil {
 		return nil, merror.Transform(err).Describe("retrieving events senders")
 	}
-
 	views := make([]events.View, len(boxEvents))
 	for i, e := range boxEvents {
 		views[i], err = events.ToView(e, sendersMap)

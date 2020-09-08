@@ -27,9 +27,12 @@ func (req *CountEventsRequest) BindAndValidate(eCtx echo.Context) error {
 func (bs *BoxApplication) CountEvents(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
 	req := genReq.(*CountEventsRequest)
 	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merror.Unauthorized()
+	}
 
-	if err := events.MustBeMember(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {
-		return nil, merror.Forbidden()
+	if err := events.MustHaveAccess(ctx, bs.db, bs.identities, req.boxID, acc.IdentityID); err != nil {
+		return nil, err
 	}
 
 	count, err := events.CountByBoxID(ctx, bs.db, req.boxID)

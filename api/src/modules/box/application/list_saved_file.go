@@ -30,6 +30,9 @@ func (bs *BoxApplication) ListSavedFiles(ctx context.Context, genReq entrypoints
 	req := genReq.(*ListSavedFilesRequest)
 
 	access := ajwt.GetAccesses(ctx)
+	if access == nil {
+		return nil, merror.Unauthorized()
+	}
 
 	// check identity
 	if req.IdentityID != access.IdentityID {

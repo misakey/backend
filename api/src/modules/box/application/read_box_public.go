@@ -34,6 +34,7 @@ type PublicBoxView struct {
 	Title string `json:"title"`
 }
 
+// Since ReadBoxPublic returns public data, there is no access check performed
 func (bs *BoxApplication) ReadBoxPublic(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
 	req := genReq.(*ReadBoxPublicRequest)
 
@@ -55,6 +56,5 @@ func (bs *BoxApplication) ReadBoxPublic(ctx context.Context, genReq entrypoints.
 	view := PublicBoxView{
 		Title: box.Title,
 	}
-
 	return view, nil
 }

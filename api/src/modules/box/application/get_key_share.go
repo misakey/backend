@@ -30,15 +30,25 @@ func (req *GetKeyShareRequest) BindAndValidate(eCtx echo.Context) error {
 
 func (bs *BoxApplication) GetKeyShare(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
 	req := genReq.(*GetKeyShareRequest)
+
+	// check accesses
 	acc := ajwt.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merror.Unauthorized()
+	}
 
 	ks, err := keyshares.Get(ctx, bs.db, req.otherShareHash)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting key share")
 	}
-	if err := events.StoreJoin(ctx, bs.db, ks.BoxID, acc.IdentityID); err != nil {
+
+	if err := events.MustHaveAccess(ctx, bs.db, bs.identities, ks.BoxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 
+	// consider the user has joined the box at this moment
+	if err := events.StoreJoin(ctx, bs.db, bs.identities, ks.BoxID, acc.IdentityID); err != nil {
+		return nil, err
+	}
 	return ks, nil
 }
