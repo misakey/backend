@@ -7,12 +7,13 @@ from time import sleep
 from base64 import b64encode, b64decode
 
 from misapy import http
-from misapy.get_access_token import get_authenticated_session
-from misapy.box_key_shares import create_key_share, get_key_share
 from misapy.box_helpers import URL_PREFIX, create_box_and_post_some_events_to_it
-from misapy.test_context import testContext
-from misapy.container_access import list_encrypted_files
+from misapy.box_key_shares import create_key_share, get_key_share
+from misapy.box_members import join_box
 from misapy.check_response import check_response, assert_fn
+from misapy.container_access import list_encrypted_files
+from misapy.get_access_token import get_authenticated_session
+from misapy.test_context import testContext
 
 def test_basics(s1, s2):
     box1_id, box1_share_hash = create_box_and_post_some_events_to_it(session=s1, close=False)    
@@ -105,16 +106,16 @@ def test_basics(s1, s2):
     )
 
     # Another identity creates other boxes
-    box2_id, box2_share_hash = create_box_and_post_some_events_to_it(session=s2, close=False)
+    box2_id, _ = create_box_and_post_some_events_to_it(session=s2, close=False)
     create_box_and_post_some_events_to_it(session=s2)
     create_box_and_post_some_events_to_it(session=s2)    
 
     print("- identity 1 becomes member of box 2")
-    get_key_share(s1, box2_share_hash)
+    join_box(s1, box2_id)
 
     print('- identity 1 (creator) can list all events on open box 2')
     r = s1.get(f'{URL_PREFIX}/boxes/{box2_id}/events')
-    assert len(r.json()) == 2
+    assert len(r.json()) == 3
 
     print('- identity 1 (non-creator) posts to box 2 a legit event')
     r = s1.post(
@@ -183,7 +184,7 @@ def test_basics(s1, s2):
 
 def test_box_messages(s1, s2): 
     # Message Edition & Deletion
-    box1_id, box1_share_hash = create_box_and_post_some_events_to_it(session=s1, close=False)
+    box1_id, _ = create_box_and_post_some_events_to_it(session=s1, close=False)
     r = s1.post(
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
@@ -362,7 +363,7 @@ def test_box_messages(s1, s2):
 
     print('- box admin can delete any message')
     # Message posted by s2 but deleted by s1 (box creator) - become first a member
-    get_key_share(s2, box1_share_hash)
+    join_box(s2, box1_id)
     r = s2.post(
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
@@ -401,7 +402,7 @@ def test_accesses(s1, s2):
     )
 
     print('- identity 2 becomes a member by getting the key share')
-    get_key_share(s2, box_share_hash)
+    join_box(s2, box_id)
 
     print('- identity 2 can then can get the box')
     s2.get(

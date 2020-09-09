@@ -2,9 +2,9 @@
 import os
 from base64 import b64encode, urlsafe_b64encode
 
+from .check_response import check_response, assert_fn
 from .get_access_token import get_authenticated_session
 from .test_context import testContext
-from .check_response import check_response, assert_fn
 
 def create_key_share(session, box_id):
     box_key_share = {

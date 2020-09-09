@@ -210,6 +210,7 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
 def get_authenticated_session(email=None, require_account=False, acr_values=None, reset_password=False):
     creds = get_credentials(email, require_account, acr_values, reset_password)
     session = http.Session()
+    print(creds.access_token)
     session.headers.update({'Authorization': f'Bearer {creds.access_token}'})
     session.email = creds.email
     session.account_id = creds.account_id

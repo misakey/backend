@@ -37,21 +37,23 @@ func NewSenderView(identity domain.Identity) SenderView {
 
 // View represent an event as it is represented in JSON responses
 type View struct {
-	Type      string      `json:"type"`
-	Content   *types.JSON `json:"content,omitempty"`
-	ID        string      `json:"id"`
-	CreatedAt time.Time   `json:"server_event_created_at"`
-	Sender    SenderView  `json:"sender"`
+	Type       string      `json:"type"`
+	Content    *types.JSON `json:"content"`
+	ID         string      `json:"id"`
+	CreatedAt  time.Time   `json:"server_event_created_at"`
+	ReferrerID null.String `json:"referrer_id"`
+	Sender     SenderView  `json:"sender"`
 }
 
 // ToView transforms an event into its JSON view.
 func ToView(e Event, identityMap map[string]domain.Identity) (View, error) {
 	view := View{
-		Type:      e.Type,
-		Content:   &e.JSONContent,
-		ID:        e.ID,
-		CreatedAt: e.CreatedAt,
-		Sender:    NewSenderView(identityMap[e.SenderID]),
+		Type:       e.Type,
+		Content:    &e.JSONContent,
+		ID:         e.ID,
+		ReferrerID: e.ReferrerID,
+		CreatedAt:  e.CreatedAt,
+		Sender:     NewSenderView(identityMap[e.SenderID]),
 	}
 
 	// For deleted messages
@@ -74,6 +76,9 @@ func ToView(e Event, identityMap map[string]domain.Identity) (View, error) {
 		}
 	}
 
+	if view.Content.String() == "{}" {
+		view.Content = nil
+	}
 	return view, nil
 }
 
