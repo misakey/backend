@@ -25,6 +25,7 @@ func initRoutes(
 	identityHTTP := entrypoints.NewIdentityHTTP(ssoService)
 	backupKeyShareHTTP := entrypoints.NewBackupKeyShareHTTP(ssoService)
 	backupArchiveHTTP := entrypoints.NewBackupArchiveHTTP(ssoService)
+	cryptoActionHTTP := entrypoints.NewCryptoActionsHTTP(ssoService)
 
 	routes := router.Group("")
 	routes.POST("/authn-steps", authnHTTP.InitAuthnStep)
@@ -34,6 +35,8 @@ func initRoutes(
 	accountRoutes.PUT("/:id/backup", accountHTTP.UpdateBackup, oidcAuthzMidlw)
 	accountRoutes.GET("/:id/pwd-params", accountHTTP.GetPwdParams)
 	accountRoutes.PUT("/:id/password", accountHTTP.ChangePassword, oidcAuthzMidlw)
+	accountRoutes.GET("/:id/crypto/actions", cryptoActionHTTP.ListCryptoActions, oidcAuthzMidlw)
+	accountRoutes.DELETE("/:id/crypto/actions", cryptoActionHTTP.DeleteCryptoActions, oidcAuthzMidlw)
 
 	authRoutes := router.Group("/auth")
 	authRoutes.GET("/login", authFlowHTTP.LoginInit)

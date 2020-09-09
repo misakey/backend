@@ -105,23 +105,26 @@ var IdentityWhere = struct {
 
 // IdentityRels is where relationship names are stored.
 var IdentityRels = struct {
-	Account             string
-	Identifier          string
-	AuthenticationSteps string
-	UsedCoupons         string
+	Account                     string
+	Identifier                  string
+	AuthenticationSteps         string
+	SenderIdentityCryptoActions string
+	UsedCoupons                 string
 }{
-	Account:             "Account",
-	Identifier:          "Identifier",
-	AuthenticationSteps: "AuthenticationSteps",
-	UsedCoupons:         "UsedCoupons",
+	Account:                     "Account",
+	Identifier:                  "Identifier",
+	AuthenticationSteps:         "AuthenticationSteps",
+	SenderIdentityCryptoActions: "SenderIdentityCryptoActions",
+	UsedCoupons:                 "UsedCoupons",
 }
 
 // identityR is where relationships are stored.
 type identityR struct {
-	Account             *Account
-	Identifier          *Identifier
-	AuthenticationSteps AuthenticationStepSlice
-	UsedCoupons         UsedCouponSlice
+	Account                     *Account
+	Identifier                  *Identifier
+	AuthenticationSteps         AuthenticationStepSlice
+	SenderIdentityCryptoActions CryptoActionSlice
+	UsedCoupons                 UsedCouponSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -274,6 +277,27 @@ func (o *Identity) AuthenticationSteps(mods ...qm.QueryMod) authenticationStepQu
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"authentication_step\".*"})
+	}
+
+	return query
+}
+
+// SenderIdentityCryptoActions retrieves all the crypto_action's CryptoActions with an executor via sender_identity_id column.
+func (o *Identity) SenderIdentityCryptoActions(mods ...qm.QueryMod) cryptoActionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"crypto_action\".\"sender_identity_id\"=?", o.ID),
+	)
+
+	query := CryptoActions(queryMods...)
+	queries.SetFrom(query.Query, "\"crypto_action\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"crypto_action\".*"})
 	}
 
 	return query
@@ -578,6 +602,94 @@ func (identityL) LoadAuthenticationSteps(ctx context.Context, e boil.ContextExec
 	return nil
 }
 
+// LoadSenderIdentityCryptoActions allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (identityL) LoadSenderIdentityCryptoActions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeIdentity interface{}, mods queries.Applicator) error {
+	var slice []*Identity
+	var object *Identity
+
+	if singular {
+		object = maybeIdentity.(*Identity)
+	} else {
+		slice = *maybeIdentity.(*[]*Identity)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &identityR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &identityR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(qm.From(`crypto_action`), qm.WhereIn(`crypto_action.sender_identity_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load crypto_action")
+	}
+
+	var resultSlice []*CryptoAction
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice crypto_action")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on crypto_action")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for crypto_action")
+	}
+
+	if singular {
+		object.R.SenderIdentityCryptoActions = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &cryptoActionR{}
+			}
+			foreign.R.SenderIdentity = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.SenderIdentityID) {
+				local.R.SenderIdentityCryptoActions = append(local.R.SenderIdentityCryptoActions, foreign)
+				if foreign.R == nil {
+					foreign.R = &cryptoActionR{}
+				}
+				foreign.R.SenderIdentity = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadUsedCoupons allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (identityL) LoadUsedCoupons(ctx context.Context, e boil.ContextExecutor, singular bool, maybeIdentity interface{}, mods queries.Applicator) error {
@@ -843,6 +955,129 @@ func (o *Identity) AddAuthenticationSteps(ctx context.Context, exec boil.Context
 			rel.R.Identity = o
 		}
 	}
+	return nil
+}
+
+// AddSenderIdentityCryptoActions adds the given related objects to the existing relationships
+// of the identity, optionally inserting them as new records.
+// Appends related to o.R.SenderIdentityCryptoActions.
+// Sets related.R.SenderIdentity appropriately.
+func (o *Identity) AddSenderIdentityCryptoActions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*CryptoAction) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.SenderIdentityID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"crypto_action\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"sender_identity_id"}),
+				strmangle.WhereClause("\"", "\"", 2, cryptoActionPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.SenderIdentityID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &identityR{
+			SenderIdentityCryptoActions: related,
+		}
+	} else {
+		o.R.SenderIdentityCryptoActions = append(o.R.SenderIdentityCryptoActions, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &cryptoActionR{
+				SenderIdentity: o,
+			}
+		} else {
+			rel.R.SenderIdentity = o
+		}
+	}
+	return nil
+}
+
+// SetSenderIdentityCryptoActions removes all previously related items of the
+// identity replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.SenderIdentity's SenderIdentityCryptoActions accordingly.
+// Replaces o.R.SenderIdentityCryptoActions with related.
+// Sets related.R.SenderIdentity's SenderIdentityCryptoActions accordingly.
+func (o *Identity) SetSenderIdentityCryptoActions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*CryptoAction) error {
+	query := "update \"crypto_action\" set \"sender_identity_id\" = null where \"sender_identity_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.SenderIdentityCryptoActions {
+			queries.SetScanner(&rel.SenderIdentityID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.SenderIdentity = nil
+		}
+
+		o.R.SenderIdentityCryptoActions = nil
+	}
+	return o.AddSenderIdentityCryptoActions(ctx, exec, insert, related...)
+}
+
+// RemoveSenderIdentityCryptoActions relationships from objects passed in.
+// Removes related items from R.SenderIdentityCryptoActions (uses pointer comparison, removal does not keep order)
+// Sets related.R.SenderIdentity.
+func (o *Identity) RemoveSenderIdentityCryptoActions(ctx context.Context, exec boil.ContextExecutor, related ...*CryptoAction) error {
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.SenderIdentityID, nil)
+		if rel.R != nil {
+			rel.R.SenderIdentity = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("sender_identity_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.SenderIdentityCryptoActions {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.SenderIdentityCryptoActions)
+			if ln > 1 && i < ln-1 {
+				o.R.SenderIdentityCryptoActions[i] = o.R.SenderIdentityCryptoActions[ln-1]
+			}
+			o.R.SenderIdentityCryptoActions = o.R.SenderIdentityCryptoActions[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

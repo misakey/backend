@@ -214,4 +214,5 @@ def get_authenticated_session(email=None, require_account=False, acr_values=None
     session.headers.update({'Authorization': f'Bearer {creds.access_token}'})
     session.email = creds.email
     session.account_id = creds.account_id
+    session.identity_id = creds.identity_id
     return session

@@ -7,6 +7,7 @@ var TableNames = struct {
 	Account            string
 	AuthenticationStep string
 	BackupArchive      string
+	CryptoAction       string
 	Identifier         string
 	Identity           string
 	UsedCoupon         string
@@ -14,6 +15,7 @@ var TableNames = struct {
 	Account:            "account",
 	AuthenticationStep: "authentication_step",
 	BackupArchive:      "backup_archive",
+	CryptoAction:       "crypto_action",
 	Identifier:         "identifier",
 	Identity:           "identity",
 	UsedCoupon:         "used_coupon",

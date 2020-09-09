@@ -20,6 +20,7 @@ func Launch() {
 	initCreatedAtToEntities()
 	initAddColorToUserIdentity()
 	initAddCouponAndIdentityLevel()
+	initCreateCryptoActionsTable()
 
 	migration.StartGoose(os.Getenv("DSN_SSO"), os.Getenv("MIGRATION_DIR_SSO"))
 }
