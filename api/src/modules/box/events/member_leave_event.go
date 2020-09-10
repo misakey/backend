@@ -30,6 +30,7 @@ func leaveHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, redC
 		eType:     null.StringFrom("member.join"),
 		unrefered: true,
 		senderID:  null.StringFrom(e.SenderID),
+		boxID:     null.StringFrom(e.BoxID),
 	})
 	if err != nil {
 		return merror.Transform(err).Describe("getting last join event")
