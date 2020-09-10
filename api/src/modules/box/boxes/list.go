@@ -5,9 +5,11 @@ import (
 
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
@@ -35,24 +37,27 @@ func ListSenderBoxes(
 		return boxes, merror.Transform(err).Describe("listing box ids")
 	}
 
-	// 2. put pagination in place
-	// if the offset is higher than the total size, we return an empty list
-	if offset >= len(boxIDs) {
-		return boxes, nil
+	// 2. order by most recent and put pagination in place
+	mods := []qm.QueryMod{
+		qm.Select("box_id", "max(created_at)"),
+		sqlboiler.EventWhere.BoxID.IN(boxIDs),
+		qm.GroupBy("box_id"),
+		qm.OrderBy("max DESC"),
+		qm.Offset(offset),
+		qm.Limit(limit),
 	}
-	// cut the slice using the offset
-	boxIDs = boxIDs[offset:]
-	// cut the slice using the limit
-	if len(boxIDs) > limit {
-		boxIDs = boxIDs[:limit]
+
+	lastEvents, err := sqlboiler.Events(mods...).All(ctx, exec)
+	if err != nil {
+		return boxes, merror.Transform(err).Describe("ordering boxes")
 	}
 
 	// 3. compute all boxes
-	boxes = make([]*Box, len(boxIDs))
-	for i, boxID := range boxIDs {
-		box, err := Compute(ctx, boxID, exec, identities)
+	boxes = make([]*Box, len(lastEvents))
+	for i, e := range lastEvents {
+		box, err := Compute(ctx, e.BoxID, exec, identities)
 		if err != nil {
-			return boxes, merror.Transform(err).Describef("computing box %s", boxID)
+			return boxes, merror.Transform(err).Describef("computing box %s", e.BoxID)
 		}
 		boxes[i] = &box
 	}

@@ -292,6 +292,7 @@ gitlab.misakey.dev/misakey/backend v0.1.1-0.20200805142712-f865571b4b2c h1:5elVL
 gitlab.misakey.dev/misakey/backend v0.2.1-0.20200825081154-7b3594cffdd4 h1:9PWDhtVs0dI6/IZosfD3+aI/LUq4ZxImdmr+ymvTxNA=
 gitlab.misakey.dev/misakey/backend v0.2.1-0.20200831141157-864f5c37f68a h1:3YEciprHlZAixSduzcMPACa461B0A9sQbft7mmpBOFc=
 gitlab.misakey.dev/misakey/backend v0.2.1-0.20200902135035-244798dca92f h1:VeHlSwGr4/JzRoJqibjzl72XPS+YLtqxuQ8CB5KanUQ=
+gitlab.misakey.dev/misakey/backend v0.2.1-0.20200909151111-6be826a88bbc h1:y2hmfnge0RReVy2H8Il+bMqZ1Nnzaio26WCAxkE2RJE=
 gitlab.misakey.dev/misakey/msk-sdk-go v1.13.0 h1:NWWmkqCgW22W/fUF4Iu9hT3edfEkxxXeyUNjx5OzZHs=
 gitlab.misakey.dev/misakey/msk-sdk-go v1.13.0/go.mod h1:Gk71diHNh+Wms/yYaV+TPjJZjZL6zXCZ5fKk4eMqtec=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
