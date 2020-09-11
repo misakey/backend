@@ -117,7 +117,7 @@ _JSON Body_:
 ```json
 {
   "client": {
-    "id": "c001d00d-5ecc-beef-ca4e-b00b1e54a111",
+    "id": "00000000-0000-0000-0000-000000000000",
     "name": "Misakey App",
     "logo_uri": "https://media.glassdoor.com/sqll/2449676/misakey-squarelogo-1549446114307.png",
     "tos_uri": "https://about.misakey.com/#/fr/legals/tos/",
@@ -646,7 +646,7 @@ _JSON Body_:
     "amr": "emailed_code"
   },
   "client": {
-    "id": "c001d00d-5ecc-beef-ca4e-b00b1e54a111",
+    "id": "00000000-0000-0000-0000-000000000000",
     "name": "Misakey App",
     "logo_uri": "https://media.glassdoor.com/sqll/2449676/misakey-squarelogo-1549446114307.png"
   }

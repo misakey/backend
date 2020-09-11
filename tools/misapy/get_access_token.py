@@ -137,7 +137,7 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
     # but we don't care because all we need is the login challenge in the redirection URL
     r = s.get(
         'https://auth.misakey.com.local/_/oauth2/auth',
-        params={
+        params={00000000-0000-0000-0000-000000000000
             'client_id': 'c001d00d-5ecc-beef-ca4e-b00b1e54a111',
             'redirect_uri': 'https://api.misakey.com.local/auth/callback',
             'response_type': 'code',

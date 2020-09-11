@@ -116,7 +116,7 @@ ID Token example:
   "sco": "openid user pur.minimum_required rol.admin.31e987bb-5e2c-4174-9e4b-49c5786b192e",
   "at_hash": "z-N-JLaW6RbtqWfqTABIrw",
   "aud": [
-    "c001d00d-5ecc-beef-ca4e-b00b1e54a111"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "auth_time": 1568883569,
   "exp": 1568887169,
