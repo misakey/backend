@@ -55,8 +55,8 @@ func (sso SSOService) GetIdentity(ctx context.Context, query IdentityQuery) (Ide
 // PartialUpdateIdentityCmd
 type PartialUpdateIdentityCmd struct {
 	IdentityID    string
-	DisplayName   string `json:"display_name"`
-	Notifications string `json:"notifications"`
+	DisplayName   string      `json:"display_name"`
+	Notifications string      `json:"notifications"`
 	Color         null.String `json:"color"`
 }
 
@@ -65,7 +65,7 @@ func (cmd PartialUpdateIdentityCmd) Validate() error {
 	if err := v.ValidateStruct(&cmd,
 		v.Field(&cmd.IdentityID, v.Required, is.UUIDv4),
 		v.Field(&cmd.Notifications, v.In("minimal", "moderate", "frequent")),
-		v.Field(&cmd.DisplayName, v.Length(3, 21)),
+		v.Field(&cmd.DisplayName, v.Length(3, 254)),
 		v.Field(&cmd.Color, v.Length(7, 7)),
 	); err != nil {
 		return err
@@ -212,11 +212,10 @@ func (sso *SSOService) DeleteAvatar(ctx context.Context, cmd DeleteAvatarCmd) er
 	return sso.identityService.Update(ctx, &identity)
 }
 
-
 // AttachCouponCmd
 type AttachCouponCmd struct {
 	IdentityID string
-	Value string
+	Value      string
 }
 
 // Validate the AttachCouponCmd
@@ -261,10 +260,10 @@ func (sso *SSOService) AttachCoupon(ctx context.Context, cmd AttachCouponCmd) er
 		return merror.Transform(err).Describe("updating identity")
 	}
 
-	// 2. Create the used_coupon 
+	// 2. Create the used_coupon
 	usedCoupon := domain.UsedCoupon{
-		IdentityID:     cmd.IdentityID,
-		Value:          cmd.Value,
+		IdentityID: cmd.IdentityID,
+		Value:      cmd.Value,
 	}
 
 	if err := sso.usedCouponService.CreateUsedCoupon(ctx, usedCoupon); err != nil {
