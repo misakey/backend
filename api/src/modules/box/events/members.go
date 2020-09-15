@@ -25,6 +25,7 @@ func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, boxID stri
 	}
 	// start the member IDs list with it
 	uniqueMemberIDs := make(map[string]bool)
+	memberIDs := []string{createEvent.SenderID}
 	uniqueMemberIDs[createEvent.SenderID] = true
 
 	// 2. compute people that has joined the box
@@ -32,16 +33,16 @@ func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, boxID stri
 	if err != nil {
 		return nil, err
 	}
+
+	// build the list and ensure unicity with a map
 	for _, e := range activeJoins {
-		uniqueMemberIDs[e.SenderID] = true
+		_, ok := uniqueMemberIDs[e.SenderID]
+		if !ok {
+			uniqueMemberIDs[e.SenderID] = true
+			memberIDs = append(memberIDs, e.SenderID)
+		}
 	}
 
-	memberIDs := make([]string, len(uniqueMemberIDs))
-	idx := 0
-	for memberID := range uniqueMemberIDs {
-		memberIDs[idx] = memberID
-		idx++
-	}
 	return memberIDs, nil
 }
 
