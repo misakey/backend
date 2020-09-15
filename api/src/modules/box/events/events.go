@@ -12,6 +12,7 @@ import (
 	"github.com/volatiletech/sqlboiler/types"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
@@ -52,10 +53,18 @@ func New(eType string, jsonContent types.JSON, boxID, senderID string, referrerI
 	return event, nil
 }
 
+func (e *Event) persist(ctx context.Context, exec boil.ContextExecutor) error {
+	// finally insert
+	if err := e.ToSQLBoiler().Insert(ctx, exec, boil.Infer()); err != nil {
+		return merror.Transform(err).Describe("inserting event in DB")
+	}
+	return nil
+}
+
 func ListForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string, offset, limit *int) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
 		boxID:  null.StringFrom(boxID),
-		eTypes: memberReadTypes(),
+		eTypes: etype.MembersCanSee(),
 		offset: offset,
 		limit:  limit,
 	})
@@ -107,8 +116,9 @@ type eventFilters struct {
 	senderID    null.String
 	notSenderID null.String
 	referrerID  null.String
+	referrerIDs []string
 	content     *string
-	unrefered   bool
+	unreferred  bool
 
 	offset *int
 	limit  *int
@@ -140,7 +150,7 @@ func list(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) 
 
 	dbEvents, err := sqlboiler.Events(mods...).All(ctx, exec)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("listing events")
+		return nil, err
 	}
 
 	events := make([]Event, len(dbEvents))
@@ -174,9 +184,13 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 	if len(filters.eTypes) > 0 {
 		mods = append(mods, sqlboiler.EventWhere.Type.IN(filters.eTypes))
 	}
-	// add referrer
+	// add referrer id
 	if filters.referrerID.Valid {
-		mods = append(mods, sqlboiler.EventWhere.ReferrerID.EQ(filters.referrerID))
+		filters.referrerIDs = append(filters.referrerIDs, filters.referrerID.String)
+	}
+	// add referrers ids
+	if len(filters.referrerIDs) > 0 {
+		mods = append(mods, qm.AndIn(sqlboiler.EventColumns.ReferrerID+" IN ?", slice.StringSliceToInterfaceSlice(filters.referrerIDs)...))
 	}
 	// add box query
 	if filters.boxID.Valid {
@@ -195,9 +209,9 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 		mods = append(mods, qm.Limit(*filters.limit))
 	}
 
-	// add unrefered query
+	// add unreferred query
 	// TODO: merge this query into the main one as a sub query
-	if filters.unrefered {
+	if filters.unreferred {
 		notInIDs, err := referentIDs(ctx, exec, filters)
 		if err != nil {
 			return mods, merror.Transform(err).Describe("sub selecting referents")
@@ -215,18 +229,17 @@ func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFi
 	// either it selects event refering another specific event
 	if filters.id.Valid {
 		subMods = append(subMods, sqlboiler.EventWhere.ReferrerID.EQ(filters.id))
-	} else { // or it selects event refering any event for a given box or sender
+	} else {
+		subMods = append(subMods, sqlboiler.EventWhere.ReferrerID.IsNotNull())
+		// NOTE: boxID must be checked before senderID - both cannot be used at the same time
+		// TODO (perf/usage): need to improve this query to be more natural to build
 		if filters.boxID.Valid {
 			subMods = append(subMods, sqlboiler.EventWhere.BoxID.EQ(filters.boxID.String))
-		}
-		if filters.senderID.Valid {
+		} else if filters.senderID.Valid {
 			subMods = append(subMods, sqlboiler.EventWhere.SenderID.EQ(filters.senderID.String))
+		} else {
+			return nil, merror.Internal().Describe("wrong unreferred use")
 		}
-		// box id or sender id should have been set or the query will be to large
-		if len(subMods) == 0 {
-			return nil, merror.Internal().Describe("wrong unrefered use")
-		}
-		subMods = append(subMods, sqlboiler.EventWhere.ReferrerID.IsNotNull())
 	}
 	referents, err := sqlboiler.Events(subMods...).All(ctx, exec)
 	if err != nil {
@@ -282,7 +295,7 @@ func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 func CountByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (int, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.EventWhere.BoxID.EQ(boxID),
-		sqlboiler.EventWhere.Type.IN(memberReadTypes()),
+		sqlboiler.EventWhere.Type.IN(etype.MembersCanSee()),
 	}
 	count, err := sqlboiler.Events(mods...).Count(ctx, exec)
 	if err != nil {

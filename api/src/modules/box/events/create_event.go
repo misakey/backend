@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+
 	"github.com/volatiletech/null"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
@@ -62,7 +63,7 @@ func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, e
 	}
 
 	// persist the event in storage
-	if err = event.ToSQLBoiler().Insert(ctx, exec, boil.Infer()); err != nil {
+	if err = event.persist(ctx, exec); err != nil {
 		return Event{}, merror.Transform(err).Describe("inserting event")
 	}
 

@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -11,7 +12,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
-func leaveHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+func doLeave(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
 	// check that the current sender has access to the box
 	if err := MustMemberHaveAccess(ctx, exec, identities, e.BoxID, e.SenderID); err != nil {
 		// user is a not a box member
@@ -27,15 +28,15 @@ func leaveHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, redC
 
 	// get the last join event to set the referrer id
 	joinEvent, err := get(ctx, exec, eventFilters{
-		eType:     null.StringFrom("member.join"),
-		unrefered: true,
-		senderID:  null.StringFrom(e.SenderID),
-		boxID:     null.StringFrom(e.BoxID),
+		eType:      null.StringFrom("member.join"),
+		unreferred: true,
+		senderID:   null.StringFrom(e.SenderID),
+		boxID:      null.StringFrom(e.BoxID),
 	})
 	if err != nil {
 		return merror.Transform(err).Describe("getting last join event")
 	}
 	e.ReferrerID = null.StringFrom(joinEvent.ID)
 
-	return nil
+	return e.persist(ctx, exec)
 }

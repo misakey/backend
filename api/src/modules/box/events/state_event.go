@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null"
 
@@ -16,7 +17,7 @@ type StateLifecycleContent struct {
 	State string `json:"state"`
 }
 
-func lifecycleHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redis.Client, _ entrypoints.IdentityIntraprocessInterface) error {
+func doLifecycle(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redis.Client, _ entrypoints.IdentityIntraprocessInterface) error {
 	// check accesses
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return merror.Transform(err).Describe("checking admin")
@@ -39,7 +40,7 @@ func lifecycleHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, 
 		return err
 	}
 
-	return nil
+	return e.persist(ctx, exec)
 }
 
 func isClosed(

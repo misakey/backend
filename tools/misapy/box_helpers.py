@@ -47,14 +47,19 @@ def create_box_and_post_some_events_to_it(session, close=True):
     key_share = create_key_share(s, box_id).json()
 
     print(f'- access invitation_link creation for box {box_id}')
-    r = s.post(
-        f'{URL_PREFIX}/boxes/{box_id}/events',
+    s.post(
+        f'{URL_PREFIX}/boxes/{box_id}/batch-events',
         json={
-            'type': 'access.add',
-            'content': {
-                'restriction_type': 'invitation_link',
-                'value': key_share["other_share_hash"]
-            }
+            'batch_type': 'accesses',
+            'events' : [
+                {
+                    'type': 'access.add',
+                    'content': {
+                        'restriction_type': 'invitation_link',
+                        'value': key_share["other_share_hash"]
+                    }
+                }
+            ]
         },
         expected_status_code=201,
     )

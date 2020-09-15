@@ -108,6 +108,13 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw ech
 	)
 	boxRouter.POST("/:id/events", postEvents, authzMidlw)
 
+	batchPostEvents := entrypoints.NewProtectedHTTP(
+		func() entrypoints.Request { return &application.BatchCreateEventRequest{} },
+		bs.BatchCreateEvent,
+		entrypoints.ResponseCreated,
+	)
+	boxRouter.POST("/:id/batch-events", batchPostEvents, authzMidlw)
+
 	uploadEncryptedFile := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.UploadEncryptedFileRequest{} },
 		bs.UploadEncryptedFile,

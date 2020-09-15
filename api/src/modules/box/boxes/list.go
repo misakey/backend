@@ -86,7 +86,7 @@ func ListSenderBoxIDs(
 	exec boil.ContextExecutor,
 	senderID string,
 ) ([]string, error) {
-	joinedBoxIDs, err := events.ListJoinedBoxIDs(ctx, exec, senderID)
+	joinedBoxIDs, err := events.ListMemberBoxIDs(ctx, exec, senderID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing joined box ids")
 	}

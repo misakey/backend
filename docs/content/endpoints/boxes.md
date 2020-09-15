@@ -169,41 +169,7 @@ HTTP 204 NO CONTENT
 _Headers:_
 - `X-Total-Count` (integer): the total count of boxes that the user can access.
 
-## 2.5. Listing joined and accessible boxes
-
-### 2.5.1. request
-
-Users are able to list boxes they have an access to.
-
-The returned list is automatically computed from the server according to the authorization
-provided by the received bearer token.
-
-```bash
-GET https://api.misakey.com/boxes/joined
-```
-
-_Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
-
-_Query Parameters:_
-
-Pagination ([more info](/concepts/pagination)) with default limit set to 10.
-
-### 2.5.2. response
-
-_Code:_
-```bash
-HTTP 200 OK
-```
-
-A list of event is returned.
-```json
-[
-  {{% include "include/box-list.json" %}}
-]
-```
-
-## 2.6. Delete a box
+## 2.5. Delete a box
 
 [Box admins](../../concepts/box-events/#21-admins) only are able to delete corresponding boxes.
 
@@ -211,7 +177,7 @@ A removed box sees its data completely removed from Misakey storage. This action
 
 This action removes all data related to the box (events, key-shares...).
 
-### 2.6.1. request
+### 2.5.1. request
 
 ```bash
 DELETE https://api.misakey.com/boxes/:id
@@ -232,14 +198,14 @@ _JSON Body:_
 
 - `user_confirmation` (string) (one of: _delete_, _supprimer_): the input the end-user has entered to confirm the deletion. The server will check if the value corresponds to some expected strings (cf one of).
 
-### 2.6.2. response
+### 2.5.2. response
 
 _Code:_
 ```bash
 HTTP 204 NO CONTENT
 ```
 
-## 2.7. Reset the new events count for an identity
+## 2.6. Reset the new events count for an identity
 
 The list of boxes return many information for each boxes, including a numerical field `events_count` telling how many event have occured since the connected identity's last visit.
 
@@ -247,7 +213,7 @@ This endpoint allows to reset the new events count of a box for a given identity
 
 It is a kind of an acknowledgement and it must be used when the user want to mark the box as "read".
 
-### 2.7.1. request
+### 2.6.1. request
 
 ```bash
 PUT https://api.misakey.com/boxes/:id/new-events-count/ack
@@ -268,39 +234,11 @@ where `identity_id` is the identity of the requester who wants to acknowledge.
 _Headers:_
 - :key: `Authorization` (opaque token) (ACR >= 1): a valid access token corresponding to the identity of the body
 
-### 2.7.2. success response
+### 2.6.2. success response
 
 _Code:_
 ```bash
 HTTP 204 NO CONTENT
-```
-
-## 2.8. Listing box members
-
-### 2.5.1. request
-
-```bash
-GET https://api.misakey.com/boxes/:id/members
-```
-
-_Path Parameter:_
-- `id` (string) (uuid): the box id
-
-_Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
-
-### 2.5.2. response
-
-_Code:_
-```bash
-HTTP 200 OK
-```
-
-A list of senders is returned.
-```json
-[
-  {{% include "include/event-sender.json" %}}
-]
 ```
 
 # 3. Accesses
@@ -312,7 +250,7 @@ Access defines who has access to a box considering some rules.
 :warning: Only box admins can add or remove accesses.
 
 To add or remove accesses in a given box, please refer to:
-* the [sending an event to a box endpoint](../box_events/#21-sending-an-event-to-a-box).
+* the [sending an event to a box endpoint](../box_events/#21-single-creation-of-an-event-for-a-box).
 * the [access type events documentation](/concepts/box-events/#15-access-type-events).
 
 ## 3.2. List accesses for a given box
@@ -355,5 +293,82 @@ Only the current valid accesses are returned.
           "value": "sadin.nicolas7@gmail.com"
       }
     }
+]
+```
+
+
+# 4. Membership
+
+## 4.1. Add or remove membership
+
+To add or remove membership for a couple <box, identity>, please refer to:
+
+* the [sending an event to a box endpoint](../box_events/#21-single-creation-of-an-event-for-a-box).
+* the [member type events documentation](/concepts/box-events/#12-member-type-events).
+
+## 4.1. Listing actively joined user's boxes.
+
+### 4.1.1. request
+
+Users are able to list boxes they have an access to.
+
+The returned list is automatically computed from the server according to the authorization
+provided by the received bearer token.
+
+```bash
+GET https://api.misakey.com/boxes/joined
+```
+
+_Headers:_
+- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
+
+_Query Parameters:_
+
+Pagination ([more info](/concepts/pagination)) with default limit set to 10.
+
+### 4.1.2. response
+
+_Code:_
+```bash
+HTTP 200 OK
+```
+
+A list of event is returned.
+```json
+[
+  {{% include "include/box-list.json" %}}
+]
+```
+
+
+## 4.2. Listing all box's active members
+
+This endpoint return all identities that have an active membership to the box.
+
+Identities who have left and have been kicked out of the box are not returned.
+
+### 4.2.1. request
+
+```bash
+GET https://api.misakey.com/boxes/:id/members
+```
+
+_Path Parameter:_
+- `id` (string) (uuid): the box id
+
+_Headers:_
+- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
+
+### 4.2.2. response
+
+_Code:_
+```bash
+HTTP 200 OK
+```
+
+A list of senders is returned.
+```json
+[
+  {{% include "include/event-sender.json" %}}
 ]
 ```

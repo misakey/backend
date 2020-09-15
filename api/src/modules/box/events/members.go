@@ -3,10 +3,13 @@ package events
 import (
 	"context"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
+
 	"github.com/volatiletech/null"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/boil"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
@@ -14,7 +17,7 @@ import (
 func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]string, error) {
 	// 1. get the creator id which is a member
 	createEvent, err := get(ctx, exec, eventFilters{
-		eType: null.StringFrom("create"),
+		eType: null.StringFrom(etype.Create),
 		boxID: null.StringFrom(boxID),
 	})
 	if err != nil {
@@ -24,17 +27,12 @@ func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, boxID stri
 	uniqueMemberIDs := make(map[string]bool)
 	uniqueMemberIDs[createEvent.SenderID] = true
 
-	// 2. compute people having access to the box
-	// get all the identity that has joined the box and did not leave it
-	joinEvents, err := list(ctx, exec, eventFilters{
-		eType:     null.StringFrom("member.join"),
-		unrefered: true,
-		boxID:     null.StringFrom(boxID),
-	})
+	// 2. compute people that has joined the box
+	activeJoins, err := listBoxActiveJoinEvents(ctx, exec, boxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("listing join events")
+		return nil, err
 	}
-	for _, e := range joinEvents {
+	for _, e := range activeJoins {
 		uniqueMemberIDs[e.SenderID] = true
 	}
 
@@ -62,10 +60,12 @@ func MustBeMember(
 	}
 
 	_, err = get(ctx, exec, eventFilters{
-		eType:     null.StringFrom("member.join"),
-		unrefered: true,
-		senderID:  null.StringFrom(senderID),
-		boxID:     null.StringFrom(boxID),
+		eType:      null.StringFrom("member.join"),
+		unreferred: true,
+		boxID:      null.StringFrom(boxID),
+		// NOTE: today senderID is not used to build unreferred filter since boxID is considered before
+		// this is necessary since the sender of member.kick is not the sender of the member.join event.
+		senderID: null.StringFrom(senderID),
 	})
 	// if found, the sender is a member of the box
 	if err == nil {
@@ -83,47 +83,22 @@ func isMember(ctx context.Context, exec boil.ContextExecutor, boxID, senderID st
 	return (err == nil), err
 }
 
-func MustBeAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) error {
-	isCreator, err := isCreator(ctx, exec, boxID, senderID)
-	if err != nil {
-		return err
-	}
-	if !isCreator {
-		return merror.Forbidden().Describe("not the creator")
-	}
-	return nil
-}
-
-func isAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (bool, error) {
-	err := MustBeAdmin(ctx, exec, boxID, senderID)
-	if err != nil && merror.HasCode(err, merror.ForbiddenCode) {
-		return false, nil
-	}
-	// return false admin if an error has occured
-	return (err == nil), err
-}
-
-func NotifyMembers(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, senderID, boxID string) error {
+// increment count for all identities except the sender
+func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
 	// retrieve all member ids excepted the sender id
 	// we build a set to find all uniq actors
-	uniqMembers := make(map[string]bool)
-	events, err := list(ctx, exec, eventFilters{
-		boxID:       null.StringFrom(boxID),
-		notSenderID: null.StringFrom(senderID),
-	})
+	memberIDs, err := ListBoxMemberIDs(ctx, exec, e.BoxID)
 	if err != nil {
-		return err
+		return merror.Transform(err).Describe("notifying member: listing members")
 	}
-	for _, event := range events {
-		uniqMembers[event.SenderID] = true
-	}
-	memberIDs := make([]string, len(uniqMembers))
-	idx := 0
-	for member := range uniqMembers {
-		memberIDs[idx] = member
-		idx += 1
+	// delete the notification sender id from the list
+	for i, id := range memberIDs {
+		if id == e.SenderID {
+			memberIDs = append(memberIDs[:i], memberIDs[i+1:]...)
+			break
+		}
 	}
 
 	// incr counts for a given box for all received identityIDs
-	return incrCounts(ctx, redConn, memberIDs, boxID)
+	return incrCounts(ctx, redConn, memberIDs, e.BoxID)
 }

@@ -21,7 +21,7 @@ type accessContent struct {
 	Value           string `json:"value"`
 }
 
-func addAccessHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ entrypoints.IdentityIntraprocessInterface) error {
+func doAddAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ entrypoints.IdentityIntraprocessInterface) error {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return merror.Transform(err).Describe("checking admin")
@@ -42,10 +42,10 @@ func addAccessHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, 
 	// check the access doesn't exist yet
 	content := e.JSONContent.String()
 	_, err := get(ctx, exec, eventFilters{
-		eType:     null.StringFrom("access.add"),
-		unrefered: true,
-		boxID:     null.StringFrom(e.BoxID),
-		content:   &content,
+		eType:      null.StringFrom("access.add"),
+		unreferred: true,
+		boxID:      null.StringFrom(e.BoxID),
+		content:    &content,
 	})
 	// no error means the access already exists
 	if err == nil {
@@ -57,10 +57,11 @@ func addAccessHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, 
 	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
 		return err
 	}
-	return nil
+
+	return e.persist(ctx, exec)
 }
 
-func rmAccessHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ entrypoints.IdentityIntraprocessInterface) error {
+func doRmAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ entrypoints.IdentityIntraprocessInterface) error {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return merror.Transform(err).Describe("checking admin")
@@ -76,26 +77,26 @@ func rmAccessHandler(ctx context.Context, e *Event, exec boil.ContextExecutor, r
 		return merror.BadRequest().Describe("content should be empty").Detail("content", merror.DVForbidden)
 	}
 
-	// the referrer must exist and not been refered
-	// access.add refered means an access.rm already exist
+	// the referrer must exist and not been referred yet or it is already removed
+	// access.add referred means an access.rm already exist for it
 	_, err := get(ctx, exec, eventFilters{
-		eType:     null.StringFrom("access.add"),
-		unrefered: true,
-		boxID:     null.StringFrom(e.BoxID),
-		id:        e.ReferrerID,
+		eType:      null.StringFrom("access.add"),
+		unreferred: true,
+		boxID:      null.StringFrom(e.BoxID),
+		id:         e.ReferrerID,
 	})
-	// no error means the access.rm already exists
 	if err != nil {
 		return merror.Transform(err).Describe("checking access.add referrer_id consistency")
 	}
-	return nil
+
+	return e.persist(ctx, exec)
 }
 
 func FindActiveAccesses(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
-		boxID:     null.StringFrom(boxID),
-		eType:     null.StringFrom("access.add"),
-		unrefered: true,
+		boxID:      null.StringFrom(boxID),
+		eType:      null.StringFrom("access.add"),
+		unreferred: true,
 	})
 }
 

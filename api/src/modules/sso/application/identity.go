@@ -248,10 +248,10 @@ func (sso *SSOService) AttachCoupon(ctx context.Context, cmd AttachCouponCmd) er
 
 	if strings.EqualFold(cmd.Value, "ProductHuntRocks") {
 		cmd.Value = "ProductHuntRocks"
-	} else if strings.EqualFold(cmd.Value, "EarlyBird") {
+	} else if strings.EqualFold(cmd.Value, "EarlyBird") || strings.EqualFold(cmd.Value, "EarlyBirds") {
 		cmd.Value = "EarlyBird"
 	} else {
-		return merror.BadRequest().Detail("value", merror.DVInvalid).Describe("invalid coupon")
+		return merror.BadRequest().Detail("value", merror.DVInvalid).Detail("invalid_value", cmd.Value).Describe("invalid coupon")
 	}
 
 	// 3. Update the identity
