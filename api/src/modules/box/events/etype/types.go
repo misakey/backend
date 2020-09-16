@@ -27,6 +27,7 @@ func MembersCanSee() []string {
 
 		Memberjoin,
 		Memberleave,
+		Memberkick,
 	}
 }
 
