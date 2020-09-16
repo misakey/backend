@@ -62,17 +62,34 @@ func ToView(e Event, identityMap map[string]domain.Identity) (View, error) {
 		var content DeletedContent
 		err := json.Unmarshal(e.JSONContent, &content)
 		if err != nil {
-			return view, merror.Transform(err).Describe("unmarshaling content json")
+			return view, merror.Transform(err).Describef("unmarshaling %s json", e.Type)
 		}
 
-		if content != (DeletedContent{}) {
+		if content.Deleted.ByIdentityID != "" {
 			deletor := NewSenderView(identityMap[content.Deleted.ByIdentityID])
 			content.Deleted.ByIdentity = &deletor
 			content.Deleted.ByIdentityID = ""
 			err := view.Content.Marshal(content)
 			if err != nil {
-				return view, merror.Transform(err).Describe("marshalling event content")
+				return view, merror.Transform(err).Describef("marshalling %s content", e.Type)
 			}
+		}
+	}
+
+	if e.Type == "member.kick" {
+		var content MemberKickContent
+		err := json.Unmarshal(e.JSONContent, &content)
+		if err != nil {
+			return view, merror.Transform(err).Describef("unmarshaling %s json", e.Type)
+		}
+
+		if content.KickedMemberID != "" {
+			kicked := NewSenderView(identityMap[content.KickedMemberID])
+			content.KickedMember = &kicked
+		}
+		content.KickedMemberID = ""
+		if err := view.Content.Marshal(content); err != nil {
+			return view, merror.Transform(err).Describe("marshalling event content")
 		}
 	}
 
@@ -117,19 +134,30 @@ func MapSenderIdentities(ctx context.Context, events []Event, identityRepo entry
 }
 
 func getIdentityIDs(event Event) ([]string, error) {
-	IDs := []string{event.SenderID}
+	ids := []string{event.SenderID}
 
 	if event.Type == "msg.text" || event.Type == "msg.file" {
 		var content DeletedContent
 		err := json.Unmarshal(event.JSONContent, &content)
 		if err != nil {
-			return IDs, merror.Transform(err).Describe("unmarshaling content json")
+			return ids, merror.Transform(err).Describef("unmarshaling %s json", event.Type)
 		}
 
 		if content.Deleted.ByIdentityID != "" {
-			IDs = append(IDs, content.Deleted.ByIdentityID)
+			ids = append(ids, content.Deleted.ByIdentityID)
+		}
+	}
+	if event.Type == "member.kick" {
+		var content MemberKickContent
+		err := json.Unmarshal(event.JSONContent, &content)
+		if err != nil {
+			return ids, merror.Transform(err).Describef("unmarshaling %s json", event.Type)
+		}
+
+		if content.KickedMemberID != "" {
+			ids = append(ids, content.KickedMemberID)
 		}
 	}
 
-	return IDs, nil
+	return ids, nil
 }

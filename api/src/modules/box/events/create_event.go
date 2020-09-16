@@ -42,7 +42,7 @@ func NewCreate(title, publicKey, senderID string) (e Event, err error) {
 		PublicKey: publicKey,
 		Title:     title,
 	}
-	return newWithAnyContent("create", &c, boxID, senderID)
+	return newWithAnyContent("create", &c, boxID, senderID, nil)
 }
 
 func GetCreateEvent(

@@ -96,12 +96,16 @@ Messages of type `member.kick` have no content.
 ```json
 {
   "type": "member.kick",
-  "referrer_id": "<member.join id>",
-  "content": null,
+  "referrer_id": "(string) (uuid): member.join id",
+  "content": {
+      "kicked_member_id": "(string) (uuid): identity id that has been kicked"
+  },
 }
 ```
 
 Once the event has been created for a user, the user is still listed as member but informed that he has been kicked.
+
+On read, the `kicked_member_id` is transformed into a `kicked_member` field containing sender information. This `kicked_member` attribute is nullable.
 
 ## 1.3. `Message` type events
 

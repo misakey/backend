@@ -138,7 +138,7 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
     r = s.get(
         'https://auth.misakey.com.local/_/oauth2/auth',
         params={
-            'client_id': 'c001d00d-5ecc-beef-ca4e-b00b1e54a111',
+            'client_id': '00000000-0000-0000-0000-000000000000',
             'redirect_uri': 'https://api.misakey.com.local/auth/callback',
             'response_type': 'code',
             'scope': 'openid tos privacy_policy',
@@ -211,6 +211,7 @@ def get_authenticated_session(email=None, require_account=False, acr_values=None
     creds = get_credentials(email, require_account, acr_values, reset_password)
     session = http.Session()
     session.headers.update({'Authorization': f'Bearer {creds.access_token}'})
+    print(f'Tok - {creds.identity_id}: {creds.access_token}')
     session.email = creds.email
     session.account_id = creds.account_id
     session.identity_id = creds.identity_id

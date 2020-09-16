@@ -95,7 +95,7 @@ func ListByTypeAndBoxIDAndSenderID(ctx context.Context, exec boil.ContextExecuto
 	return events, nil
 }
 
-func newWithAnyContent(eType string, content anyContent, boxID, senderID string) (Event, error) {
+func newWithAnyContent(eType string, content anyContent, boxID, senderID string, referrerID *string) (Event, error) {
 	contentBytes, err := json.Marshal(content)
 	if err != nil {
 		return Event{}, merror.Transform(err).Describe("marshalling anyContent into bytes")
@@ -105,7 +105,7 @@ func newWithAnyContent(eType string, content anyContent, boxID, senderID string)
 		return Event{}, merror.Transform(err).Describe("unmarshalling content bytes into types.JSON")
 	}
 
-	return New(eType, jsonContent, boxID, senderID, nil)
+	return New(eType, jsonContent, boxID, senderID, referrerID)
 }
 
 type eventFilters struct {

@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+
 	"github.com/volatiletech/null"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
@@ -50,7 +51,7 @@ func NewMsgFile(
 		EncryptedFileID: fileID,
 	}
 
-	e, err = newWithAnyContent("msg.file", &content, boxID, senderID)
+	e, err = newWithAnyContent("msg.file", &content, boxID, senderID, nil)
 	if err != nil {
 		return e, "", merror.Transform(err).Describe("new event")
 	}

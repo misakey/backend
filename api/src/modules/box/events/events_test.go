@@ -13,7 +13,7 @@ func TestNewWithAnyContent(t *testing.T) {
 			Encrypted: "bm90X2VtcHR5X3lvdV9zZWU=",
 			PublicKey: "not_null_public_key",
 		}
-		e, err := newWithAnyContent("msg.text", content, "3389043f-bf0a-456c-a8a2-f068ede21ce9", "2289043f-bf0a-456c-a8a2-f068ede21ce9")
+		e, err := newWithAnyContent("msg.text", content, "3389043f-bf0a-456c-a8a2-f068ede21ce9", "2289043f-bf0a-456c-a8a2-f068ede21ce9", nil)
 		assert.Nilf(t, err, "error not nil")
 		assert.Equalf(t, "msg.text", e.Type, "event type")
 		assert.Equalf(t, "2289043f-bf0a-456c-a8a2-f068ede21ce9", e.SenderID, "sender id")
