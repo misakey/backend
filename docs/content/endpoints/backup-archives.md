@@ -1,6 +1,11 @@
----
-title: SSO - Backup Archives
----
++++
+categories = ["Endpoints"]
+date = "2020-09-11"
+description = "Backup Archives endpoints"
+tags = ["sso", "backup", "archives", "api", "endpoints"]
+title = "SSO - Backup Archives"
++++
+
 
 A new backup archive is created whenever a user successfully performs a “forgotten password” procedure.
 The purpose of a backup archive is to keep a copy of the user's secret backup

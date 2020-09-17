@@ -57,3 +57,12 @@ pre {
   color: black;
 }
 
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#search {
+    height: 25px;
+}

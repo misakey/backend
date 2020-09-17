@@ -1,6 +1,10 @@
----
-title: Box - Boxes
----
++++
+categories = ["Endpoints"]
+date = "2020-09-11"
+description = "Boxes endpoints"
+tags = ["box", "api", "endpoints"]
+title = "Box"
++++
 
 # 1. Introduction
 
@@ -88,27 +92,9 @@ _JSON Body:_
 {
     "code": "forbidden",
     "origin": "not_defined",
-    "desc": "must match a restriction rule",
+    "desc": "",
     "details": {
-        "reason": "no_access"
-    }
-}
-```
-
-**II - The user is not a box member
-
-```bash
-HTTP 403 FORBIDDEN
-```
-
-_JSON Body:_
-```json
-{
-    "code": "forbidden",
-    "origin": "not_defined",
-    "desc": "must be a member",
-    "details": {
-        "reason": "not_member"
+        "lifecyle": "conflict"
     }
 }
 ```
@@ -295,7 +281,6 @@ Only the current valid accesses are returned.
     }
 ]
 ```
-
 
 # 4. Membership
 

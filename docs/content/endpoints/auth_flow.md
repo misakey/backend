@@ -1,6 +1,10 @@
----
-title: SSO - Auth Flow
----
++++
+categories = ["Endpoints"]
+date = "2020-09-11"
+description = "Auth Flow endpoints"
+tags = ["sso", "authflow", "api", "endpoints"]
+title = "SSO - Auth Flow"
++++
 
 ## 1. Introduction
 

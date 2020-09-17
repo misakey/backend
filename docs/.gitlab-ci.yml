@@ -7,10 +7,31 @@
 variables:
   DOCUMENTATION_URL: "https://misakey.pages.misakey.dev/backend/"
 
+build-index:
+  image:
+    name: node:latest
+  extends:
+    - .only-master-and-manual
+    - .only-docs
+  stage: docs
+  tags:
+    - misakey_docker
+  script:
+    - npm install grunt string toml
+    - npm install -g grunt
+    - cd docs && grunt lunr-index
+  artifacts:
+    name: "docs:index-$CI_PIPELINE_ID"
+    paths:
+      - docs/static/js/lunr
+    expire_in: 1 hour
+
 pages:
   image:
     name: klakegg/hugo:latest
     entrypoint: [""]
+  dependencies:
+   - build-index
   extends:
     - .only-master-and-manual
     - .only-docs

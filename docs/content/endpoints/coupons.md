@@ -1,6 +1,10 @@
----
-title: SSO - Coupons
----
++++
+categories = ["Endpoints"]
+date = "2020-09-11"
+description = "Coupons endpoints"
+tags = ["sso", "coupons", "api", "endpoints"]
+title = "SSO - Coupons"
++++
 
 ## 1. Introduction
 

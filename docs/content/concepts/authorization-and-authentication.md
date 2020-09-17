@@ -1,6 +1,10 @@
----
-title: Authorization & Authentication
----
++++
+categories = ["Concepts"]
+date = "2020-09-11"
+description = "Authorization & Authentication"
+tags = ["concepts", "authorization", "authentication"]
+title = "Authorization & Authentication"
++++
 
 ## 1. Introduction
 

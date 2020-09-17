@@ -1,6 +1,10 @@
----
-title: Box - Events
----
++++
+categories = ["Endpoints"]
+date = "2020-09-11"
+description = "Events endpoints"
+tags = ["box", "events", "api", "endpoints"]
+title = "Box - Events"
++++
 
 # 1. Introduction
 

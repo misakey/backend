@@ -1,6 +1,11 @@
----
-title: SSO - Backup Key Shares (Key Splitting)
----
++++
+categories = ["Endpoints"]
+date = "2020-09-11"
+description = "Backup Key Shares (key splitting) endpoints"
+tags = ["sso", "backup", "keyshares", "key", "splitting", "api", "endpoints"]
+title = "SSO - Backup Key Shares"
++++
+
 ## 1. Introduction
 
 Key Splitting consists in splitting a secret key in several (currently, always two) *key shares*.

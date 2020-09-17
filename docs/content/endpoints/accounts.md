@@ -1,6 +1,10 @@
----
-title: SSO - Accounts
----
++++
+categories = ["Endpoints"]
+date = "2020-09-11"
+description = "Accounts endpoints"
+tags = ["sso", "accounts", "api", "endpoints"]
+title = "SSO - Accounts"
++++
 
 ## 1. Introduction
 

@@ -40,3 +40,15 @@ For more information see the source code of the shortcode in `layouts/shortcodes
 
 [Hugo]: https://gohugo.io/
 [Hugo shortcode]: https://gohugo.io/content-management/shortcodes/
+
+## Search
+
+The documentation search engine use [`lunr`](https://lunrjs.com/) and needs a fully built
+index to work with.
+The index is built via [`grunt`](https://gruntjs.com/).
+
+Some steps are needed to get ready:
+- Install `npm`
+- Run `npm install` in the docs root folder
+- Install the `grunt` CLI (`sudo npm install -g grunt`)
+- Run `grunt lunr-index` in the docs root folder

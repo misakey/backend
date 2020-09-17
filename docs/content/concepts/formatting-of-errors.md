@@ -1,6 +1,10 @@
----
-title: Formatting of errors
----
++++
+categories = ["Concepts"]
+date = "2020-09-11"
+description = "Formatting of errors"
+tags = ["concepts", "formatting", "errors"]
+title = "Formatting of errors"
++++
 
 ## 1. Error conventions
 

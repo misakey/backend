@@ -1,6 +1,10 @@
----
-title: Argon2 Server Relief (Client-side Password Hashing)
----
++++
+categories = ["Concepts"]
+date = "2020-09-11"
+description = "Argon2 Server Relief (Client-side Password Hashing)"
+tags = ["concepts", "server", "relief", "argon2", "hashing"]
+title = "Argon2 Server Relief"
++++
 
 [Argon2][] is the password hashing function we use
 to hash passwords before storing them in database.
