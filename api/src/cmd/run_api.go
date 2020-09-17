@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	_ "net/http/pprof"
 	"os"
 
 	"github.com/rs/zerolog/log"
@@ -13,6 +14,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/generic"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/generic/pprof"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk"
 )
@@ -50,6 +52,7 @@ func initService() {
 	// init echo router using sdk call
 	e := echorouter.New()
 	e.HideBanner = true
+	pprof.Wrap(e)
 
 	// init modules
 	generic.InitModule(e)
