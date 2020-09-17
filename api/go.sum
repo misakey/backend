@@ -64,10 +64,8 @@ github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9GBnD5lWE=
 github.com/go-logfmt/logfmt v0.4.0/go.mod h1:3RMwSq7FuexP4Kalkev3ejPJsZTpXXBr9+V4qmtdjCk=
-github.com/go-ozzo/ozzo-validation v3.6.0+incompatible h1:msy24VGS42fKO9K1vLz82/GeYW1cILu7Nuuj1N3BBkE=
 github.com/go-ozzo/ozzo-validation/v4 v4.2.1 h1:XALUNshPYumA7UShB7iM3ZVlqIBn0jfwjqAMIoyE1N0=
 github.com/go-ozzo/ozzo-validation/v4 v4.2.1/go.mod h1:2NKgrcHl3z6cJs+3Oo940FPRiTzuqKbvfrL2RxCj6Ew=
-github.com/go-ozzo/ozzo-validation/v4 v4.2.2 h1:5uhbQAuRK6taB9orHJXA5GtOCuQbsHktskg8aWciC68=
 github.com/go-playground/assert/v2 v2.0.1 h1:MsBgLAaY856+nPRTKrp3/OZK38U/wa0CcBYNjji3q3A=
 github.com/go-playground/assert/v2 v2.0.1/go.mod h1:VDjEfimB/XKnb+ZQfWdccd7VUvScMdVu0Titje2rxJ4=
 github.com/go-playground/locales v0.13.0 h1:HyWk6mgj5qFqCT5fjGBuRArbVDfE4hi8+e8ceBS/t7Q=
@@ -287,12 +285,6 @@ github.com/volatiletech/sqlboiler v3.7.1+incompatible/go.mod h1:jLfDkkHWPbS2cWRL
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
-gitlab.misakey.dev/misakey/backend v0.0.4-0.20200728073924-56ff4ff77843 h1:fG9VQ3OgDphnoWG4c3Tj3EyjOUBB7lCkCnU8CKr+/DQ=
-gitlab.misakey.dev/misakey/backend v0.1.1-0.20200805142712-f865571b4b2c h1:5elVLvICR108BQQ/oCp/NIrxUYNFuwDSmc8n/xFEAlk=
-gitlab.misakey.dev/misakey/backend v0.2.1-0.20200825081154-7b3594cffdd4 h1:9PWDhtVs0dI6/IZosfD3+aI/LUq4ZxImdmr+ymvTxNA=
-gitlab.misakey.dev/misakey/backend v0.2.1-0.20200831141157-864f5c37f68a h1:3YEciprHlZAixSduzcMPACa461B0A9sQbft7mmpBOFc=
-gitlab.misakey.dev/misakey/backend v0.2.1-0.20200902135035-244798dca92f h1:VeHlSwGr4/JzRoJqibjzl72XPS+YLtqxuQ8CB5KanUQ=
-gitlab.misakey.dev/misakey/backend v0.2.1-0.20200909151111-6be826a88bbc h1:y2hmfnge0RReVy2H8Il+bMqZ1Nnzaio26WCAxkE2RJE=
 gitlab.misakey.dev/misakey/msk-sdk-go v1.13.0 h1:NWWmkqCgW22W/fUF4Iu9hT3edfEkxxXeyUNjx5OzZHs=
 gitlab.misakey.dev/misakey/msk-sdk-go v1.13.0/go.mod h1:Gk71diHNh+Wms/yYaV+TPjJZjZL6zXCZ5fKk4eMqtec=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
