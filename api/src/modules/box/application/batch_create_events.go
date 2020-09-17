@@ -106,7 +106,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoin
 	}
 
 	for _, event := range createdList {
-		if err := events.Handler(event.Type).After(ctx, &event, tr, bs.redConn, bs.identities); err != nil {
+		if err := events.Handler(event.Type).After(ctx, &event, bs.db, bs.redConn, bs.identities); err != nil {
 			// we log the error but we don’t return it
 			logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", event.Type)
 		}
@@ -118,7 +118,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoin
 	}
 	views := make([]events.View, len(createdList))
 	for i, e := range createdList {
-		views[i], err = events.ToView(e, sendersMap)
+		views[i], err = events.FormatEvent(e, sendersMap)
 		if err != nil {
 			return nil, merror.Transform(err).Describe("computing event view")
 		}

@@ -7,22 +7,24 @@ import (
 
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
 // editMessage is called by function "CreateEvent"
 // when the event is of type "msg.edit"
-func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.Event) (result events.View, err error) {
+func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.Event, handler events.EventHandler) (result events.View, err error) {
 	var content events.MsgEditContent
 	err = json.Unmarshal(receivedEvent.JSONContent, &content)
 	if err != nil {
 		return result, merror.Internal().Describe("unmarshaling content json")
 	}
 
-	toEdit, err := sqlboiler.FindEvent(ctx, bs.db, content.EventID)
+	toEdit, err := sqlboiler.FindEvent(ctx, bs.db, receivedEvent.ReferrerID.String)
 	if err != nil {
 		return result, merror.Internal().Describe("retrieving event to edit")
 	}
@@ -84,12 +86,17 @@ func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.
 
 	event := events.FromSQLBoiler(toEdit)
 
+	if err := handler.After(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {
+		// we log the error but we don’t return it
+		logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", receivedEvent.Type)
+	}
+
 	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.identities)
 	if err != nil {
 		return result, merror.Transform(err).Describe("retrieving identities for view")
 	}
 
-	view, err := events.ToView(event, identityMap)
+	view, err := events.FormatEvent(event, identityMap)
 	if err != nil {
 		return view, merror.Transform(err).Describe("computing event view")
 	}

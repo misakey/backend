@@ -53,7 +53,7 @@ func (bs *BoxApplication) ListEvents(ctx context.Context, genReq entrypoints.Req
 	}
 	views := make([]events.View, len(boxEvents))
 	for i, e := range boxEvents {
-		views[i], err = events.ToView(e, sendersMap)
+		views[i], err = events.FormatEvent(e, sendersMap)
 		if err != nil {
 			return views, merror.Transform(err).Describe("computing event view")
 		}

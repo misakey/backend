@@ -31,11 +31,10 @@ type anyContent interface {
 }
 
 var contentTypeGetters = map[string]func() anyContent{
-	"create":     func() anyContent { return &CreationContent{} },
-	"msg.text":   func() anyContent { return &MsgTextContent{} },
-	"msg.file":   func() anyContent { return &MsgFileContent{} },
-	"msg.delete": func() anyContent { return &MsgDeleteContent{} },
-	"msg.edit":   func() anyContent { return &MsgEditContent{} },
+	"create":   func() anyContent { return &CreationContent{} },
+	"msg.text": func() anyContent { return &MsgTextContent{} },
+	"msg.file": func() anyContent { return &MsgFileContent{} },
+	"msg.edit": func() anyContent { return &MsgEditContent{} },
 }
 
 func bindAndValidateContent(e *Event) error {

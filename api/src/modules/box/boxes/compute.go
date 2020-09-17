@@ -111,7 +111,7 @@ func (c *computer) playEvent(ctx context.Context, e events.Event, last bool) err
 			return merror.Transform(err).Describe("retrieving identities for view")
 		}
 
-		view, err := events.ToView(e, identityMap)
+		view, err := events.FormatEvent(e, identityMap)
 		if err != nil {
 			return merror.Transform(err).Describe("computing view of last event")
 		}

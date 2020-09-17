@@ -9,7 +9,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 )
 
-func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw echo.MiddlewareFunc) {
+func bindRoutes(router *echo.Echo, bs application.BoxApplication, wsh entrypoints.WebsocketHandler, authzMidlw echo.MiddlewareFunc) {
 	// Boxes
 	boxRouter := router.Group("/boxes")
 
@@ -89,6 +89,8 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, authzMidlw ech
 		entrypoints.ResponseOK,
 	)
 	boxRouter.GET("/:id/events", listEvents, authzMidlw)
+
+	boxRouter.GET("/:id/events/ws", wsh.ListEventsWS, authzMidlw)
 
 	countEvents := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.CountEventsRequest{} },

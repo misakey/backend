@@ -46,7 +46,7 @@ func (bs *BoxApplication) ListAccesses(ctx context.Context, genReq entrypoints.R
 	}
 	views := make([]events.View, len(accessEvents))
 	for i, e := range accessEvents {
-		views[i], err = events.ToView(e, sendersMap)
+		views[i], err = events.FormatEvent(e, sendersMap)
 		if err != nil {
 			return views, merror.Transform(err).Describe("computing access view")
 		}

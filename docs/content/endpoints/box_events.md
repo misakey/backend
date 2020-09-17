@@ -238,3 +238,34 @@ HTTP 200 OK
 ```
 
 [Events](/concepts/box-events) are returned in chronological order.
+
+# 3. Realtime endpoints
+
+## 3.1 Getting new events on a box
+
+This websocket (`wss://`) endpoint open a socket.
+New events will be shipped through this websocket.
+
+[More info](/concepts/realtime) on the events format.
+
+### 3.1.1 request
+
+```bash
+    GET wss://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/events/ws?access_token=
+```
+
+_Query Parameters:_
+
+- `access_token`: For websockets, the access token is (for now) shipped through query parameters.
+
+### 3.1.2 response
+
+The Websocket Protocol handshake is interpreted by HTTP servers as an Upgrade request.
+The responses are similar to HTTP classic responses.
+
+_Code_:
+```bash
+HTTP 200 OK
+```
+
+The websocket is then open.

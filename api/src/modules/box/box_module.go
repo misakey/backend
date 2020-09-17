@@ -14,6 +14,7 @@ import (
 	"gitlab.misakey.dev/misakey/msk-sdk-go/rester/http"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/application"
+	bentrypoints "gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
@@ -56,6 +57,7 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 	}
 
 	boxService := application.NewBoxApplication(dbConn, redConn, identityIntraprocess, filesRepo)
+	wsHandler := bentrypoints.NewWebsocketHandler(viper.GetStringSlice("websockets.allowed_origins"), redConn, dbConn, identityIntraprocess)
 
 	adminHydraFORM := http.NewClient(
 		viper.GetString("hydra.admin_endpoint"),
@@ -70,5 +72,5 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 		adminHydraFORM,
 	)
 
-	bindRoutes(router, boxService, authzMidlw)
+	bindRoutes(router, boxService, wsHandler, authzMidlw)
 }

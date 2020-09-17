@@ -214,8 +214,8 @@ def test_box_messages(s1, s2):
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.edit',
+            'referrer_id': text_msg_id,
             'content': {
-                'event_id': text_msg_id,
                 'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
                 'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
             }
@@ -234,9 +234,9 @@ def test_box_messages(s1, s2):
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.edit',
+            # Oldest event (last in the list) is the box creation event
+            'referrer_id': box5_events[-1]['id'],
             'content': {
-                # Oldest event (last in the list) is the box creation event
-                'event_id': box5_events[-1]['id'],
                 'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
                 'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
             }
@@ -249,8 +249,8 @@ def test_box_messages(s1, s2):
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.edit',
+            'referrer_id': file_msg_id,
             'content': {
-                'event_id': file_msg_id,
                 'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
                 'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
             }
@@ -263,8 +263,8 @@ def test_box_messages(s1, s2):
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.edit',
+            'referrer_id': text_msg_id,
             'content': {
-                'event_id': text_msg_id,
                 'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
                 'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
             }
@@ -278,9 +278,7 @@ def test_box_messages(s1, s2):
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.delete',
-            'content': {
-                'event_id': text_msg_id,
-            }
+            'referrer_id': text_msg_id
         },
         expected_status_code=403,
     )
@@ -290,10 +288,8 @@ def test_box_messages(s1, s2):
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.delete',
-            'content': {
-                # oldest event is last in the list
-                'event_id': box5_events[-1]['id'],
-            }
+            # oldest event is last in the list
+            'referrer_id': box5_events[-1]['id']
         },
         expected_status_code=403,
     )
@@ -303,9 +299,7 @@ def test_box_messages(s1, s2):
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.delete',
-            'content': {
-                'event_id': text_msg_id,
-            }
+            'referrer_id': text_msg_id
         },
         expected_status_code=201,
     )
@@ -324,9 +318,7 @@ def test_box_messages(s1, s2):
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.delete',
-            'content': {
-                'event_id': file_msg_id,
-            }
+            'referrer_id': file_msg_id
         },
         expected_status_code=201,
     )
@@ -340,9 +332,7 @@ def test_box_messages(s1, s2):
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.delete',
-            'content': {
-                'event_id': text_msg_id,
-            }
+            'referrer_id': text_msg_id
         },
         expected_status_code=410,
     )
@@ -352,8 +342,8 @@ def test_box_messages(s1, s2):
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.edit',
+            'referrer_id': text_msg_id,
             'content': {
-                'event_id': text_msg_id,
                 'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
                 'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
             }
@@ -380,9 +370,7 @@ def test_box_messages(s1, s2):
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
             'type': 'msg.delete',
-            'content': {
-                'event_id': msg_id,
-            }
+            'referrer_id': msg_id
         },
     )
     check_response(

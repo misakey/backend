@@ -125,7 +125,7 @@ Messages of type `msg.txt` allow the transfer of message text.
     "encrypted": "(string) (base64): the encrypted message. Recall that files are sent separately from the message, so the size of a message event stays rather small.",
     "deleted": { // nullable, indicates the message have been removed
       "at_time": "indicates the deletion time of the message",
-      "by_identity_id": "indicates who has deleted the message",
+      "by_identity": "indicates who has deleted the message",
     },
     "last_edited_at": "(RFC3339 time): indicates that the message was edited, and when",
     "referrer_id": null
@@ -144,7 +144,7 @@ Messages of type `msg.file` allow the transfer of blob data.
     "encrypted_file_id": "(string) (uuid format): a unique identifier used to store and download the file",
     "deleted": { // nullable, indicates the message have been removed
       "at_time": "indicates the deletion time of the message",
-      "by_identity_id": "indicates who has deleted the message",
+      "by_identity": "indicates who has deleted the message",
     },
     "referrer_id": null
 }
@@ -160,13 +160,11 @@ and replaced by who deleted it and when.
 ```json
 {
   "type": "msg.delete",
-  "content": {
-    "event_id": "f17169e0-61d8-4211-bb9f-bac29fe46d2d"
-  }
+  "referrer_id": "f17169e0-61d8-4211-bb9f-bac29fe46d2d"
 }
 ```
 
-Where `event_id` is the ID of the event to delete.
+Where `referrer_id` is the ID of the event to delete.
 
 - The sender's account must be the one that sent the event to delete,
   or the sender must be the box creator.
@@ -181,14 +179,14 @@ Users can edit their own messages.
 {
     "type": "msg.edit",
     "content": {
-        "event_id": "7410feae-637e-40a8-ab59-badeaf479c63",
         "new_encrypted": "EditedXXB64dcc9PhJTeyUS2K04zeHKLMW8fviUkmyBjWdGvwwo=",
         "new_public_key": "EditedXXa75RO1FzZpskiKHAggyB7YNJoz4R24dnMFvHfMzu4wQ="
-    }
+    },
+    "referrer_id": "7410feae-637e-40a8-ab59-badeaf479c63"
 }
 ```
 
-Where `event_id` is the ID of the event to edit.
+Where `referrer_id` is the ID of the event to edit.
 
 - The sender's account must be the one that sent the event to edit.
 - the message must not be already deleted

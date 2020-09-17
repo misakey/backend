@@ -44,6 +44,9 @@
 [backup_key_share]
   expiration = "1h"
 
+[websockets]
+  allowed_origins = ["https://app.misakey.com.local"]
+
 # only used if ENV=production
 # [aws]
 #   # region slug name used for Amazon SES

@@ -15,6 +15,7 @@ func initConfig() {
 		"hydra.admin_endpoint",
 		"redis.address",
 		"redis.port",
+		"websockets.allowed_origins",
 	}
 	switch os.Getenv("ENV") {
 	case "production":

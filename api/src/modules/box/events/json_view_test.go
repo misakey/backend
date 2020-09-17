@@ -8,7 +8,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 )
 
-func TestToView(t *testing.T) {
+func TestFormatEvent(t *testing.T) {
 	t.Run("the deleted content is optional", func(t *testing.T) {
 		msg := MsgTextContent{
 			Encrypted: "coucou",
@@ -22,7 +22,7 @@ func TestToView(t *testing.T) {
 			JSONContent: json,
 			SenderID:    "user-A",
 		}
-		_, err = ToView(e, map[string]domain.Identity{})
+		_, err = FormatEvent(e, map[string]domain.Identity{})
 		assert.Nil(t, err)
 	})
 	t.Run("the sender mapping of deleted content is optional", func(t *testing.T) {
@@ -37,7 +37,7 @@ func TestToView(t *testing.T) {
 			JSONContent: json,
 			SenderID:    "user-A",
 		}
-		_, err = ToView(e, map[string]domain.Identity{})
+		_, err = FormatEvent(e, map[string]domain.Identity{})
 		assert.Nil(t, err)
 	})
 	t.Run("the deletor is correctly mapped", func(t *testing.T) {
@@ -52,7 +52,7 @@ func TestToView(t *testing.T) {
 			JSONContent: json,
 			SenderID:    "identity-A",
 		}
-		view, err := ToView(e, map[string]domain.Identity{
+		view, err := FormatEvent(e, map[string]domain.Identity{
 			"identity-A": domain.Identity{DisplayName: "Arno"},
 		})
 		assert.Nilf(t, err, "to view")

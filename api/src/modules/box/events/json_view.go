@@ -45,16 +45,24 @@ type View struct {
 	Sender     SenderView  `json:"sender"`
 }
 
-// ToView transforms an event into its JSON view.
-func ToView(e Event, identityMap map[string]domain.Identity) (View, error) {
-	view := View{
+func (v *View) ToJSON() ([]byte, error) {
+	return json.Marshal(v)
+}
+
+func ToView(e Event, sender domain.Identity) View {
+	return View{
 		Type:       e.Type,
 		Content:    &e.JSONContent,
 		ID:         e.ID,
 		ReferrerID: e.ReferrerID,
 		CreatedAt:  e.CreatedAt,
-		Sender:     NewSenderView(identityMap[e.SenderID]),
+		Sender:     NewSenderView(sender),
 	}
+}
+
+// FormatEvent transforms an event into its JSON view.
+func FormatEvent(e Event, identityMap map[string]domain.Identity) (View, error) {
+	view := ToView(e, identityMap[e.SenderID])
 
 	// For deleted messages
 	// we put the deletor identifier in the content

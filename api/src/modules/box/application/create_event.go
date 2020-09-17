@@ -74,11 +74,11 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 
 	// TODO (code structure): use handlers
 	if event.Type == "msg.delete" {
-		return bs.deleteMessage(ctx, event)
+		return bs.deleteMessage(ctx, event, handler)
 	}
 	// TODO (code structure): use handlers
 	if event.Type == "msg.edit" {
-		return bs.editMessage(ctx, event)
+		return bs.editMessage(ctx, event, handler)
 	}
 
 	if err := handler.After(ctx, &event, bs.db, bs.redConn, bs.identities); err != nil {
@@ -91,7 +91,7 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 		return view, merror.Transform(err).Describe("retrieving identities for view")
 	}
 
-	view, err = events.ToView(event, identityMap)
+	view, err = events.FormatEvent(event, identityMap)
 	if err != nil {
 		return view, merror.Transform(err).Describe("computing event view")
 	}

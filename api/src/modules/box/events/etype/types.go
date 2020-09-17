@@ -40,7 +40,6 @@ func RequiresContent(eType string) bool {
 		Msgtext,
 		Msgfile,
 		Msgedit,
-		Msgdelete,
 
 		Accessadd:
 		return true

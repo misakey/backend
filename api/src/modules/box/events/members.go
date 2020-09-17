@@ -103,3 +103,34 @@ func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *r
 	// incr counts for a given box for all received identityIDs
 	return incrCounts(ctx, redConn, memberIDs, e.BoxID)
 }
+
+// send event to realtime channels
+func publish(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+	senderIdentities, err := MapSenderIdentities(ctx, []Event{*e}, identities)
+	if err != nil {
+		return merror.Transform(err).Describe("getting sender information")
+	}
+
+	view, err := FormatEvent(*e, senderIdentities)
+	if err != nil {
+		return merror.Transform(err).Describe("formatting event")
+	}
+
+	serializedEvent, err := view.ToJSON()
+	if err != nil {
+		return merror.Internal().Describe("encoding event to json")
+	}
+	redConn.Publish(e.BoxID+":events", serializedEvent)
+
+	return nil
+}
+
+// send event to realtime channels
+// and increment count for all identities except the sender
+func publishAndNotify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+	if err := publish(ctx, e, exec, redConn, identities); err != nil {
+		return err
+	}
+
+	return notify(ctx, e, exec, redConn, identities)
+}
