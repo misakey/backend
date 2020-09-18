@@ -77,7 +77,7 @@ func initDefaultConfig() {
 	// some of these fields are shared between modules.
 	viper.SetDefault("server.port", 8080)
 	viper.SetDefault("hydra.secure", true)
-	viper.SetDefault("sql.max_open_connections", 50)
+	viper.SetDefault("sql.max_open_connections", 20)
 	viper.SetDefault("sql.max_idle_connections", 2)
 	viper.SetDefault("sql.conn_max_lifetime", "0m")
 
