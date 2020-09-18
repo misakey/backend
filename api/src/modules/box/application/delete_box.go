@@ -78,13 +78,18 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq entrypoints.Requ
 
 	// 4. Delete orphan files
 	for _, fileID := range boxFileIDs {
-		isOrphan, err := files.IsOrphan(ctx, bs.db, fileID)
-		if err != nil {
-			return nil, merror.Transform(err).Describe("checking file is orphan")
-		}
-		if isOrphan {
-			if err := files.Delete(ctx, bs.db, bs.filesRepo, fileID); err != nil {
-				return nil, merror.Transform(err).Describe("deleting stored file")
+		// we need to check the existency of fileID
+		// since it is set to "" when msg.delete is called on the msg.file
+		// TODO: clean this up
+		if fileID != "" {
+			isOrphan, err := files.IsOrphan(ctx, bs.db, fileID)
+			if err != nil {
+				return nil, merror.Transform(err).Describe("checking file is orphan")
+			}
+			if isOrphan {
+				if err := files.Delete(ctx, bs.db, bs.filesRepo, fileID); err != nil {
+					return nil, merror.Transform(err).Describe("deleting stored file")
+				}
 			}
 		}
 	}
