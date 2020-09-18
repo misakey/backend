@@ -4,8 +4,6 @@ of the Mattermost server: https://github.com/mattermost/mattermost-server */
 package mwebsockets
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
 	"time"
 
@@ -27,6 +25,8 @@ type Websocket struct {
 	Websocket    *websocket.Conn
 	Send         chan WebsocketMessage
 	EndWritePump chan struct{}
+
+	ID string
 }
 
 type WebsocketMessage struct {
@@ -36,6 +36,7 @@ type WebsocketMessage struct {
 func NewWebsocket(
 	eCtx echo.Context,
 	allowedOrigins []string,
+	id string,
 ) (*Websocket, error) {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(req *http.Request) bool {
@@ -62,25 +63,28 @@ func NewWebsocket(
 		Websocket:    wsConn,
 		Send:         make(chan WebsocketMessage, sendQueueSize),
 		EndWritePump: make(chan struct{}),
+		ID:           "ws_" + id,
 	}
 
 	return ws, nil
 }
 
 func (ws *Websocket) Pump(eCtx echo.Context) {
+	logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: init pump", ws.ID)
 	// writePump routine
 	go func() {
 		if err := ws.writePump(); err != nil {
-			logger.FromCtx(eCtx.Request().Context()).Error().Err(err)
+			logger.FromCtx(eCtx.Request().Context()).Error().Err(err).Msgf("%s", ws.ID)
 		}
 	}()
 
 	// readPump routine
-	if err := ws.readPump(); err != nil {
-		logger.FromCtx(eCtx.Request().Context()).Error().Err(err)
+	if err := ws.readPump(eCtx); err != nil {
+		logger.FromCtx(eCtx.Request().Context()).Error().Err(err).Msgf("%s", ws.ID)
 	}
 
 	close(ws.EndWritePump)
+	logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: pump closed", ws.ID)
 }
 
 func (ws *Websocket) writePump() error {
@@ -91,16 +95,16 @@ func (ws *Websocket) writePump() error {
 		case msg, ok := <-ws.Send:
 			if !ok {
 				_ = ws.SendCloseMessage()
-				return merror.Internal().Describe("getting websocket message")
+				return merror.Internal().Describef("%s: getting message", ws.ID)
 			}
 
 			toSend := []byte(msg.Msg)
 			if err := ws.SendMessage(websocket.TextMessage, toSend); err != nil {
-				return merror.Internal().Describe("sending websocket message")
+				return merror.Internal().Describef("%s: sending message", ws.ID)
 			}
 		case <-ticker.C:
 			if err := ws.SendMessage(websocket.PingMessage, []byte{}); err != nil {
-				return merror.Internal().Describe("sending ping")
+				return merror.Internal().Describef("%s: sending ping", ws.ID)
 			}
 		case <-ws.EndWritePump:
 			return nil
@@ -108,11 +112,13 @@ func (ws *Websocket) writePump() error {
 	}
 }
 
-func (ws *Websocket) readPump() error {
+func (ws *Websocket) readPump(eCtx echo.Context) error {
 	ws.Websocket.SetReadLimit(maxMessageSizekB)
+
 	_ = ws.Websocket.SetReadDeadline(time.Now().Add(pongWaitTime))
 	ws.Websocket.SetPongHandler(func(string) error {
 		_ = ws.Websocket.SetReadDeadline(time.Now().Add(pongWaitTime))
+		logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: pong received", ws.ID)
 		// TODO: handle this when we know how the browser reacts
 		// if we return an error, the connection is closed
 		// which may not be what we want if the browser does not
@@ -121,9 +127,13 @@ func (ws *Websocket) readPump() error {
 	})
 
 	for {
-		var req WebsocketRequest
-		if err := ws.Websocket.ReadJSON(&req); err != nil {
+		msgType, bytes, err := ws.Websocket.ReadMessage()
+		if err != nil {
+			logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: read message: %s", ws.ID, err.Error())
 			return err
+		}
+		if msgType == websocket.CloseMessage {
+			logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: close message received: %s", ws.ID, string(bytes))
 		}
 	}
 }
@@ -140,19 +150,4 @@ func (ws *Websocket) SendMessage(kind int, msg []byte) error {
 func (ws *Websocket) Close() error {
 	close(ws.Send)
 	return ws.Websocket.Close()
-}
-
-// WebsocketRequest represents a request made to the server through a websocket.
-type WebsocketRequest struct {
-}
-
-func (o *WebsocketRequest) ToJson() string {
-	b, _ := json.Marshal(o)
-	return string(b)
-}
-
-func WebSocketRequestFromJson(data io.Reader) *WebsocketRequest {
-	var o *WebsocketRequest
-	_ = json.NewDecoder(data).Decode(&o)
-	return o
 }

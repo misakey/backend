@@ -1,6 +1,8 @@
 package entrypoints
 
 import (
+	"fmt"
+
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/go-redis/redis/v7"
@@ -31,7 +33,7 @@ func (wh WebsocketHandler) ListEventsWS(c echo.Context) error {
 		return err
 	}
 
-	ws, err := mwebsockets.NewWebsocket(c, wh.allowedOrigins)
+	ws, err := mwebsockets.NewWebsocket(c, wh.allowedOrigins, fmt.Sprintf("%s_%s", acc.IdentityID, boxID))
 	if err != nil {
 		return err
 	}
