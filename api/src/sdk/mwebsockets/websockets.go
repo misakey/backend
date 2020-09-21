@@ -127,13 +127,13 @@ func (ws *Websocket) readPump(eCtx echo.Context) error {
 	})
 
 	for {
-		msgType, bytes, err := ws.Websocket.ReadMessage()
+		msgType, _, err := ws.Websocket.ReadMessage()
 		if err != nil {
-			logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: read message: %s", ws.ID, err.Error())
-			return err
-		}
-		if msgType == websocket.CloseMessage {
-			logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: close message received: %s", ws.ID, string(bytes))
+			logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: read message %d: %s", ws.ID, msgType, err.Error())
+			if msgType == websocket.CloseAbnormalClosure {
+				return err
+			}
+			return nil
 		}
 	}
 }
