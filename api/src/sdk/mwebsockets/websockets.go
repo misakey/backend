@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	pingInterval     = 60 * time.Second
-	pongWaitTime     = 100 * time.Second
+	pingInterval     = 45 * time.Second
+	pongWaitTime     = 120 * time.Second
 	writeWaitTime    = 30 * time.Second
 	maxMessageSizekB = int64(8 * 1024)
 	sendQueueSize    = 8
