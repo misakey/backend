@@ -38,6 +38,7 @@ func ListSenderBoxes(
 	}
 
 	// 2. order by most recent and put pagination in place
+	// TODO (perf): this query does not use any index and is quite heavy
 	mods := []qm.QueryMod{
 		qm.Select("box_id", "max(created_at)"),
 		sqlboiler.EventWhere.BoxID.IN(boxIDs),
@@ -55,6 +56,8 @@ func ListSenderBoxes(
 	// 3. compute all boxes
 	boxes = make([]*Box, len(lastEvents))
 	for i, e := range lastEvents {
+		// TODO (perf): find a way to give to computer the last event in advance
+		// TODO (perf): computation in redis
 		box, err := Compute(ctx, e.BoxID, exec, identities)
 		if err != nil {
 			return boxes, merror.Transform(err).Describef("computing box %s", e.BoxID)
@@ -90,7 +93,6 @@ func ListSenderBoxIDs(
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing joined box ids")
 	}
-
 	createdBoxIDs, err := events.ListCreatorBoxIDs(ctx, exec, senderID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing creator box ids")

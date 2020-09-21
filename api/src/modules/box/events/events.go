@@ -61,12 +61,25 @@ func (e *Event) persist(ctx context.Context, exec boil.ContextExecutor) error {
 	return nil
 }
 
+func GetLast(ctx context.Context, exec boil.ContextExecutor, boxID string) (Event, error) {
+	return get(ctx, exec, eventFilters{
+		boxID: null.StringFrom(boxID),
+	})
+}
+
 func ListForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string, offset, limit *int) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
 		boxID:  null.StringFrom(boxID),
 		eTypes: etype.MembersCanSee(),
 		offset: offset,
 		limit:  limit,
+	})
+}
+
+func ListForBuild(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {
+	return list(ctx, exec, eventFilters{
+		boxID:  null.StringFrom(boxID),
+		eTypes: etype.RequireToBuild(),
 	})
 }
 
@@ -109,17 +122,28 @@ func newWithAnyContent(eType string, content anyContent, boxID, senderID string,
 }
 
 type eventFilters struct {
+	// focus on one column filter
+	idOnly    bool
+	boxIDOnly bool
+
+	// classic filters
 	id          null.String
 	boxID       null.String
 	eType       null.String
 	eTypes      []string
 	senderID    null.String
-	notSenderID null.String
 	referrerID  null.String
 	referrerIDs []string
-	content     *string
-	unreferred  bool
 
+	// filters triggerring in jsonb research
+	content  *string
+	unkicked bool
+	fileID   null.String
+
+	// ensure the event is not referred by another one
+	unreferred bool
+
+	// pagintation
 	offset *int
 	limit  *int
 }
@@ -164,6 +188,14 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 	mods := []qm.QueryMod{
 		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " DESC"),
 	}
+	// select only the id if asked
+	if filters.idOnly {
+		mods = append(mods, qm.Select(sqlboiler.EventColumns.ID))
+	}
+	// select only the id if asked
+	if filters.boxIDOnly {
+		mods = append(mods, qm.Select(sqlboiler.EventColumns.BoxID))
+	}
 	// add id
 	if filters.id.Valid {
 		mods = append(mods, sqlboiler.EventWhere.ID.EQ(filters.id.String))
@@ -172,15 +204,13 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 	if filters.senderID.Valid {
 		mods = append(mods, sqlboiler.EventWhere.SenderID.EQ(filters.senderID.String))
 	}
-	// remove not sender id
-	if filters.notSenderID.Valid {
-		mods = append(mods, sqlboiler.EventWhere.SenderID.NEQ(filters.notSenderID.String))
-	}
 	// add type
+	// NOTE: must be handled before filters.eTypes
 	if filters.eType.Valid {
 		filters.eTypes = append(filters.eTypes, filters.eType.String)
 	}
 	// add types
+	// NOTE: must be handled after filters.eType
 	if len(filters.eTypes) > 0 {
 		mods = append(mods, sqlboiler.EventWhere.Type.IN(filters.eTypes))
 	}
@@ -199,6 +229,10 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 	// add JSONB matching
 	if filters.content != nil {
 		mods = append(mods, qm.Where(`content::jsonb @> ?`, *filters.content))
+	}
+	// add encrypted file id JSONB matching
+	if filters.fileID.Valid {
+		mods = append(mods, qm.Where(`content->>'encrypted_file_id' = ?`, filters.fileID.String))
 	}
 	// add offset for pagination
 	if filters.offset != nil {
@@ -225,20 +259,32 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 
 func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) ([]string, error) {
 	// first we get events that refers other event: the referents
-	subMods := []qm.QueryMod{}
+	subMods := []qm.QueryMod{
+		qm.Select(sqlboiler.EventColumns.ReferrerID),
+	}
 	// either it selects event refering another specific event
 	if filters.id.Valid {
 		subMods = append(subMods, sqlboiler.EventWhere.ReferrerID.EQ(filters.id))
 	} else {
 		subMods = append(subMods, sqlboiler.EventWhere.ReferrerID.IsNotNull())
+
+		// check we don't face the cases we should never use
+		if filters.boxID.IsZero() && filters.senderID.IsZero() ||
+			filters.unkicked && filters.senderID.IsZero() {
+			return nil, merror.Internal().Describe("wrong unreferred use")
+		}
+
 		// NOTE: boxID must be checked before senderID - both cannot be used at the same time
 		// TODO (perf/usage): need to improve this query to be more natural to build
 		if filters.boxID.Valid {
 			subMods = append(subMods, sqlboiler.EventWhere.BoxID.EQ(filters.boxID.String))
 		} else if filters.senderID.Valid {
 			subMods = append(subMods, sqlboiler.EventWhere.SenderID.EQ(filters.senderID.String))
-		} else {
-			return nil, merror.Internal().Describe("wrong unreferred use")
+			if filters.unkicked {
+				subMods = append(subMods, qm.Or2(
+					qm.Where(`type = 'member.kick' AND content->>'kicked_member_id' = ?`, filters.senderID.String),
+				))
+			}
 		}
 	}
 	referents, err := sqlboiler.Events(subMods...).All(ctx, exec)
@@ -255,10 +301,9 @@ func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFi
 
 func FindByEncryptedFileID(ctx context.Context, exec boil.ContextExecutor, encryptedFileID string) ([]Event, error) {
 	// build expected content
-	content := `{"encrypted_file_id": "` + encryptedFileID + `"}`
 	events, err := list(ctx, exec, eventFilters{
-		eType:   null.StringFrom("msg.file"),
-		content: &content,
+		eType:  null.StringFrom("msg.file"),
+		fileID: null.StringFrom(encryptedFileID),
 	})
 	if err != nil {
 		return nil, err

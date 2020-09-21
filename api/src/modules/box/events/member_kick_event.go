@@ -17,7 +17,7 @@ type MemberKickContent struct {
 	// Stored but not in json
 	KickedMemberID string `json:"kicked_member_id,omitempty"`
 	// in json
-	KickedMember *SenderView `json:"kicked_member"`
+	KickedMember *SenderView `json:"kicked_member,omitempty"`
 }
 
 func (c *MemberKickContent) Unmarshal(content types.JSON) error {

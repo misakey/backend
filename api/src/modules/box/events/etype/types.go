@@ -31,6 +31,13 @@ func MembersCanSee() []string {
 	}
 }
 
+func RequireToBuild() []string {
+	return []string{
+		Create,
+		Statelifecycle,
+	}
+}
+
 func RequiresContent(eType string) bool {
 	switch eType {
 	case

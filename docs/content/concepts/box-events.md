@@ -107,7 +107,7 @@ Messages of type `member.kick` have no content.
 }
 ```
 
-Once the event has been created for a user, the user is still listed as member but informed that he has been kicked.
+Once the event has been created for a user, the user cannot get/list the box anymore.
 
 On read, the `kicked_member_id` is transformed into a `kicked_member` field containing sender information. This `kicked_member` attribute is nullable.
 

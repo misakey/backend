@@ -141,8 +141,8 @@ def test_basics(s1, s2):
         expected_status_code=403
     )
 
-    print('- boxes listing')
-    r = s1.get(f'{URL_PREFIX}/boxes')
+    print(f'- boxes listing should return {box2_id} and {box1_id}')
+    r = s1.get(f'{URL_PREFIX}/boxes', expected_status_code=200)
     boxes = r.json()
     assert len(boxes) == 2
     
@@ -510,13 +510,12 @@ def test_accesses(s1, s2):
     assert r.json()[3]['type'] == 'member.kick'
     assert r.json()[3]['referrer_id'] == join_id
 
-    print('- check the member is considered as kicked everywhere')
-    # identity 2 is kicked and cannot retrieve the box
+    print('- identity 2 is kicked and cannot retrieve the box')
     s2.get(
         f'{URL_PREFIX}/boxes/{box_id}',
         expected_status_code=403
     )
-    # identity 2 is kicked and is not part anymore of the members list
+    print('- identity 2 is kicked and is not part anymore of the members list')
     r = s1.get(
         f'{URL_PREFIX}/boxes/{box_id}/members',
         expected_status_code=200
@@ -524,7 +523,7 @@ def test_accesses(s1, s2):
     assert len(r.json()) == 1
     assert r.json()[0]['identifier']['value'] == s1.email
     
-    # the box isn't listed when the user requested their boxes
+    print('- the box is not listed when the user requested their boxes')
     r = s2.get(
         f'{URL_PREFIX}/boxes',
         expected_status_code=200
@@ -614,8 +613,10 @@ with testContext():
 
     print('--------\nBasics...')
     test_basics(s1, s2)
+
     print('--------\nMessages...')
     test_box_messages(s1, s2)
+
     print('--------\nAccesses...')
     test_accesses(s1, s2)
     print('All OK')

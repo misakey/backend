@@ -50,39 +50,20 @@ func listBoxActiveJoinEvents(ctx context.Context, exec boil.ContextExecutor, box
 // List box ids joined by an identity ID
 func ListMemberBoxIDs(ctx context.Context, exec boil.ContextExecutor, senderID string) ([]string, error) {
 	joins, err := list(ctx, exec, eventFilters{
+		boxIDOnly:  true,
 		eType:      null.StringFrom(etype.Memberjoin),
 		unreferred: true,
 		senderID:   null.StringFrom(senderID),
+		unkicked:   true,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	joinIDs := make([]string, len(joins))
+	joinBoxIDs := make([]string, len(joins))
 	for i, e := range joins {
-		joinIDs[i] = e.ID
-	}
-	kicks, err := list(ctx, exec, eventFilters{
-		eType:       null.StringFrom(etype.Memberkick),
-		referrerIDs: joinIDs,
-	})
-	if err != nil {
-		return nil, err
+		joinBoxIDs[i] = e.BoxID
 	}
 
-	var boxIDs []string
-JoinLoop:
-	for _, e := range joins {
-		// skip join event that has been kicked
-		for i, kick := range kicks {
-			if kick.ReferrerID.String == e.ID {
-				// pop the kick event since used
-				kicks = append(kicks[:i], kicks[i+1:]...)
-				continue JoinLoop
-			}
-		}
-		boxIDs = append(boxIDs, e.BoxID)
-	}
-
-	return boxIDs, nil
+	return joinBoxIDs, nil
 }

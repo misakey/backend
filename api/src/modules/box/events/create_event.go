@@ -72,8 +72,9 @@ func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, e
 
 func ListCreatorBoxIDs(ctx context.Context, exec boil.ContextExecutor, creatorID string) ([]string, error) {
 	createEvents, err := list(ctx, exec, eventFilters{
-		eType:    null.StringFrom("create"),
-		senderID: null.StringFrom(creatorID),
+		boxIDOnly: true,
+		eType:     null.StringFrom("create"),
+		senderID:  null.StringFrom(creatorID),
 	})
 	if err != nil {
 		return nil, err

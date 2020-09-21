@@ -3,10 +3,11 @@ package boxes
 import (
 	"context"
 
+	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
+
 	"github.com/volatiletech/sqlboiler/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
@@ -49,8 +50,8 @@ func Compute(
 		events:     buildEvents,
 	}
 	computer.ePlayer = map[string]func(context.Context, events.Event) error{
-		// NOTE: to add an new event here should involve attention on the ListForMembersByBoxID method
-		// used to retrieve events to compute the bo
+		// NOTE: to add an new event here should involve attention on the RequireToBuild method
+		// used to retrieve events to compute the box
 		"create":          computer.playCreate,
 		"state.lifecycle": computer.playState,
 	}
@@ -69,8 +70,7 @@ func Compute(
 
 func (c *computer) retrieveEvents(ctx context.Context) error {
 	var err error
-	// NOTE: Member Events might not be all required to compute the box view at some point
-	c.events, err = events.ListForMembersByBoxID(ctx, c.exec, c.box.ID, nil, nil)
+	c.events, err = events.ListForBuild(ctx, c.exec, c.box.ID)
 	return err
 }
 
@@ -80,45 +80,52 @@ func (c *computer) do(ctx context.Context) error {
 	totalCount := len(c.events)
 	for i := 0; i < totalCount; i++ {
 		e := c.events[totalCount-i-1]
-		if err := c.playEvent(ctx, e, i == totalCount-1); err != nil {
+		if err := c.playEvent(ctx, e); err != nil {
 			return merror.Transform(err).Describef("playing event %s", e.ID)
 		}
 	}
-	return nil
+
+	return c.lastEvent(ctx)
 }
 
-func (c *computer) playEvent(ctx context.Context, e events.Event, last bool) error {
+func (c *computer) playEvent(ctx context.Context, e events.Event) error {
 	// play the event
 	if play, ok := c.ePlayer[e.Type]; ok {
 		if err := play(ctx, e); err != nil {
 			return err
 		}
 	}
+	return nil
+}
 
+func (c *computer) lastEvent(ctx context.Context) error {
 	// take care of binding the last event in the box
-	if last {
-		acc := ajwt.GetAccesses(ctx)
+	var last events.Event
+	var err error
 
-		// if the box has been closed and the viewer is not the creator or has no token
-		// we force the last event to be the close event
-		if (acc == nil || acc.IdentityID != c.creatorID) && c.closeEvent != nil {
-			e = *c.closeEvent
-			c.box.PublicKey = ""
-		}
-
-		identityMap, err := events.MapSenderIdentities(ctx, []events.Event{e}, c.identities)
+	// if the box has been closed and the viewer is not the creator or has no token
+	// we force the last event to be the close event and we remove the public key
+	acc := ajwt.GetAccesses(ctx)
+	if (acc == nil || acc.IdentityID != c.creatorID) && c.closeEvent != nil {
+		last = *c.closeEvent
+		c.box.PublicKey = ""
+	} else { // retrieve last event
+		last, err = events.GetLast(ctx, c.exec, c.box.ID)
 		if err != nil {
-			return merror.Transform(err).Describe("retrieving identities for view")
+			return merror.Transform(err).Describe("getting last event")
 		}
-
-		view, err := events.FormatEvent(e, identityMap)
-		if err != nil {
-			return merror.Transform(err).Describe("computing view of last event")
-		}
-
-		c.box.LastEvent = view
-
 	}
+
+	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{last}, c.identities)
+	if err != nil {
+		return merror.Transform(err).Describe("retrieving identities for view")
+	}
+
+	view, err := events.FormatEvent(last, identityMap)
+	if err != nil {
+		return merror.Transform(err).Describe("computing view of last event")
+	}
+	c.box.LastEvent = view
 	return nil
 }
 
