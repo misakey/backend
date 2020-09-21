@@ -29,25 +29,25 @@ type computer struct {
 	// local save for internal logic
 	creatorID  string
 	closeEvent *events.Event
+	lastEvent  *events.Event
 }
 
 // ComputeBox box according to the received boxID.
 // The function retrieves events linked to the boxID using received db connector.
-// The function can takes optionally events, only these events will be used to compute
-// the box if there are some.
+// The function can takes optionally the last event which will be retrieve if nil
 func Compute(
 	ctx context.Context,
 	boxID string,
 	exec boil.ContextExecutor,
 	identities entrypoints.IdentityIntraprocessInterface,
-	buildEvents ...events.Event,
+	lastEvent *events.Event,
 ) (Box, error) {
 	// init the computer system
 	computer := &computer{
 		exec:       exec,
 		identities: identities,
 		box:        Box{ID: boxID},
-		events:     buildEvents,
+		lastEvent:  lastEvent,
 	}
 	computer.ePlayer = map[string]func(context.Context, events.Event) error{
 		// NOTE: to add an new event here should involve attention on the RequireToBuild method
@@ -57,21 +57,15 @@ func Compute(
 	}
 
 	// automatically retrieve events if 0 events loaded
-	if len(buildEvents) == 0 {
-		if err := computer.retrieveEvents(ctx); err != nil {
-			return computer.box, err
-		}
+	var err error
+	computer.events, err = events.ListForBuild(ctx, computer.exec, computer.box.ID)
+	if err != nil {
+		return computer.box, err
 	}
 
 	// comput the box then return it
-	err := computer.do(ctx)
+	err = computer.do(ctx)
 	return computer.box, err
-}
-
-func (c *computer) retrieveEvents(ctx context.Context) error {
-	var err error
-	c.events, err = events.ListForBuild(ctx, c.exec, c.box.ID)
-	return err
 }
 
 func (c *computer) do(ctx context.Context) error {
@@ -85,7 +79,7 @@ func (c *computer) do(ctx context.Context) error {
 		}
 	}
 
-	return c.lastEvent(ctx)
+	return c.handleLast(ctx)
 }
 
 func (c *computer) playEvent(ctx context.Context, e events.Event) error {
@@ -98,30 +92,28 @@ func (c *computer) playEvent(ctx context.Context, e events.Event) error {
 	return nil
 }
 
-func (c *computer) lastEvent(ctx context.Context) error {
-	// take care of binding the last event in the box
-	var last events.Event
-	var err error
-
+// take care of binding the last event in the box
+func (c *computer) handleLast(ctx context.Context) error {
 	// if the box has been closed and the viewer is not the creator or has no token
 	// we force the last event to be the close event and we remove the public key
 	acc := ajwt.GetAccesses(ctx)
 	if (acc == nil || acc.IdentityID != c.creatorID) && c.closeEvent != nil {
-		last = *c.closeEvent
+		c.lastEvent = c.closeEvent
 		c.box.PublicKey = ""
-	} else { // retrieve last event
-		last, err = events.GetLast(ctx, c.exec, c.box.ID)
+	} else if c.lastEvent == nil { // retrieve last event if not already there
+		last, err := events.GetLast(ctx, c.exec, c.box.ID)
 		if err != nil {
 			return merror.Transform(err).Describe("getting last event")
 		}
+		c.lastEvent = &last
 	}
 
-	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{last}, c.identities)
+	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{*c.lastEvent}, c.identities)
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving identities for view")
 	}
 
-	view, err := events.FormatEvent(last, identityMap)
+	view, err := events.FormatEvent(*c.lastEvent, identityMap)
 	if err != nil {
 		return merror.Transform(err).Describe("computing view of last event")
 	}

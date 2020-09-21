@@ -54,7 +54,7 @@ func ListMemberBoxIDs(ctx context.Context, exec boil.ContextExecutor, senderID s
 		eType:      null.StringFrom(etype.Memberjoin),
 		unreferred: true,
 		senderID:   null.StringFrom(senderID),
-		unkicked:   true,
+		// unkicked:   true,
 	})
 	if err != nil {
 		return nil, err

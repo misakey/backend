@@ -16,6 +16,7 @@ type IdentityIntraprocess struct {
 	service identity.IdentityService
 }
 
+// TODO (perf): instantiate this before each query and install a in-memory cache for the request
 func NewIdentityIntraprocess(identityService identity.IdentityService) IdentityIntraprocess {
 	return IdentityIntraprocess{
 		service: identityService,

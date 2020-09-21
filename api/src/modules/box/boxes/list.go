@@ -14,7 +14,7 @@ import (
 )
 
 func Get(ctx context.Context, exec boil.ContextExecutor, identities entrypoints.IdentityIntraprocessInterface, boxID string) (Box, error) {
-	return Compute(ctx, boxID, exec, identities)
+	return Compute(ctx, boxID, exec, identities, nil)
 }
 
 func CountForSender(ctx context.Context, exec boil.ContextExecutor, senderID string) (int, error) {
@@ -56,9 +56,8 @@ func ListSenderBoxes(
 	// 3. compute all boxes
 	boxes = make([]*Box, len(lastEvents))
 	for i, e := range lastEvents {
-		// TODO (perf): find a way to give to computer the last event in advance
 		// TODO (perf): computation in redis
-		box, err := Compute(ctx, e.BoxID, exec, identities)
+		box, err := Compute(ctx, e.BoxID, exec, identities, nil)
 		if err != nil {
 			return boxes, merror.Transform(err).Describef("computing box %s", e.BoxID)
 		}

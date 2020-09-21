@@ -47,11 +47,9 @@ func (bs *BoxApplication) CreateBox(ctx context.Context, genReq entrypoints.Requ
 	}
 
 	// build the box view and return it
-	box, err := boxes.Compute(ctx, event.BoxID, bs.db, bs.identities, event)
+	box, err := boxes.Compute(ctx, event.BoxID, bs.db, bs.identities, &event)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("building box")
 	}
-
 	return box, nil
-
 }
