@@ -14,24 +14,24 @@
               <img src="https://static.misakey.com/img/MisakeyLogoTypo.png" width="150" alt="Misakey Logo" style="-ms-interpolation-mode: bicubic;border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
             </p>
 
-            <p>Nous avons reçu une demande d’authentification Misakey par code de confirmation.</p>
+            <p>We have received an authentication request with a confirmation code.</p>
 
-            <h3>Votre code de confirmation</h3>
+            <h3>Here is your code</h3>
 
 
             <h2>{{.code}}</h2>
 
 
-            <p>Si vous n’êtes pas à l'origine de cette demande, envoyez un e-mail à <a href="mailto:feedback@misakey.com">feedback@misakey.com</a> pour nous le signaler et ne transférez ce code à aucune personne.</p>
+            <p>If you didn't request this code, send an email to <a href="mailto:feedback@misakey.com">feedback@misakey.com</a>. Please don't transfer this code to anyone.</p>
 
             <br>
-            Cordialement,
+            Stay secure and keep your data confidential,
             <br>
-            L’équipe Misakey
+            Misakey Team,
             <br><br>
             <hr style="border: 2px solid #EAEEF3; border-bottom: 0; margin: 20px 0;">
             <p style="text-align: center;color: #A9B3BC;-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;">
-              Cette adresse e-mail ne peut pas recevoir de réponses. Pour en savoir plus, consultez l’aide Misakey.
+              This email address can't receive responses. If you want to know more, check Misakey help section.
               <br> © Misakey SAS, 66 avenue des champs Elysée, 75008 Paris, France
             </p>
           </div>
