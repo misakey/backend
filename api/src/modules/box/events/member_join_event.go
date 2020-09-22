@@ -47,23 +47,12 @@ func listBoxActiveJoinEvents(ctx context.Context, exec boil.ContextExecutor, box
 	return activeJoinEvents, nil
 }
 
-// List box ids joined by an identity ID
-func ListMemberBoxIDs(ctx context.Context, exec boil.ContextExecutor, senderID string) ([]string, error) {
+func ListMemberBoxLatestEvents(ctx context.Context, exec boil.ContextExecutor, senderID string) ([]Event, error) {
 	joins, err := list(ctx, exec, eventFilters{
-		boxIDOnly:  true,
 		eType:      null.StringFrom(etype.Memberjoin),
 		unreferred: true,
 		senderID:   null.StringFrom(senderID),
 		// unkicked:   true,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	joinBoxIDs := make([]string, len(joins))
-	for i, e := range joins {
-		joinBoxIDs[i] = e.BoxID
-	}
-
-	return joinBoxIDs, nil
+	return joins, err
 }

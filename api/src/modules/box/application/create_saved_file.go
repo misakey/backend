@@ -53,14 +53,14 @@ func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq entrypoint
 		return nil, merror.Transform(err).Describe("getting events")
 	}
 
-	identityBoxIDs, err := boxes.ListSenderBoxIDs(ctx, bs.db, access.IdentityID)
+	identityBoxEvents, err := boxes.LastSenderBoxEvents(ctx, bs.db, access.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting identity boxes")
 	}
 	// creating an index to optimize next operation
-	identityBoxesIndex := make(map[string]bool, len(identityBoxIDs))
-	for _, boxID := range identityBoxIDs {
-		identityBoxesIndex[boxID] = true
+	identityBoxesIndex := make(map[string]bool, len(identityBoxEvents))
+	for _, boxEvent := range identityBoxEvents {
+		identityBoxesIndex[boxEvent.BoxID] = true
 	}
 
 	// check that the identity has access to at least one box

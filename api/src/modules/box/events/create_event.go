@@ -70,21 +70,12 @@ func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, e
 	return event, nil
 }
 
-func ListCreatorBoxIDs(ctx context.Context, exec boil.ContextExecutor, creatorID string) ([]string, error) {
+func ListCreatorIDEvents(ctx context.Context, exec boil.ContextExecutor, creatorID string) ([]Event, error) {
 	createEvents, err := list(ctx, exec, eventFilters{
-		boxIDOnly: true,
-		eType:     null.StringFrom("create"),
-		senderID:  null.StringFrom(creatorID),
+		eType:    null.StringFrom("create"),
+		senderID: null.StringFrom(creatorID),
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	boxIDs := make([]string, len(createEvents))
-	for i, e := range createEvents {
-		boxIDs[i] = e.BoxID
-	}
-	return boxIDs, nil
+	return createEvents, err
 }
 
 func isCreator(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (bool, error) {

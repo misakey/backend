@@ -18,8 +18,8 @@ func Get(ctx context.Context, exec boil.ContextExecutor, identities entrypoints.
 }
 
 func CountForSender(ctx context.Context, exec boil.ContextExecutor, senderID string) (int, error) {
-	boxIDs, err := ListSenderBoxIDs(ctx, exec, senderID)
-	return len(boxIDs), err
+	list, err := LastSenderBoxEvents(ctx, exec, senderID)
+	return len(list), err
 }
 
 func ListSenderBoxes(
@@ -31,33 +31,29 @@ func ListSenderBoxes(
 	limit, offset int,
 ) ([]*Box, error) {
 	boxes := []*Box{}
-	// 1. retrieve box IDs
-	boxIDs, err := ListSenderBoxIDs(ctx, exec, senderID)
+	// 1. retrieve lastest events concerning the user's boxes
+	list, err := LastSenderBoxEvents(ctx, exec, senderID)
 	if err != nil {
 		return boxes, merror.Transform(err).Describe("listing box ids")
 	}
 
-	// 2. order by most recent and put pagination in place
-	// TODO (perf): this query does not use any index and is quite heavy
-	mods := []qm.QueryMod{
-		qm.Select("box_id", "max(created_at)"),
-		sqlboiler.EventWhere.BoxID.IN(boxIDs),
-		qm.GroupBy("box_id"),
-		qm.OrderBy("max DESC"),
-		qm.Offset(offset),
-		qm.Limit(limit),
+	// 2. put pagination in place
+	// if the offset is higher than the total size, we return an empty list
+	if offset >= len(list) {
+		return boxes, nil
 	}
-
-	lastEvents, err := sqlboiler.Events(mods...).All(ctx, exec)
-	if err != nil {
-		return boxes, merror.Transform(err).Describe("ordering boxes")
+	// cut the slice using the offset
+	list = list[offset:]
+	// cut the slice using the limit
+	if len(list) > limit {
+		list = list[:limit]
 	}
 
 	// 3. compute all boxes
-	boxes = make([]*Box, len(lastEvents))
-	for i, e := range lastEvents {
+	boxes = make([]*Box, len(list))
+	for i, e := range list {
 		// TODO (perf): computation in redis
-		box, err := Compute(ctx, e.BoxID, exec, identities, nil)
+		box, err := Compute(ctx, e.BoxID, exec, identities, &e)
 		if err != nil {
 			return boxes, merror.Transform(err).Describef("computing box %s", e.BoxID)
 		}
@@ -83,29 +79,46 @@ func ListSenderBoxes(
 	return boxes, nil
 }
 
-func ListSenderBoxIDs(
+func LastSenderBoxEvents(
 	ctx context.Context,
 	exec boil.ContextExecutor,
 	senderID string,
-) ([]string, error) {
-	joinedBoxIDs, err := events.ListMemberBoxIDs(ctx, exec, senderID)
+) ([]events.Event, error) {
+	joins, err := events.ListMemberBoxLatestEvents(ctx, exec, senderID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing joined box ids")
 	}
-	createdBoxIDs, err := events.ListCreatorBoxIDs(ctx, exec, senderID)
+	creates, err := events.ListCreatorIDEvents(ctx, exec, senderID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing creator box ids")
 	}
 
-	ids := append(joinedBoxIDs, createdBoxIDs...)
-	var uniqueIDs []string
-	addedOnes := make(map[string]bool)
-	for _, boxID := range ids {
-		_, ok := addedOnes[boxID]
-		if !ok {
-			uniqueIDs = append(uniqueIDs, boxID)
-			addedOnes[boxID] = true
-		}
+	// it is forbidden to join box the user has created so we already have unique box IDs
+	boxIDs := make([]string, len(joins)+len(creates))
+	idx := 0
+	for _, event := range append(joins, creates...) {
+		boxIDs[idx] = event.BoxID
+		idx += 1
 	}
-	return uniqueIDs, nil
+
+	mods := []qm.QueryMod{
+		qm.Select("DISTINCT ON (box_id) box_id, event.*"),
+		sqlboiler.EventWhere.BoxID.IN(boxIDs),
+		qm.OrderBy("box_id"),
+		qm.OrderBy("created_at DESC"),
+	}
+
+	lastEventsDB, err := sqlboiler.Events(mods...).All(ctx, exec)
+	if err != nil {
+		return []events.Event{}, merror.Transform(err).Describe("retrieving last events")
+	}
+
+	// get last events
+	lastEvents := make([]events.Event, len(lastEventsDB))
+	idx = 0
+	for _, event := range lastEventsDB {
+		lastEvents[idx] = events.FromSQLBoiler(event)
+		idx += 1
+	}
+	return lastEvents, nil
 }
