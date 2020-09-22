@@ -6,8 +6,11 @@ import (
 	"github.com/volatiletech/null"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/types"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
@@ -56,7 +59,7 @@ func GetCreateEvent(
 	})
 }
 
-func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, exec boil.ContextExecutor) (Event, error) {
+func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) (Event, error) {
 	event, err := NewCreate(title, publicKey, senderID)
 	if err != nil {
 		return Event{}, merror.Transform(err).Describe("creating create event")
@@ -65,6 +68,11 @@ func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, e
 	// persist the event in storage
 	if err = event.persist(ctx, exec); err != nil {
 		return Event{}, merror.Transform(err).Describe("inserting event")
+	}
+
+	// invalidates cache for creator boxes list
+	if err := invalidateCaches(ctx, &event, exec, redConn, identities); err != nil {
+		logger.FromCtx(ctx).Warn().Err(err).Msgf("invalidating the cache")
 	}
 
 	return event, nil

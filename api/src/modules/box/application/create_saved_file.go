@@ -53,7 +53,7 @@ func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq entrypoint
 		return nil, merror.Transform(err).Describe("getting events")
 	}
 
-	identityBoxEvents, err := boxes.LastSenderBoxEvents(ctx, bs.db, access.IdentityID)
+	identityBoxEvents, err := boxes.LastSenderBoxEvents(ctx, bs.db, bs.redConn, access.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting identity boxes")
 	}

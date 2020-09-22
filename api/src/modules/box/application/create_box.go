@@ -41,7 +41,15 @@ func (bs *BoxApplication) CreateBox(ctx context.Context, genReq entrypoints.Requ
 		return nil, merror.Transform(err).Describe("checking level")
 	}
 
-	event, err := events.CreateCreateEvent(ctx, req.Title, req.PublicKey, acc.IdentityID, bs.db)
+	event, err := events.CreateCreateEvent(
+		ctx,
+		req.Title,
+		req.PublicKey,
+		acc.IdentityID,
+		bs.db,
+		bs.redConn,
+		bs.identities,
+	)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating create event")
 	}

@@ -25,7 +25,7 @@ func (bs *BoxApplication) CountBoxes(ctx context.Context, _ entrypoints.Request)
 		return nil, merror.Unauthorized()
 	}
 
-	count, err := boxes.CountForSender(ctx, bs.db, acc.IdentityID)
+	count, err := boxes.CountForSender(ctx, bs.db, bs.redConn, acc.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("counting sender boxes")
 	}

@@ -8,11 +8,13 @@ import (
 
 	"github.com/go-redis/redis/v7"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/cache"
 )
 
 // DelCounts for couple <identityID, boxID>
 func DelCounts(ctx context.Context, redConn *redis.Client, identityID, boxID string) error {
-	if _, err := redConn.Del(fmt.Sprintf("%s:%s", identityID, boxID)).Result(); err != nil {
+	if _, err := redConn.Del(fmt.Sprintf("%s:eventCounts:%s", identityID, boxID)).Result(); err != nil {
 		return err
 	}
 	return nil
@@ -21,7 +23,7 @@ func DelCounts(ctx context.Context, redConn *redis.Client, identityID, boxID str
 // GetCountsForIdentity and return a map with box IDs and their corresponding new events count for the user
 func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID string) (map[string]int, error) {
 	result := make(map[string]int)
-	keys, err := redConn.Keys(fmt.Sprintf("%s:*", identityID)).Result()
+	keys, err := redConn.Keys(fmt.Sprintf("%s:eventCounts:*", identityID)).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +35,7 @@ func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID
 		return nil, err
 	}
 	for idx, eventCount := range eventsCounts {
-		boxID := strings.Split(keys[idx], ":")[1]
+		boxID := strings.Split(keys[idx], ":")[2]
 		count, err := strconv.Atoi(eventCount.(string))
 		if err != nil {
 			return nil, merror.Internal().Describef("unexpected value format for %s: %s", keys[idx], err.Error())
@@ -47,7 +49,7 @@ func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID
 func incrCounts(ctx context.Context, redConn *redis.Client, identityIDs []string, boxID string) error {
 	pipe := redConn.TxPipeline()
 	for _, identityID := range identityIDs {
-		if _, err := pipe.Incr(fmt.Sprintf("%s:%s", identityID, boxID)).Result(); err != nil {
+		if _, err := pipe.Incr(cache.GetEventCountKey(identityID, boxID)).Result(); err != nil {
 			return err
 		}
 	}

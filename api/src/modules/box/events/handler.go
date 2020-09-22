@@ -71,9 +71,9 @@ var eventTypeHandlerMapping = map[string]EventHandler{
 	"access.add": {gh(doAddAccess), gh(empty)},
 	"access.rm":  {gh(doRmAccess), gh(empty)},
 
-	"member.leave": {gh(doLeave), gh(publish, notify, interrupt)},
-	"member.join":  {gh(doJoin), gh(publish, notify)},
-	"member.kick":  {gh(empty), gh(publish, notify, interrupt)},
+	"member.leave": {gh(doLeave), gh(publish, notify, interrupt, invalidateCaches)},
+	"member.join":  {gh(doJoin), gh(publish, notify, invalidateCaches)},
+	"member.kick":  {gh(empty), gh(publish, notify, interrupt, invalidateCaches)},
 }
 
 func gh(handlers ...handler) []handler {

@@ -3,20 +3,29 @@ package events
 import (
 	"context"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
-
-	"github.com/volatiletech/null"
-
 	"github.com/go-redis/redis/v7"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/cache"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
 )
 
 // List identities ID that are members of the given box
-func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]string, error) {
-	// 1. get the creator id which is a member
+func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, boxID string) ([]string, error) {
+	// 1. try to retrieve cache if it exists
+	members, err := redConn.SMembers(cache.GetBoxMembersKey(boxID)).Result()
+	if err == nil && len(members) != 0 {
+		return members, nil
+	}
+
+	// 2. if cache couldn’t be retrieved
+	// get the creator id which is a member
+	logger.FromCtx(ctx).Debug().Msgf("regenerating members cache for %s", boxID)
 	createEvent, err := get(ctx, exec, eventFilters{
 		eType: null.StringFrom(etype.Create),
 		boxID: null.StringFrom(boxID),
@@ -29,7 +38,7 @@ func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, boxID stri
 	memberIDs := []string{createEvent.SenderID}
 	uniqueMemberIDs[createEvent.SenderID] = true
 
-	// 2. compute people that has joined the box
+	// 3. compute people that has joined the box
 	activeJoins, err := listBoxActiveJoinEvents(ctx, exec, boxID)
 	if err != nil {
 		return nil, err
@@ -44,6 +53,11 @@ func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, boxID stri
 		}
 	}
 
+	// 4. update the cache
+	if _, err := redConn.SAdd(cache.GetBoxMembersKey(boxID), slice.StringSliceToInterfaceSlice(memberIDs)...).Result(); err != nil {
+		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not build members cache for %s", boxID)
+	}
+
 	return memberIDs, nil
 }
 
@@ -55,10 +69,10 @@ func MustBeMember(
 ) error {
 
 	// check the membership in the cache if it exists
-	exists, err := redConn.Exists(boxID + ":members").Result()
+	exists, err := redConn.Exists(cache.GetBoxMembersKey(boxID)).Result()
 	if err == nil && exists == 1 {
 		// if cache is valid
-		senderIsMember, err := redConn.SIsMember(boxID+":members", senderID).Result()
+		senderIsMember, err := redConn.SIsMember(cache.GetBoxMembersKey(boxID), senderID).Result()
 		if err != nil {
 			if senderIsMember {
 				return nil
@@ -110,7 +124,7 @@ func isMember(
 func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
 	// retrieve all member ids excepted the sender id
 	// we build a set to find all uniq actors
-	memberIDs, err := ListBoxMemberIDs(ctx, exec, e.BoxID)
+	memberIDs, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
 	if err != nil {
 		return merror.Transform(err).Describe("notifying member: listing members")
 	}
@@ -170,7 +184,7 @@ func interrupt(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn
 		}
 		if c.State == "closed" {
 			// get all members
-			memberIDs, err := ListBoxMemberIDs(ctx, exec, e.BoxID)
+			memberIDs, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
 			if err != nil {
 				return merror.Transform(err).Describe("getting members list")
 			}
@@ -198,4 +212,28 @@ func sendInterruption(ctx context.Context, redConn *redis.Client, senderID, boxI
 	if _, err := redConn.Publish("interrupt:"+boxID+":"+senderID, []byte("stop")).Result(); err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("interrupting channel interrupt:%s:%s", boxID, senderID)
 	}
+}
+
+func invalidateCaches(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+	_, err := redConn.Del(cache.GetBoxMembersKey(e.BoxID)).Result()
+	if err != nil {
+		logger.FromCtx(ctx).Warn().Msgf("could not invalidate cache %s:members", e.BoxID)
+	}
+
+	var senderID string
+	if e.Type == etype.Memberkick {
+		var content MemberKickContent
+		if err := e.JSONContent.Unmarshal(&content); err != nil {
+			logger.FromCtx(ctx).Warn().Msgf("could not unmarshall member.kick %s content", e.ID)
+		}
+		senderID = content.KickedMemberID
+	} else {
+		senderID = e.SenderID
+	}
+	_, err = redConn.Del(cache.GetSenderBoxesKey(senderID)).Result()
+	if err != nil {
+		logger.FromCtx(ctx).Warn().Msgf("could not invalidate cache %s:boxes", senderID)
+	}
+
+	return nil
 }

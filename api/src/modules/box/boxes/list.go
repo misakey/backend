@@ -7,9 +7,12 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/cache"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
@@ -18,8 +21,8 @@ func Get(ctx context.Context, exec boil.ContextExecutor, identities entrypoints.
 	return Compute(ctx, boxID, exec, identities, nil)
 }
 
-func CountForSender(ctx context.Context, exec boil.ContextExecutor, senderID string) (int, error) {
-	list, err := LastSenderBoxEvents(ctx, exec, senderID)
+func CountForSender(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, senderID string) (int, error) {
+	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID)
 	return len(list), err
 }
 
@@ -33,7 +36,7 @@ func ListSenderBoxes(
 ) ([]*Box, error) {
 	boxes := []*Box{}
 	// 1. retrieve lastest events concerning the user's boxes
-	list, err := LastSenderBoxEvents(ctx, exec, senderID)
+	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID)
 	if err != nil {
 		return boxes, merror.Transform(err).Describe("listing box ids")
 	}
@@ -80,11 +83,19 @@ func ListSenderBoxes(
 	return boxes, nil
 }
 
-func LastSenderBoxEvents(
+func LastSenderBoxIDs(
 	ctx context.Context,
 	exec boil.ContextExecutor,
+	redConn *redis.Client,
 	senderID string,
-) ([]events.Event, error) {
+) ([]string, error) {
+	// 1. try to retrieve cache
+	cacheBoxIDs, err := redConn.SMembers(cache.GetSenderBoxesKey(senderID)).Result()
+	if err == nil && len(cacheBoxIDs) != 0 {
+		return cacheBoxIDs, nil
+	}
+
+	// 2. build list
 	joins, err := events.ListMemberBoxLatestEvents(ctx, exec, senderID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing joined box ids")
@@ -102,6 +113,25 @@ func LastSenderBoxEvents(
 		idx += 1
 	}
 
+	// 3. update cache
+	if _, err := redConn.SAdd(cache.GetSenderBoxesKey(senderID), slice.StringSliceToInterfaceSlice(boxIDs)...).Result(); err != nil {
+		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not build boxes cache for %s", senderID)
+	}
+
+	return boxIDs, nil
+}
+
+func LastSenderBoxEvents(
+	ctx context.Context,
+	exec boil.ContextExecutor,
+	redConn *redis.Client,
+	senderID string,
+) ([]events.Event, error) {
+	boxIDs, err := LastSenderBoxIDs(ctx, exec, redConn, senderID)
+	if err != nil {
+		return nil, err
+	}
+
 	mods := []qm.QueryMod{
 		qm.Select("DISTINCT ON (box_id) box_id, event.*"),
 		sqlboiler.EventWhere.BoxID.IN(boxIDs),
@@ -116,7 +146,7 @@ func LastSenderBoxEvents(
 
 	// get last events
 	lastEvents := make([]events.Event, len(lastEventsDB))
-	idx = 0
+	idx := 0
 	for _, event := range lastEventsDB {
 		lastEvents[idx] = events.FromSQLBoiler(event)
 		idx += 1

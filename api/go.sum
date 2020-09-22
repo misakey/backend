@@ -280,6 +280,8 @@ github.com/volatiletech/sqlboiler v3.7.1+incompatible/go.mod h1:jLfDkkHWPbS2cWRL
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
+gitlab.misakey.dev/misakey/backend v0.4.6-0.20200922064517-0b34db37270d h1:+3mNg8Xjzk7qa8/CcjAZsp4Rtx93oNL3raJi+L2hJTo=
+gitlab.misakey.dev/misakey/backend v0.4.6-0.20200922102302-38bc4ed247de h1:NwnNRxxjtdh00SFfE4NKWGN4KExRsj5rL4+4HM48bpw=
 gitlab.misakey.dev/misakey/msk-sdk-go v1.13.0 h1:NWWmkqCgW22W/fUF4Iu9hT3edfEkxxXeyUNjx5OzZHs=
 gitlab.misakey.dev/misakey/msk-sdk-go v1.13.0/go.mod h1:Gk71diHNh+Wms/yYaV+TPjJZjZL6zXCZ5fKk4eMqtec=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=

@@ -36,7 +36,7 @@ func (bs *BoxApplication) ListBoxMembers(ctx context.Context, genReq entrypoints
 		return nil, err
 	}
 
-	membersIDs, err := events.ListBoxMemberIDs(ctx, bs.db, req.boxID)
+	membersIDs, err := events.ListBoxMemberIDs(ctx, bs.db, bs.redConn, req.boxID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing box members")
 	}
