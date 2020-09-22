@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"path/filepath"
-	"strings"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -246,29 +245,24 @@ func (sso *SSOService) AttachCoupon(ctx context.Context, cmd AttachCouponCmd) er
 		return merror.Conflict().Describe("coupon already applied")
 	}
 
-	if strings.EqualFold(cmd.Value, "ProductHuntRocks") {
-		cmd.Value = "ProductHuntRocks"
-	} else if strings.EqualFold(cmd.Value, "EarlyBird") || strings.EqualFold(cmd.Value, "EarlyBirds") {
-		cmd.Value = "EarlyBird"
-	} else {
-		return merror.BadRequest().Detail("value", merror.DVInvalid).Detail("invalid_value", cmd.Value).Describe("invalid coupon")
-	}
+	// NOTE: there is no valid coupon nowadays
+	return merror.BadRequest().Detail("value", merror.DVInvalid).Detail("invalid_value", cmd.Value).Describe("invalid coupon")
 
-	// 3. Update the identity
-	identity.Level = 20
-	if err := sso.identityService.Update(ctx, &identity); err != nil {
-		return merror.Transform(err).Describe("updating identity")
-	}
+	// // 3. Update the identity
+	// identity.Level = 20
+	// if err := sso.identityService.Update(ctx, &identity); err != nil {
+	// 	return merror.Transform(err).Describe("updating identity")
+	// }
 
-	// 2. Create the used_coupon
-	usedCoupon := domain.UsedCoupon{
-		IdentityID: cmd.IdentityID,
-		Value:      cmd.Value,
-	}
+	// // 2. Create the used_coupon
+	// usedCoupon := domain.UsedCoupon{
+	// 	IdentityID: cmd.IdentityID,
+	// 	Value:      cmd.Value,
+	// }
 
-	if err := sso.usedCouponService.CreateUsedCoupon(ctx, usedCoupon); err != nil {
-		return merror.Transform(err).Describe("creating coupon")
-	}
+	// if err := sso.usedCouponService.CreateUsedCoupon(ctx, usedCoupon); err != nil {
+	// 	return merror.Transform(err).Describe("creating coupon")
+	// }
 
-	return nil
+	// return nil
 }

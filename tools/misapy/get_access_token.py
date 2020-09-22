@@ -183,23 +183,6 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
     )
     account_id = r.json()['account_id']
 
-    # use a coupon to have a level to perform all future actions
-    try:
-        s.post(
-            f'https://api.misakey.com.local/identities/{identity_id}/coupons',
-            headers={
-                'Authorization': f'Bearer {access_token}'
-            },
-            json={
-                'value': 'EarlyBird',
-            }
-        )
-    except requests.exceptions.HTTPError as err:
-        if err.response.status_code == 409:
-            pass
-        else:
-            return err
-
     return namedtuple(
         'OAuth2Creds',
         ['email', 'access_token', 'identity_id',

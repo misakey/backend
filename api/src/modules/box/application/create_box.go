@@ -36,11 +36,6 @@ func (bs *BoxApplication) CreateBox(ctx context.Context, genReq entrypoints.Requ
 		return nil, merror.Unauthorized()
 	}
 
-	// Check identity level
-	if err := boxes.MustBeAtLeastLevel20(ctx, bs.db, bs.identities, acc.IdentityID); err != nil {
-		return nil, merror.Transform(err).Describe("checking level")
-	}
-
 	event, err := events.CreateCreateEvent(
 		ctx,
 		req.Title,
