@@ -10,6 +10,7 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 )
 
@@ -49,8 +50,23 @@ func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, boxID stri
 func MustBeMember(
 	ctx context.Context,
 	exec boil.ContextExecutor,
+	redConn *redis.Client,
 	boxID, senderID string,
 ) error {
+
+	// check the membership in the cache if it exists
+	exists, err := redConn.Exists(boxID + ":members").Result()
+	if err == nil && exists == 1 {
+		// if cache is valid
+		senderIsMember, err := redConn.SIsMember(boxID+":members", senderID).Result()
+		if err != nil {
+			if senderIsMember {
+				return nil
+			}
+			return merror.Forbidden().Describe("restricted to member").Detail("sender_id", merror.DVForbidden)
+		}
+	}
+
 	// if the creator, returns immediatly
 	isCreator, err := isCreator(ctx, exec, boxID, senderID)
 	if err != nil {
@@ -75,8 +91,14 @@ func MustBeMember(
 	return merror.Forbidden().Describe("restricted to member").Detail("sender_id", merror.DVForbidden)
 }
 
-func isMember(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (bool, error) {
-	err := MustBeMember(ctx, exec, boxID, senderID)
+func isMember(
+	ctx context.Context,
+	exec boil.ContextExecutor,
+	redConn *redis.Client,
+	boxID,
+	senderID string,
+) (bool, error) {
+	err := MustBeMember(ctx, exec, redConn, boxID, senderID)
 	if err != nil && merror.HasCode(err, merror.ForbiddenCode) {
 		return false, nil
 	}
@@ -125,12 +147,55 @@ func publish(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *
 	return nil
 }
 
-// send event to realtime channels
-// and increment count for all identities except the sender
-func publishAndNotify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
-	if err := publish(ctx, e, exec, redConn, identities); err != nil {
-		return err
+// send interrupt messages to close realtime channels
+func interrupt(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+	// on a leave event
+	// close sockets for the leaving member
+	if e.Type == etype.Memberleave {
+		sendInterruption(ctx, redConn, e.SenderID, e.BoxID)
+		// on a kicked event
+		// close sockets for the kicked member
+	} else if e.Type == etype.Memberkick {
+		var c MemberKickContent
+		if err := e.JSONContent.Unmarshal(&c); err != nil {
+			return merror.Transform(err).Describe("marshalling lifecycle content")
+		}
+		sendInterruption(ctx, redConn, c.KickedMemberID, e.BoxID)
+		// on a close event
+		// close sockets for all members except the admin
+	} else if e.Type == etype.Statelifecycle {
+		var c StateLifecycleContent
+		if err := e.JSONContent.Unmarshal(&c); err != nil {
+			return merror.Transform(err).Describe("marshalling lifecycle content")
+		}
+		if c.State == "closed" {
+			// get all members
+			memberIDs, err := ListBoxMemberIDs(ctx, exec, e.BoxID)
+			if err != nil {
+				return merror.Transform(err).Describe("getting members list")
+			}
+			// get admin
+			adminID, err := getAdminID(ctx, exec, e.BoxID)
+			if err != nil {
+				return merror.Transform(err).Describe("getting admin id")
+			}
+			// send interruption if not creator
+			for _, memberID := range memberIDs {
+				if memberID != adminID {
+					sendInterruption(ctx, redConn, memberID, e.BoxID)
+				}
+			}
+		}
 	}
+	return nil
+}
 
-	return notify(ctx, e, exec, redConn, identities)
+func sendInterruption(ctx context.Context, redConn *redis.Client, senderID, boxID string) {
+	logger.
+		FromCtx(ctx).
+		Debug().
+		Msgf("sending interruption message to %s:%s", boxID, senderID)
+	if _, err := redConn.Publish("interrupt:"+boxID+":"+senderID, []byte("stop")).Result(); err != nil {
+		logger.FromCtx(ctx).Error().Err(err).Msgf("interrupting channel interrupt:%s:%s", boxID, senderID)
+	}
 }

@@ -102,7 +102,7 @@ func FindActiveAccesses(ctx context.Context, exec boil.ContextExecutor, boxID st
 
 func MustMemberHaveAccess(
 	ctx context.Context,
-	exec boil.ContextExecutor, identities entrypoints.IdentityIntraprocessInterface,
+	exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface,
 	boxID string, identityID string,
 ) error {
 	// 1. the identity must have access to the box
@@ -111,7 +111,7 @@ func MustMemberHaveAccess(
 	}
 
 	// 2. the identity must be a member of the box
-	isMember, err := isMember(ctx, exec, boxID, identityID)
+	isMember, err := isMember(ctx, exec, redConn, boxID, identityID)
 	if err != nil {
 		return err
 	}

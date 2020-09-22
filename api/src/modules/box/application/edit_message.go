@@ -86,9 +86,11 @@ func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.
 
 	event := events.FromSQLBoiler(toEdit)
 
-	if err := handler.After(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {
-		// we log the error but we don’t return it
-		logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", receivedEvent.Type)
+	for _, after := range handler.After {
+		if err := after(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {
+			// we log the error but we don’t return it
+			logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", receivedEvent.Type)
+		}
 	}
 
 	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.identities)

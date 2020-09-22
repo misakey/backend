@@ -24,9 +24,9 @@ func empty(_ context.Context, _ *Event, _ boil.ContextExecutor, _ *redis.Client,
 	return nil
 }
 
-func doDefault(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+func doDefault(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
 	// check that the current sender has access to the box
-	if err := MustMemberHaveAccess(ctx, exec, identities, e.BoxID, e.SenderID); err != nil {
+	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
 		return err
 	}
 
@@ -39,9 +39,9 @@ func doDefault(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redi
 
 // doReferrer checks that the referrer_id is set
 // and **do not** persist event in database
-func doReferrer(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+func doReferrer(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
 	// check that the current sender has access to the box
-	if err := MustMemberHaveAccess(ctx, exec, identities, e.BoxID, e.SenderID); err != nil {
+	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
 		return err
 	}
 
@@ -55,25 +55,29 @@ func doReferrer(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *red
 }
 
 type EventHandler struct {
-	Do, After handler
+	Do, After []handler
 }
 
 // NOTE:
 // Do handler is at least responsible for making the event persistent in storage (some events might do it differently though).
 // After handler must perform non-critical actions that might fail without altering the state of the box.
 var eventTypeHandlerMapping = map[string]EventHandler{
-	"state.lifecycle": {doLifecycle, publish},
+	"state.lifecycle": {gh(doLifecycle), gh(publish, interrupt)},
 
-	"msg.text":   {doDefault, publishAndNotify},
-	"msg.file":   {doDefault, publishAndNotify},
-	"msg.edit":   {doReferrer, publish},
-	"msg.delete": {doReferrer, publish},
-	"access.add": {doAddAccess, empty},
-	"access.rm":  {doRmAccess, empty},
+	"msg.text":   {gh(doDefault), gh(publish, notify)},
+	"msg.file":   {gh(doDefault), gh(publish, notify)},
+	"msg.edit":   {gh(doReferrer), gh(publish)},
+	"msg.delete": {gh(doReferrer), gh(publish)},
+	"access.add": {gh(doAddAccess), gh(empty)},
+	"access.rm":  {gh(doRmAccess), gh(empty)},
 
-	"member.leave": {doLeave, publishAndNotify},
-	"member.join":  {doJoin, publishAndNotify},
-	"member.kick":  {empty, publishAndNotify},
+	"member.leave": {gh(doLeave), gh(publish, notify, interrupt)},
+	"member.join":  {gh(doJoin), gh(publish, notify)},
+	"member.kick":  {gh(empty), gh(publish, notify, interrupt)},
+}
+
+func gh(handlers ...handler) []handler {
+	return handlers
 }
 
 func Handler(eType string) EventHandler {

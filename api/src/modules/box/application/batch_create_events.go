@@ -83,9 +83,12 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoin
 
 		// call the proper event handlers
 		handler := events.Handler(event.Type)
-		err = handler.Do(ctx, &event, tr, bs.redConn, bs.identities)
-		if err != nil {
-			return nil, merror.Transform(err).Describef("doing %s event", event.Type)
+
+		for _, do := range handler.Do {
+			err = do(ctx, &event, tr, bs.redConn, bs.identities)
+			if err != nil {
+				return nil, merror.Transform(err).Describef("doing %s event", event.Type)
+			}
 		}
 		createdList[i] = event
 	}
@@ -106,9 +109,11 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoin
 	}
 
 	for _, event := range createdList {
-		if err := events.Handler(event.Type).After(ctx, &event, bs.db, bs.redConn, bs.identities); err != nil {
-			// we log the error but we don’t return it
-			logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", event.Type)
+		for _, after := range events.Handler(event.Type).After {
+			if err := after(ctx, &event, bs.db, bs.redConn, bs.identities); err != nil {
+				// we log the error but we don’t return it
+				logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", event.Type)
+			}
 		}
 	}
 

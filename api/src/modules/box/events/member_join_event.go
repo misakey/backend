@@ -16,7 +16,7 @@ import (
 
 func doJoin(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
 	// check that the current sender is not already a box member
-	isMember, err := isMember(ctx, exec, e.BoxID, e.SenderID)
+	isMember, err := isMember(ctx, exec, redConn, e.BoxID, e.SenderID)
 	if err != nil {
 		return merror.Transform(err).Describe("checking membership")
 	}

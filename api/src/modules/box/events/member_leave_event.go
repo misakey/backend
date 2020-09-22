@@ -14,7 +14,7 @@ import (
 
 func doLeave(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
 	// check that the current sender has access to the box
-	if err := MustMemberHaveAccess(ctx, exec, identities, e.BoxID, e.SenderID); err != nil {
+	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
 		// user is a not a box member
 		// so we just return
 		return err

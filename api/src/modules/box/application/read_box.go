@@ -34,7 +34,7 @@ func (bs *BoxApplication) ReadBox(ctx context.Context, genReq entrypoints.Reques
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustMemberHaveAccess(ctx, bs.db, bs.identities, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustMemberHaveAccess(ctx, bs.db, bs.redConn, bs.identities, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 

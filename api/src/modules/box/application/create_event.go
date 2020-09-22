@@ -68,8 +68,10 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 
 	// call the proper event handlers
 	handler := events.Handler(event.Type)
-	if err := handler.Do(ctx, &event, bs.db, bs.redConn, bs.identities); err != nil {
-		return nil, merror.Transform(err).Describef("during %s event", event.Type)
+	for _, do := range handler.Do {
+		if err := do(ctx, &event, bs.db, bs.redConn, bs.identities); err != nil {
+			return nil, merror.Transform(err).Describef("during %s event", event.Type)
+		}
 	}
 
 	// TODO (code structure): use handlers
@@ -81,9 +83,11 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 		return bs.editMessage(ctx, event, handler)
 	}
 
-	if err := handler.After(ctx, &event, bs.db, bs.redConn, bs.identities); err != nil {
-		// we log the error but we don’t return it
-		logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", event.Type)
+	for _, after := range handler.After {
+		if err := after(ctx, &event, bs.db, bs.redConn, bs.identities); err != nil {
+			// we log the error but we don’t return it
+			logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", event.Type)
+		}
 	}
 
 	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.identities)

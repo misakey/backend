@@ -116,9 +116,11 @@ func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent event
 		return result, merror.Transform(err).Describe("committing transaction")
 	}
 
-	if err := handler.After(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {
-		// we log the error but we don’t return it
-		logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", receivedEvent.Type)
+	for _, after := range handler.After {
+		if err := after(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {
+			// we log the error but we don’t return it
+			logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", receivedEvent.Type)
+		}
 	}
 
 	event := events.FromSQLBoiler(toDelete)

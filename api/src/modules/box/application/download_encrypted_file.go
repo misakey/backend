@@ -2,11 +2,12 @@ package application
 
 import (
 	"context"
-	"github.com/volatiletech/sqlboiler/boil"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
+	"github.com/volatiletech/sqlboiler/boil"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
 	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
 
@@ -41,7 +42,7 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq entr
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	allowed, err := hasAccessToFile(ctx, bs.db, bs.identities, req.fileID, acc.IdentityID)
+	allowed, err := hasAccessToFile(ctx, bs.db, bs.redConn, bs.identities, req.fileID, acc.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("checking access to file")
 	}
@@ -60,7 +61,7 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq entr
 
 func hasAccessToFile(
 	ctx context.Context,
-	exec boil.ContextExecutor, identities e.IdentityIntraprocessInterface,
+	exec boil.ContextExecutor, redConn *redis.Client, identities e.IdentityIntraprocessInterface,
 	fileID string, identityID string,
 ) (bool, error) {
 	// 1. identity has access to files contained in boxes they have access to
@@ -73,7 +74,7 @@ func hasAccessToFile(
 		return false, err
 	}
 	for _, event := range linkedEvents {
-		err := events.MustMemberHaveAccess(ctx, exec, identities, event.BoxID, identityID)
+		err := events.MustMemberHaveAccess(ctx, exec, redConn, identities, event.BoxID, identityID)
 		// if no error has been raised, the access is allowed
 		if err == nil {
 			return true, nil

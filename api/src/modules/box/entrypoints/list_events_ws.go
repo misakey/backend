@@ -21,7 +21,7 @@ func (wh WebsocketHandler) ListEventsWS(c echo.Context) error {
 	boxID := c.Param("id")
 
 	if err := v.Validate(boxID, v.Required, is.UUIDv4); err != nil {
-		return err
+		return merror.BadRequest().From(merror.OriPath).Detail("id", merror.DVMalformed)
 	}
 
 	// check accesses
@@ -29,7 +29,7 @@ func (wh WebsocketHandler) ListEventsWS(c echo.Context) error {
 	if acc == nil {
 		return merror.Forbidden()
 	}
-	if err := events.MustMemberHaveAccess(c.Request().Context(), wh.db, wh.identities, boxID, acc.IdentityID); err != nil {
+	if err := events.MustMemberHaveAccess(c.Request().Context(), wh.db, wh.redConn, wh.identities, boxID, acc.IdentityID); err != nil {
 		return err
 	}
 
@@ -37,9 +37,9 @@ func (wh WebsocketHandler) ListEventsWS(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	defer ws.Close()
 
 	go ws.Pump(c)
+	go listenInterrupt(c, ws, wh.redConn, acc.IdentityID, boxID)
 
 	sub := wh.redConn.Subscribe(boxID + ":events")
 
@@ -68,6 +68,8 @@ func (wh WebsocketHandler) ListEventsWS(c echo.Context) error {
 	logger.FromCtx(c.Request().Context()).Debug().Msg("Websocket loop started")
 	for {
 		select {
+		case <-ws.EndPump:
+			return nil
 		case msg, ok := <-ch:
 			if !ok {
 				// here we close the websocket and send an error to the client
@@ -78,8 +80,53 @@ func (wh WebsocketHandler) ListEventsWS(c echo.Context) error {
 			ws.Send <- mwebsockets.WebsocketMessage{
 				Msg: msg.Payload,
 			}
-		case <-ws.EndWritePump:
-			return nil
+		}
+	}
+}
+
+// TODO(code structure): factorize this for use in other parts
+func listenInterrupt(c echo.Context, ws *mwebsockets.Websocket, redConn *redis.Client, senderID, boxID string) {
+	sub := redConn.Subscribe("interrupt:" + boxID + ":" + senderID)
+	// we instantiate this interface to wait for
+	// the subscription to be active
+	// see: https://godoc.org/github.com/go-redis/redis#Client.Subscribe
+	iface, err := sub.Receive()
+	if err != nil {
+		return
+	}
+	// Should be *Subscription, but others are possible if other actions have been
+	// taken on sub since it was created.
+	switch msg := iface.(type) {
+	case *redis.Subscription:
+		logger.FromCtx(c.Request().Context()).Debug().Msgf("%s: redis Subscription successful", ws.ID)
+	case *redis.Message:
+		ws.Send <- mwebsockets.WebsocketMessage{
+			Msg: msg.Payload,
+		}
+	default:
+		logger.FromCtx(c.Request().Context()).Debug().Msgf("%s: unexpected redis notification type: %s", msg, ws.ID)
+	}
+
+	ch := sub.Channel()
+
+	logger.FromCtx(c.Request().Context()).Debug().Msgf("%s: websocket loop started", ws.ID)
+	for {
+		select {
+		case <-ws.EndPump:
+			return
+		case msg, ok := <-ch:
+			if !ok {
+				logger.FromCtx(c.Request().Context()).Error().Msgf("%s: cannot receive redis messages", ws.ID)
+			}
+			if msg.Payload == "stop" {
+				logger.FromCtx(c.Request().Context()).Error().Msgf("%s: interrupting websocket", ws.ID)
+				close(ws.Interrupt)
+			} else {
+				logger.
+					FromCtx(c.Request().Context()).
+					Error().
+					Msgf("%s: unexpected message in interrupt chan: %s", msg.String(), ws.ID)
+			}
 		}
 	}
 }

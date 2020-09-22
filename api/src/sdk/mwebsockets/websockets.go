@@ -17,14 +17,17 @@ var (
 	pingInterval     = 45 * time.Second
 	pongWaitTime     = 120 * time.Second
 	writeWaitTime    = 30 * time.Second
+	closeGracePeriod = 1 * time.Second
 	maxMessageSizekB = int64(8 * 1024)
 	sendQueueSize    = 8
 )
 
 type Websocket struct {
-	Websocket    *websocket.Conn
-	Send         chan WebsocketMessage
-	EndWritePump chan struct{}
+	Websocket *websocket.Conn
+	Send      chan WebsocketMessage
+	Receive   chan error
+	Interrupt chan struct{}
+	EndPump   chan struct{}
 
 	ID string
 }
@@ -60,10 +63,12 @@ func NewWebsocket(
 	}
 
 	ws := &Websocket{
-		Websocket:    wsConn,
-		Send:         make(chan WebsocketMessage, sendQueueSize),
-		EndWritePump: make(chan struct{}),
-		ID:           "ws_" + id,
+		Websocket: wsConn,
+		Send:      make(chan WebsocketMessage, sendQueueSize),
+		Receive:   make(chan error),
+		EndPump:   make(chan struct{}),
+		Interrupt: make(chan struct{}),
+		ID:        "ws_" + id,
 	}
 
 	return ws, nil
@@ -80,10 +85,9 @@ func (ws *Websocket) Pump(eCtx echo.Context) {
 
 	// readPump routine
 	if err := ws.readPump(eCtx); err != nil {
-		logger.FromCtx(eCtx.Request().Context()).Error().Err(err).Msgf("%s", ws.ID)
+		logger.FromCtx(eCtx.Request().Context()).Error().Err(err).Msgf("%s: read pump error", ws.ID)
 	}
-
-	close(ws.EndWritePump)
+	close(ws.EndPump)
 	logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: pump closed", ws.ID)
 }
 
@@ -92,6 +96,12 @@ func (ws *Websocket) writePump() error {
 
 	for {
 		select {
+		case <-ws.EndPump:
+			return nil
+		case <-ticker.C:
+			if err := ws.SendMessage(websocket.PingMessage, []byte{}); err != nil {
+				return merror.Internal().Describef("%s: sending ping", ws.ID)
+			}
 		case msg, ok := <-ws.Send:
 			if !ok {
 				_ = ws.SendCloseMessage()
@@ -102,17 +112,25 @@ func (ws *Websocket) writePump() error {
 			if err := ws.SendMessage(websocket.TextMessage, toSend); err != nil {
 				return merror.Internal().Describef("%s: sending message", ws.ID)
 			}
-		case <-ticker.C:
-			if err := ws.SendMessage(websocket.PingMessage, []byte{}); err != nil {
-				return merror.Internal().Describef("%s: sending ping", ws.ID)
-			}
-		case <-ws.EndWritePump:
-			return nil
+		}
+	}
+}
+
+func (ws *Websocket) listener(eCtx echo.Context) {
+	for {
+		// NOTE: manage normal message when the client
+		// communicates with the server
+		_, _, err := ws.Websocket.ReadMessage()
+		if err != nil {
+			ws.Receive <- err
+			return
 		}
 	}
 }
 
 func (ws *Websocket) readPump(eCtx echo.Context) error {
+	defer ws.Close()
+
 	ws.Websocket.SetReadLimit(maxMessageSizekB)
 
 	_ = ws.Websocket.SetReadDeadline(time.Now().Add(pongWaitTime))
@@ -126,20 +144,27 @@ func (ws *Websocket) readPump(eCtx echo.Context) error {
 		return nil
 	})
 
+	go ws.listener(eCtx)
+
 	for {
-		_, _, err := ws.Websocket.ReadMessage()
-		if err != nil {
+		select {
+		case err := <-ws.Receive:
 			logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: read message: %s", ws.ID, err.Error())
 			if websocket.IsCloseError(err, websocket.CloseAbnormalClosure) {
 				return err
 			}
+			return nil
+		case <-ws.Interrupt:
+			// trying to gracefully close the socket
+			_ = ws.SendCloseMessage()
+			time.Sleep(closeGracePeriod)
 			return nil
 		}
 	}
 }
 
 func (ws *Websocket) SendCloseMessage() error {
-	return ws.SendMessage(websocket.CloseMessage, []byte{})
+	return ws.SendMessage(websocket.CloseNormalClosure, []byte{})
 }
 
 func (ws *Websocket) SendMessage(kind int, msg []byte) error {
@@ -148,6 +173,5 @@ func (ws *Websocket) SendMessage(kind int, msg []byte) error {
 }
 
 func (ws *Websocket) Close() error {
-	close(ws.Send)
 	return ws.Websocket.Close()
 }
