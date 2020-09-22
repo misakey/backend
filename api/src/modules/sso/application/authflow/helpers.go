@@ -3,7 +3,7 @@ package authflow
 import (
 	"net/url"
 
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 // BuildRedirectErr with an error code and a description

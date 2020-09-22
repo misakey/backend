@@ -8,7 +8,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 // Process allows to have multi Step in a login flow

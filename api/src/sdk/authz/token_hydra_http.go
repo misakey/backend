@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/url"
 
-	"gitlab.misakey.dev/misakey/msk-sdk-go/rester"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
 )
 
 // oidcIntroHTTP implements Token repository interface using HTTP REST

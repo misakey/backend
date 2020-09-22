@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 type accountRepo interface {

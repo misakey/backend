@@ -1,4 +1,4 @@
-package migration
+package db
 
 import (
 	"database/sql"
@@ -9,8 +9,8 @@ import (
 	"github.com/pressly/goose"
 )
 
-// StartGoose use goose to run imported migrations
-func StartGoose(dsn string, migrationDir string) {
+// StartMigration use goose to run imported migrations
+func StartMigration(dsn string, migrationDir string) {
 	// define command - default is up.
 	command := "up"
 	commandArg := false

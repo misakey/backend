@@ -8,15 +8,15 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/bubble"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/echorouter"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/generic"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/generic/pprof"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/bubble"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/echorouter"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 )
 
 var cfgFile string

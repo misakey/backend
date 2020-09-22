@@ -10,12 +10,12 @@ import (
 	"github.com/spf13/viper"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/db"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/rester/http"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/db"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/application"
 	bentrypoints "gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester/http"
 )
 
 func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntraprocessInterface) {

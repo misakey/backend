@@ -8,8 +8,8 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/sqlboiler/boil"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"

@@ -5,12 +5,16 @@ go 1.13
 require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
 	github.com/aws/aws-sdk-go v1.32.10
+	github.com/benbjohnson/clock v0.0.0-20161215174838-7dc76406b6d3
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ericlagergren/decimal v0.0.0-20191206042408-88212e6cfca9 // indirect
 	github.com/friendsofgo/errors v0.9.2
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/go-playground/assert/v2 v2.0.1
+	github.com/go-playground/validator/v10 v10.2.0
 	github.com/go-redis/redis/v7 v7.4.0
+	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/labstack/echo/v4 v4.1.16
@@ -27,11 +31,15 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.6.1
+	github.com/volatiletech/inflect v0.0.1 // indirect
 	github.com/volatiletech/null v8.0.0+incompatible
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
-	gitlab.misakey.dev/misakey/msk-sdk-go v1.13.0
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
+	gopkg.in/go-playground/validator.v9 v9.29.1
 	gopkg.in/ini.v1 v1.57.0 // indirect
+	gopkg.in/square/go-jose.v2 v2.4.1
 )

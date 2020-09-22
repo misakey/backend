@@ -8,11 +8,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/db"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/oauth"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/oidc"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/rester/http"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application"
@@ -27,6 +22,11 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/db"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oauth"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester/http"
 )
 
 func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {

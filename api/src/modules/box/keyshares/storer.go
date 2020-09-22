@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"github.com/volatiletech/sqlboiler/boil"
 )

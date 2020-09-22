@@ -4,8 +4,7 @@ import (
 	"os"
 
 	_ "github.com/lib/pq"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/migration"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/db"
 )
 
 func Launch() {
@@ -22,5 +21,5 @@ func Launch() {
 	initAddCouponAndIdentityLevel()
 	initCreateCryptoActionsTable()
 
-	migration.StartGoose(os.Getenv("DSN_SSO"), os.Getenv("MIGRATION_DIR_SSO"))
+	db.StartMigration(os.Getenv("DSN_SSO"), os.Getenv("MIGRATION_DIR_SSO"))
 }

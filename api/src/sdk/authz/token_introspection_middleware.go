@@ -4,9 +4,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null"
 
-	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/rester"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
 )
 
 // NewOIDCIntrospector used to declare a route require OIDC authorization

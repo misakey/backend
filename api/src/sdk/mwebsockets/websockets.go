@@ -9,8 +9,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 var (

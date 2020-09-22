@@ -7,9 +7,9 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/sqlboiler/types"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
@@ -108,14 +108,19 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoin
 		return nil, merror.Transform(err).Describe("committing transaction")
 	}
 
-	for _, event := range createdList {
-		for _, after := range events.Handler(event.Type).After {
-			if err := after(ctx, &event, bs.db, bs.redConn, bs.identities); err != nil {
-				// we log the error but we don’t return it
-				logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", event.Type)
+	// not important to wait for after handlers to return
+	// NOTE: we construct a new context since the actual one will be destroyed after the function has returned
+	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), acc), logger.CtxKey, logger.FromCtx(ctx))
+	go func(ctx context.Context, list []events.Event) {
+		for _, e := range list {
+			for _, after := range events.Handler(e.Type).After {
+				if err := after(ctx, &e, bs.db, bs.redConn, bs.identities); err != nil {
+					// we log the error but we don’t return it
+					logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", e.Type)
+				}
 			}
 		}
-	}
+	}(subCtx, createdList)
 
 	sendersMap, err := events.MapSenderIdentities(ctx, createdList, bs.identities)
 	if err != nil {

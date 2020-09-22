@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"

@@ -3,7 +3,7 @@ package authflow
 import (
 	"context"
 
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 func (afs AuthFlowService) Logout(ctx context.Context, subject string, token string) error {

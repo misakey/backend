@@ -5,7 +5,7 @@ import (
 
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 func MustBeAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) error {

@@ -2,7 +2,7 @@ package uuid
 
 import (
 	"github.com/google/uuid"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 func NewString() (string, error) {

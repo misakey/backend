@@ -7,13 +7,13 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/sqlboiler/types"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/ajwt"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 )
 
 type CreateEventRequest struct {
@@ -81,12 +81,17 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 		return bs.editMessage(ctx, event, handler)
 	}
 
-	for _, after := range handler.After {
-		if err := after(ctx, &event, bs.db, bs.redConn, bs.identities); err != nil {
-			// we log the error but we don’t return it
-			logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", event.Type)
+	// not important to wait for after handlers to return
+	// NOTE: we construct a new context since the actual one will be destroyed after the function has returned
+	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), acc), logger.CtxKey, logger.FromCtx(ctx))
+	go func(ctx context.Context, e events.Event) {
+		for _, after := range handler.After {
+			if err := after(ctx, &e, bs.db, bs.redConn, bs.identities); err != nil {
+				// we log the error but we don’t return it
+				logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", e.Type)
+			}
 		}
-	}
+	}(subCtx, event)
 
 	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.identities)
 	if err != nil {

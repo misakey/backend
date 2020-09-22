@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v7"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 // SimpleKeyRedis manages operations with simple key/value

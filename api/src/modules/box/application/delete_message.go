@@ -7,9 +7,10 @@ import (
 
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
@@ -116,12 +117,17 @@ func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent event
 		return result, merror.Transform(err).Describe("committing transaction")
 	}
 
-	for _, after := range handler.After {
-		if err := after(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {
-			// we log the error but we don’t return it
-			logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", receivedEvent.Type)
+	// not important to wait for after handlers to return
+	// NOTE: we construct a new context since the actual one will be destroyed after the function has returned
+	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), ajwt.GetAccesses(ctx)), logger.CtxKey, logger.FromCtx(ctx))
+	go func(ctx context.Context, e events.Event) {
+		for _, after := range handler.After {
+			if err := after(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {
+				// we log the error but we don’t return it
+				logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", receivedEvent.Type)
+			}
 		}
-	}
+	}(subCtx, receivedEvent)
 
 	event := events.FromSQLBoiler(toDelete)
 

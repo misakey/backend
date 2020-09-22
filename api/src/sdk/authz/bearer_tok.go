@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 func GetBearerTok(ctx echo.Context) (string, error) {

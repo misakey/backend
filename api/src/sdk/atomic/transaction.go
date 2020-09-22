@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 )
 
 func SQLRollback(ctx context.Context, tr *sql.Tx, err error) {

@@ -7,9 +7,10 @@ import (
 
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
@@ -86,12 +87,15 @@ func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.
 
 	event := events.FromSQLBoiler(toEdit)
 
-	for _, after := range handler.After {
-		if err := after(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {
-			// we log the error but we don’t return it
-			logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", receivedEvent.Type)
+	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), ajwt.GetAccesses(ctx)), logger.CtxKey, logger.FromCtx(ctx))
+	go func(ctx context.Context, e events.Event) {
+		for _, after := range handler.After {
+			if err := after(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {
+				// we log the error but we don’t return it
+				logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", receivedEvent.Type)
+			}
 		}
-	}
+	}(subCtx, event)
 
 	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.identities)
 	if err != nil {

@@ -4,8 +4,7 @@ import (
 	"os"
 
 	_ "github.com/lib/pq"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/migration"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/db"
 )
 
 func Launch() {
@@ -19,5 +18,5 @@ func Launch() {
 	initCreateUniqueIndexOnSavedFileTable()
 	initAddReferColumnOnBoxEvents()
 
-	migration.StartGoose(os.Getenv("DSN_BOX"), os.Getenv("MIGRATION_DIR_BOX"))
+	db.StartMigration(os.Getenv("DSN_BOX"), os.Getenv("MIGRATION_DIR_BOX"))
 }

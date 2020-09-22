@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/volatiletech/null"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 )

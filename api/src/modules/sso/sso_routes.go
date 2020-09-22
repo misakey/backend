@@ -2,11 +2,11 @@ package sso
 
 import (
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/msk-sdk-go/oauth"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/backuparchive"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oauth"
 )
 
 func initRoutes(

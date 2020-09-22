@@ -3,7 +3,7 @@ package email
 import (
 	"context"
 
-	"gitlab.misakey.dev/misakey/msk-sdk-go/logger"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 )
 
 // MailerLogger logs emails instead of sending them.
