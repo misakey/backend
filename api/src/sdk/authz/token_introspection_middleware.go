@@ -27,6 +27,9 @@ func NewOIDCIntrospector(misakeyAudience string, selfRestrict bool, tokenRester 
 			// introspect the token
 			introTok, err := tokens.Introspect(ctx.Request().Context(), opaqueTok)
 			if err != nil {
+				if merror.HasCode(err, merror.InternalCode) {
+					return merror.Transform(err).Describe("introspecting token")
+				}
 				return merror.Unauthorized().From(merror.OriHeaders).Describe(err.Error())
 			}
 
