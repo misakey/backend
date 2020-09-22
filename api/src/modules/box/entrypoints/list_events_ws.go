@@ -119,7 +119,7 @@ func listenInterrupt(c echo.Context, ws *mwebsockets.Websocket, redConn *redis.C
 				logger.FromCtx(c.Request().Context()).Error().Msgf("%s: cannot receive redis messages", ws.ID)
 			}
 			if msg.Payload == "stop" {
-				logger.FromCtx(c.Request().Context()).Error().Msgf("%s: interrupting websocket", ws.ID)
+				logger.FromCtx(c.Request().Context()).Debug().Msgf("%s: interrupting websocket", ws.ID)
 				close(ws.Interrupt)
 			} else {
 				logger.
