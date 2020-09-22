@@ -2,6 +2,7 @@ package boxes
 
 import (
 	"context"
+	"sort"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -120,5 +121,7 @@ func LastSenderBoxEvents(
 		lastEvents[idx] = events.FromSQLBoiler(event)
 		idx += 1
 	}
+
+	sort.Slice(lastEvents, func(i, j int) bool { return lastEvents[i].CreatedAt.Unix() > lastEvents[j].CreatedAt.Unix() })
 	return lastEvents, nil
 }
