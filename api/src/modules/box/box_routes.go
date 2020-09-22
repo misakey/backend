@@ -47,7 +47,6 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, wsh entrypoint
 		},
 	)
 	boxRouter.HEAD("/joined", countBoxes, authzMidlw)
-	boxRouter.HEAD("", countBoxes, authzMidlw)
 
 	listBoxes := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.ListBoxesRequest{} },
@@ -55,7 +54,6 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, wsh entrypoint
 		entrypoints.ResponseOK,
 	)
 	boxRouter.GET("/joined", listBoxes, authzMidlw)
-	boxRouter.GET("", listBoxes, authzMidlw)
 
 	listBoxMembers := entrypoints.NewProtectedHTTP(
 		func() entrypoints.Request { return &application.ListBoxMembersRequest{} },

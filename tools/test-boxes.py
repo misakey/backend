@@ -142,7 +142,7 @@ def test_basics(s1, s2):
     )
 
     print(f'- boxes listing should return {box2_id} and {box1_id}')
-    r = s1.get(f'{URL_PREFIX}/boxes', expected_status_code=200)
+    r = s1.get(f'{URL_PREFIX}/boxes/joined', expected_status_code=200)
     boxes = r.json()
     assert len(boxes) == 2
     
@@ -151,7 +151,7 @@ def test_basics(s1, s2):
 
     print('- pagination')
     r = s2.get(
-        f'{URL_PREFIX}/boxes',
+        f'{URL_PREFIX}/boxes/joined',
         params={
             'offset': 1,
             'limit': 2,
@@ -161,7 +161,7 @@ def test_basics(s1, s2):
     assert len(boxes) == 2
 
     r = s2.get(
-        f'{URL_PREFIX}/boxes',
+        f'{URL_PREFIX}/boxes/joined',
         params={
             'offset': 1,
             'limit': 10,
@@ -172,7 +172,7 @@ def test_basics(s1, s2):
     assert len(boxes) == 2
 
     r = s2.get(
-        f'{URL_PREFIX}/boxes',
+        f'{URL_PREFIX}/boxes/joined',
         params={
             'offset': 20,
             'limit': 2,
@@ -525,7 +525,7 @@ def test_accesses(s1, s2):
     
     print('- the box is not listed when the user requested their boxes')
     r = s2.get(
-        f'{URL_PREFIX}/boxes',
+        f'{URL_PREFIX}/boxes/joined',
         expected_status_code=200
     )
     # for box in r.json():
