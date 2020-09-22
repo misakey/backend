@@ -36,8 +36,6 @@ func (req *CreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 			etype.Msgfile,
 			etype.Msgedit,
 			etype.Msgdelete,
-			etype.Accessadd,
-			etype.Accessrm,
 			etype.Memberjoin,
 			etype.Memberleave,
 		)),

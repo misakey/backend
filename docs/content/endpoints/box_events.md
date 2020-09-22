@@ -28,6 +28,8 @@ Considering the type of event, side effects will occurs.
 This endpoint does not allow the creation of all type of event though. Some require to use different routes to be created as a side effect:
 - `create` type events are created by the server [during the creation of the box](../boxes/#21-creating-a-box).
 - `msg.file` type events are created by the server [during the upload of an encrypted file](../box_enc_files/#23-upload-an-encrypted-file-to-a-box).
+- `access.*` type events can only be created using [events batch creation](./#22-batch-creation-of-events-for-a-box).
+- `member.kick` type events are created by the server [during the removal of an access](../../concepts/box-events/#123-kick).
 
 ### 2.1.1. request
 
