@@ -95,7 +95,7 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, cmd PartialUpd
 		identity.Notifications = cmd.Notifications
 	}
 
-	if !cmd.Color.Valid {
+	if cmd.Color.Valid {
 		identity.Color = cmd.Color
 	}
 
