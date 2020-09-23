@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -14,7 +13,7 @@ import (
 
 // DelCounts for couple <identityID, boxID>
 func DelCounts(ctx context.Context, redConn *redis.Client, identityID, boxID string) error {
-	if _, err := redConn.Del(fmt.Sprintf("%s:eventCounts:%s", identityID, boxID)).Result(); err != nil {
+	if _, err := redConn.Del(cache.GetEventCountKey(identityID, boxID)).Result(); err != nil {
 		return err
 	}
 	return nil
@@ -23,7 +22,7 @@ func DelCounts(ctx context.Context, redConn *redis.Client, identityID, boxID str
 // GetCountsForIdentity and return a map with box IDs and their corresponding new events count for the user
 func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID string) (map[string]int, error) {
 	result := make(map[string]int)
-	keys, err := redConn.Keys(fmt.Sprintf("%s:eventCounts:*", identityID)).Result()
+	keys, err := redConn.Keys(cache.GetEventCountKeys(identityID)).Result()
 	if err != nil {
 		return nil, err
 	}

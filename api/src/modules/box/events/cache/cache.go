@@ -13,3 +13,7 @@ func GetBoxMembersKey(boxID string) string {
 func GetEventCountKey(identityID, boxID string) string {
 	return fmt.Sprintf("eventCounts:user_%s:%s", identityID, boxID)
 }
+
+func GetEventCountKeys(identityID string) string {
+	return fmt.Sprintf("eventCounts:user_%s:*", identityID)
+}
