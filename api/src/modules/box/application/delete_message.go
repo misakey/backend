@@ -119,7 +119,7 @@ func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent event
 
 	// not important to wait for after handlers to return
 	// NOTE: we construct a new context since the actual one will be destroyed after the function has returned
-	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), ajwt.GetAccesses(ctx)), logger.CtxKey, logger.FromCtx(ctx))
+	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), ajwt.GetAccesses(ctx)), logger.CtxKey{}, logger.FromCtx(ctx))
 	go func(ctx context.Context, e events.Event) {
 		for _, after := range handler.After {
 			if err := after(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {

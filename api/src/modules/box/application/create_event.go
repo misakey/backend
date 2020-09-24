@@ -83,7 +83,7 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 
 	// not important to wait for after handlers to return
 	// NOTE: we construct a new context since the actual one will be destroyed after the function has returned
-	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), acc), logger.CtxKey, logger.FromCtx(ctx))
+	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), acc), logger.CtxKey{}, logger.FromCtx(ctx))
 	go func(ctx context.Context, e events.Event) {
 		for _, after := range handler.After {
 			if err := after(ctx, &e, bs.db, bs.redConn, bs.identities); err != nil {

@@ -87,7 +87,7 @@ func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.
 
 	event := events.FromSQLBoiler(toEdit)
 
-	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), ajwt.GetAccesses(ctx)), logger.CtxKey, logger.FromCtx(ctx))
+	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), ajwt.GetAccesses(ctx)), logger.CtxKey{}, logger.FromCtx(ctx))
 	go func(ctx context.Context, e events.Event) {
 		for _, after := range handler.After {
 			if err := after(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {

@@ -63,7 +63,7 @@ func NewZerologLogger() echo.MiddlewareFunc {
 				Logger()
 
 			// replace current request context with a child context containing our zerolog logger
-			c.SetRequest(req.WithContext(context.WithValue(req.Context(), logger.CtxKey, &l)))
+			c.SetRequest(req.WithContext(context.WithValue(req.Context(), logger.CtxKey{}, &l)))
 
 			err := next(c)
 			if err != nil {

@@ -110,7 +110,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoin
 
 	// not important to wait for after handlers to return
 	// NOTE: we construct a new context since the actual one will be destroyed after the function has returned
-	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), acc), logger.CtxKey, logger.FromCtx(ctx))
+	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), acc), logger.CtxKey{}, logger.FromCtx(ctx))
 	go func(ctx context.Context, list []events.Event) {
 		for _, e := range list {
 			for _, after := range events.Handler(e.Type).After {

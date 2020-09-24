@@ -9,15 +9,15 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type loggerCtxKey struct{}
+type CtxKey struct{}
 
-// SetLogger returns ctx with Logger set inside it using loggerCtxKey
+// SetLogger returns ctx with Logger set inside it using CtxKey
 func SetLogger(ctx context.Context, logger *zerolog.Logger) context.Context {
-	return context.WithValue(ctx, loggerCtxKey{}, logger)
+	return context.WithValue(ctx, CtxKey{}, logger)
 }
 
 func FromCtx(ctx context.Context) *zerolog.Logger {
-	return ctx.Value(loggerCtxKey{}).(*zerolog.Logger)
+	return ctx.Value(CtxKey{}).(*zerolog.Logger)
 }
 
 func ZerologLogger() zerolog.Logger {
