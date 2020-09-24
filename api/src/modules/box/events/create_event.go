@@ -3,12 +3,12 @@ package events
 import (
 	"context"
 
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-redis/redis/v7"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/types"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"

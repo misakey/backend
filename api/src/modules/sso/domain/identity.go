@@ -1,6 +1,6 @@
 package domain
 
-import "github.com/volatiletech/null"
+import "github.com/volatiletech/null/v8"
 
 type Identity struct {
 	ID            string      `json:"id"`

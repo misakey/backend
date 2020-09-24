@@ -2,7 +2,7 @@ package authz
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"

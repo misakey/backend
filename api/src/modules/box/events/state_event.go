@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/go-redis/redis/v7"
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"

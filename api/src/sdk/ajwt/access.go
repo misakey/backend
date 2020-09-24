@@ -4,7 +4,7 @@ import (
 	"context"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )

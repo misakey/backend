@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/volatiletech/sqlboiler/types"
+	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 

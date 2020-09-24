@@ -5,9 +5,9 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"

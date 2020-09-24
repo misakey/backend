@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"github.com/volatiletech/sqlboiler/types"
+	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 

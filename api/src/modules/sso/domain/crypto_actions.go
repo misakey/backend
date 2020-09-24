@@ -3,7 +3,7 @@ package domain
 import (
 	"time"
 
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 )
 
 type CryptoAction struct {

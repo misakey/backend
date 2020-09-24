@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories/sqlboiler"
@@ -33,4 +33,3 @@ func (repo *UsedCouponSQLBoiler) Insert(ctx context.Context, UsedCoupon domain.U
 	sqlUsedCoupon := repo.toSQLBoiler(&UsedCoupon)
 	return sqlUsedCoupon.Insert(ctx, repo.db, boil.Infer())
 }
-

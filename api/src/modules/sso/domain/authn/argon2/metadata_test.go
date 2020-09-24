@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/volatiletech/sqlboiler/types"
+	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
 func TestToMetadata(t *testing.T) {

@@ -4,12 +4,12 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 func Create(

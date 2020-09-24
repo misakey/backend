@@ -3,8 +3,8 @@ package events
 import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/types"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
 type MsgTextContent struct {

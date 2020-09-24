@@ -3,7 +3,7 @@ package identity
 import (
 	"context"
 
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"

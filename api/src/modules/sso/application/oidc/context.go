@@ -1,7 +1,7 @@
 package oidc
 
 import (
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 )
 
 // Context format used to forward information to Open ID server

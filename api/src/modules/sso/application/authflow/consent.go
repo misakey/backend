@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 

@@ -6,14 +6,14 @@ services:
       context: ../../../../
       dockerfile: Dockerfile
     depends_on:
-      api_db:
+      sso_db:
         condition: service_healthy
     environment:
-      - DSN_SSO=postgres://misakey:secret@api_db:5432/sso-migration-test?sslmode=disable
+      - DSN_SSO=postgres://misakey:secret@sso_db:5432/sso-migration-test?sslmode=disable
       - ENV=development
     command: "sso-migrate --goose=up"
 
-  api_db:
+  sso_db:
     image: postgres:11.4
     ports:
       - 127.0.0.1:5501:5432

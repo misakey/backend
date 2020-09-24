@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-	"github.com/volatiletech/sqlboiler/types"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
