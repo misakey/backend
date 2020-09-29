@@ -6,12 +6,12 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
@@ -35,7 +35,7 @@ func (req *CreateSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateSavedFileRequest)
 
 	access := ajwt.GetAccesses(ctx)
@@ -48,12 +48,12 @@ func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq entrypoint
 	}
 
 	// get the boxes with this file
-	events, err := events.FindByEncryptedFileID(ctx, bs.db, req.EncryptedFileID)
+	events, err := events.FindByEncryptedFileID(ctx, bs.DB, req.EncryptedFileID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting events")
 	}
 
-	identityBoxEvents, err := boxes.LastSenderBoxEvents(ctx, bs.db, bs.redConn, access.IdentityID)
+	identityBoxEvents, err := boxes.LastSenderBoxEvents(ctx, bs.DB, bs.RedConn, access.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting identity boxes")
 	}
@@ -89,7 +89,7 @@ func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq entrypoint
 		EncryptedMetadata: req.EncryptedMetadata,
 		KeyFingerprint:    req.KeyFingerprint,
 	}
-	if err := files.CreateSavedFile(ctx, bs.db, savedFile); err != nil {
+	if err := files.CreateSavedFile(ctx, bs.DB, savedFile); err != nil {
 		return nil, merror.Transform(err).Describe("creating saved file")
 	}
 

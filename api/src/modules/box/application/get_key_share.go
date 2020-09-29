@@ -5,11 +5,11 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/keyshares"
 )
@@ -28,7 +28,7 @@ func (req *GetKeyShareRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) GetKeyShare(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) GetKeyShare(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*GetKeyShareRequest)
 
 	// check accesses
@@ -37,12 +37,12 @@ func (bs *BoxApplication) GetKeyShare(ctx context.Context, genReq entrypoints.Re
 		return nil, merror.Unauthorized()
 	}
 
-	ks, err := keyshares.Get(ctx, bs.db, req.otherShareHash)
+	ks, err := keyshares.Get(ctx, bs.DB, req.otherShareHash)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting key share")
 	}
 
-	if err := events.MustHaveAccess(ctx, bs.db, bs.identities, ks.BoxID, acc.IdentityID); err != nil {
+	if err := events.MustHaveAccess(ctx, bs.DB, bs.Identities, ks.BoxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 

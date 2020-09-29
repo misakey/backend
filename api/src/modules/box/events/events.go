@@ -28,6 +28,7 @@ type Event struct {
 	JSONContent types.JSON
 
 	Content interface{}
+	MetadataForHandlers MetadataForUsedSpaceHandler
 }
 
 func New(eType string, jsonContent types.JSON, boxID, senderID string, referrerID *string) (Event, error) {

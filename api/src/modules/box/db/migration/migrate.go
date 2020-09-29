@@ -17,6 +17,8 @@ func Launch() {
 	initCreateSavedFileTable()
 	initCreateUniqueIndexOnSavedFileTable()
 	initAddReferColumnOnBoxEvents()
+	initCreateStorageQuotumTable()
+	initCreateBoxUsedSpaceTable()
 
 	db.StartMigration(os.Getenv("DSN_BOX"), os.Getenv("MIGRATION_DIR_BOX"))
 }

@@ -19,5 +19,5 @@ func (sso SSOService) Logout(ctx context.Context) error {
 	}
 
 	// expire all current authentication steps for the logged out subject
-	return sso.authenticationService.ExpireAll(ctx, acc.IdentityID)
+	return sso.AuthenticationService.ExpireAll(ctx, acc.IdentityID)
 }

@@ -90,7 +90,7 @@ func (sso SSOService) ConsentInit(ctx context.Context, consentChallenge string) 
 		IdentityID:  consentCtx.OIDCContext.MID(),
 		AccountID:   consentCtx.OIDCContext.AID(),
 	}
-	if err := sso.authenticationService.UpsertSession(ctx, session); err != nil {
+	if err := sso.AuthenticationService.UpsertSession(ctx, session); err != nil {
 		return sso.authFlowService.ConsentRedirectErr(err)
 	}
 

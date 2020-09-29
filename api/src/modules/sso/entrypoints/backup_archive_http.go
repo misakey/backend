@@ -9,10 +9,10 @@ import (
 )
 
 type BackupArchiveHTTP struct {
-	service application.SSOService
+	service *application.SSOService
 }
 
-func NewBackupArchiveHTTP(service application.SSOService) BackupArchiveHTTP {
+func NewBackupArchiveHTTP(service *application.SSOService) BackupArchiveHTTP {
 	return BackupArchiveHTTP{service: service}
 }
 

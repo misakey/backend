@@ -8,7 +8,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/db"
 
@@ -18,7 +17,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester/http"
 )
 
-func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntraprocessInterface) {
+func InitModule(router *echo.Echo) Process {
 	// init the box module configuration
 	initConfig()
 
@@ -56,8 +55,9 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 		log.Fatal().Msg("unknown ENV value (should be production|development)")
 	}
 
-	boxService := application.NewBoxApplication(dbConn, redConn, identityIntraprocess, filesRepo)
-	wsHandler := bentrypoints.NewWebsocketHandler(viper.GetStringSlice("websockets.allowed_origins"), redConn, dbConn, identityIntraprocess)
+	boxService := application.NewBoxApplication(dbConn, redConn, filesRepo)
+	wsHandler := bentrypoints.NewWebsocketHandler(viper.GetStringSlice("websockets.allowed_origins"), &boxService)
+	quotumIntraprocess := bentrypoints.NewQuotumIntraprocess(boxService)
 
 	adminHydraFORM := http.NewClient(
 		viper.GetString("hydra.admin_endpoint"),
@@ -72,5 +72,15 @@ func InitModule(router *echo.Echo, identityIntraprocess entrypoints.IdentityIntr
 		adminHydraFORM,
 	)
 
-	bindRoutes(router, boxService, wsHandler, authzMidlw)
+	bindRoutes(router, &boxService, wsHandler, authzMidlw)
+
+	return Process{
+		BoxService:         &boxService,
+		QuotumIntraprocess: &quotumIntraprocess,
+	}
+}
+
+type Process struct {
+	BoxService         *application.BoxApplication
+	QuotumIntraprocess bentrypoints.QuotaIntraprocessInterface
 }

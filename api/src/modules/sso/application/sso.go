@@ -17,7 +17,7 @@ type SSOService struct {
 	identityService       identity.IdentityService
 	identifierService     identifier.IdentifierService
 	authFlowService       authflow.AuthFlowService
-	authenticationService authn.Service
+	AuthenticationService authn.Service
 	backupKeyShareService backupkeyshare.BackupKeyShareService
 	backupArchiveService  backuparchive.BackupArchiveService
 	usedCouponService     coupon.UsedCouponService
@@ -36,7 +36,7 @@ func NewSSOService(
 	return SSOService{
 		accountService: as, identityService: ids, identifierService: idfs,
 		authFlowService:       afs,
-		authenticationService: authns,
+		AuthenticationService: authns,
 		backupKeyShareService: bks,
 		backupArchiveService:  backupArchiveService,
 		usedCouponService:     usedCouponService,

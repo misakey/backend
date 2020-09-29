@@ -11,6 +11,14 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 )
 
+type QuotumInterface interface {
+	CreateBase(ctx context.Context, identityID string) (interface{}, error)
+}
+
+func (s *Service) SetQuotaService(quota QuotumInterface) {
+	s.quotaService = quota
+}
+
 type Service struct {
 	steps             stepRepo
 	sessions          sessionRepo
@@ -18,6 +26,7 @@ type Service struct {
 	identifierService identifier.IdentifierService
 	identityService   identity.IdentityService
 	accountService    account.AccountService
+	quotaService      QuotumInterface
 	templates         email.Renderer
 	emails            email.Sender
 	codeValidity      time.Duration

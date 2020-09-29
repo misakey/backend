@@ -7,10 +7,10 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
 type AckNewEventsCountRequest struct {
@@ -30,7 +30,7 @@ func (req *AckNewEventsCountRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) AckNewEventsCount(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) AckNewEventsCount(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*AckNewEventsCountRequest)
 
 	acc := ajwt.GetAccesses(ctx)
@@ -38,7 +38,7 @@ func (bs *BoxApplication) AckNewEventsCount(ctx context.Context, genReq entrypoi
 		return nil, merror.Forbidden()
 	}
 
-	if err := events.DelCounts(ctx, bs.redConn, req.IdentityID, req.boxID); err != nil {
+	if err := events.DelCounts(ctx, bs.RedConn, req.IdentityID, req.boxID); err != nil {
 		return nil, err
 	}
 

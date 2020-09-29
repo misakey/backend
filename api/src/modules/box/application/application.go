@@ -10,17 +10,20 @@ import (
 )
 
 type BoxApplication struct {
-	db         *sql.DB
-	redConn    *redis.Client
-	identities entrypoints.IdentityIntraprocessInterface
+	DB         *sql.DB
+	RedConn    *redis.Client
+	Identities entrypoints.IdentityIntraprocessInterface
 	filesRepo  files.FileStorageRepo
 }
 
-func NewBoxApplication(db *sql.DB, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, filesRepo files.FileStorageRepo) BoxApplication {
+func (ba *BoxApplication) SetIdentities(identities entrypoints.IdentityIntraprocessInterface) {
+	ba.Identities = identities
+}
+
+func NewBoxApplication(db *sql.DB, redConn *redis.Client, filesRepo files.FileStorageRepo) BoxApplication {
 	return BoxApplication{
-		db:         db,
-		redConn:    redConn,
-		identities: identities,
-		filesRepo:  filesRepo,
+		DB:        db,
+		RedConn:   redConn,
+		filesRepo: filesRepo,
 	}
 }

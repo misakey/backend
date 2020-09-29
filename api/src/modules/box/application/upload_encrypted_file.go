@@ -9,8 +9,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
@@ -45,7 +45,7 @@ func (req *UploadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) error 
 	)
 }
 
-func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*UploadEncryptedFileRequest)
 
 	// checking accesses
@@ -53,12 +53,12 @@ func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq entryp
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustMemberHaveAccess(ctx, bs.db, bs.redConn, bs.identities, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustMemberHaveAccess(ctx, bs.DB, bs.RedConn, bs.Identities, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 
 	// upload files works only on open boxes
-	if err := events.MustBoxBeOpen(ctx, bs.db, req.boxID); err != nil {
+	if err := events.MustBoxBeOpen(ctx, bs.DB, req.boxID); err != nil {
 		return nil, merror.Transform(err).Describe("checking open")
 	}
 
@@ -80,7 +80,7 @@ func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq entryp
 		ID:   fileID,
 		Size: req.size,
 	}
-	if err := files.Create(ctx, bs.db, eFile); err != nil {
+	if err := files.Create(ctx, bs.DB, eFile); err != nil {
 		return nil, merror.Transform(err).Describe("creating file")
 	}
 
@@ -90,15 +90,22 @@ func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq entryp
 	}
 
 	// persist the event in storage - on failure, we try to remove the uploaded file
+
+	// set fileSize in content to compute boxUsedSpace after event is persisted
+	metadata := events.MetadataForUsedSpaceHandler{
+		NewEventSize: req.size,
+	}
+
 	eReq := CreateEventRequest{
 		boxID:   e.BoxID,
 		Type:    e.Type,
 		Content: e.JSONContent,
+		MetadataForHandlers: metadata,
 	}
 	view, err := bs.CreateEvent(ctx, &eReq)
 	if err != nil {
 		err = merror.Transform(err).Describe("inserting event in DB")
-		if delErr := files.Delete(ctx, bs.db, bs.filesRepo, fileID); delErr != nil {
+		if delErr := files.Delete(ctx, bs.DB, bs.filesRepo, fileID); delErr != nil {
 			return nil, merror.Transform(err).Describef("deleting file: %v", delErr)
 		}
 		return nil, err

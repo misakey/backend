@@ -29,7 +29,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester/http"
 )
 
-func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
+func InitModule(router *echo.Echo) Process {
 	initConfig()
 
 	// init db connections
@@ -176,7 +176,7 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 	authnProcessAuthzMidlw := authn.NewProcessIntrospector(viper.GetString("authflow.self_client_id"), authnProcessRepo)
 
 	// bind all routes to the router
-	initRoutes(router, authnProcessAuthzMidlw, oidcAuthzMidlw, extOIDCAuthzMidlw, ssoService, *oauthCodeFlow, backupArchiveService)
+	initRoutes(router, authnProcessAuthzMidlw, oidcAuthzMidlw, extOIDCAuthzMidlw, &ssoService, *oauthCodeFlow, backupArchiveService)
 	// bind static assets for avatars only if configuration has been set up
 	avatarLocation := viper.GetString("server.avatars")
 	if len(avatarLocation) > 0 {
@@ -185,5 +185,13 @@ func InitModule(router *echo.Echo) entrypoints.IdentityIntraprocessInterface {
 
 	identityIntraprocess := entrypoints.NewIdentityIntraprocess(identityService)
 
-	return &identityIntraprocess
+	return Process{
+		IdentityIntraprocess: &identityIntraprocess,
+		SSOService:           &ssoService,
+	}
+}
+
+type Process struct {
+	SSOService           *application.SSOService
+	IdentityIntraprocess entrypoints.IdentityIntraprocessInterface
 }

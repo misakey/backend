@@ -49,5 +49,5 @@ func (sso SSOService) InitAuthnStep(ctx context.Context, cmd AuthenticationStepC
 	}
 
 	// 2. we try to init the authentication step
-	return sso.authenticationService.InitStep(ctx, identity, cmd.Step.MethodName)
+	return sso.AuthenticationService.InitStep(ctx, identity, cmd.Step.MethodName)
 }

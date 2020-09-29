@@ -7,9 +7,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 )
 
 type ListBoxesRequest struct {
@@ -27,7 +27,7 @@ func (req *ListBoxesRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) ListBoxes(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) ListBoxes(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListBoxesRequest)
 	// default limit is 10
 	if req.Limit == 0 {
@@ -41,7 +41,7 @@ func (bs *BoxApplication) ListBoxes(ctx context.Context, genReq entrypoints.Requ
 	}
 	boxes, err := boxes.ListSenderBoxes(
 		ctx,
-		bs.db, bs.redConn, bs.identities,
+		bs.DB, bs.RedConn, bs.Identities,
 		acc.IdentityID,
 		req.Limit, req.Offset,
 	)

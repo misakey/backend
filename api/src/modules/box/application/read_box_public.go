@@ -8,9 +8,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/keyshares"
 )
 
@@ -35,11 +35,11 @@ type PublicBoxView struct {
 }
 
 // Since ReadBoxPublic returns public data, there is no access check performed
-func (bs *BoxApplication) ReadBoxPublic(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) ReadBoxPublic(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ReadBoxPublicRequest)
 
 	// get key share
-	keyShare, err := keyshares.Get(ctx, bs.db, req.OtherShareHash)
+	keyShare, err := keyshares.Get(ctx, bs.DB, req.OtherShareHash)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (bs *BoxApplication) ReadBoxPublic(ctx context.Context, genReq entrypoints.
 	}
 
 	// get box title
-	box, err := boxes.Get(ctx, bs.db, bs.identities, req.boxID)
+	box, err := boxes.Get(ctx, bs.DB, bs.Identities, req.boxID)
 	if err != nil {
 		return nil, err
 	}

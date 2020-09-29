@@ -24,8 +24,8 @@ var deletableTypes = map[string]bool{
 
 // deleteMessage is called by function "CreateEvent"
 // when the event is of type "msg.delete"
-func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent events.Event, handler events.EventHandler) (result events.View, err error) {
-	toDelete, err := sqlboiler.FindEvent(ctx, bs.db, receivedEvent.ReferrerID.String)
+func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent *events.Event, handler events.EventHandler) (result events.View, err error) {
+	toDelete, err := sqlboiler.FindEvent(ctx, bs.DB, receivedEvent.ReferrerID.String)
 	if err != nil {
 		return result, merror.Transform(err).Describe("retrieving event to delete")
 	}
@@ -34,7 +34,7 @@ func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent event
 	// so we put them first.
 	if receivedEvent.SenderID != toDelete.SenderID {
 		// box admins can delete messages even if they are not the author
-		if err := events.MustBeAdmin(ctx, bs.db, toDelete.BoxID, receivedEvent.SenderID); err != nil {
+		if err := events.MustBeAdmin(ctx, bs.DB, toDelete.BoxID, receivedEvent.SenderID); err != nil {
 			return result, merror.Transform(err).Describe("checking admins")
 		}
 	}
@@ -63,6 +63,23 @@ func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent event
 			return result, merror.Transform(err).Describe("unmarshaling content of event to delete")
 		}
 		fileID = msgFileContent.EncryptedFileID
+
+		oldFile, err := files.Get(ctx, bs.DB, fileID)
+		if err != nil {
+			logger.FromCtx(ctx).Warn().Err(err).Msgf("could not retrieve file %s", fileID)
+			receivedEvent.MetadataForHandlers.OldEventSize = 0
+		} else {
+			receivedEvent.MetadataForHandlers.OldEventSize = oldFile.Size
+		}
+	} else if toDelete.Type == "msg.text" {
+		var oldContent events.MsgTextContent
+		err = json.Unmarshal(toDelete.Content.JSON, &oldContent)
+		if err != nil {
+			logger.FromCtx(ctx).Warn().Err(err).Msgf("unmarshaling content of event to delete %s", toDelete.ID)
+			receivedEvent.MetadataForHandlers.OldEventSize = 0
+		} else {
+			receivedEvent.MetadataForHandlers.OldEventSize = int64(len(oldContent.Encrypted))
+		}
 	}
 
 	newContentJSON := events.DeletedContent{}
@@ -75,7 +92,7 @@ func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent event
 	}
 	toDelete.Content = null.JSONFrom(newContentBytes)
 
-	tx, err := bs.db.BeginTx(ctx, nil)
+	tx, err := bs.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return result, merror.Transform(err).Describe("creating DB transaction")
 	}
@@ -120,9 +137,9 @@ func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent event
 	// not important to wait for after handlers to return
 	// NOTE: we construct a new context since the actual one will be destroyed after the function has returned
 	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), ajwt.GetAccesses(ctx)), logger.CtxKey{}, logger.FromCtx(ctx))
-	go func(ctx context.Context, e events.Event) {
+	go func(ctx context.Context, e *events.Event) {
 		for _, after := range handler.After {
-			if err := after(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {
+			if err := after(ctx, e, bs.DB, bs.RedConn, bs.Identities); err != nil {
 				// we log the error but we don’t return it
 				logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", receivedEvent.Type)
 			}
@@ -131,7 +148,7 @@ func (bs *BoxApplication) deleteMessage(ctx context.Context, receivedEvent event
 
 	event := events.FromSQLBoiler(toDelete)
 
-	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.identities)
+	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.Identities)
 	if err != nil {
 		return result, merror.Transform(err).Describe("retrieving identities for view")
 	}

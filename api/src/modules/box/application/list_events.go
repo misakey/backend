@@ -8,8 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
 
@@ -31,23 +31,23 @@ func (req *ListEventsRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) ListEvents(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) ListEvents(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListEventsRequest)
 
 	acc := ajwt.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustMemberHaveAccess(ctx, bs.db, bs.redConn, bs.identities, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustMemberHaveAccess(ctx, bs.DB, bs.RedConn, bs.Identities, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 
-	boxEvents, err := events.ListForMembersByBoxID(ctx, bs.db, req.boxID, req.Offset, req.Limit)
+	boxEvents, err := events.ListForMembersByBoxID(ctx, bs.DB, req.boxID, req.Offset, req.Limit)
 	if err != nil {
 		return nil, err
 	}
 
-	sendersMap, err := events.MapSenderIdentities(ctx, boxEvents, bs.identities)
+	sendersMap, err := events.MapSenderIdentities(ctx, boxEvents, bs.Identities)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("retrieving events senders")
 	}

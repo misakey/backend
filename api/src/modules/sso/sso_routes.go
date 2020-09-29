@@ -14,7 +14,7 @@ func initRoutes(
 	authnProcessAuthzMidlw echo.MiddlewareFunc,
 	oidcAuthzMidlw echo.MiddlewareFunc,
 	extOIDCAuthzMidlw echo.MiddlewareFunc,
-	ssoService application.SSOService,
+	ssoService *application.SSOService,
 	oauthCodeFlow oauth.AuthorizationCodeFlow,
 	backupArchiveService backuparchive.BackupArchiveService,
 ) {

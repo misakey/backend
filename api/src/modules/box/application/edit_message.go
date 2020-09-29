@@ -18,14 +18,14 @@ import (
 
 // editMessage is called by function "CreateEvent"
 // when the event is of type "msg.edit"
-func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.Event, handler events.EventHandler) (result events.View, err error) {
+func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent *events.Event, handler events.EventHandler) (result events.View, err error) {
 	var content events.MsgEditContent
 	err = json.Unmarshal(receivedEvent.JSONContent, &content)
 	if err != nil {
 		return result, merror.Internal().Describe("unmarshaling content json")
 	}
 
-	toEdit, err := sqlboiler.FindEvent(ctx, bs.db, receivedEvent.ReferrerID.String)
+	toEdit, err := sqlboiler.FindEvent(ctx, bs.DB, receivedEvent.ReferrerID.String)
 	if err != nil {
 		return result, merror.Internal().Describe("retrieving event to edit")
 	}
@@ -47,6 +47,17 @@ func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.
 			Describef("cannot edit events of type \"%s\" (only \"msg.text\")", toEdit.Type)
 	}
 
+	// Set Metadata for computing new boxUsedSpace
+	oldEvent := events.FromSQLBoiler(toEdit)
+	var oldContent events.MsgTextContent
+	if err := oldEvent.JSONContent.Unmarshal(&oldContent); err != nil {
+		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not unmarshaling oldContent %s", toEdit.ID)
+		receivedEvent.MetadataForHandlers.OldEventSize = 0
+	} else {
+		receivedEvent.MetadataForHandlers.OldEventSize = int64(len(oldContent.Encrypted))
+	}
+	receivedEvent.MetadataForHandlers.NewEventSize = int64(len(content.NewEncrypted))
+
 	newContent := &events.MsgTextContent{
 		Encrypted:    content.NewEncrypted,
 		PublicKey:    content.NewPublicKey,
@@ -59,7 +70,7 @@ func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.
 	}
 	toEdit.Content = null.JSONFrom(newContentBytes)
 
-	tx, err := bs.db.BeginTx(ctx, nil)
+	tx, err := bs.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return result, merror.Transform(err).Describe("unmarshaling content json")
 	}
@@ -90,14 +101,14 @@ func (bs *BoxApplication) editMessage(ctx context.Context, receivedEvent events.
 	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), ajwt.GetAccesses(ctx)), logger.CtxKey{}, logger.FromCtx(ctx))
 	go func(ctx context.Context, e events.Event) {
 		for _, after := range handler.After {
-			if err := after(ctx, &receivedEvent, bs.db, bs.redConn, bs.identities); err != nil {
+			if err := after(ctx, receivedEvent, bs.DB, bs.RedConn, bs.Identities); err != nil {
 				// we log the error but we don’t return it
 				logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", receivedEvent.Type)
 			}
 		}
 	}(subCtx, event)
 
-	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.identities)
+	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.Identities)
 	if err != nil {
 		return result, merror.Transform(err).Describe("retrieving identities for view")
 	}

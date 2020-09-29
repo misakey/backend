@@ -9,10 +9,10 @@ import (
 )
 
 type AccountHTTP struct {
-	service application.SSOService
+	service *application.SSOService
 }
 
-func NewAccountHTTP(service application.SSOService) AccountHTTP {
+func NewAccountHTTP(service *application.SSOService) AccountHTTP {
 	return AccountHTTP{service: service}
 }
 

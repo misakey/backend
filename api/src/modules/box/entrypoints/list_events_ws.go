@@ -7,10 +7,10 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mwebsockets"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mwebsockets"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
@@ -29,7 +29,14 @@ func (wh WebsocketHandler) ListEventsWS(c echo.Context) error {
 	if acc == nil {
 		return merror.Forbidden()
 	}
-	if err := events.MustMemberHaveAccess(c.Request().Context(), wh.db, wh.redConn, wh.identities, boxID, acc.IdentityID); err != nil {
+	if err := events.MustMemberHaveAccess(
+		c.Request().Context(),
+		wh.boxService.DB,
+		wh.boxService.RedConn,
+		wh.boxService.Identities,
+		boxID,
+		acc.IdentityID,
+	); err != nil {
 		return err
 	}
 
@@ -39,9 +46,9 @@ func (wh WebsocketHandler) ListEventsWS(c echo.Context) error {
 	}
 
 	go ws.Pump(c)
-	go listenInterrupt(c, ws, wh.redConn, acc.IdentityID, boxID)
+	go listenInterrupt(c, ws, wh.boxService.RedConn, acc.IdentityID, boxID)
 
-	sub := wh.redConn.Subscribe(boxID + ":events")
+	sub := wh.boxService.RedConn.Subscribe(boxID + ":events")
 
 	// we instantiate this interface to wait for
 	// the subscription to be active

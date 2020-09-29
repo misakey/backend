@@ -10,10 +10,10 @@ import (
 )
 
 type AuthnHTTP struct {
-	service application.SSOService
+	service *application.SSOService
 }
 
-func NewAuthnHTTP(service application.SSOService) AuthnHTTP {
+func NewAuthnHTTP(service *application.SSOService) AuthnHTTP {
 	return AuthnHTTP{service: service}
 }
 

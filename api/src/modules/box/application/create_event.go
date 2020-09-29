@@ -8,12 +8,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 )
 
 type CreateEventRequest struct {
@@ -21,6 +21,7 @@ type CreateEventRequest struct {
 	Type       string     `json:"type"`
 	Content    types.JSON `json:"content"`
 	ReferrerID *string    `json:"referrer_id"`
+	MetadataForHandlers events.MetadataForUsedSpaceHandler
 }
 
 func (req *CreateEventRequest) BindAndValidate(eCtx echo.Context) error {
@@ -44,7 +45,7 @@ func (req *CreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateEventRequest)
 	acc := ajwt.GetAccesses(ctx)
 	if acc == nil {
@@ -54,7 +55,7 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 	view := events.View{}
 
 	// check the box exists and is not closed
-	if err := events.MustBoxBeOpen(ctx, bs.db, req.boxID); err != nil {
+	if err := events.MustBoxBeOpen(ctx, bs.DB, req.boxID); err != nil {
 		return view, merror.Transform(err).Describe("checking open")
 	}
 
@@ -63,22 +64,24 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 	if err != nil {
 		return nil, err
 	}
+	// used for computing newBoxUsedSpace in handlers
+	event.MetadataForHandlers = req.MetadataForHandlers
 
 	// call the proper event handlers
 	handler := events.Handler(event.Type)
 	for _, do := range handler.Do {
-		if err := do(ctx, &event, bs.db, bs.redConn, bs.identities); err != nil {
+		if err := do(ctx, &event, bs.DB, bs.RedConn, bs.Identities); err != nil {
 			return nil, merror.Transform(err).Describef("during %s event", event.Type)
 		}
 	}
 
 	// TODO (code structure): use handlers
 	if event.Type == "msg.delete" {
-		return bs.deleteMessage(ctx, event, handler)
+		return bs.deleteMessage(ctx, &event, handler)
 	}
 	// TODO (code structure): use handlers
 	if event.Type == "msg.edit" {
-		return bs.editMessage(ctx, event, handler)
+		return bs.editMessage(ctx, &event, handler)
 	}
 
 	// not important to wait for after handlers to return
@@ -86,14 +89,14 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq entrypoints.Re
 	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), acc), logger.CtxKey{}, logger.FromCtx(ctx))
 	go func(ctx context.Context, e events.Event) {
 		for _, after := range handler.After {
-			if err := after(ctx, &e, bs.db, bs.redConn, bs.identities); err != nil {
+			if err := after(ctx, &e, bs.DB, bs.RedConn, bs.Identities); err != nil {
 				// we log the error but we don’t return it
 				logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", e.Type)
 			}
 		}
 	}(subCtx, event)
 
-	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.identities)
+	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.Identities)
 	if err != nil {
 		return view, merror.Transform(err).Describe("retrieving identities for view")
 	}

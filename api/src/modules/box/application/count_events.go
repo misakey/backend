@@ -8,8 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
 
@@ -24,18 +24,18 @@ func (req *CountEventsRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) CountEvents(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) CountEvents(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CountEventsRequest)
 	acc := ajwt.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
 
-	if err := events.MustHaveAccess(ctx, bs.db, bs.identities, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustHaveAccess(ctx, bs.DB, bs.Identities, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 
-	count, err := events.CountByBoxID(ctx, bs.db, req.boxID)
+	count, err := events.CountByBoxID(ctx, bs.DB, req.boxID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("counting sender boxes")
 	}

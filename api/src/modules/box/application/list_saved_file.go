@@ -8,8 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
@@ -26,7 +26,7 @@ func (req *ListSavedFilesRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) ListSavedFiles(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) ListSavedFiles(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListSavedFilesRequest)
 
 	access := ajwt.GetAccesses(ctx)
@@ -39,5 +39,5 @@ func (bs *BoxApplication) ListSavedFiles(ctx context.Context, genReq entrypoints
 		return nil, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
 	}
 
-	return files.ListSavedFilesByIdentityID(ctx, bs.db, req.IdentityID)
+	return files.ListSavedFilesByIdentityID(ctx, bs.DB, req.IdentityID)
 }

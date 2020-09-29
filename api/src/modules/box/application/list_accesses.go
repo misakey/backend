@@ -7,9 +7,9 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
 type ListAccessesRequest struct {
@@ -23,7 +23,7 @@ func (req *ListAccessesRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) ListAccesses(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) ListAccesses(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListAccessesRequest)
 
 	// retrieve accesses to filters boxes to return
@@ -31,16 +31,16 @@ func (bs *BoxApplication) ListAccesses(ctx context.Context, genReq entrypoints.R
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustBeAdmin(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustBeAdmin(ctx, bs.DB, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 
-	accessEvents, err := events.FindActiveAccesses(ctx, bs.db, req.boxID)
+	accessEvents, err := events.FindActiveAccesses(ctx, bs.DB, req.boxID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting sender accesses")
 	}
 
-	sendersMap, err := events.MapSenderIdentities(ctx, accessEvents, bs.identities)
+	sendersMap, err := events.MapSenderIdentities(ctx, accessEvents, bs.Identities)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("retrieving events senders")
 	}

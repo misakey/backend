@@ -11,11 +11,11 @@ import (
 
 // AuthFlowHTTP provides function to bind to routes interacting with login flow
 type AuthFlowHTTP struct {
-	service application.SSOService
+	service *application.SSOService
 }
 
 // NewAuthFlowHTTP is AuthFlowHTTP constructor
-func NewAuthFlowHTTP(service application.SSOService) *AuthFlowHTTP {
+func NewAuthFlowHTTP(service *application.SSOService) *AuthFlowHTTP {
 	return &AuthFlowHTTP{
 		service: service,
 	}

@@ -10,11 +10,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/keyshares"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/quota"
 )
 
 type DeleteBoxRequest struct {
@@ -35,7 +36,7 @@ func (req *DeleteBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*DeleteBoxRequest)
 
 	acc := ajwt.GetAccesses(ctx)
@@ -44,18 +45,18 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq entrypoints.Requ
 	}
 
 	// 1. verify the deletion sender is an admin of the box
-	if err := events.MustBeAdmin(ctx, bs.db, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustBeAdmin(ctx, bs.DB, req.boxID, acc.IdentityID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")
 	}
 
 	// get box files before deleting events
-	boxFileIDs, err := events.ListFilesID(ctx, bs.db, req.boxID)
+	boxFileIDs, err := events.ListFilesID(ctx, bs.DB, req.boxID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting files")
 	}
 
 	// init a transaction to ensure all entities are removed
-	tr, err := bs.db.BeginTx(ctx, nil)
+	tr, err := bs.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("initing transaction")
 	}
@@ -71,23 +72,28 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq entrypoints.Requ
 		return nil, merror.Transform(err).Describe("emptying keyshares")
 	}
 
+	// 4. Delete the box used space
+	if err := quota.DeleteBoxUsedSpace(ctx, tr, req.boxID); err != nil {
+		return nil, merror.Transform(err).Describe("emptying box used space")
+	}
+
 	// run db operations
 	if err := tr.Commit(); err != nil {
 		return nil, err
 	}
 
-	// 4. Delete orphan files
+	// 5. Delete orphan files
 	for _, fileID := range boxFileIDs {
 		// we need to check the existency of fileID
 		// since it is set to "" when msg.delete is called on the msg.file
 		// TODO: clean this up
 		if fileID != "" {
-			isOrphan, err := files.IsOrphan(ctx, bs.db, fileID)
+			isOrphan, err := files.IsOrphan(ctx, bs.DB, fileID)
 			if err != nil {
 				return nil, merror.Transform(err).Describe("checking file is orphan")
 			}
 			if isOrphan {
-				if err := files.Delete(ctx, bs.db, bs.filesRepo, fileID); err != nil {
+				if err := files.Delete(ctx, bs.DB, bs.filesRepo, fileID); err != nil {
 					return nil, merror.Transform(err).Describe("deleting stored file")
 				}
 			}

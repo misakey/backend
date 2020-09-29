@@ -10,8 +10,8 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 	e "gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
@@ -28,11 +28,11 @@ func (req *DownloadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) erro
 	)
 }
 
-func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*DownloadEncryptedFileRequest)
 
 	// check the file does exist
-	_, err := files.Get(ctx, bs.db, req.fileID)
+	_, err := files.Get(ctx, bs.DB, req.fileID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("finding msg.file event")
 	}
@@ -42,7 +42,7 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq entr
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	allowed, err := hasAccessToFile(ctx, bs.db, bs.redConn, bs.identities, req.fileID, acc.IdentityID)
+	allowed, err := hasAccessToFile(ctx, bs.DB, bs.RedConn, bs.Identities, req.fileID, acc.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("checking access to file")
 	}

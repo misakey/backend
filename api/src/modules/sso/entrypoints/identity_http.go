@@ -10,10 +10,10 @@ import (
 )
 
 type IdentityHTTP struct {
-	service application.SSOService
+	service *application.SSOService
 }
 
-func NewIdentityHTTP(service application.SSOService) IdentityHTTP {
+func NewIdentityHTTP(service *application.SSOService) IdentityHTTP {
 	return IdentityHTTP{service: service}
 }
 

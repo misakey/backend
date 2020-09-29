@@ -9,10 +9,10 @@ import (
 )
 
 type CryptoActionsHTTP struct {
-	service application.SSOService
+	service *application.SSOService
 }
 
-func NewCryptoActionsHTTP(service application.SSOService) CryptoActionsHTTP {
+func NewCryptoActionsHTTP(service *application.SSOService) CryptoActionsHTTP {
 	return CryptoActionsHTTP{
 		service: service,
 	}

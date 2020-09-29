@@ -8,9 +8,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
 
@@ -26,7 +26,7 @@ func (req *ReadBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) ReadBox(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) ReadBox(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ReadBoxRequest)
 
 	// check accesses
@@ -34,9 +34,9 @@ func (bs *BoxApplication) ReadBox(ctx context.Context, genReq entrypoints.Reques
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustMemberHaveAccess(ctx, bs.db, bs.redConn, bs.identities, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustMemberHaveAccess(ctx, bs.DB, bs.RedConn, bs.Identities, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 
-	return boxes.Get(ctx, bs.db, bs.identities, req.boxID)
+	return boxes.Get(ctx, bs.DB, bs.Identities, req.boxID)
 }

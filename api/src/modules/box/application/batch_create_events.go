@@ -8,13 +8,13 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 )
 
 type BatchCreateEventRequest struct {
@@ -54,7 +54,7 @@ func (req BatchEvent) Validate() error {
 	)
 }
 
-func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*BatchCreateEventRequest)
 	acc := ajwt.GetAccesses(ctx)
 	if acc == nil {
@@ -62,12 +62,12 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoin
 	}
 
 	// check the box exists and is not closed
-	if err := events.MustBoxBeOpen(ctx, bs.db, req.boxID); err != nil {
+	if err := events.MustBoxBeOpen(ctx, bs.DB, req.boxID); err != nil {
 		return nil, merror.Transform(err).Describe("checking open")
 	}
 
 	// start a transaction to handle all event in one context and potentially rollback all of them
-	tr, err := bs.db.BeginTx(ctx, nil)
+	tr, err := bs.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("initing transaction")
 	}
@@ -85,7 +85,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoin
 		handler := events.Handler(event.Type)
 
 		for _, do := range handler.Do {
-			err = do(ctx, &event, tr, bs.redConn, bs.identities)
+			err = do(ctx, &event, tr, bs.RedConn, bs.Identities)
 			if err != nil {
 				return nil, merror.Transform(err).Describef("doing %s event", event.Type)
 			}
@@ -96,7 +96,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoin
 	// handle post-batching action according to the batch type
 	if req.BatchType == "accesses" {
 		var kicks []events.Event
-		kicks, err = events.KickDeprecatedMembers(ctx, tr, bs.identities, req.boxID, acc.IdentityID)
+		kicks, err = events.KickDeprecatedMembers(ctx, tr, bs.Identities, req.boxID, acc.IdentityID)
 		if err != nil {
 			return nil, merror.Transform(err).Describe("potentially kicking")
 		}
@@ -114,7 +114,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoin
 	go func(ctx context.Context, list []events.Event) {
 		for _, e := range list {
 			for _, after := range events.Handler(e.Type).After {
-				if err := after(ctx, &e, bs.db, bs.redConn, bs.identities); err != nil {
+				if err := after(ctx, &e, bs.DB, bs.RedConn, bs.Identities); err != nil {
 					// we log the error but we don’t return it
 					logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", e.Type)
 				}
@@ -122,7 +122,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq entrypoin
 		}
 	}(subCtx, createdList)
 
-	sendersMap, err := events.MapSenderIdentities(ctx, createdList, bs.identities)
+	sendersMap, err := events.MapSenderIdentities(ctx, createdList, bs.Identities)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("retrieving events senders")
 	}

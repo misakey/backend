@@ -64,10 +64,10 @@ type EventHandler struct {
 var eventTypeHandlerMapping = map[string]EventHandler{
 	"state.lifecycle": {gh(doLifecycle), gh(publish, interrupt)},
 
-	"msg.text":   {gh(doDefault), gh(publish, notify)},
-	"msg.file":   {gh(doDefault), gh(publish, notify)},
-	"msg.edit":   {gh(doReferrer), gh(publish)},
-	"msg.delete": {gh(doReferrer), gh(publish)},
+	"msg.text":   {gh(doDefault), gh(publish, notify, computeUsedSpace)},
+	"msg.file":   {gh(doDefault), gh(publish, notify, computeUsedSpace)},
+	"msg.edit":   {gh(doReferrer), gh(publish, computeUsedSpace)},
+	"msg.delete": {gh(doReferrer), gh(publish, computeUsedSpace)},
 	"access.add": {gh(doAddAccess), gh(empty)},
 	"access.rm":  {gh(doRmAccess), gh(empty)},
 

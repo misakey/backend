@@ -7,9 +7,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
 
@@ -28,7 +28,7 @@ func (req *CreateBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) CreateBox(ctx context.Context, genReq entrypoints.Request) (interface{}, error) {
+func (bs *BoxApplication) CreateBox(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateBoxRequest)
 
 	acc := ajwt.GetAccesses(ctx)
@@ -41,16 +41,16 @@ func (bs *BoxApplication) CreateBox(ctx context.Context, genReq entrypoints.Requ
 		req.Title,
 		req.PublicKey,
 		acc.IdentityID,
-		bs.db,
-		bs.redConn,
-		bs.identities,
+		bs.DB,
+		bs.RedConn,
+		bs.Identities,
 	)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating create event")
 	}
 
 	// build the box view and return it
-	box, err := boxes.Compute(ctx, event.BoxID, bs.db, bs.identities, &event)
+	box, err := boxes.Compute(ctx, event.BoxID, bs.DB, bs.Identities, &event)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("building box")
 	}

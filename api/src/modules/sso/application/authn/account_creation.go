@@ -8,6 +8,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
@@ -83,6 +84,13 @@ func (as *Service) assertAccountCreation(ctx context.Context, challenge string, 
 	if err := as.identityService.Update(ctx, identity); err != nil {
 		return err
 	}
+
+	// set initial quotas
+	_, err = as.quotaService.CreateBase(ctx, identity.ID)
+	if err != nil {
+		logger.FromCtx(ctx).Error().Err(err).Msgf("setting base quota for %s", identity.ID)
+	}
+
 	return nil
 }
 

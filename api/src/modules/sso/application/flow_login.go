@@ -32,7 +32,7 @@ func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) stri
 	// skip indicates if an active session has been detected
 	// we check if login session ACR are high enough to accept authentication
 	if loginCtx.Skip {
-		session, err := sso.authenticationService.GetSession(ctx, loginCtx.SessionID)
+		session, err := sso.AuthenticationService.GetSession(ctx, loginCtx.SessionID)
 		if err == nil {
 			sessionACR = session.ACR
 			// if the session ACR is higher or equivalent to the expected ACR, we accept the login
@@ -55,7 +55,7 @@ func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) stri
 	}
 
 	// store information about the incomming authentication process
-	if err := sso.authenticationService.InitProcess(ctx, loginChallenge, sessionACR, expectedACR); err != nil {
+	if err := sso.AuthenticationService.InitProcess(ctx, loginChallenge, sessionACR, expectedACR); err != nil {
 		return sso.authFlowService.LoginRedirectErr(merror.Transform(err).Describe("initing authn process"))
 	}
 
@@ -162,7 +162,7 @@ func (sso SSOService) RequireAuthableIdentity(ctx context.Context, cmd IdentityA
 
 	// get the appropriate authn step
 	// NOTE: not handled - authnsession ACR
-	step, err := sso.authenticationService.NextStep(ctx, identity, oidc.ACR0, logCtx.OIDCContext.ACRValues())
+	step, err := sso.AuthenticationService.NextStep(ctx, identity, oidc.ACR0, logCtx.OIDCContext.ACRValues())
 	if err != nil {
 		return view, merror.Transform(err).Describe("getting next authn step")
 	}
@@ -266,7 +266,7 @@ func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd)
 	}
 
 	// try to assert the authentication step
-	if err := sso.authenticationService.AssertStep(ctx, logCtx.Challenge, &identity, cmd.Step); err != nil {
+	if err := sso.AuthenticationService.AssertStep(ctx, logCtx.Challenge, &identity, cmd.Step); err != nil {
 		return view, err
 	}
 
@@ -279,7 +279,7 @@ func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd)
 	}
 
 	// upgrade the authentication process
-	process, err := sso.authenticationService.UpgradeProcess(ctx, logCtx.Challenge, identity, cmd.Step.MethodName)
+	process, err := sso.AuthenticationService.UpgradeProcess(ctx, logCtx.Challenge, identity, cmd.Step.MethodName)
 	if err != nil {
 		return view, merror.Transform(err).Describe("upgrading authn process")
 	}

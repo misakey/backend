@@ -9,10 +9,10 @@ import (
 )
 
 type BackupKeyShareHTTP struct {
-	service application.SSOService
+	service *application.SSOService
 }
 
-func NewBackupKeyShareHTTP(service application.SSOService) BackupKeyShareHTTP {
+func NewBackupKeyShareHTTP(service *application.SSOService) BackupKeyShareHTTP {
 	return BackupKeyShareHTTP{service: service}
 }
 

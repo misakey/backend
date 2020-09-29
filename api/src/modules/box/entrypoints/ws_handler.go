@@ -1,24 +1,17 @@
 package entrypoints
 
 import (
-	"database/sql"
-
-	"github.com/go-redis/redis/v7"
-	sentrypoints "gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/application"
 )
 
 type WebsocketHandler struct {
-	redConn        *redis.Client
-	db             *sql.DB
-	identities     sentrypoints.IdentityIntraprocessInterface
+	boxService     *application.BoxApplication
 	allowedOrigins []string
 }
 
-func NewWebsocketHandler(allowedOrigins []string, redConn *redis.Client, db *sql.DB, identities sentrypoints.IdentityIntraprocessInterface) WebsocketHandler {
+func NewWebsocketHandler(allowedOrigins []string, boxService *application.BoxApplication) WebsocketHandler {
 	return WebsocketHandler{
 		allowedOrigins: allowedOrigins,
-		redConn:        redConn,
-		db:             db,
-		identities:     identities,
+		boxService:     boxService,
 	}
 }

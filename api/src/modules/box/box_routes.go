@@ -4,43 +4,44 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/application"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 )
 
-func bindRoutes(router *echo.Echo, bs application.BoxApplication, wsh entrypoints.WebsocketHandler, authzMidlw echo.MiddlewareFunc) {
+func bindRoutes(router *echo.Echo, bs *application.BoxApplication, wsh entrypoints.WebsocketHandler, authzMidlw echo.MiddlewareFunc) {
 	// Boxes
 	boxRouter := router.Group("/boxes")
 
 	// ----------------------
 	// Boxes related routes
 
-	createBox := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.CreateBoxRequest{} },
+	createBox := request.NewProtectedHTTP(
+		func() request.Request { return &application.CreateBoxRequest{} },
 		bs.CreateBox,
-		entrypoints.ResponseCreated,
+		request.ResponseCreated,
 	)
 	boxRouter.POST("", createBox, authzMidlw)
 
-	getBox := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.ReadBoxRequest{} },
+	getBox := request.NewProtectedHTTP(
+		func() request.Request { return &application.ReadBoxRequest{} },
 		bs.ReadBox,
-		entrypoints.ResponseOK,
+		request.ResponseOK,
 	)
 	boxRouter.GET("/:id", getBox, authzMidlw)
 
-	getBoxPublic := entrypoints.NewPublicHTTP(
-		func() entrypoints.Request { return &application.ReadBoxPublicRequest{} },
+	getBoxPublic := request.NewPublicHTTP(
+		func() request.Request { return &application.ReadBoxPublicRequest{} },
 		bs.ReadBoxPublic,
-		entrypoints.ResponseOK,
+		request.ResponseOK,
 	)
 	boxRouter.GET("/:id/public", getBoxPublic)
 
-	countBoxes := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.CountBoxesRequest{} },
+	countBoxes := request.NewProtectedHTTP(
+		func() request.Request { return &application.CountBoxesRequest{} },
 		bs.CountBoxes,
-		entrypoints.ResponseNoContent,
+		request.ResponseNoContent,
 		func(ctx echo.Context, data interface{}) error {
 			ctx.Response().Header().Set("X-Total-Count", strconv.Itoa(data.(int)))
 			return nil
@@ -48,52 +49,52 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, wsh entrypoint
 	)
 	boxRouter.HEAD("/joined", countBoxes, authzMidlw)
 
-	listBoxes := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.ListBoxesRequest{} },
+	listBoxes := request.NewProtectedHTTP(
+		func() request.Request { return &application.ListBoxesRequest{} },
 		bs.ListBoxes,
-		entrypoints.ResponseOK,
+		request.ResponseOK,
 	)
 	boxRouter.GET("/joined", listBoxes, authzMidlw)
 
-	listBoxMembers := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.ListBoxMembersRequest{} },
+	listBoxMembers := request.NewProtectedHTTP(
+		func() request.Request { return &application.ListBoxMembersRequest{} },
 		bs.ListBoxMembers,
-		entrypoints.ResponseOK,
+		request.ResponseOK,
 	)
 	boxRouter.GET("/:id/members", listBoxMembers, authzMidlw)
 
-	deleteBox := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.DeleteBoxRequest{} },
+	deleteBox := request.NewProtectedHTTP(
+		func() request.Request { return &application.DeleteBoxRequest{} },
 		bs.DeleteBox,
-		entrypoints.ResponseNoContent,
+		request.ResponseNoContent,
 	)
 	boxRouter.DELETE("/:id", deleteBox, authzMidlw)
 
 	// ----------------------
 	// Access related routes
-	listAccesses := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.ListAccessesRequest{} },
+	listAccesses := request.NewProtectedHTTP(
+		func() request.Request { return &application.ListAccessesRequest{} },
 		bs.ListAccesses,
-		entrypoints.ResponseOK,
+		request.ResponseOK,
 	)
 	boxRouter.GET("/:id/accesses", listAccesses, authzMidlw)
 
 	// ----------------------
 	// Events related routes
 
-	listEvents := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.ListEventsRequest{} },
+	listEvents := request.NewProtectedHTTP(
+		func() request.Request { return &application.ListEventsRequest{} },
 		bs.ListEvents,
-		entrypoints.ResponseOK,
+		request.ResponseOK,
 	)
 	boxRouter.GET("/:id/events", listEvents, authzMidlw)
 
 	boxRouter.GET("/:id/events/ws", wsh.ListEventsWS, authzMidlw)
 
-	countEvents := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.CountEventsRequest{} },
+	countEvents := request.NewProtectedHTTP(
+		func() request.Request { return &application.CountEventsRequest{} },
 		bs.CountEvents,
-		entrypoints.ResponseNoContent,
+		request.ResponseNoContent,
 		func(ctx echo.Context, data interface{}) error {
 			ctx.Response().Header().Set("X-Total-Count", strconv.Itoa(data.(int)))
 			return nil
@@ -101,31 +102,31 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, wsh entrypoint
 	)
 	boxRouter.HEAD("/:id/events", countEvents, authzMidlw)
 
-	postEvents := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.CreateEventRequest{} },
+	postEvents := request.NewProtectedHTTP(
+		func() request.Request { return &application.CreateEventRequest{} },
 		bs.CreateEvent,
-		entrypoints.ResponseCreated,
+		request.ResponseCreated,
 	)
 	boxRouter.POST("/:id/events", postEvents, authzMidlw)
 
-	batchPostEvents := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.BatchCreateEventRequest{} },
+	batchPostEvents := request.NewProtectedHTTP(
+		func() request.Request { return &application.BatchCreateEventRequest{} },
 		bs.BatchCreateEvent,
-		entrypoints.ResponseCreated,
+		request.ResponseCreated,
 	)
 	boxRouter.POST("/:id/batch-events", batchPostEvents, authzMidlw)
 
-	uploadEncryptedFile := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.UploadEncryptedFileRequest{} },
+	uploadEncryptedFile := request.NewProtectedHTTP(
+		func() request.Request { return &application.UploadEncryptedFileRequest{} },
 		bs.UploadEncryptedFile,
-		entrypoints.ResponseCreated,
+		request.ResponseCreated,
 	)
 	boxRouter.POST("/:bid/encrypted-files", uploadEncryptedFile, authzMidlw)
 
-	newEventsCount := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.AckNewEventsCountRequest{} },
+	newEventsCount := request.NewProtectedHTTP(
+		func() request.Request { return &application.AckNewEventsCountRequest{} },
 		bs.AckNewEventsCount,
-		entrypoints.ResponseNoContent,
+		request.ResponseNoContent,
 	)
 	boxRouter.PUT("/:id/new-events-count/ack", newEventsCount, authzMidlw)
 
@@ -134,17 +135,17 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, wsh entrypoint
 
 	keyShareRouter := router.Group("/box-key-shares", authzMidlw)
 
-	createKeyShare := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.CreateKeyShareRequest{} },
+	createKeyShare := request.NewProtectedHTTP(
+		func() request.Request { return &application.CreateKeyShareRequest{} },
 		bs.CreateKeyShare,
-		entrypoints.ResponseCreated,
+		request.ResponseCreated,
 	)
 	keyShareRouter.POST("", createKeyShare)
 
-	getKeyShare := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.GetKeyShareRequest{} },
+	getKeyShare := request.NewProtectedHTTP(
+		func() request.Request { return &application.GetKeyShareRequest{} },
 		bs.GetKeyShare,
-		entrypoints.ResponseOK,
+		request.ResponseOK,
 	)
 	keyShareRouter.GET("/:other-share-hash", getKeyShare)
 
@@ -153,24 +154,24 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, wsh entrypoint
 
 	savedFileRouter := router.Group("/saved-files", authzMidlw)
 
-	createSavedFile := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.CreateSavedFileRequest{} },
+	createSavedFile := request.NewProtectedHTTP(
+		func() request.Request { return &application.CreateSavedFileRequest{} },
 		bs.CreateSavedFile,
-		entrypoints.ResponseCreated,
+		request.ResponseCreated,
 	)
 	savedFileRouter.POST("", createSavedFile)
 
-	deleteSavedFile := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.DeleteSavedFileRequest{} },
+	deleteSavedFile := request.NewProtectedHTTP(
+		func() request.Request { return &application.DeleteSavedFileRequest{} },
 		bs.DeleteSavedFile,
-		entrypoints.ResponseNoContent,
+		request.ResponseNoContent,
 	)
 	savedFileRouter.DELETE("/:id", deleteSavedFile)
 
-	listSavedFiles := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.ListSavedFilesRequest{} },
+	listSavedFiles := request.NewProtectedHTTP(
+		func() request.Request { return &application.ListSavedFilesRequest{} },
 		bs.ListSavedFiles,
-		entrypoints.ResponseOK,
+		request.ResponseOK,
 	)
 	savedFileRouter.GET("", listSavedFiles)
 
@@ -178,10 +179,39 @@ func bindRoutes(router *echo.Echo, bs application.BoxApplication, wsh entrypoint
 	// Encrypted Files related routes
 	encryptedFileRouter := router.Group("/encrypted-files", authzMidlw)
 
-	downloadEncryptedFile := entrypoints.NewProtectedHTTP(
-		func() entrypoints.Request { return &application.DownloadEncryptedFileRequest{} },
+	downloadEncryptedFile := request.NewProtectedHTTP(
+		func() request.Request { return &application.DownloadEncryptedFileRequest{} },
 		bs.DownloadEncryptedFile,
-		entrypoints.ResponseBlob,
+		request.ResponseBlob,
 	)
 	encryptedFileRouter.GET("/:id", downloadEncryptedFile, authzMidlw)
+
+	// ----------------------
+	// box-users related routes
+	boxUserRouter := router.Group("/box-users", authzMidlw)
+
+	listStorageQuota := request.NewProtectedHTTP(
+		func() request.Request { return &application.ListUserStorageQuotaRequest{} },
+		bs.ListUserStorageQuota,
+		request.ResponseOK,
+	)
+	boxUserRouter.GET("/:id/storage-quota", listStorageQuota, authzMidlw)
+
+	getUserVaultSpace := request.NewProtectedHTTP(
+		func() request.Request { return &application.GetVaultUsedSpaceRequest{} },
+		bs.GetVaultUsedSpace,
+		request.ResponseOK,
+	)
+	boxUserRouter.GET("/:id/vault-used-space", getUserVaultSpace, authzMidlw)
+
+	// ----------------------
+	// box-used-space related routes
+	boxUsedSpacesRouter := router.Group("/box-used-spaces", authzMidlw)
+
+	listBoxUsedSpace := request.NewProtectedHTTP(
+		func() request.Request { return &application.ListBoxUsedSpaceRequest{} },
+		bs.ListBoxUsedSpace,
+		request.ResponseOK,
+	)
+	boxUsedSpacesRouter.GET("", listBoxUsedSpace, authzMidlw)
 }
