@@ -142,29 +142,35 @@ func MustHaveAccess(
 		return err
 	}
 
-	// 3. if no access exists or the box is closed, only the admins has access to
+	// 3. if no access exists, only the admins has access to
+	if len(accesses) == 0 {
+		return merror.Forbidden().Describe("must be an admin").Detail("reason", "no_access")
+	}
+
+	// 4. if the box is closed, only the admins has access to
 	closedBox, err := isClosed(ctx, exec, boxID)
 	if err != nil {
 		return err
 	}
-	if len(accesses) == 0 || closedBox {
-		return merror.Forbidden().Describe("must be an admin").Detail("reason", "no_access")
+
+	if closedBox {
+		return merror.Forbidden().Describe("cannot access a closed box").Detail("reason", "closed")
 	}
 
-	// 4. consider the box can be public to return directly
+	// 5. consider the box can be public to return directly
 	// further security barriers exists because of encryption if the box is public
 	// but was not shared
 	if isPublic(ctx, accesses) {
 		return nil
 	}
 
-	// 5. if the box isn't public, get the identity to check whitelist rules
+	// 6. if the box isn't public, get the identity to check whitelist rules
 	identity, err := identities.Get(ctx, identityID)
 	if err != nil {
 		return merror.Transform(err).Describe("getting identity for access check")
 	}
 
-	// 6. check restriction rules
+	// 7. check restriction rules
 	for _, access := range accesses {
 		c := accessContent{}
 		// on marshal error the box is locked and considered as not public
