@@ -75,6 +75,11 @@ func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, e
 		logger.FromCtx(ctx).Warn().Err(err).Msgf("invalidating the cache")
 	}
 
+	// send notification to creator
+	if err := notify(ctx, &event, exec, redConn, identities); err != nil {
+		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not send create notification for box %s", event.BoxID)
+	}
+
 	return event, nil
 }
 

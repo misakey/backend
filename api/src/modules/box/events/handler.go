@@ -62,7 +62,7 @@ type EventHandler struct {
 // Do handler is at least responsible for making the event persistent in storage (some events might do it differently though).
 // After handler must perform non-critical actions that might fail without altering the state of the box.
 var eventTypeHandlerMapping = map[string]EventHandler{
-	"state.lifecycle": {gh(doLifecycle), gh(publish, interrupt)},
+	"state.lifecycle": {gh(doLifecycle), gh(publish, notify, interrupt)},
 
 	"msg.text":   {gh(doDefault), gh(publish, notify, computeUsedSpace)},
 	"msg.file":   {gh(doDefault), gh(publish, notify, computeUsedSpace)},

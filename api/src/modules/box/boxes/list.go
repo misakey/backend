@@ -7,9 +7,9 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/cache"
@@ -17,8 +17,8 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
-func Get(ctx context.Context, exec boil.ContextExecutor, identities entrypoints.IdentityIntraprocessInterface, boxID string) (Box, error) {
-	return Compute(ctx, boxID, exec, identities, nil)
+func Get(ctx context.Context, exec boil.ContextExecutor, identities entrypoints.IdentityIntraprocessInterface, boxID string) (events.Box, error) {
+	return events.Compute(ctx, boxID, exec, identities, nil)
 }
 
 func CountForSender(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, senderID string) (int, error) {
@@ -33,8 +33,8 @@ func ListSenderBoxes(
 	identities entrypoints.IdentityIntraprocessInterface,
 	senderID string,
 	limit, offset int,
-) ([]*Box, error) {
-	boxes := []*Box{}
+) ([]*events.Box, error) {
+	boxes := []*events.Box{}
 	// 1. retrieve lastest events concerning the user's boxes
 	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID)
 	if err != nil {
@@ -54,29 +54,21 @@ func ListSenderBoxes(
 	}
 
 	// 3. compute all boxes
-	boxes = make([]*Box, len(list))
+	boxes = make([]*events.Box, len(list))
 	for i, e := range list {
 		// TODO (perf): computation in redis
-		box, err := Compute(ctx, e.BoxID, exec, identities, &e)
+		box, err := events.Compute(ctx, e.BoxID, exec, identities, &e)
 		if err != nil {
 			return boxes, merror.Transform(err).Describef("computing box %s", e.BoxID)
 		}
 		boxes[i] = &box
 	}
 
-	// 4. add the new events count for the requesting identity
-	eventsCount, err := events.GetCountsForIdentity(ctx, redConn, senderID)
-	if err != nil {
-		return nil, merror.Transform(err).Describe("getting new events count")
-	}
 	for _, box := range boxes {
-		// if there is no value for a given box
-		// that means no new event since last visit
-		count, ok := eventsCount[box.ID]
-		if !ok {
-			box.EventsCount = 0
-		}
-		box.EventsCount = count
+		// we won’t return an error since the list
+		// can still be returned
+		// with a wrong amount of event counts
+		box.EventsCount = events.ComputeCount(ctx, redConn, senderID, box.ID)
 	}
 
 	// 5. eventually return the boxes list
@@ -114,8 +106,10 @@ func LastSenderBoxIDs(
 	}
 
 	// 3. update cache
-	if _, err := redConn.SAdd(cache.GetSenderBoxesKey(senderID), slice.StringSliceToInterfaceSlice(boxIDs)...).Result(); err != nil {
-		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not build boxes cache for %s", senderID)
+	if len(boxIDs) > 0 {
+		if _, err := redConn.SAdd(cache.GetSenderBoxesKey(senderID), slice.StringSliceToInterfaceSlice(boxIDs)...).Result(); err != nil {
+			logger.FromCtx(ctx).Warn().Err(err).Msgf("could not build boxes cache for %s", senderID)
+		}
 	}
 
 	return boxIDs, nil

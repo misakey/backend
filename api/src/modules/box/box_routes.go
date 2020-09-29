@@ -130,6 +130,14 @@ func bindRoutes(router *echo.Echo, bs *application.BoxApplication, wsh entrypoin
 	)
 	boxRouter.PUT("/:id/new-events-count/ack", newEventsCount, authzMidlw)
 
+	// Boxes
+	boxUsersRouter := router.Group("/box-users")
+
+	// ----------------------
+	// Box Users related routes
+
+	boxUsersRouter.GET("/:id/ws", wsh.BoxUsersWS, authzMidlw)
+
 	// ----------------------
 	// Box Key Shares related routes
 

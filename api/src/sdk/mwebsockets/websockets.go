@@ -25,7 +25,8 @@ var (
 type Websocket struct {
 	Websocket *websocket.Conn
 	Send      chan WebsocketMessage
-	Receive   chan error
+	Receive   chan ReceivedMessage
+	Handler   chan []byte
 	Interrupt chan struct{}
 	EndPump   chan struct{}
 
@@ -34,6 +35,11 @@ type Websocket struct {
 
 type WebsocketMessage struct {
 	Msg string
+}
+
+type ReceivedMessage struct {
+	msg []byte
+	err error
 }
 
 func NewWebsocket(
@@ -65,7 +71,8 @@ func NewWebsocket(
 	ws := &Websocket{
 		Websocket: wsConn,
 		Send:      make(chan WebsocketMessage, sendQueueSize),
-		Receive:   make(chan error),
+		Receive:   make(chan ReceivedMessage),
+		Handler:   make(chan []byte),
 		EndPump:   make(chan struct{}),
 		Interrupt: make(chan struct{}),
 		ID:        "ws_" + id,
@@ -120,9 +127,9 @@ func (ws *Websocket) listener(eCtx echo.Context) {
 	for {
 		// NOTE: manage normal message when the client
 		// communicates with the server
-		_, _, err := ws.Websocket.ReadMessage()
+		_, msg, err := ws.Websocket.ReadMessage()
+		ws.Receive <- ReceivedMessage{msg: msg, err: err}
 		if err != nil {
-			ws.Receive <- err
 			return
 		}
 	}
@@ -148,12 +155,13 @@ func (ws *Websocket) readPump(eCtx echo.Context) error {
 
 	for {
 		select {
-		case err := <-ws.Receive:
-			logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: read message: %s", ws.ID, err.Error())
-			if websocket.IsCloseError(err, websocket.CloseAbnormalClosure) {
-				return err
+		case recMsg := <-ws.Receive:
+			if recMsg.err != nil {
+				logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: error message: %s", ws.ID, recMsg.err.Error())
+				return nil
 			}
-			return nil
+			logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: read message: %s", ws.ID, recMsg.msg)
+			ws.Handler <- recMsg.msg
 		case <-ws.Interrupt:
 			// trying to gracefully close the socket
 			_ = ws.SendCloseMessage()

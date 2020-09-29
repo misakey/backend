@@ -55,6 +55,12 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request)
 		return nil, merror.Transform(err).Describe("getting files")
 	}
 
+	// get box members (to notify them)
+	memberIDs, err := events.ListBoxMemberIDs(ctx, bs.DB, bs.RedConn, req.boxID)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("getting members list")
+	}
+
 	// init a transaction to ensure all entities are removed
 	tr, err := bs.DB.BeginTx(ctx, nil)
 	if err != nil {
@@ -99,6 +105,9 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request)
 			}
 		}
 	}
+
+	// 5. Send event to websockets
+	events.SendDeleteBox(ctx, bs.RedConn, req.boxID, acc.IdentityID, memberIDs)
 
 	return nil, nil
 

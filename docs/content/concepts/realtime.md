@@ -169,3 +169,61 @@ Here are the events that can be received on this socket:
     "referrer_id": "(string) uuid of the corresponding join event"
 }
 ```
+
+## Notifications
+
+### Server to Client
+
+Notifications object are:
+
+```json
+{
+    "type": "<type>",
+    "object": {
+        <object>
+    }
+}
+```
+
+with `type` being `box` for any box event or `box-delete` for a box deletion.
+
+Object can be different types:
+
+#### `box` type
+
+This message is sent when a event is worth notify the user on a given box.
+
+```json
+{{% include include/box.json %}}
+```
+
+#### `box-delete` type
+
+This message notify a box deletion.
+
+```json
+{
+    "sender_id": "<uuid>",
+    "box_id": "<uuid>"
+}
+```
+
+### Client to server
+
+Server accepts only events of the type `ack`:
+
+#### `ack` type
+
+These messages are sent when a user want to acknowledge the events count on a box.
+
+This set the events count to 0 for the user on the box.
+
+```json
+{
+    "type": "ack",
+    "object": {
+        "sender_id": "<uuid>",
+        "box_id": "<uuid>"
+    }
+}
+```

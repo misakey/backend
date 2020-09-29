@@ -28,7 +28,7 @@ func isAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID str
 	return (err == nil), err
 }
 
-func getAdminID(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
+func GetAdminID(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
 	createEvent, err := get(ctx, exec, eventFilters{
 		eType: null.StringFrom("create"),
 		boxID: null.StringFrom(boxID),

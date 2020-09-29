@@ -6,10 +6,9 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/cache"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
@@ -118,122 +117,4 @@ func isMember(
 	}
 	// return false admin if an error has occured
 	return (err == nil), err
-}
-
-// increment count for all identities except the sender
-func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
-	// retrieve all member ids excepted the sender id
-	// we build a set to find all uniq actors
-	memberIDs, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
-	if err != nil {
-		return merror.Transform(err).Describe("notifying member: listing members")
-	}
-	// delete the notification sender id from the list
-	for i, id := range memberIDs {
-		if id == e.SenderID {
-			memberIDs = append(memberIDs[:i], memberIDs[i+1:]...)
-			break
-		}
-	}
-
-	// incr counts for a given box for all received identityIDs
-	return incrCounts(ctx, redConn, memberIDs, e.BoxID)
-}
-
-// send event to realtime channels
-func publish(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
-	senderIdentities, err := MapSenderIdentities(ctx, []Event{*e}, identities)
-	if err != nil {
-		return merror.Transform(err).Describe("getting sender information")
-	}
-
-	view, err := FormatEvent(*e, senderIdentities)
-	if err != nil {
-		return merror.Transform(err).Describe("formatting event")
-	}
-
-	serializedEvent, err := view.ToJSON()
-	if err != nil {
-		return merror.Internal().Describe("encoding event to json")
-	}
-	redConn.Publish(e.BoxID+":events", serializedEvent)
-
-	return nil
-}
-
-// send interrupt messages to close realtime channels
-func interrupt(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
-	// on a leave event
-	// close sockets for the leaving member
-	if e.Type == etype.Memberleave {
-		sendInterruption(ctx, redConn, e.SenderID, e.BoxID)
-		// on a kicked event
-		// close sockets for the kicked member
-	} else if e.Type == etype.Memberkick {
-		var c MemberKickContent
-		if err := e.JSONContent.Unmarshal(&c); err != nil {
-			return merror.Transform(err).Describe("marshalling lifecycle content")
-		}
-		sendInterruption(ctx, redConn, c.KickedMemberID, e.BoxID)
-		// on a close event
-		// close sockets for all members except the admin
-	} else if e.Type == etype.Statelifecycle {
-		var c StateLifecycleContent
-		if err := e.JSONContent.Unmarshal(&c); err != nil {
-			return merror.Transform(err).Describe("marshalling lifecycle content")
-		}
-		if c.State == "closed" {
-			// get all members
-			memberIDs, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
-			if err != nil {
-				return merror.Transform(err).Describe("getting members list")
-			}
-			// get admin
-			adminID, err := getAdminID(ctx, exec, e.BoxID)
-			if err != nil {
-				return merror.Transform(err).Describe("getting admin id")
-			}
-			// send interruption if not creator
-			for _, memberID := range memberIDs {
-				if memberID != adminID {
-					sendInterruption(ctx, redConn, memberID, e.BoxID)
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func sendInterruption(ctx context.Context, redConn *redis.Client, senderID, boxID string) {
-	logger.
-		FromCtx(ctx).
-		Debug().
-		Msgf("sending interruption message to %s:%s", boxID, senderID)
-	if _, err := redConn.Publish("interrupt:"+boxID+":"+senderID, []byte("stop")).Result(); err != nil {
-		logger.FromCtx(ctx).Error().Err(err).Msgf("interrupting channel interrupt:%s:%s", boxID, senderID)
-	}
-}
-
-func invalidateCaches(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
-	_, err := redConn.Del(cache.GetBoxMembersKey(e.BoxID)).Result()
-	if err != nil {
-		logger.FromCtx(ctx).Warn().Msgf("could not invalidate cache %s:members", e.BoxID)
-	}
-
-	var senderID string
-	if e.Type == etype.Memberkick {
-		var content MemberKickContent
-		if err := e.JSONContent.Unmarshal(&content); err != nil {
-			logger.FromCtx(ctx).Warn().Msgf("could not unmarshall member.kick %s content", e.ID)
-		}
-		senderID = content.KickedMemberID
-	} else {
-		senderID = e.SenderID
-	}
-	_, err = redConn.Del(cache.GetSenderBoxesKey(senderID)).Result()
-	if err != nil {
-		logger.FromCtx(ctx).Warn().Msgf("could not invalidate cache %s:boxes", senderID)
-	}
-
-	return nil
 }

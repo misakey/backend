@@ -9,7 +9,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
 
@@ -50,9 +49,10 @@ func (bs *BoxApplication) CreateBox(ctx context.Context, genReq request.Request)
 	}
 
 	// build the box view and return it
-	box, err := boxes.Compute(ctx, event.BoxID, bs.DB, bs.Identities, &event)
+	box, err := events.Compute(ctx, event.BoxID, bs.DB, bs.Identities, &event)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("building box")
 	}
+
 	return box, nil
 }

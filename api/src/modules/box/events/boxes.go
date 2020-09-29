@@ -1,7 +1,8 @@
-package boxes
+package events
 
 import (
 	"context"
+	"time"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 
@@ -10,15 +11,44 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/identities"
 )
 
+// Box is a volatile object built based on events linked to its ID
+type Box struct {
+	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"server_created_at"`
+	PublicKey string    `json:"public_key"`
+	Title     string    `json:"title"`
+	Lifecycle string    `json:"lifecycle"`
+
+	// aggregated data
+	EventsCount int        `json:"events_count"`
+	Creator     SenderView `json:"creator"`
+	LastEvent   View       `json:"last_event"`
+}
+
+func MustBeAtLeastLevel20(
+	ctx context.Context,
+	exec boil.ContextExecutor,
+	identities entrypoints.IdentityIntraprocessInterface,
+	identityID string,
+) error {
+	identity, err := identities.Get(ctx, identityID)
+	if err != nil {
+		return merror.Transform(err).Describe("Getting identity")
+	}
+	if identity.Level < 20 {
+		return merror.Forbidden().Detail("level", merror.DVInvalid)
+	}
+	return nil
+}
+
 type computer struct {
 	// binding of event type - play func
-	ePlayer map[string]func(context.Context, events.Event) error
+	ePlayer map[string]func(context.Context, Event) error
 
-	events []events.Event
+	events []Event
 
 	exec       boil.ContextExecutor
 	identities entrypoints.IdentityIntraprocessInterface
@@ -28,8 +58,8 @@ type computer struct {
 
 	// local save for internal logic
 	creatorID  string
-	closeEvent *events.Event
-	lastEvent  *events.Event
+	closeEvent *Event
+	lastEvent  *Event
 }
 
 // ComputeBox box according to the received boxID.
@@ -40,7 +70,7 @@ func Compute(
 	boxID string,
 	exec boil.ContextExecutor,
 	identities entrypoints.IdentityIntraprocessInterface,
-	lastEvent *events.Event,
+	lastEvent *Event,
 ) (Box, error) {
 	// init the computer system
 	computer := &computer{
@@ -49,7 +79,7 @@ func Compute(
 		box:        Box{ID: boxID},
 		lastEvent:  lastEvent,
 	}
-	computer.ePlayer = map[string]func(context.Context, events.Event) error{
+	computer.ePlayer = map[string]func(context.Context, Event) error{
 		// NOTE: to add an new event here should involve attention on the RequireToBuild method
 		// used to retrieve events to compute the box
 		"create":          computer.playCreate,
@@ -58,7 +88,7 @@ func Compute(
 
 	// automatically retrieve events if 0 events loaded
 	var err error
-	computer.events, err = events.ListForBuild(ctx, computer.exec, computer.box.ID)
+	computer.events, err = ListForBuild(ctx, computer.exec, computer.box.ID)
 	if err != nil {
 		return computer.box, err
 	}
@@ -82,7 +112,7 @@ func (c *computer) do(ctx context.Context) error {
 	return c.handleLast(ctx)
 }
 
-func (c *computer) playEvent(ctx context.Context, e events.Event) error {
+func (c *computer) playEvent(ctx context.Context, e Event) error {
 	// play the event
 	if play, ok := c.ePlayer[e.Type]; ok {
 		if err := play(ctx, e); err != nil {
@@ -101,19 +131,19 @@ func (c *computer) handleLast(ctx context.Context) error {
 		c.lastEvent = c.closeEvent
 		c.box.PublicKey = ""
 	} else if c.lastEvent == nil { // retrieve last event if not already there
-		last, err := events.GetLast(ctx, c.exec, c.box.ID)
+		last, err := GetLast(ctx, c.exec, c.box.ID)
 		if err != nil {
 			return merror.Transform(err).Describe("getting last event")
 		}
 		c.lastEvent = &last
 	}
 
-	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{*c.lastEvent}, c.identities)
+	identityMap, err := MapSenderIdentities(ctx, []Event{*c.lastEvent}, c.identities)
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving identities for view")
 	}
 
-	view, err := events.FormatEvent(*c.lastEvent, identityMap)
+	view, err := FormatEvent(*c.lastEvent, identityMap)
 	if err != nil {
 		return merror.Transform(err).Describe("computing view of last event")
 	}
@@ -121,9 +151,9 @@ func (c *computer) handleLast(ctx context.Context) error {
 	return nil
 }
 
-func (c *computer) playCreate(ctx context.Context, e events.Event) error {
+func (c *computer) playCreate(ctx context.Context, e Event) error {
 	c.box.CreatedAt = e.CreatedAt
-	CreationContent := events.CreationContent{}
+	CreationContent := CreationContent{}
 	if err := CreationContent.Unmarshal(e.JSONContent); err != nil {
 		return err
 	}
@@ -139,13 +169,13 @@ func (c *computer) playCreate(ctx context.Context, e events.Event) error {
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving creator")
 	}
-	c.box.Creator = events.NewSenderView(identity)
+	c.box.Creator = NewSenderView(identity)
 	return nil
 }
 
 // today, state if only about lifecycle
-func (c *computer) playState(_ context.Context, e events.Event) error {
-	content := events.StateLifecycleContent{}
+func (c *computer) playState(_ context.Context, e Event) error {
+	content := StateLifecycleContent{}
 	if err := e.JSONContent.Unmarshal(&content); err != nil {
 		return err
 	}

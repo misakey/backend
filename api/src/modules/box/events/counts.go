@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-redis/redis/v7"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/cache"
@@ -45,7 +46,7 @@ func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID
 }
 
 // incrCounts for a given box for all received identityIDs
-func incrCounts(ctx context.Context, redConn *redis.Client, identityIDs []string, boxID string) error {
+func IncrCounts(ctx context.Context, redConn *redis.Client, identityIDs []string, boxID string) error {
 	pipe := redConn.TxPipeline()
 	for _, identityID := range identityIDs {
 		if _, err := pipe.Incr(cache.GetEventCountKey(identityID, boxID)).Result(); err != nil {
@@ -56,4 +57,19 @@ func incrCounts(ctx context.Context, redConn *redis.Client, identityIDs []string
 		return err
 	}
 	return nil
+}
+
+func ComputeCount(ctx context.Context, redConn *redis.Client, senderID, boxID string) int {
+	eventsCount, err := GetCountsForIdentity(ctx, redConn, senderID)
+	if err != nil {
+		logger.FromCtx(ctx).Error().Err(err).Msgf("could not get events count for %s:%s", senderID, boxID)
+		return 0
+	}
+	// if there is no value for a given box
+	// that means no new event since last visit
+	count, ok := eventsCount[boxID]
+	if !ok {
+		return 0
+	}
+	return count
 }
