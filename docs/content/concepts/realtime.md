@@ -194,7 +194,7 @@ Object can be different types:
 This message is sent when a event is worth notify the user on a given box.
 
 ```json
-{{% include include/box.json %}}
+{{% include "include/box.json" %}}
 ```
 
 #### `box-delete` type
