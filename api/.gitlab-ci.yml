@@ -16,7 +16,7 @@ api:install_mod:
     - .only-api
     - .except-wip-or-non-api-tags
   stage: dep
-  image: golang:1.13
+  image: golang:1.14
   tags:
     - misakey_go
   script:
@@ -33,7 +33,7 @@ api:lint_code:
     - .only-api
     - .except-wip-or-non-api-tags
   stage: test
-  image: golang:1.13
+  image: golang:1.14
   dependencies:
     - api:install_mod
   tags:
@@ -49,7 +49,7 @@ api:unit_tests:
    - .only-api
    - .except-wip-or-non-api-tags
  stage: test
- image: golang:1.13
+ image: golang:1.14
  dependencies:
    - api:install_mod
  tags:

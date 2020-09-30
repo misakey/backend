@@ -1,6 +1,6 @@
 module gitlab.misakey.dev/misakey/backend/api
 
-go 1.13
+go 1.14
 
 require (
 	github.com/aws/aws-sdk-go v1.32.10
@@ -18,7 +18,7 @@ require (
 	github.com/labstack/echo/v4 v4.1.16
 	github.com/lib/pq v1.7.0
 	github.com/magiconair/properties v1.8.4 // indirect
-	github.com/mitchellh/mapstructure v1.3.3
+	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose v2.7.0-rc3+incompatible
