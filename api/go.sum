@@ -299,6 +299,7 @@ github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
 gitlab.misakey.dev/misakey/backend v0.4.8-0.20200923071143-f924acffe243 h1:sry3K9i0D/BtXT2KhcgeJ+LmA+NCr8E88vt4WKkZUDA=
 gitlab.misakey.dev/misakey/backend v0.4.8-0.20200924124249-4edc6b735c18 h1:08/bwyHlXN5SAiXGlbmN62Xv5yAqoNqr/mJsnQYsjYM=
+gitlab.misakey.dev/misakey/backend v0.4.8-0.20200929140645-274b0d82c43b h1:hhx9Ea5FsQUZ91Q/tjtjmUGn2c0HIuTfiSwqYMkEvGQ=
 gitlab.misakey.dev/misakey/backend/api/src/sdk v1.13.0 h1:NWWmkqCgW22W/fUF4Iu9hT3edfEkxxXeyUNjx5OzZHs=
 gitlab.misakey.dev/misakey/backend/api/src/sdk v1.13.0/go.mod h1:Gk71diHNh+Wms/yYaV+TPjJZjZL6zXCZ5fKk4eMqtec=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=

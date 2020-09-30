@@ -9,6 +9,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -73,12 +74,22 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request)
 		return nil, merror.Transform(err).Describe("deleting events")
 	}
 
-	// 3. Delete the key shares
+	// 3. Get public key
+	createEvent, err := events.GetCreateEvent(ctx, bs.DB, req.boxID)
+	if err != nil {
+		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not get publicKey for %s", req.boxID)
+	}
+	creationContent := events.CreationContent{}
+	if err = createEvent.JSONContent.Unmarshal(&creationContent); err != nil {
+		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not get publicKey for %s", req.boxID)
+	}
+
+	// 4. Delete the key shares
 	if err := keyshares.EmptyAll(ctx, tr, req.boxID); err != nil {
 		return nil, merror.Transform(err).Describe("emptying keyshares")
 	}
 
-	// 4. Delete the box used space
+	// 5. Delete the box used space
 	if err := quota.DeleteBoxUsedSpace(ctx, tr, req.boxID); err != nil {
 		return nil, merror.Transform(err).Describe("emptying box used space")
 	}
@@ -88,7 +99,7 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request)
 		return nil, err
 	}
 
-	// 5. Delete orphan files
+	// 6. Delete orphan files
 	for _, fileID := range boxFileIDs {
 		// we need to check the existency of fileID
 		// since it is set to "" when msg.delete is called on the msg.file
@@ -106,8 +117,8 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request)
 		}
 	}
 
-	// 5. Send event to websockets
-	events.SendDeleteBox(ctx, bs.RedConn, req.boxID, acc.IdentityID, memberIDs)
+	// 7. Send event to websockets
+	events.SendDeleteBox(ctx, bs.RedConn, req.boxID, acc.IdentityID, memberIDs, creationContent.PublicKey)
 
 	return nil, nil
 

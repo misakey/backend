@@ -23,7 +23,7 @@ func NewLogger() echo.MiddlewareFunc {
 }
 
 // NewZerologLogger instantiates a zerolog Logger and add it to context
-func NewZerologLogger() echo.MiddlewareFunc {
+func NewZerologLogger(logLevel string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
@@ -52,7 +52,7 @@ func NewZerologLogger() echo.MiddlewareFunc {
 
 			// set some values added to all logs
 			l := logger.
-				ZerologLogger().
+				ZerologLogger(logLevel).
 				With().
 				Str("request_id", requestID).
 				Str("fapi_interaction_id", fapiInterID).

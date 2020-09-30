@@ -15,9 +15,9 @@ import (
 
 type MemberKickContent struct {
 	// Stored but not in json
-	KickedMemberID string `json:"kicked_member_id,omitempty"`
+	KickerID string `json:"kicker_id,omitempty"`
 	// in json
-	KickedMember *SenderView `json:"kicked_member,omitempty"`
+	Kicker *SenderView `json:"kicker,omitempty"`
 }
 
 func (c *MemberKickContent) Unmarshal(content types.JSON) error {
@@ -26,8 +26,8 @@ func (c *MemberKickContent) Unmarshal(content types.JSON) error {
 
 func (c MemberKickContent) Validate() error {
 	return v.ValidateStruct(&c,
-		v.Field(&c.KickedMemberID, v.Required, is.UUIDv4),
-		v.Field(&c.KickedMember, v.Nil),
+		v.Field(&c.KickerID, v.Required, is.UUIDv4),
+		v.Field(&c.Kicker, v.Nil),
 	)
 }
 
@@ -49,8 +49,8 @@ func KickDeprecatedMembers(
 		if err := MustHaveAccess(ctx, exec, identities, boxID, joinEvent.SenderID); err != nil {
 			// if the member has no access anymore then kick them by creation a member.kick event
 			if merror.HasCode(err, merror.ForbiddenCode) {
-				content := MemberKickContent{KickedMemberID: joinEvent.SenderID}
-				kickEvent, err := newWithAnyContent(etype.Memberkick, &content, boxID, kickerID, &joinEvent.ID)
+				content := MemberKickContent{KickerID: kickerID}
+				kickEvent, err := newWithAnyContent(etype.Memberkick, &content, boxID, joinEvent.SenderID, &joinEvent.ID)
 				if err != nil {
 					return kicks, merror.Transform(err).Describe("newing kick event")
 				}

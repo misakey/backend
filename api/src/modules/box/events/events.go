@@ -27,7 +27,7 @@ type Event struct {
 	ReferrerID  null.String
 	JSONContent types.JSON
 
-	Content interface{}
+	Content             interface{}
 	MetadataForHandlers MetadataForUsedSpaceHandler
 }
 
@@ -64,7 +64,8 @@ func (e *Event) persist(ctx context.Context, exec boil.ContextExecutor) error {
 
 func GetLast(ctx context.Context, exec boil.ContextExecutor, boxID string) (Event, error) {
 	return get(ctx, exec, eventFilters{
-		boxID: null.StringFrom(boxID),
+		boxID:  null.StringFrom(boxID),
+		eTypes: etype.MembersCanSee(),
 	})
 }
 

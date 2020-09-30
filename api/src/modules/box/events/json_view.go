@@ -91,11 +91,11 @@ func FormatEvent(e Event, identityMap map[string]domain.Identity) (View, error) 
 			return view, merror.Transform(err).Describef("unmarshaling %s json", e.Type)
 		}
 
-		if content.KickedMemberID != "" {
-			kicked := NewSenderView(identityMap[content.KickedMemberID])
-			content.KickedMember = &kicked
+		if content.KickerID != "" {
+			kicked := NewSenderView(identityMap[content.KickerID])
+			content.Kicker = &kicked
 		}
-		content.KickedMemberID = ""
+		content.KickerID = ""
 		if err := view.Content.Marshal(content); err != nil {
 			return view, merror.Transform(err).Describe("marshalling event content")
 		}
@@ -162,8 +162,8 @@ func getIdentityIDs(event Event) ([]string, error) {
 			return ids, merror.Transform(err).Describef("unmarshaling %s json", event.Type)
 		}
 
-		if content.KickedMemberID != "" {
-			ids = append(ids, content.KickedMemberID)
+		if content.KickerID != "" {
+			ids = append(ids, content.KickerID)
 		}
 	}
 

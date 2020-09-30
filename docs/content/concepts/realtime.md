@@ -203,8 +203,9 @@ This message notify a box deletion.
 
 ```json
 {
+    "id": "<uuid>",
     "sender_id": "<uuid>",
-    "box_id": "<uuid>"
+    "public_key": "<string>"
 }
 ```
 

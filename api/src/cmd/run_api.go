@@ -38,8 +38,11 @@ var RootCmd = &cobra.Command{
 }
 
 func initService() {
+
+	initDefaultConfig()
+
 	// init logger
-	log.Logger = logger.ZerologLogger()
+	log.Logger = logger.ZerologLogger(viper.GetString("log.level"))
 
 	// add error needles to auto handle some specific errors on layers we use everywhere
 	bubble.AddNeedle(bubble.PSQLNeedle{})
@@ -47,10 +50,8 @@ func initService() {
 	bubble.AddNeedle(sdk.EchoNeedle{})
 	bubble.Lock()
 
-	initDefaultConfig()
-
 	// init echo router using sdk call
-	e := echorouter.New()
+	e := echorouter.New(viper.GetString("log.level"))
 	e.HideBanner = true
 	pprof.Wrap(e)
 

@@ -20,7 +20,7 @@ func FromCtx(ctx context.Context) *zerolog.Logger {
 	return ctx.Value(CtxKey{}).(*zerolog.Logger)
 }
 
-func ZerologLogger() zerolog.Logger {
+func ZerologLogger(level string) zerolog.Logger {
 	serviceName := filepath.Base(os.Args[0])
 	serviceVersion := os.Getenv("VERSION")
 	zerolog.TimeFieldFormat = time.RFC3339
@@ -33,10 +33,33 @@ func ZerologLogger() zerolog.Logger {
 		Caller().
 		Logger()
 
+	zerolog.SetGlobalLevel(GetLogLevel(level))
+
 	// do not log in json in development environment
 	if os.Getenv("ENV") == "development" {
 		l = l.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
 	return l
+}
+
+func GetLogLevel(level string) zerolog.Level {
+	switch level {
+	case "debug":
+		return zerolog.DebugLevel
+	case "info":
+		return zerolog.InfoLevel
+	case "warning":
+		return zerolog.WarnLevel
+	case "error":
+		return zerolog.ErrorLevel
+	case "fatal":
+		return zerolog.FatalLevel
+	case "panic":
+		return zerolog.PanicLevel
+	default:
+		// defaulting to info
+		return zerolog.InfoLevel
+	}
+
 }

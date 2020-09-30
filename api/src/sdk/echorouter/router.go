@@ -9,9 +9,9 @@ import (
 
 var env = os.Getenv("ENV")
 
-func New() *echo.Echo {
+func New(logLevel string) *echo.Echo {
 	e := echo.New()
-	e.Use(NewZerologLogger())
+	e.Use(NewZerologLogger(logLevel))
 	e.Use(NewLogger())
 	e.Use(middleware.Recover())
 	e.HTTPErrorHandler = Error

@@ -34,6 +34,24 @@ func Get(
 	return fromSQLBoiler(record), nil
 }
 
+func GetLastForBoxID(
+	ctx context.Context, exec boil.ContextExecutor,
+	boxID string,
+) (*BoxKeyShare, error) {
+	mods := []qm.QueryMod{
+		sqlboiler.BoxKeyShareWhere.BoxID.EQ(boxID),
+		qm.OrderBy("created_at DESC"),
+	}
+	record, err := sqlboiler.BoxKeyShares(mods...).One(ctx, exec)
+	if err != nil {
+		return nil, err
+	}
+
+	keyShare := fromSQLBoiler(record)
+
+	return &keyShare, nil
+}
+
 func EmptyAll(
 	ctx context.Context, exec boil.ContextExecutor,
 	boxID string,

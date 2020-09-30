@@ -44,15 +44,8 @@ func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *r
 		uniqRecipientsIDs[memberID] = true
 	}
 
-	// add sender_id and kicked_member_id
+	// add sender_id
 	uniqRecipientsIDs[e.SenderID] = true
-	if e.Type == "member.kick" {
-		var content MemberKickContent
-		if err := e.JSONContent.Unmarshal(&content); err != nil {
-			return err
-		}
-		uniqRecipientsIDs[content.KickedMemberID] = true
-	}
 
 	box, err := Compute(ctx, e.BoxID, exec, identities, e)
 	if err != nil {
@@ -95,21 +88,13 @@ func publish(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *
 
 // send interrupt messages to close realtime channels
 func interrupt(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
-	// on a leave event
+	// on a leave or kick event
 	// close sockets for the leaving member
-	if e.Type == etype.Memberleave {
+	if e.Type == etype.Memberleave || e.Type == etype.Memberkick {
 		notifications.SendInterruption(ctx, redConn, e.SenderID, e.BoxID)
-		// on a kicked event
-		// close sockets for the kicked member
-	} else if e.Type == etype.Memberkick {
-		var c MemberKickContent
-		if err := e.JSONContent.Unmarshal(&c); err != nil {
-			return merror.Transform(err).Describe("marshalling lifecycle content")
-		}
-		notifications.SendInterruption(ctx, redConn, c.KickedMemberID, e.BoxID)
+	} else if e.Type == etype.Statelifecycle {
 		// on a close event
 		// close sockets for all members except the admin
-	} else if e.Type == etype.Statelifecycle {
 		var c StateLifecycleContent
 		if err := e.JSONContent.Unmarshal(&c); err != nil {
 			return merror.Transform(err).Describe("marshalling lifecycle content")
@@ -142,33 +127,25 @@ func invalidateCaches(ctx context.Context, e *Event, exec boil.ContextExecutor, 
 		logger.FromCtx(ctx).Warn().Msgf("could not invalidate cache %s:members", e.BoxID)
 	}
 
-	var senderID string
-	if e.Type == etype.Memberkick {
-		var content MemberKickContent
-		if err := e.JSONContent.Unmarshal(&content); err != nil {
-			logger.FromCtx(ctx).Warn().Msgf("could not unmarshall member.kick %s content", e.ID)
-		}
-		senderID = content.KickedMemberID
-	} else {
-		senderID = e.SenderID
-	}
-	_, err = redConn.Del(cache.GetSenderBoxesKey(senderID)).Result()
+	_, err = redConn.Del(cache.GetSenderBoxesKey(e.SenderID)).Result()
 	if err != nil {
-		logger.FromCtx(ctx).Warn().Msgf("could not invalidate cache %s:boxes", senderID)
+		logger.FromCtx(ctx).Warn().Msgf("could not invalidate cache %s:boxes", e.SenderID)
 	}
 
 	return nil
 }
 
 type DeletedBox struct {
-	BoxID    string `json:"id"`
-	SenderID string `json:"sender_id"`
+	BoxID     string `json:"id"`
+	SenderID  string `json:"sender_id"`
+	PublicKey string `json:"public_key"`
 }
 
-func SendDeleteBox(ctx context.Context, redConn *redis.Client, boxID, senderID string, memberIDs []string) {
+func SendDeleteBox(ctx context.Context, redConn *redis.Client, boxID, senderID string, memberIDs []string, publicKey string) {
 	deletedBox := DeletedBox{
-		BoxID:    boxID,
-		SenderID: senderID,
+		BoxID:     boxID,
+		SenderID:  senderID,
+		PublicKey: publicKey,
 	}
 	bu := notifications.Update{
 		Type:   "box.delete",
