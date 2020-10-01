@@ -13,6 +13,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/cache"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
@@ -22,7 +23,7 @@ func Get(ctx context.Context, exec boil.ContextExecutor, identities entrypoints.
 }
 
 func CountForSender(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, senderID string) (int, error) {
-	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID)
+	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID, []string{})
 	return len(list), err
 }
 
@@ -36,7 +37,7 @@ func ListSenderBoxes(
 ) ([]*events.Box, error) {
 	boxes := []*events.Box{}
 	// 1. retrieve lastest events concerning the user's boxes
-	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID)
+	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID, etype.MembersCanSee())
 	if err != nil {
 		return boxes, merror.Transform(err).Describe("listing box ids")
 	}
@@ -120,6 +121,7 @@ func LastSenderBoxEvents(
 	exec boil.ContextExecutor,
 	redConn *redis.Client,
 	senderID string,
+	etypes []string,
 ) ([]events.Event, error) {
 	boxIDs, err := LastSenderBoxIDs(ctx, exec, redConn, senderID)
 	if err != nil {
@@ -131,6 +133,10 @@ func LastSenderBoxEvents(
 		sqlboiler.EventWhere.BoxID.IN(boxIDs),
 		qm.OrderBy("box_id"),
 		qm.OrderBy("created_at DESC"),
+	}
+
+	if len(etypes) > 0 {
+		mods = append(mods, sqlboiler.EventWhere.Type.IN(etypes))
 	}
 
 	lastEventsDB, err := sqlboiler.Events(mods...).All(ctx, exec)
