@@ -41,7 +41,7 @@ func (req *UploadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) error 
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
 		v.Field(&req.MsgEncContent, v.Required, is.Base64),
 		v.Field(&req.MsgPubKey, v.Required),
-		v.Field(&req.size, v.Required, v.Max(2*1024*1024*1024).Error("the maximum file size is 2GB")), // @FIXME put the max file size in a configuration
+		v.Field(&req.size, v.Required, v.Max(126*1024*1024).Error("the maximum file size is 126MB")), // @FIXME put the max file size in a configuration
 	)
 }
 
