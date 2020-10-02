@@ -51,12 +51,12 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq requ
 	}
 
 	// download the file then render it
-	data, err := files.Download(ctx, bs.filesRepo, req.fileID)
+	reader, err := files.Download(ctx, bs.filesRepo, req.fileID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("downloading")
 	}
 
-	return data, nil
+	return reader, nil
 }
 
 func hasAccessToFile(

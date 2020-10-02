@@ -2,6 +2,7 @@ package request
 
 import (
 	"context"
+	"io"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -15,6 +16,11 @@ type Request interface {
 
 func ResponseNoContent(eCtx echo.Context, _ interface{}) error {
 	return eCtx.NoContent(http.StatusNoContent)
+}
+
+func ResponseStream(eCtx echo.Context, data interface{}) error {
+	reader := data.(io.Reader)
+	return eCtx.Stream(http.StatusOK, "application/octet-stream", reader)
 }
 
 func ResponseOK(eCtx echo.Context, data interface{}) error {

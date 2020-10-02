@@ -1,6 +1,7 @@
 package files
 
 import (
+	"bytes"
 	"context"
 	"io"
 
@@ -56,17 +57,22 @@ func (s *FileAmazonS3) Upload(ctx context.Context, fileID string, data io.Reader
 }
 
 // Download data from amazon S3 at {bucket}/{fileID}
-func (s *FileAmazonS3) Download(ctx context.Context, fileID string) ([]byte, error) {
-	data := aws.NewWriteAtBuffer([]byte{})
+func (s *FileAmazonS3) Download(ctx context.Context, fileID string) (io.Reader, error) {
 	getObj := &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(fileID),
 	}
-	if _, err := s.downloader.DownloadWithContext(ctx, data, getObj); err != nil {
+	rawObj, err := s.session.GetObject(getObj)
+	if err != nil {
 		return nil, merror.Internal().
 			Describef("unable to download object %s from bucket %q, %v", fileID, s.bucket, err)
 	}
-	return data.Bytes(), nil
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(rawObj.Body); err != nil {
+		return nil, merror.Internal().
+			Describef("unable to download object %s from bucket %q, %v", fileID, s.bucket, err)
+	}
+	return buf, nil
 }
 
 // Delete data from s3 at {bucket}/{fileID}

@@ -48,10 +48,10 @@ func (fs *FileSystem) Upload(ctx context.Context, fileID string, data io.Reader,
 }
 
 // Download a file from local storage and return its raw data
-func (fs *FileSystem) Download(ctx context.Context, fileID string) ([]byte, error) {
+func (fs *FileSystem) Download(ctx context.Context, fileID string) (io.Reader, error) {
 	// read the file
 	filePath := path.Join(fs.location, fileID)
-	return ioutil.ReadFile(filePath)
+	return os.Open(filePath)
 }
 
 // Delete a file from the file system

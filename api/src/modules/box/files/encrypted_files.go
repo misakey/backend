@@ -19,7 +19,7 @@ type EncryptedFile struct {
 
 type FileStorageRepo interface {
 	Upload(context.Context, string, io.Reader) error
-	Download(context.Context, string) ([]byte, error)
+	Download(context.Context, string) (io.Reader, error)
 	Delete(context.Context, string) error
 }
 
@@ -52,7 +52,7 @@ func Upload(ctx context.Context, repo FileStorageRepo, fileID string, encData io
 	return repo.Upload(ctx, fileID, encData)
 }
 
-func Download(ctx context.Context, repo FileStorageRepo, fileID string) ([]byte, error) {
+func Download(ctx context.Context, repo FileStorageRepo, fileID string) (io.Reader, error) {
 	return repo.Download(ctx, fileID)
 }
 

@@ -190,7 +190,7 @@ func bindRoutes(router *echo.Echo, bs *application.BoxApplication, wsh entrypoin
 	downloadEncryptedFile := request.NewProtectedHTTP(
 		func() request.Request { return &application.DownloadEncryptedFileRequest{} },
 		bs.DownloadEncryptedFile,
-		request.ResponseBlob,
+		request.ResponseStream,
 	)
 	encryptedFileRouter.GET("/:id", downloadEncryptedFile, authzMidlw)
 
