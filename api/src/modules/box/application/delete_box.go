@@ -105,7 +105,7 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request)
 		// since it is set to "" when msg.delete is called on the msg.file
 		// TODO: clean this up
 		if fileID != "" {
-			isOrphan, err := files.IsOrphan(ctx, bs.DB, fileID)
+			isOrphan, err := events.IsFileOrphan(ctx, bs.DB, fileID)
 			if err != nil {
 				return nil, merror.Transform(err).Describe("checking file is orphan")
 			}

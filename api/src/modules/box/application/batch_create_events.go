@@ -74,6 +74,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.R
 	defer atomic.SQLRollback(ctx, tr, err)
 
 	createdList := make([]events.Event, len(req.Events))
+	metadatas := make(map[string]interface{}, len(req.Events))
 	for i, batchE := range req.Events {
 		var event events.Event
 		event, err = events.New(batchE.Type, batchE.Content, req.boxID, acc.IdentityID, batchE.ReferrerID)
@@ -84,11 +85,9 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.R
 		// call the proper event handlers
 		handler := events.Handler(event.Type)
 
-		for _, do := range handler.Do {
-			err = do(ctx, &event, tr, bs.RedConn, bs.Identities)
-			if err != nil {
-				return nil, merror.Transform(err).Describef("doing %s event", event.Type)
-			}
+		metadatas[event.ID], err = handler.Do(ctx, &event, tr, bs.RedConn, bs.Identities, bs.filesRepo)
+		if err != nil {
+			return nil, merror.Transform(err).Describef("doing %s event", event.Type)
 		}
 		createdList[i] = event
 	}
@@ -114,7 +113,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.R
 	go func(ctx context.Context, list []events.Event) {
 		for _, e := range list {
 			for _, after := range events.Handler(e.Type).After {
-				if err := after(ctx, &e, bs.DB, bs.RedConn, bs.Identities); err != nil {
+				if err := after(ctx, &e, bs.DB, bs.RedConn, bs.Identities, bs.filesRepo, metadatas[e.ID]); err != nil {
 					// we log the error but we don’t return it
 					logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", e.Type)
 				}

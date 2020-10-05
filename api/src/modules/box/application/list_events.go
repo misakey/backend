@@ -53,6 +53,10 @@ func (bs *BoxApplication) ListEvents(ctx context.Context, genReq request.Request
 	}
 	views := make([]events.View, len(boxEvents))
 	for i, e := range boxEvents {
+		if err := events.BuildAggregate(ctx, bs.DB, &e); err != nil {
+			return views, merror.Transform(err).Describe("building aggregate")
+		}
+
 		views[i], err = events.FormatEvent(e, sendersMap)
 		if err != nil {
 			return views, merror.Transform(err).Describe("computing event view")

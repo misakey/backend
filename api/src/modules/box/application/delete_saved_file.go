@@ -10,6 +10,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
@@ -46,7 +47,7 @@ func (bs *BoxApplication) DeleteSavedFile(ctx context.Context, genReq request.Re
 	}
 
 	// delete stored file if orphan
-	isOrphan, err := files.IsOrphan(ctx, bs.DB, savedFile.EncryptedFileID)
+	isOrphan, err := events.IsFileOrphan(ctx, bs.DB, savedFile.EncryptedFileID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("deleting stored file")
 	}

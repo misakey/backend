@@ -22,8 +22,6 @@ func MembersCanSee() []string {
 
 		Msgtext,
 		Msgfile,
-		Msgedit,
-		Msgdelete,
 
 		Memberjoin,
 		Memberleave,

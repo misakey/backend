@@ -143,6 +143,9 @@ func (c *computer) handleLast(ctx context.Context) error {
 		return merror.Transform(err).Describe("retrieving identities for view")
 	}
 
+	if err := BuildAggregate(ctx, c.exec, c.lastEvent); err != nil {
+		return merror.Transform(err).Describe("building aggregate")
+	}
 	view, err := FormatEvent(*c.lastEvent, identityMap)
 	if err != nil {
 		return merror.Transform(err).Describe("computing view of last event")

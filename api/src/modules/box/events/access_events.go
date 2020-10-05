@@ -14,6 +14,8 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
 type accessContent struct {
@@ -21,22 +23,22 @@ type accessContent struct {
 	Value           string `json:"value"`
 }
 
-func doAddAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ entrypoints.IdentityIntraprocessInterface) error {
+func doAddAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
-		return merror.Transform(err).Describe("checking admin")
+		return nil, merror.Transform(err).Describe("checking admin")
 	}
 
 	// check content format
 	var c accessContent
 	if err := e.JSONContent.Unmarshal(&c); err != nil {
-		return merror.Transform(err).Describe("marshalling access content")
+		return nil, merror.Transform(err).Describe("marshalling access content")
 	}
 	if err := v.ValidateStruct(&c,
 		v.Field(&c.RestrictionType, v.Required, v.In("invitation_link", "identifier", "email_domain")),
 		v.Field(&c.Value, v.Required),
 	); err != nil {
-		return merror.Transform(err).Describe("validating access content")
+		return nil, merror.Transform(err).Describe("validating access content")
 	}
 
 	// check the access doesn't exist yet
@@ -49,32 +51,32 @@ func doAddAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redCo
 	})
 	// no error means the access already exists
 	if err == nil {
-		return merror.Conflict().Describe("this access already exists").
+		return nil, merror.Conflict().Describe("this access already exists").
 			Detail("content", merror.DVConflict).
 			Detail("box_id", merror.DVConflict)
 	}
 	// a not found is what is expected so we do ignore it
 	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
-		return err
+		return nil, err
 	}
 
-	return e.persist(ctx, exec)
+	return nil, e.persist(ctx, exec)
 }
 
-func doRmAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ entrypoints.IdentityIntraprocessInterface) error {
+func doRmAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
-		return merror.Transform(err).Describe("checking admin")
+		return nil, merror.Transform(err).Describe("checking admin")
 	}
 
 	if err := v.ValidateStruct(e,
 		v.Field(&e.ReferrerID, v.Required, is.UUIDv4),
 	); err != nil {
-		return err
+		return nil, err
 	}
 
 	if e.JSONContent.String() != "{}" {
-		return merror.BadRequest().Describe("content should be empty").Detail("content", merror.DVForbidden)
+		return nil, merror.BadRequest().Describe("content should be empty").Detail("content", merror.DVForbidden)
 	}
 
 	// the referrer must exist and not been referred yet or it is already removed
@@ -86,10 +88,10 @@ func doRmAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redCon
 		id:         e.ReferrerID,
 	})
 	if err != nil {
-		return merror.Transform(err).Describe("checking access.add referrer_id consistency")
+		return nil, merror.Transform(err).Describe("checking access.add referrer_id consistency")
 	}
 
-	return e.persist(ctx, exec)
+	return nil, e.persist(ctx, exec)
 }
 
 func FindActiveAccesses(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {

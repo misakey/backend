@@ -10,11 +10,12 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
 type CreationContent struct {
@@ -59,7 +60,7 @@ func GetCreateEvent(
 	})
 }
 
-func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) (Event, error) {
+func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, filesRepo files.FileStorageRepo) (Event, error) {
 	event, err := NewCreate(title, publicKey, senderID)
 	if err != nil {
 		return Event{}, merror.Transform(err).Describe("creating create event")
@@ -71,12 +72,12 @@ func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, e
 	}
 
 	// invalidates cache for creator boxes list
-	if err := invalidateCaches(ctx, &event, exec, redConn, identities); err != nil {
+	if err := invalidateCaches(ctx, &event, exec, redConn, identities, filesRepo, nil); err != nil {
 		logger.FromCtx(ctx).Warn().Err(err).Msgf("invalidating the cache")
 	}
 
 	// send notification to creator
-	if err := notify(ctx, &event, exec, redConn, identities); err != nil {
+	if err := notify(ctx, &event, exec, redConn, identities, filesRepo, nil); err != nil {
 		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not send create notification for box %s", event.BoxID)
 	}
 

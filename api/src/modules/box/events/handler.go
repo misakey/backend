@@ -7,45 +7,40 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
-type handler func(
+type Metadata interface{}
+
+type doHandler func(
 	context.Context,
 	*Event,
-	boil.ContextExecutor,
+	boil.ContextExecutor, // transaction
 	*redis.Client,
 	entrypoints.IdentityIntraprocessInterface,
+	files.FileStorageRepo,
+) (Metadata, error)
+
+type afterHandler func(
+	context.Context,
+	*Event,
+	boil.ContextExecutor, // db connector
+	*redis.Client,
+	entrypoints.IdentityIntraprocessInterface,
+	files.FileStorageRepo,
+	Metadata,
 ) error
 
-func empty(_ context.Context, _ *Event, _ boil.ContextExecutor, _ *redis.Client, _ entrypoints.IdentityIntraprocessInterface) error {
-	return nil
+func empty(_ context.Context, _ *Event, _ boil.ContextExecutor, _ *redis.Client, _ entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+	return nil, nil
 }
 
-func doDefault(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+// checkReferrer id is set
+func checkReferrer(ctx context.Context, e Event) error {
 	// check that the current sender has access to the box
-	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
-		return err
-	}
-
-	if e.ReferrerID.Valid {
-		return merror.BadRequest().Describe("referrer id cannot be set").Detail("referrer_id", merror.DVForbidden)
-	}
-
-	return e.persist(ctx, exec)
-}
-
-// doReferrer checks that the referrer_id is set
-// and **do not** persist event in database
-func doReferrer(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
-	// check that the current sender has access to the box
-	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
-		return err
-	}
-
-	if err := v.ValidateStruct(e,
+	if err := v.ValidateStruct(&e,
 		v.Field(&e.ReferrerID, v.Required, is.UUIDv4),
 	); err != nil {
 		return err
@@ -55,28 +50,29 @@ func doReferrer(ctx context.Context, e *Event, exec boil.ContextExecutor, redCon
 }
 
 type EventHandler struct {
-	Do, After []handler
+	Do    doHandler
+	After []afterHandler
 }
 
 // NOTE:
 // Do handler is at least responsible for making the event persistent in storage (some events might do it differently though).
 // After handler must perform non-critical actions that might fail without altering the state of the box.
 var eventTypeHandlerMapping = map[string]EventHandler{
-	"state.lifecycle": {gh(doLifecycle), gh(publish, notify, interrupt)},
+	"state.lifecycle": {doLifecycle, gh(publish, notify, interrupt)},
 
-	"msg.text":   {gh(doDefault), gh(publish, notify, computeUsedSpace)},
-	"msg.file":   {gh(doDefault), gh(publish, notify, computeUsedSpace)},
-	"msg.edit":   {gh(doReferrer), gh(publish, computeUsedSpace)},
-	"msg.delete": {gh(doReferrer), gh(publish, computeUsedSpace)},
-	"access.add": {gh(doAddAccess), gh(empty)},
-	"access.rm":  {gh(doRmAccess), gh(empty)},
+	"msg.text":   {doMessage, gh(publish, notify, computeUsedSpace)},
+	"msg.file":   {doMessage, gh(publish, notify, computeUsedSpace)},
+	"msg.edit":   {doEditMsg, gh(publish, computeUsedSpace)},
+	"msg.delete": {doDeleteMsg, gh(publish, computeUsedSpace)},
+	"access.add": {doAddAccess, gh()},
+	"access.rm":  {doRmAccess, gh()},
 
-	"member.leave": {gh(doLeave), gh(publish, notify, interrupt, invalidateCaches)},
-	"member.join":  {gh(doJoin), gh(publish, notify, invalidateCaches)},
-	"member.kick":  {gh(empty), gh(publish, notify, interrupt, invalidateCaches)},
+	"member.leave": {doLeave, gh(publish, notify, interrupt, invalidateCaches)},
+	"member.join":  {doJoin, gh(publish, notify, invalidateCaches)},
+	"member.kick":  {empty, gh(publish, notify, interrupt, invalidateCaches)},
 }
 
-func gh(handlers ...handler) []handler {
+func gh(handlers ...afterHandler) []afterHandler {
 	return handlers
 }
 

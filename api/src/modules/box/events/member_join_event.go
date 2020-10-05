@@ -8,28 +8,28 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
-func doJoin(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+func doJoin(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
 	// check that the current sender is not already a box member
 	isMember, err := isMember(ctx, exec, redConn, e.BoxID, e.SenderID)
 	if err != nil {
-		return merror.Transform(err).Describe("checking membership")
+		return nil, merror.Transform(err).Describe("checking membership")
 	}
 	if isMember {
-		return merror.Conflict().Describe("already box member")
+		return nil, merror.Conflict().Describe("already box member")
 	}
 
 	// check accesses
 	if err := MustHaveAccess(ctx, exec, identities, e.BoxID, e.SenderID); err != nil {
-		return merror.Transform(err).Describe("checking accesses")
+		return nil, merror.Transform(err).Describe("checking accesses")
 	}
 
-	return e.persist(ctx, exec)
+	return nil, e.persist(ctx, exec)
 }
 
 // list active joins for a given box

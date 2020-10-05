@@ -11,12 +11,13 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/cache"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/notifications"
 )
 
 // increment count for all identities except the sender
 // and send event to all members
-func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo, _ Metadata) error {
 	// 1. retrieve member ids
 	memberIDs, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
 	if err != nil {
@@ -66,7 +67,7 @@ func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *r
 }
 
 // send event to realtime channels
-func publish(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+func publish(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo, _ Metadata) error {
 	senderIdentities, err := MapSenderIdentities(ctx, []Event{*e}, identities)
 	if err != nil {
 		return merror.Transform(err).Describe("getting sender information")
@@ -87,7 +88,7 @@ func publish(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *
 }
 
 // send interrupt messages to close realtime channels
-func interrupt(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+func interrupt(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo, _ Metadata) error {
 	// on a leave or kick event
 	// close sockets for the leaving member
 	if e.Type == etype.Memberleave || e.Type == etype.Memberkick {
@@ -121,7 +122,7 @@ func interrupt(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn
 	return nil
 }
 
-func invalidateCaches(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface) error {
+func invalidateCaches(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo, _ Metadata) error {
 	_, err := redConn.Del(cache.GetBoxMembersKey(e.BoxID)).Result()
 	if err != nil {
 		logger.FromCtx(ctx).Warn().Msgf("could not invalidate cache %s:members", e.BoxID)

@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -17,10 +18,10 @@ import (
 )
 
 type CreateEventRequest struct {
-	boxID      string
-	Type       string     `json:"type"`
-	Content    types.JSON `json:"content"`
-	ReferrerID *string    `json:"referrer_id"`
+	boxID               string
+	Type                string     `json:"type"`
+	Content             types.JSON `json:"content"`
+	ReferrerID          *string    `json:"referrer_id"`
 	MetadataForHandlers events.MetadataForUsedSpaceHandler
 }
 
@@ -68,20 +69,23 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq request.Reques
 	event.MetadataForHandlers = req.MetadataForHandlers
 
 	// call the proper event handlers
-	handler := events.Handler(event.Type)
-	for _, do := range handler.Do {
-		if err := do(ctx, &event, bs.DB, bs.RedConn, bs.Identities); err != nil {
-			return nil, merror.Transform(err).Describef("during %s event", event.Type)
-		}
+	// initialize transaction
+	tx, err := bs.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("creating DB transaction")
 	}
 
-	// TODO (code structure): use handlers
-	if event.Type == "msg.delete" {
-		return bs.deleteMessage(ctx, &event, handler)
+	handler := events.Handler(event.Type)
+	metadata, err := handler.Do(ctx, &event, tx, bs.RedConn, bs.Identities, bs.filesRepo)
+	if err != nil {
+		atomic.SQLRollback(ctx, tx, err)
+		return nil, merror.Transform(err).Describef("during %s event", event.Type)
 	}
-	// TODO (code structure): use handlers
-	if event.Type == "msg.edit" {
-		return bs.editMessage(ctx, &event, handler)
+
+	// commit transaction
+	err = tx.Commit()
+	if err != nil {
+		return nil, merror.Transform(err).Describe("committing transaction")
 	}
 
 	// not important to wait for after handlers to return
@@ -89,7 +93,7 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq request.Reques
 	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), acc), logger.CtxKey{}, logger.FromCtx(ctx))
 	go func(ctx context.Context, e events.Event) {
 		for _, after := range handler.After {
-			if err := after(ctx, &e, bs.DB, bs.RedConn, bs.Identities); err != nil {
+			if err := after(ctx, &e, bs.DB, bs.RedConn, bs.Identities, bs.filesRepo, metadata); err != nil {
 				// we log the error but we don’t return it
 				logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", e.Type)
 			}

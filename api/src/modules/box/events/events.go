@@ -168,6 +168,29 @@ func get(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) (
 	return FromSQLBoiler(dbEvent), nil
 }
 
+func listEventAndReferrers(ctx context.Context, exec boil.ContextExecutor, id string) ([]Event, error) {
+	mods := []qm.QueryMod{
+		sqlboiler.EventWhere.ID.EQ(id),
+		qm.Or2(sqlboiler.EventWhere.ReferrerID.EQ(null.StringFrom(id))),
+		qm.OrderBy("created_at ASC"),
+	}
+
+	dbEvents, err := sqlboiler.Events(mods...).All(ctx, exec)
+	if err != nil {
+		return nil, err
+	}
+	if len(dbEvents) == 0 {
+		return nil, merror.NotFound().Describe("listing events")
+	}
+
+	events := make([]Event, len(dbEvents))
+	for i, record := range dbEvents {
+		events[i] = FromSQLBoiler(record)
+	}
+
+	return events, nil
+}
+
 func list(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) ([]Event, error) {
 	mods, err := buildMods(ctx, exec, filters)
 	if err != nil {

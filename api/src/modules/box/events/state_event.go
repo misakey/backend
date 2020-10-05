@@ -3,44 +3,44 @@ package events
 import (
 	"context"
 
+	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
-
-	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
 type StateLifecycleContent struct {
 	State string `json:"state"`
 }
 
-func doLifecycle(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redis.Client, _ entrypoints.IdentityIntraprocessInterface) error {
+func doLifecycle(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redis.Client, _ entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
 	// check accesses
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
-		return merror.Transform(err).Describe("checking admin")
+		return nil, merror.Transform(err).Describe("checking admin")
 	}
 
 	// handle content
 	var c StateLifecycleContent
 	if err := e.JSONContent.Unmarshal(&c); err != nil {
-		return merror.Transform(err).Describe("marshalling lifecycle content")
+		return nil, merror.Transform(err).Describe("marshalling lifecycle content")
 	}
 
 	// referrer ID cannot be set
 	if err := v.Empty.Validate(&e.ReferrerID); err != nil {
-		return err
+		return nil, err
 	}
 	// only closed state lifecycle change is allowed today
 	if err := v.ValidateStruct(&c,
 		v.Field(&c.State, v.Required, v.In("closed")),
 	); err != nil {
-		return err
+		return nil, err
 	}
 
-	return e.persist(ctx, exec)
+	return nil, e.persist(ctx, exec)
 }
 
 func isClosed(
