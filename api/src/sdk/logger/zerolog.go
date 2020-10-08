@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -62,4 +63,24 @@ func GetLogLevel(level string) zerolog.Level {
 		return zerolog.InfoLevel
 	}
 
+}
+
+// LogMemUsage whenever a debug is required somewhere
+// NOTE: don't forget to call runtime.GC() to trigger the garbage collector
+// between stats retrievals
+func LogMemUsage(ctx context.Context, desc string) {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	FromCtx(ctx).
+		Debug().
+		Msgf("%s: Alloc=%v, TotalAlloc=%v, Sys=%v NumGC=%v",
+			desc,
+			bToMb(m.Alloc),
+			bToMb(m.TotalAlloc),
+			bToMb(m.Sys), m.NumGC,
+		)
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }

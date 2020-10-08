@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
+
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
@@ -19,8 +21,14 @@ func ResponseNoContent(eCtx echo.Context, _ interface{}) error {
 }
 
 func ResponseStream(eCtx echo.Context, data interface{}) error {
-	reader := data.(io.Reader)
-	return eCtx.Stream(http.StatusOK, "application/octet-stream", reader)
+	readCloser := data.(io.ReadCloser)
+	defer func(ctx context.Context) {
+		if err := readCloser.Close(); err != nil {
+			logger.FromCtx(ctx).Error().Msgf("cannot close stream: %v", err)
+		}
+	}(eCtx.Request().Context())
+
+	return eCtx.Stream(http.StatusOK, echo.MIMEOctetStream, readCloser)
 }
 
 func ResponseOK(eCtx echo.Context, data interface{}) error {
@@ -32,7 +40,7 @@ func ResponseCreated(eCtx echo.Context, data interface{}) error {
 }
 
 func ResponseBlob(eCtx echo.Context, data interface{}) error {
-	return eCtx.Blob(http.StatusOK, "application/octet-stream", data.([]byte))
+	return eCtx.Blob(http.StatusOK, echo.MIMEOctetStream, data.([]byte))
 }
 
 func NewPublicHTTP(

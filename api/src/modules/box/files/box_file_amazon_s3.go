@@ -1,7 +1,6 @@
 package files
 
 import (
-	"bytes"
 	"context"
 	"io"
 
@@ -67,12 +66,7 @@ func (s *FileAmazonS3) Download(ctx context.Context, fileID string) (io.Reader, 
 		return nil, merror.Internal().
 			Describef("unable to download object %s from bucket %q, %v", fileID, s.bucket, err)
 	}
-	buf := new(bytes.Buffer)
-	if _, err := buf.ReadFrom(rawObj.Body); err != nil {
-		return nil, merror.Internal().
-			Describef("unable to download object %s from bucket %q, %v", fileID, s.bucket, err)
-	}
-	return buf, nil
+	return rawObj.Body, nil
 }
 
 // Delete data from s3 at {bucket}/{fileID}

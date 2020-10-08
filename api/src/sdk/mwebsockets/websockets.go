@@ -143,7 +143,6 @@ func (ws *Websocket) readPump(eCtx echo.Context) error {
 	_ = ws.Websocket.SetReadDeadline(time.Now().Add(pongWaitTime))
 	ws.Websocket.SetPongHandler(func(string) error {
 		_ = ws.Websocket.SetReadDeadline(time.Now().Add(pongWaitTime))
-		logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: pong received", ws.ID)
 		// TODO: handle this when we know how the browser reacts
 		// if we return an error, the connection is closed
 		// which may not be what we want if the browser does not

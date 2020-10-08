@@ -3,7 +3,7 @@ module gitlab.misakey.dev/misakey/backend/api
 go 1.14
 
 require (
-	github.com/aws/aws-sdk-go v1.32.10
+	github.com/aws/aws-sdk-go v1.35.4
 	github.com/benbjohnson/clock v0.0.0-20161215174838-7dc76406b6d3
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ericlagergren/decimal v0.0.0-20191206042408-88212e6cfca9 // indirect
