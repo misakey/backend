@@ -11,26 +11,27 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 )
 
-// Error implements the echo framework error interface.
+// errorHandler implements the echo framework error interface.
 // it does return error as a JSON object rather than just text.
-func Error(err error, ctx echo.Context) {
+func errorHandler(err error, ctx echo.Context) {
 	// bubble adds more info to the error if known
 	err = bubble.Explode(err)
 	// force transform to merror and try to interpret the code
 	code, mErr := merror.HandleErr(err)
 
 	// log the error
+	details, _ := json.Marshal(mErr.Details)
+	logEvent := logger.FromCtx(ctx.Request().Context())
+	// NOTE: log an error on internal code whereas log an info on others
 	if mErr.Co == merror.InternalCode {
-		details, _ := json.Marshal(mErr.Details)
-		logger.FromCtx(ctx.Request().Context()).Error().RawJSON("details", details).Msg(mErr.Desc)
+		logEvent.Error().RawJSON("details", details).Msg(mErr.Desc)
 		// flush the internal error information on production to avoid giving too much
 		// information to the client
 		if env == "production" {
 			mErr = mErr.Flush()
 		}
 	} else {
-		details, _ := json.Marshal(mErr.Details)
-		logger.FromCtx(ctx.Request().Context()).Info().RawJSON("details", details).Msg(mErr.Desc)
+		logEvent.Info().RawJSON("details", details).Msg(mErr.Desc)
 	}
 
 	if !ctx.Response().Committed {

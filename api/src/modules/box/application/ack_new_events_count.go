@@ -8,8 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
@@ -33,7 +33,7 @@ func (req *AckNewEventsCountRequest) BindAndValidate(eCtx echo.Context) error {
 func (bs *BoxApplication) AckNewEventsCount(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*AckNewEventsCountRequest)
 
-	acc := ajwt.GetAccesses(ctx)
+	acc := oidc.GetAccesses(ctx)
 	if acc.IdentityID != req.IdentityID {
 		return nil, merror.Forbidden()
 	}

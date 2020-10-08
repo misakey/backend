@@ -5,18 +5,22 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
 type ListCryptoActionsQuery struct {
-	AccountID string
+	accountID string
 }
 
-func (query ListCryptoActionsQuery) Validate() error {
-	return v.ValidateStruct(&query,
-		v.Field(&query.AccountID, v.Required, is.UUIDv4.Error("account id must be uuid v4")),
+func (query *ListCryptoActionsQuery) BindAndValidate(eCtx echo.Context) error {
+	query.accountID = eCtx.Param("id")
+
+	return v.ValidateStruct(query,
+		v.Field(&query.accountID, v.Required, is.UUIDv4),
 	)
 }
 
@@ -24,18 +28,20 @@ type CryptoActionView struct {
 	domain.CryptoAction
 }
 
-func (sso SSOService) ListCryptoActions(ctx context.Context, query ListCryptoActionsQuery) ([]CryptoActionView, error) {
-	acc := ajwt.GetAccesses(ctx)
+func (sso *SSOService) ListCryptoActions(ctx context.Context, gen request.Request) (interface{}, error) {
+	query := gen.(*ListCryptoActionsQuery)
+
+	acc := oidc.GetAccesses(ctx)
 	// querier must have an account
 	if acc == nil || acc.AccountID.IsZero() {
 		return nil, merror.Forbidden()
 	}
 
-	if query.AccountID != acc.AccountID.String {
+	if query.accountID != acc.AccountID.String {
 		return nil, merror.Forbidden().Describe("can only list one's own crypto actions")
 	}
 
-	actions, err := sso.cryptoActionService.ListCryptoActions(ctx, query.AccountID)
+	actions, err := sso.cryptoActionService.ListCryptoActions(ctx, query.accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -48,43 +54,50 @@ func (sso SSOService) ListCryptoActions(ctx context.Context, query ListCryptoAct
 	return views, nil
 }
 
-type DeleteCryptoActionsQuery struct {
-	AccountID     string
+type DeleteCryptoActionsCmd struct {
+	accountID     string
 	UntilActionID string `json:"until_action_id"`
 }
 
-func (query DeleteCryptoActionsQuery) Validate() error {
-	return v.ValidateStruct(&query,
-		v.Field(&query.AccountID, v.Required, is.UUIDv4.Error("account id must be uuid v4")),
+func (query *DeleteCryptoActionsCmd) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(query); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
+	query.accountID = eCtx.Param("id")
+
+	return v.ValidateStruct(query,
+		v.Field(&query.accountID, v.Required, is.UUIDv4.Error("account id must be uuid v4")),
 		v.Field(&query.UntilActionID, v.Required, is.UUIDv4.Error("until_action_id must be uuid v4")),
 	)
 }
 
-func (sso SSOService) DeleteCryptoActionsUntil(ctx context.Context, query DeleteCryptoActionsQuery) error {
-	acc := ajwt.GetAccesses(ctx)
+func (sso *SSOService) DeleteCryptoActionsUntil(ctx context.Context, gen request.Request) (interface{}, error) {
+	cmd := gen.(*DeleteCryptoActionsCmd)
+
+	acc := oidc.GetAccesses(ctx)
 	// querier must have an account
 	if acc == nil || acc.AccountID.IsZero() {
-		return merror.Forbidden()
+		return nil, merror.Forbidden()
 	}
 
-	if query.AccountID != acc.AccountID.String {
-		return merror.Forbidden().Describe("can only delete one's own crypto actions")
+	if cmd.accountID != acc.AccountID.String {
+		return nil, merror.Forbidden().Describe("can only delete one's own crypto actions")
 	}
 
-	action, err := sso.cryptoActionService.GetCryptoAction(ctx, query.UntilActionID)
+	action, err := sso.cryptoActionService.GetCryptoAction(ctx, cmd.UntilActionID)
 	if err != nil {
-		return merror.Transform(err).Describe("retrieving action")
+		return nil, merror.Transform(err).Describe("retrieving action")
 	}
 
-	if action.AccountID != query.AccountID {
+	if action.AccountID != cmd.accountID {
 		// We pretend not to have found the action
-		return merror.NotFound().Describef("no action with ID %s", query.UntilActionID)
+		return nil, merror.NotFound().Describef("no action with ID %s", cmd.UntilActionID)
 	}
 
-	err = sso.cryptoActionService.DeleteCryptoActionsUntil(ctx, query.AccountID, action.CreatedAt)
+	err = sso.cryptoActionService.DeleteCryptoActionsUntil(ctx, cmd.accountID, action.CreatedAt)
 	if err != nil {
-		return merror.Transform(err).Describe("deleting actions")
+		return nil, merror.Transform(err).Describe("deleting actions")
 	}
 
-	return nil
+	return nil, nil
 }

@@ -5,7 +5,7 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -30,7 +30,7 @@ func (req *CreateBoxRequest) BindAndValidate(eCtx echo.Context) error {
 func (bs *BoxApplication) CreateBox(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateBoxRequest)
 
-	acc := ajwt.GetAccesses(ctx)
+	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}

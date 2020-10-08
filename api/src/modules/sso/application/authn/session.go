@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 // Session is bound to login session id in hydra

@@ -6,24 +6,42 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
+
+type LoginInitCmd struct {
+	Challenge string `query:"login_challenge"`
+}
+
+func (cmd *LoginInitCmd) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(cmd); err != nil {
+		return merror.BadRequest().From(merror.OriQuery)
+	}
+	if cmd.Challenge == "" {
+		return merror.BadRequest().From(merror.OriQuery).Detail("login_challenge", merror.DVRequired)
+	}
+	return nil
+}
 
 // Init a user authentication stage (a.k.a. login flow)
 // It interacts with hydra and login sessions to know either user is already authenticated or not
 // It returns a URL user's agent should be redirected to
-func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) string {
+func (sso *SSOService) LoginInit(ctx context.Context, gen request.Request) (interface{}, error) {
+	req := gen.(*LoginInitCmd)
+
 	// get info about current login session
-	loginCtx, err := sso.authFlowService.GetLoginContext(ctx, loginChallenge)
+	loginCtx, err := sso.authFlowService.GetLoginContext(ctx, req.Challenge)
 	if err != nil {
-		return sso.authFlowService.LoginRedirectErr(err)
+		return sso.authFlowService.LoginRedirectErr(err), nil
 	}
 
 	sessionACR := oidc.ACR0
@@ -44,23 +62,23 @@ func (sso SSOService) LoginInit(ctx context.Context, loginChallenge string) stri
 				loginCtx.OIDCContext.SetAID(session.AccountID)
 				redirectTo, err := sso.authFlowService.BuildAndAcceptLogin(ctx, loginCtx)
 				if err != nil {
-					return sso.authFlowService.LoginRedirectErr(err)
+					return sso.authFlowService.LoginRedirectErr(err), nil
 				}
-				return redirectTo
+				return redirectTo, nil
 			}
 		}
 		if authflow.NonePrompt(loginCtx.RequestURL) {
-			return sso.authFlowService.LoginRequiredErr()
+			return sso.authFlowService.LoginRequiredErr(), nil
 		}
 	}
 
 	// store information about the incomming authentication process
-	if err := sso.AuthenticationService.InitProcess(ctx, loginChallenge, sessionACR, expectedACR); err != nil {
-		return sso.authFlowService.LoginRedirectErr(merror.Transform(err).Describe("initing authn process"))
+	if err := sso.AuthenticationService.InitProcess(ctx, req.Challenge, sessionACR, expectedACR); err != nil {
+		return sso.authFlowService.LoginRedirectErr(merror.Transform(err).Describe("initing authn process")), nil
 	}
 
 	// return the login page url
-	return sso.authFlowService.BuildLoginURL(loginChallenge)
+	return sso.authFlowService.BuildLoginURL(req.Challenge), nil
 }
 
 // IdentityAuthableCmd orders:
@@ -76,7 +94,11 @@ type IdentityAuthableCmd struct {
 }
 
 // Validate the IdentityAuthableCmd
-func (cmd IdentityAuthableCmd) Validate() error {
+func (cmd *IdentityAuthableCmd) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(cmd); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
+
 	// validate nested structure separately
 	if err := v.ValidateStruct(&cmd.Identifier,
 		v.Field(&cmd.Identifier.Value, v.Required, is.EmailFormat),
@@ -84,12 +106,11 @@ func (cmd IdentityAuthableCmd) Validate() error {
 		return err
 	}
 
-	if err := v.ValidateStruct(&cmd,
+	if err := v.ValidateStruct(cmd,
 		v.Field(&cmd.LoginChallenge, v.Required),
 	); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -111,10 +132,11 @@ type nextStepView struct {
 // This method is used to retrieve information about the authable identity attached to an identifier value.
 // The identifier value is set by the end-user on the interface and we receive it here.
 // The function returns information about the Account & Identity that corresponds to the identifier.
-// It creates is needed the trio identifier/account/identity.
+// It creates if required the trio identifier/account/identity.
 // If an identity is created during this process, an confirmation code auth method is started
 // This method will exceptionnaly both proof the identity and confirm the login flow within the auth flow.
-func (sso SSOService) RequireAuthableIdentity(ctx context.Context, cmd IdentityAuthableCmd) (IdentityAuthableView, error) {
+func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.Request) (interface{}, error) {
+	cmd := gen.(*IdentityAuthableCmd)
 	view := IdentityAuthableView{}
 
 	// 0. check the login challenge exists
@@ -174,6 +196,20 @@ func (sso SSOService) RequireAuthableIdentity(ctx context.Context, cmd IdentityA
 	return view, nil
 }
 
+type LoginInfoQuery struct {
+	Challenge string `query:"login_challenge"`
+}
+
+func (cmd *LoginInfoQuery) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(cmd); err != nil {
+		return merror.BadRequest().From(merror.OriQuery)
+	}
+	if cmd.Challenge == "" {
+		return merror.BadRequest().From(merror.OriQuery).Detail("login_challenge", merror.DVRequired)
+	}
+	return nil
+}
+
 // LoginInfoView bears data about current user authentication status
 type LoginInfoView struct {
 	Client struct { // concerned relying party
@@ -188,10 +224,11 @@ type LoginInfoView struct {
 	LoginHint      string         `json:"login_hint"`
 }
 
-func (sso SSOService) LoginInfo(ctx context.Context, loginChallenge string) (LoginInfoView, error) {
+func (sso *SSOService) LoginInfo(ctx context.Context, gen request.Request) (interface{}, error) {
+	query := gen.(*LoginInfoQuery)
 	view := LoginInfoView{}
 
-	logCtx, err := sso.authFlowService.GetLoginContext(ctx, loginChallenge)
+	logCtx, err := sso.authFlowService.GetLoginContext(ctx, query.Challenge)
 	if err != nil {
 		return view, merror.Transform(err).Describe("could not get context")
 	}
@@ -214,18 +251,21 @@ type LoginAuthnStepCmd struct {
 	PasswordResetExt *PasswordResetCmd `json:"password_reset"`
 }
 
-// Validate the LoginStepCmd
-func (cmd LoginAuthnStepCmd) Validate() error {
+func (cmd *LoginAuthnStepCmd) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(cmd); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
+
 	// validate nested structure separately
 	if err := v.ValidateStruct(&cmd.Step,
-		v.Field(&cmd.Step.IdentityID, v.Required, is.UUIDv4.Error("identity id should be an uuid v4")),
+		v.Field(&cmd.Step.IdentityID, v.Required, is.UUIDv4),
 		v.Field(&cmd.Step.MethodName, v.Required),
 		v.Field(&cmd.Step.RawJSONMetadata, v.Required),
 	); err != nil {
 		return err
 	}
 
-	if err := v.ValidateStruct(&cmd,
+	if err := v.ValidateStruct(cmd,
 		v.Field(&cmd.LoginChallenge, v.Required),
 	); err != nil {
 		return err
@@ -234,7 +274,6 @@ func (cmd LoginAuthnStepCmd) Validate() error {
 	if cmd.PasswordResetExt != nil {
 		return cmd.PasswordResetExt.Validate()
 	}
-
 	return nil
 }
 
@@ -245,11 +284,12 @@ type LoginAuthnStepView struct {
 	RedirectTo  *string       `json:"redirect_to,omitempty"`
 }
 
-// LoginStep assert an authentication step in a multi-factor authentication process
+// Assert an authentication step in a multi-factor authentication process
 // the authentication process is stored and considering the final expected ACR:
 // - a new authn-step is returned to the client
 // - the login flow is accepted and a redirect url is returned
-func (sso SSOService) LoginAuthnStep(ctx context.Context, cmd LoginAuthnStepCmd) (LoginAuthnStepView, error) {
+func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request) (interface{}, error) {
+	cmd := gen.(*LoginAuthnStepCmd)
 	view := LoginAuthnStepView{}
 
 	// ensure the login challenge is correct and the identity is authable

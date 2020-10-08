@@ -608,8 +608,8 @@ def test_accesses(s1, s2):
 
 with testContext():
     # Init 2 user sessions for creator rules testing
-    s1 = get_authenticated_session()
-    s2 = get_authenticated_session()
+    s1 = get_authenticated_session(acr_values=2)
+    s2 = get_authenticated_session(acr_values=2)
 
     print('--------\nBasics...')
     test_basics(s1, s2)

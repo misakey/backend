@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -20,7 +20,7 @@ func (req *CountBoxesRequest) BindAndValidate(_ echo.Context) error {
 
 func (bs *BoxApplication) CountBoxes(ctx context.Context, _ request.Request) (interface{}, error) {
 	// retrieve accesses to filters boxes to return
-	acc := ajwt.GetAccesses(ctx)
+	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}

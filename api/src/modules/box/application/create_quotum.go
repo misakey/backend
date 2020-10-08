@@ -30,6 +30,7 @@ func (req *CreateQuotumRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// only call be intraprocess entrypoints so no check required
 func (bs *BoxApplication) CreateQuotum(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateQuotumRequest)
 

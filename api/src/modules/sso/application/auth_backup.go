@@ -5,9 +5,11 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
-	//	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+	//	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 type AuthBackupView struct {
@@ -17,22 +19,27 @@ type AuthBackupView struct {
 }
 
 type GetBackupQuery struct {
-	LoginChallenge string
-	IdentityID     string
+	LoginChallenge string `query:"login_challenge"`
+	IdentityID     string `query:"identity_id"`
 }
 
-func (cmd GetBackupQuery) Validate() error {
-	return v.ValidateStruct(&cmd,
-		v.Field(&cmd.LoginChallenge, v.Required),
-		v.Field(&cmd.IdentityID, v.Required, is.UUIDv4),
+func (query *GetBackupQuery) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(query); err != nil {
+		return merror.BadRequest().From(merror.OriQuery).Describe(err.Error())
+	}
+
+	return v.ValidateStruct(query,
+		v.Field(&query.LoginChallenge, v.Required),
+		v.Field(&query.IdentityID, v.Required, is.UUIDv4),
 	)
 }
 
-func (sso SSOService) GetBackupDuringAuth(ctx context.Context, query GetBackupQuery) (AuthBackupView, error) {
+func (sso *SSOService) GetBackupDuringAuth(ctx context.Context, gen request.Request) (interface{}, error) {
+	query := gen.(*GetBackupQuery)
 	view := AuthBackupView{}
 
 	// get token
-	acc := ajwt.GetAccesses(ctx)
+	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return view, merror.Forbidden().From(merror.OriHeaders).Describe("bearer token could not be found")
 	}
@@ -45,11 +52,6 @@ func (sso SSOService) GetBackupDuringAuth(ctx context.Context, query GetBackupQu
 	// identity_id must match
 	if acc.IdentityID != query.IdentityID {
 		return view, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
-	}
-
-	// process must be at least on ACR 2
-	if err := acc.ACRIsGTE(ajwt.ACRSecLvl2); err != nil {
-		return view, merror.Forbidden().Describe("acr must be at least 2")
 	}
 
 	// get identity

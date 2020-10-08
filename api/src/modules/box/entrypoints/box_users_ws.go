@@ -7,7 +7,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
@@ -23,7 +23,7 @@ func (wh WebsocketHandler) BoxUsersWS(c echo.Context) error {
 	}
 
 	// check accesses
-	acc := ajwt.GetAccesses(c.Request().Context())
+	acc := oidc.GetAccesses(c.Request().Context())
 	if acc == nil || acc.IdentityID != identityID {
 		return merror.Forbidden()
 	}

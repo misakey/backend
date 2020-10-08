@@ -2,7 +2,8 @@ package login
 
 import (
 	"github.com/volatiletech/null/v8"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 // Context bears internal data about current user authentication request

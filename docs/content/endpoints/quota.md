@@ -80,7 +80,7 @@ HTTP 200 OK
 ]
 ```
 
-## 4. Get vault used soace
+## 4. Get vault used space
 
 This route is used to retrieve the vault used space linked to an identity.
 

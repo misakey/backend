@@ -162,6 +162,7 @@ github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFB
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
+github.com/labstack/echo v1.4.4 h1:1bEiBNeGSUKxcPDGfZ/7IgdhJJZx8wV/pICJh4W2NJI=
 github.com/labstack/echo v3.3.10+incompatible h1:pGRcYk231ExFAyoAjAfD85kQzRJCRI8bbnE7CX5OEgg=
 github.com/labstack/echo v3.3.10+incompatible/go.mod h1:0INS7j/VjnFxD4E2wkz67b8cVwCLbBmJyDaka6Cmk1s=
 github.com/labstack/echo/v4 v4.1.16 h1:8swiwjE5Jkai3RPfZoahp8kjVCRNq+y7Q0hPji2Kz0o=
@@ -308,6 +309,7 @@ gitlab.misakey.dev/misakey/backend v0.4.8-0.20200924124249-4edc6b735c18 h1:08/bw
 gitlab.misakey.dev/misakey/backend v0.4.8-0.20200929140645-274b0d82c43b h1:hhx9Ea5FsQUZ91Q/tjtjmUGn2c0HIuTfiSwqYMkEvGQ=
 gitlab.misakey.dev/misakey/backend v0.4.8-0.20200930083915-8d825fc672b2 h1:7KDRXHA11Ca5tOa9T8JdZNgItSNHlUXWlSpsdDMqk2g=
 gitlab.misakey.dev/misakey/backend v0.4.8-0.20201001082712-aa827d082887 h1:cvfnqdQqsrj7lMoI5yLsEuQgcAb2bSsPMxnE2RFatXg=
+gitlab.misakey.dev/misakey/backend v0.5.1-0.20201002132336-4f76e9a881a6 h1:Hr6wXMFn2N/Wm2nvahSouBtMAj2RxyjlGypNaz62B2c=
 gitlab.misakey.dev/misakey/backend/api/src/sdk v1.13.0 h1:NWWmkqCgW22W/fUF4Iu9hT3edfEkxxXeyUNjx5OzZHs=
 gitlab.misakey.dev/misakey/backend/api/src/sdk v1.13.0/go.mod h1:Gk71diHNh+Wms/yYaV+TPjJZjZL6zXCZ5fKk4eMqtec=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=

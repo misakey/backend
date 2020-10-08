@@ -6,9 +6,9 @@ import (
 	"encoding/base64"
 	"time"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 // Process allows to have multi Step in a login flow
@@ -39,7 +39,7 @@ type processRepo interface {
 	Create(context.Context, *Process) error
 	Update(context.Context, Process) error
 	Get(context.Context, string) (Process, error)
-	GetByTok(ctx context.Context, token string) (Process, error)
+	GetClaims(ctx context.Context, token string) (oidc.AccessClaims, error)
 }
 
 func (as *Service) computeNextStep(ctx context.Context, identity domain.Identity, p Process) (Process, error) {

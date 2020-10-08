@@ -65,7 +65,7 @@ func (repo CryptoActionSQLBoiler) Create(ctx context.Context, action domain.Cryp
 func (repo CryptoActionSQLBoiler) List(ctx context.Context, accountID string) ([]domain.CryptoAction, error) {
 	records, err := sqlboiler.CryptoActions(
 		sqlboiler.CryptoActionWhere.AccountID.EQ(accountID),
-		qm.OrderBy(sqlboiler.CryptoActionColumns.CreatedAt+"ASC"),
+		qm.OrderBy(sqlboiler.CryptoActionColumns.CreatedAt+" ASC"),
 	).All(ctx, repo.db)
 	result := make([]domain.CryptoAction, len(records))
 	if err == sql.ErrNoRows {

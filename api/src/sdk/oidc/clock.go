@@ -1,4 +1,4 @@
-package ajwt
+package oidc
 
 import (
 	customclock "github.com/benbjohnson/clock"

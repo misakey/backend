@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+
 	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -64,8 +66,8 @@ func InitModule(router *echo.Echo) Process {
 	}
 
 	// init resters
-	publicHydraJSON := http.NewClient(viper.GetString("hydra.public_endpoint"), viper.GetBool("hydra.secure"))
-	adminHydraJSON := http.NewClient(viper.GetString("hydra.admin_endpoint"), viper.GetBool("hydra.secure"))
+	publicHydraJSON := http.NewClient(viper.GetString("hydra.public_endpoint"), viper.GetBool("hydra.secure"), http.SetAuthenticator(&oidc.BearerTokenAuthenticator{}))
+	adminHydraJSON := http.NewClient(viper.GetString("hydra.admin_endpoint"), viper.GetBool("hydra.secure"), http.SetAuthenticator(&oidc.BearerTokenAuthenticator{}))
 	publicHydraFORM := http.NewClient(
 		viper.GetString("hydra.public_endpoint"),
 		viper.GetBool("hydra.secure"),
@@ -76,6 +78,7 @@ func InitModule(router *echo.Echo) Process {
 		viper.GetString("hydra.admin_endpoint"),
 		viper.GetBool("hydra.secure"),
 		http.SetFormat(http.URLENCODED_FORM_MIME_TYPE),
+		http.SetAuthenticator(&oidc.BearerTokenAuthenticator{}),
 	)
 
 	// init repositories
@@ -87,7 +90,8 @@ func InitModule(router *echo.Echo) Process {
 	usedCouponRepo := repositories.NewUsedCouponSQLBoiler(dbConn)
 	cryptoActionRepo := repositories.NewCryptoActionSQLBoiler(dbConn)
 	backupKeyRepo := backupkeyshare.NewRedisRepo(redConn, viper.GetDuration("backup_key_share.expiration"))
-	authnSessionRepo, authnProcessRepo := authn.NewAuthnSessionRedis(redConn), authn.NewAuthnProcessRedis(redConn)
+	authnSessionRepo := authn.NewAuthnSessionRedis(redConn)
+	authnProcessRepo := authn.NewAuthnProcessRedis(viper.GetString("authflow.self_client_id"), redConn)
 	hydraRepo := authflow.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
 	templateRepo := email.NewTemplateFileSystem(viper.GetString("mail.templates"))
 	var emailRepo email.Sender
@@ -173,10 +177,22 @@ func InitModule(router *echo.Echo) Process {
 		adminHydraFORM,
 	)
 
-	authnProcessAuthzMidlw := authn.NewProcessIntrospector(viper.GetString("authflow.self_client_id"), authnProcessRepo)
+	authnProcessAuthzMidlw := authz.NewAuthnProcessIntrospector(viper.GetString("authflow.self_client_id"), authnProcessRepo)
+
+	oidcHandlerFactory := request.NewHandlerFactory(oidcAuthzMidlw)
+	authnProcessHandlerFactory := request.NewHandlerFactory(authnProcessAuthzMidlw)
+	extOIDCHandlerFactory := request.NewHandlerFactory(extOIDCAuthzMidlw)
 
 	// bind all routes to the router
-	initRoutes(router, authnProcessAuthzMidlw, oidcAuthzMidlw, extOIDCAuthzMidlw, &ssoService, *oauthCodeFlow, backupArchiveService)
+	bindRoutes(
+		router,
+		oidcHandlerFactory,
+		authnProcessHandlerFactory,
+		extOIDCHandlerFactory,
+		&ssoService,
+		*oauthCodeFlow,
+		backupArchiveService,
+	)
 	// bind static assets for avatars only if configuration has been set up
 	avatarLocation := viper.GetString("server.avatars")
 	if len(avatarLocation) > 0 {

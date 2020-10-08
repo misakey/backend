@@ -6,17 +6,20 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
-type AccountQuery struct {
-	AccountID string
+type BackupQuery struct {
+	accountID string
 }
 
-func (query AccountQuery) Validate() error {
-	return v.ValidateStruct(&query,
-		v.Field(&query.AccountID, v.Required, is.UUIDv4.Error("account id must be an uuid v4")),
+func (query *BackupQuery) BindAndValidate(eCtx echo.Context) error {
+	query.accountID = eCtx.Param("id")
+	return v.ValidateStruct(query,
+		v.Field(&query.accountID, v.Required, is.UUIDv4),
 	)
 }
 
@@ -25,18 +28,20 @@ type BackupView struct {
 	Version int    `json:"version"`
 }
 
-func (sso SSOService) GetBackup(ctx context.Context, query AccountQuery) (BackupView, error) {
+// Handles GET /accounts/:id/backup - get the account backup information
+func (sso *SSOService) GetBackup(ctx context.Context, gen request.Request) (interface{}, error) {
+	query := gen.(*BackupQuery)
 	view := BackupView{}
 
 	// check access using context
-	acc := ajwt.GetAccesses(ctx)
+	acc := oidc.GetAccesses(ctx)
 	if acc == nil ||
 		acc.AccountID.IsZero() ||
-		acc.AccountID.String != query.AccountID {
+		acc.AccountID.String != query.accountID {
 		return view, merror.Forbidden()
 	}
 
-	account, err := sso.accountService.Get(ctx, query.AccountID)
+	account, err := sso.accountService.Get(ctx, query.accountID)
 	if err != nil {
 		return view, err
 	}
@@ -46,42 +51,50 @@ func (sso SSOService) GetBackup(ctx context.Context, query AccountQuery) (Backup
 	return view, nil
 }
 
-type UpdateBackupCmd struct {
+type BackupUpdateCmd struct {
 	accountID  string
 	Data       string `json:"data"`
 	NewVersion int    `json:"version"`
 }
 
-func (cmd *UpdateBackupCmd) SetAccountID(id string) {
-	cmd.accountID = id
-}
+func (cmd *BackupUpdateCmd) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(cmd); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
 
-func (cmd UpdateBackupCmd) Validate() error {
-	return v.ValidateStruct(&cmd,
-		v.Field(&cmd.accountID, v.Required, is.UUIDv4.Error("account id must be an uuid v4")),
+	cmd.accountID = eCtx.Param("id")
+
+	if err := v.ValidateStruct(cmd,
+		v.Field(&cmd.accountID, v.Required, is.UUIDv4),
 		v.Field(&cmd.Data, v.Required),
 		v.Field(&cmd.NewVersion, v.Required),
-	)
+	); err != nil {
+		return merror.Transform(err).Describe("validating backup update cmd")
+	}
+	return nil
 }
 
-func (sso SSOService) UpdateBackup(ctx context.Context, cmd UpdateBackupCmd) error {
+// Handles PUT /accounts/:id/backup - update the account backup information
+func (sso *SSOService) UpdateBackup(ctx context.Context, gen request.Request) (interface{}, error) {
+	cmd := gen.(*BackupUpdateCmd)
+
 	// check access using context
-	acc := ajwt.GetAccesses(ctx)
+	acc := oidc.GetAccesses(ctx)
 	if acc == nil ||
 		acc.AccountID.IsZero() ||
 		acc.AccountID.String != cmd.accountID {
-		return merror.Forbidden()
+		return nil, merror.Forbidden()
 	}
 
 	// retrieve the current state of the account
 	currentAccount, err := sso.accountService.Get(ctx, cmd.accountID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	expectedVersion := currentAccount.BackupVersion + 1
 	if cmd.NewVersion != expectedVersion {
-		return merror.Conflict().
+		return nil, merror.Conflict().
 			Describe("wrong new version value").
 			Detail("version", merror.DVInvalid).
 			Detail("expected_version", strconv.Itoa(expectedVersion))
@@ -89,5 +102,5 @@ func (sso SSOService) UpdateBackup(ctx context.Context, cmd UpdateBackupCmd) err
 
 	currentAccount.BackupData = cmd.Data
 	currentAccount.BackupVersion = cmd.NewVersion
-	return sso.accountService.Update(ctx, &currentAccount)
+	return nil, sso.accountService.Update(ctx, &currentAccount)
 }

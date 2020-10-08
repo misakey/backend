@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
@@ -126,7 +126,7 @@ func (c *computer) playEvent(ctx context.Context, e Event) error {
 func (c *computer) handleLast(ctx context.Context) error {
 	// if the box has been closed and the viewer is not the creator or has no token
 	// we force the last event to be the close event and we remove the public key
-	acc := ajwt.GetAccesses(ctx)
+	acc := oidc.GetAccesses(ctx)
 	if (acc == nil || acc.IdentityID != c.creatorID) && c.closeEvent != nil {
 		c.lastEvent = c.closeEvent
 		c.box.PublicKey = ""

@@ -4,41 +4,42 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/application"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
-func bindRoutes(router *echo.Echo, bs *application.BoxApplication, wsh entrypoints.WebsocketHandler, authzMidlw echo.MiddlewareFunc) {
-	// Boxes
-	boxRouter := router.Group("/boxes")
-
+func bindRoutes(
+	router *echo.Echo,
+	bs *application.BoxApplication,
+	wsh entrypoints.WebsocketHandler,
+	oidcHandlerFactory request.HandlerFactory,
+	authzMidlw echo.MiddlewareFunc,
+) {
 	// ----------------------
 	// Boxes related routes
-
-	createBox := request.NewProtectedHTTP(
+	boxPath := router.Group("/boxes")
+	boxPath.POST(oidcHandlerFactory.NewACR2(
+		"",
 		func() request.Request { return &application.CreateBoxRequest{} },
 		bs.CreateBox,
 		request.ResponseCreated,
-	)
-	boxRouter.POST("", createBox, authzMidlw)
-
-	getBox := request.NewProtectedHTTP(
+	))
+	boxPath.GET(oidcHandlerFactory.NewACR1(
+		"/:id",
 		func() request.Request { return &application.ReadBoxRequest{} },
 		bs.ReadBox,
 		request.ResponseOK,
-	)
-	boxRouter.GET("/:id", getBox, authzMidlw)
-
-	getBoxPublic := request.NewPublicHTTP(
+	))
+	boxPath.GET(oidcHandlerFactory.NewPublic(
+		"/:id/public",
 		func() request.Request { return &application.ReadBoxPublicRequest{} },
 		bs.ReadBoxPublic,
 		request.ResponseOK,
-	)
-	boxRouter.GET("/:id/public", getBoxPublic)
-
-	countBoxes := request.NewProtectedHTTP(
+	))
+	boxPath.HEAD(oidcHandlerFactory.NewACR2(
+		"/joined",
 		func() request.Request { return &application.CountBoxesRequest{} },
 		bs.CountBoxes,
 		request.ResponseNoContent,
@@ -46,52 +47,48 @@ func bindRoutes(router *echo.Echo, bs *application.BoxApplication, wsh entrypoin
 			ctx.Response().Header().Set("X-Total-Count", strconv.Itoa(data.(int)))
 			return nil
 		},
-	)
-	boxRouter.HEAD("/joined", countBoxes, authzMidlw)
-
-	listBoxes := request.NewProtectedHTTP(
+	))
+	boxPath.GET(oidcHandlerFactory.NewACR2(
+		"/joined",
 		func() request.Request { return &application.ListBoxesRequest{} },
 		bs.ListBoxes,
 		request.ResponseOK,
-	)
-	boxRouter.GET("/joined", listBoxes, authzMidlw)
-
-	listBoxMembers := request.NewProtectedHTTP(
+	))
+	boxPath.GET(oidcHandlerFactory.NewACR1(
+		"/:id/members",
 		func() request.Request { return &application.ListBoxMembersRequest{} },
 		bs.ListBoxMembers,
 		request.ResponseOK,
-	)
-	boxRouter.GET("/:id/members", listBoxMembers, authzMidlw)
-
-	deleteBox := request.NewProtectedHTTP(
+	))
+	boxPath.DELETE(oidcHandlerFactory.NewACR2(
+		"/:id",
 		func() request.Request { return &application.DeleteBoxRequest{} },
 		bs.DeleteBox,
 		request.ResponseNoContent,
-	)
-	boxRouter.DELETE("/:id", deleteBox, authzMidlw)
+	))
 
 	// ----------------------
 	// Access related routes
-	listAccesses := request.NewProtectedHTTP(
+	boxPath.GET(oidcHandlerFactory.NewACR2(
+		"/:id/accesses",
 		func() request.Request { return &application.ListAccessesRequest{} },
 		bs.ListAccesses,
 		request.ResponseOK,
-	)
-	boxRouter.GET("/:id/accesses", listAccesses, authzMidlw)
+	))
 
 	// ----------------------
 	// Events related routes
-
-	listEvents := request.NewProtectedHTTP(
+	boxPath.GET(oidcHandlerFactory.NewACR1(
+		"/:id/events",
 		func() request.Request { return &application.ListEventsRequest{} },
 		bs.ListEvents,
 		request.ResponseOK,
-	)
-	boxRouter.GET("/:id/events", listEvents, authzMidlw)
+	))
 
-	boxRouter.GET("/:id/events/ws", wsh.ListEventsWS, authzMidlw)
+	boxPath.GET("/:id/events/ws", wsh.ListEventsWS, authzMidlw)
 
-	countEvents := request.NewProtectedHTTP(
+	boxPath.HEAD(oidcHandlerFactory.NewACR1(
+		"/:id/events",
 		func() request.Request { return &application.CountEventsRequest{} },
 		bs.CountEvents,
 		request.ResponseNoContent,
@@ -99,127 +96,108 @@ func bindRoutes(router *echo.Echo, bs *application.BoxApplication, wsh entrypoin
 			ctx.Response().Header().Set("X-Total-Count", strconv.Itoa(data.(int)))
 			return nil
 		},
-	)
-	boxRouter.HEAD("/:id/events", countEvents, authzMidlw)
-
-	postEvents := request.NewProtectedHTTP(
+	))
+	boxPath.POST(oidcHandlerFactory.NewACR1(
+		"/:id/events",
 		func() request.Request { return &application.CreateEventRequest{} },
 		bs.CreateEvent,
 		request.ResponseCreated,
-	)
-	boxRouter.POST("/:id/events", postEvents, authzMidlw)
-
-	batchPostEvents := request.NewProtectedHTTP(
+	))
+	boxPath.POST(oidcHandlerFactory.NewACR2(
+		"/:id/batch-events",
 		func() request.Request { return &application.BatchCreateEventRequest{} },
 		bs.BatchCreateEvent,
 		request.ResponseCreated,
-	)
-	boxRouter.POST("/:id/batch-events", batchPostEvents, authzMidlw)
-
-	uploadEncryptedFile := request.NewProtectedHTTP(
+	))
+	boxPath.POST(oidcHandlerFactory.NewACR1(
+		"/:bid/encrypted-files",
 		func() request.Request { return &application.UploadEncryptedFileRequest{} },
 		bs.UploadEncryptedFile,
 		request.ResponseCreated,
-	)
-	boxRouter.POST("/:bid/encrypted-files", uploadEncryptedFile, authzMidlw)
-
-	newEventsCount := request.NewProtectedHTTP(
+	))
+	boxPath.PUT(oidcHandlerFactory.NewACR1(
+		"/:id/new-events-count/ack",
 		func() request.Request { return &application.AckNewEventsCountRequest{} },
 		bs.AckNewEventsCount,
 		request.ResponseNoContent,
-	)
-	boxRouter.PUT("/:id/new-events-count/ack", newEventsCount, authzMidlw)
-
-	// Boxes
-	boxUsersRouter := router.Group("/box-users")
+	))
 
 	// ----------------------
 	// Box Users related routes
-
-	boxUsersRouter.GET("/:id/ws", wsh.BoxUsersWS, authzMidlw)
+	boxUsersPath := router.Group("/box-users")
+	boxUsersPath.GET("/:id/ws", wsh.BoxUsersWS, authzMidlw)
 
 	// ----------------------
 	// Box Key Shares related routes
-
-	keyShareRouter := router.Group("/box-key-shares", authzMidlw)
-
-	createKeyShare := request.NewProtectedHTTP(
+	keySharePath := router.Group("/box-key-shares")
+	keySharePath.POST(oidcHandlerFactory.NewACR2(
+		"",
 		func() request.Request { return &application.CreateKeyShareRequest{} },
 		bs.CreateKeyShare,
 		request.ResponseCreated,
-	)
-	keyShareRouter.POST("", createKeyShare)
-
-	getKeyShare := request.NewProtectedHTTP(
+	))
+	keySharePath.GET(oidcHandlerFactory.NewACR1(
+		"/:other-share-hash",
 		func() request.Request { return &application.GetKeyShareRequest{} },
 		bs.GetKeyShare,
 		request.ResponseOK,
-	)
-	keyShareRouter.GET("/:other-share-hash", getKeyShare)
+	))
 
 	// ----------------------
 	// Saved Files related routes
-
-	savedFileRouter := router.Group("/saved-files", authzMidlw)
-
-	createSavedFile := request.NewProtectedHTTP(
+	savedFilePath := router.Group("/saved-files")
+	savedFilePath.POST(oidcHandlerFactory.NewACR2(
+		"",
 		func() request.Request { return &application.CreateSavedFileRequest{} },
 		bs.CreateSavedFile,
 		request.ResponseCreated,
-	)
-	savedFileRouter.POST("", createSavedFile)
-
-	deleteSavedFile := request.NewProtectedHTTP(
+	))
+	savedFilePath.DELETE(oidcHandlerFactory.NewACR2(
+		"/:id",
 		func() request.Request { return &application.DeleteSavedFileRequest{} },
 		bs.DeleteSavedFile,
 		request.ResponseNoContent,
-	)
-	savedFileRouter.DELETE("/:id", deleteSavedFile)
-
-	listSavedFiles := request.NewProtectedHTTP(
+	))
+	savedFilePath.GET(oidcHandlerFactory.NewACR2(
+		"",
 		func() request.Request { return &application.ListSavedFilesRequest{} },
 		bs.ListSavedFiles,
 		request.ResponseOK,
-	)
-	savedFileRouter.GET("", listSavedFiles)
+	))
 
 	// ----------------------
 	// Encrypted Files related routes
-	encryptedFileRouter := router.Group("/encrypted-files", authzMidlw)
-
-	downloadEncryptedFile := request.NewProtectedHTTP(
+	encryptedFilePath := router.Group("/encrypted-files")
+	encryptedFilePath.GET(oidcHandlerFactory.NewACR1(
+		"/:id",
 		func() request.Request { return &application.DownloadEncryptedFileRequest{} },
 		bs.DownloadEncryptedFile,
 		request.ResponseStream,
-	)
-	encryptedFileRouter.GET("/:id", downloadEncryptedFile, authzMidlw)
+	))
 
 	// ----------------------
 	// box-users related routes
-	boxUserRouter := router.Group("/box-users", authzMidlw)
-
-	listStorageQuota := request.NewProtectedHTTP(
+	boxUserPath := router.Group("/box-users")
+	boxUserPath.GET(oidcHandlerFactory.NewACR1(
+		"/:id/storage-quota",
 		func() request.Request { return &application.ListUserStorageQuotaRequest{} },
 		bs.ListUserStorageQuota,
 		request.ResponseOK,
-	)
-	boxUserRouter.GET("/:id/storage-quota", listStorageQuota, authzMidlw)
-
-	getUserVaultSpace := request.NewProtectedHTTP(
+	))
+	boxUserPath.GET(oidcHandlerFactory.NewACR1(
+		"/:id/vault-used-space",
 		func() request.Request { return &application.GetVaultUsedSpaceRequest{} },
 		bs.GetVaultUsedSpace,
 		request.ResponseOK,
-	)
-	boxUserRouter.GET("/:id/vault-used-space", getUserVaultSpace, authzMidlw)
+	))
 
 	// ----------------------
 	// box-used-space related routes
-	boxUsedSpacesRouter := router.Group("/box-used-spaces", authzMidlw)
-
-	listBoxUsedSpace := request.NewProtectedHTTP(
+	boxUsedSpacesPath := router.Group("/box-used-spaces")
+	boxUsedSpacesPath.GET(oidcHandlerFactory.NewACR1(
+		"",
 		func() request.Request { return &application.ListBoxUsedSpaceRequest{} },
 		bs.ListBoxUsedSpace,
 		request.ResponseOK,
-	)
-	boxUsedSpacesRouter.GET("", listBoxUsedSpace, authzMidlw)
+	))
 }

@@ -12,8 +12,8 @@ import (
 
 const headerFapiInteractionID = "x-fapi-interaction-id"
 
-// NewLogger instantiates and returns a new Logger MiddlewareFunc for echo
-func NewLogger() echo.MiddlewareFunc {
+// newLogger instantiates and returns a new Logger MiddlewareFunc for echo
+func newLogger() echo.MiddlewareFunc {
 	return middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: logger.GetEchoFormat(),
 		Skipper: func(c echo.Context) bool {
@@ -22,8 +22,8 @@ func NewLogger() echo.MiddlewareFunc {
 	})
 }
 
-// NewZerologLogger instantiates a zerolog Logger and add it to context
-func NewZerologLogger(logLevel string) echo.MiddlewareFunc {
+// newZerologLogger instantiates a zerolog Logger and add it to context
+func newZerologLogger(logLevel string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
@@ -40,7 +40,6 @@ func NewZerologLogger(logLevel string) echo.MiddlewareFunc {
 				requestID = id.String()
 			}
 			res.Header().Set(echo.HeaderXRequestID, requestID)
-
 			// bind potentially the unique ID to the fapi interaction Header
 			// from https://openid.net/specs/openid-financial-api-part-1-ID2.html#protected-resources-provisions
 			fapiInterID := req.Header.Get(headerFapiInteractionID)
@@ -64,12 +63,10 @@ func NewZerologLogger(logLevel string) echo.MiddlewareFunc {
 
 			// replace current request context with a child context containing our zerolog logger
 			c.SetRequest(req.WithContext(context.WithValue(req.Context(), logger.CtxKey{}, &l)))
-
 			err := next(c)
 			if err != nil {
 				c.Error(err)
 			}
-
 			return err
 		}
 	}

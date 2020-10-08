@@ -17,6 +17,11 @@ func (acr ClassRef) String() string {
 }
 
 func (acr ClassRef) LessThan(minimum ClassRef) bool {
+	// empty acr is always lesser
+	if acr == "" {
+		return true
+	}
+
 	// ACR0 has only one equivalent: 0
 	if acr == ACR0 && minimum != ACR0 {
 		return true

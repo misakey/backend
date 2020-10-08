@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
@@ -61,7 +61,7 @@ func newHTTPEntrypoint(
 		ctx := eCtx.Request().Context()
 
 		if checkAccesses {
-			if acc := ajwt.GetAccesses(ctx); acc == nil {
+			if acc := oidc.GetAccesses(ctx); acc == nil {
 				return merror.Forbidden()
 			}
 		}

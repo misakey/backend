@@ -7,13 +7,12 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/argon2"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 type accountMetadata struct {
@@ -33,7 +32,7 @@ func (am accountMetadata) Validate() error {
 
 // assertAccountCreation
 func (as *Service) assertAccountCreation(ctx context.Context, challenge string, identity *domain.Identity, step Step) error {
-	acc := ajwt.GetAccesses(ctx)
+	acc := oidc.GetAccesses(ctx)
 	if acc == nil ||
 		oidc.ClassRef(acc.ACR).LessThan(oidc.ACR1) {
 		return merror.Forbidden()
@@ -90,7 +89,6 @@ func (as *Service) assertAccountCreation(ctx context.Context, challenge string, 
 	if err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("setting base quota for %s", identity.ID)
 	}
-
 	return nil
 }
 

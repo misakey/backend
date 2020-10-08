@@ -4,35 +4,37 @@ import (
 	"context"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
 type BackupKeyShareQuery struct {
-	OtherShareHash string
+	otherShareHash string
 }
 
-func (cmd BackupKeyShareQuery) Validate() error {
+func (query *BackupKeyShareQuery) BindAndValidate(eCtx echo.Context) error {
+	query.otherShareHash = eCtx.Param("other-share-hash")
 
-	if err := v.ValidateStruct(&cmd,
-		v.Field(&cmd.OtherShareHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
+	if err := v.ValidateStruct(query,
+		v.Field(&query.otherShareHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 	); err != nil {
-		return merror.Transform(err).Describe("validating create backup key share command")
+		return merror.Transform(err).Describe("validating create backup key share query")
 	}
 	return nil
 }
 
-func (sso SSOService) BackupKeyShareGet(ctx context.Context, query BackupKeyShareQuery) (*domain.BackupKeyShare, error) {
+func (sso *SSOService) GetBackupKeyShare(ctx context.Context, gen request.Request) (interface{}, error) {
+	query := gen.(*BackupKeyShareQuery)
 
-	acc := ajwt.GetAccesses(ctx)
+	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Forbidden()
 	}
 
-	backupKeyShare, err := sso.backupKeyShareService.GetBackupKeyShare(ctx, query.OtherShareHash)
+	backupKeyShare, err := sso.backupKeyShareService.GetBackupKeyShare(ctx, query.otherShareHash)
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
@@ -56,7 +56,7 @@ func (req BatchEvent) Validate() error {
 
 func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*BatchCreateEventRequest)
-	acc := ajwt.GetAccesses(ctx)
+	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
@@ -109,7 +109,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.R
 
 	// not important to wait for after handlers to return
 	// NOTE: we construct a new context since the actual one will be destroyed after the function has returned
-	subCtx := context.WithValue(ajwt.SetAccesses(context.Background(), acc), logger.CtxKey{}, logger.FromCtx(ctx))
+	subCtx := context.WithValue(oidc.SetAccesses(context.Background(), acc), logger.CtxKey{}, logger.FromCtx(ctx))
 	go func(ctx context.Context, list []events.Event) {
 		for _, e := range list {
 			for _, after := range events.Handler(e.Type).After {

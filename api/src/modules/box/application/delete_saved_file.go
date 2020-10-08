@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -28,7 +28,7 @@ func (req *DeleteSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 func (bs *BoxApplication) DeleteSavedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*DeleteSavedFileRequest)
 
-	access := ajwt.GetAccesses(ctx)
+	access := oidc.GetAccesses(ctx)
 	if access == nil {
 		return nil, merror.Unauthorized()
 	}

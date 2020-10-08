@@ -5,23 +5,28 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 )
 
-type CreateBackupKeyShareCmd struct {
+type BackupKeyShareCreateCmd struct {
 	AccountID      string `json:"account_id"`
 	SaltBase64     string `json:"salt_base64"`
 	Share          string `json:"share"`
 	OtherShareHash string `json:"other_share_hash"`
 }
 
-func (cmd CreateBackupKeyShareCmd) Validate() error {
+func (cmd *BackupKeyShareCreateCmd) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(cmd); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
 
-	if err := v.ValidateStruct(&cmd,
+	if err := v.ValidateStruct(cmd,
 		v.Field(&cmd.AccountID, v.Required, is.UUIDv4.Error("account_id must be an UUIDv4")),
 		v.Field(&cmd.SaltBase64, is.Base64),
 		v.Field(&cmd.OtherShareHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
@@ -32,26 +37,27 @@ func (cmd CreateBackupKeyShareCmd) Validate() error {
 	return nil
 }
 
-func (sso SSOService) BackupKeyShareCreate(ctx context.Context, cmd CreateBackupKeyShareCmd) error {
+func (sso *SSOService) CreateBackupKeyShare(ctx context.Context, gen request.Request) (interface{}, error) {
+	cmd := gen.(*BackupKeyShareCreateCmd)
 
-	acc := ajwt.GetAccesses(ctx)
+	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return merror.Forbidden()
+		return nil, merror.Forbidden()
 	}
 
 	// the request must bear authorization for an account
 	identity, err := sso.identityService.Get(ctx, acc.IdentityID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if identity.AccountID.IsZero() {
-		return merror.Conflict().
+		return nil, merror.Conflict().
 			Describe("no account id in authorization").
 			Detail("account_id", merror.DVConflict)
 	}
 	// the account id must be the same than the identity linked account
 	if identity.AccountID.String != cmd.AccountID {
-		return merror.Forbidden().Describe("account_id does not match the querier account").Detail("account_id", merror.DVForbidden)
+		return nil, merror.Forbidden().Describe("account_id does not match the querier account").Detail("account_id", merror.DVForbidden)
 	}
 
 	backupKeyShare := domain.BackupKeyShare{
@@ -61,5 +67,5 @@ func (sso SSOService) BackupKeyShareCreate(ctx context.Context, cmd CreateBackup
 		OtherShareHash: cmd.OtherShareHash,
 	}
 
-	return sso.backupKeyShareService.CreateBackupKeyShare(ctx, backupKeyShare)
+	return nil, sso.backupKeyShareService.CreateBackupKeyShare(ctx, backupKeyShare)
 }

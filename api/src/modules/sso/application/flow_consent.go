@@ -7,13 +7,97 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
+
+type ConsentInitCmd struct {
+	ConsentChallenge string `query:"consent_challenge"`
+}
+
+func (cmd *ConsentInitCmd) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(cmd); err != nil {
+		return merror.BadRequest().From(merror.OriQuery).Describe(err.Error())
+	}
+
+	return v.ValidateStruct(cmd,
+		v.Field(&cmd.ConsentChallenge, v.Required),
+	)
+}
+
+// Init a user consent stage (a.k.a. consent flow)
+// It interacts with hydra to know either user has already consented to share data with the RP
+// It returns a URL user's agent should be redirected to
+// Today, it accept directly the consent of the user with the email claim contained in the ID token
+func (sso *SSOService) InitConsent(ctx context.Context, gen request.Request) (interface{}, error) {
+	cmd := gen.(*ConsentInitCmd)
+
+	// 1. get consent context
+	consentCtx, err := sso.authFlowService.GetConsentContext(ctx, cmd.ConsentChallenge)
+	if err != nil {
+		return sso.authFlowService.ConsentRedirectErr(err), nil
+	}
+
+	// 2. retrieve subject information to put it in ID tokens as claims
+	identity, err := sso.identityService.Get(ctx, consentCtx.OIDCContext.MID())
+	if err != nil {
+		return sso.authFlowService.ConsentRedirectErr(err), nil
+	}
+
+	// 3. upsert the Sec Level authentication session
+	// this is the first time we receive a potentially new login session id
+	session := authn.Session{
+		ID:          consentCtx.LoginSessionID,
+		ACR:         consentCtx.ACR,
+		RememberFor: consentCtx.ACR.RememberFor(),
+		IdentityID:  consentCtx.OIDCContext.MID(),
+		AccountID:   consentCtx.OIDCContext.AID(),
+	}
+	if err := sso.AuthenticationService.UpsertSession(ctx, session); err != nil {
+		return sso.authFlowService.ConsentRedirectErr(err), nil
+	}
+
+	// 4. ask our consent service if the end-user manual consent can be skipped
+	skip, err := sso.authFlowService.ShouldSkipConsent(
+		ctx, consentCtx.RequestedScope,
+		consentCtx.Client.ID,
+		identity.AccountID,
+	)
+	if err != nil {
+		return sso.authFlowService.ConsentRedirectErr(err), nil
+	}
+
+	// consider both our's and hydra's decision about skipping the manual consent
+	if skip || consentCtx.Skip {
+		return sso.authFlowService.BuildAndAcceptConsent(ctx, consentCtx, identity.Identifier.Value), nil
+	}
+
+	if authflow.NonePrompt(consentCtx.RequestURL) {
+		return sso.authFlowService.ConsentRequiredErr(), nil
+	}
+
+	return sso.authFlowService.BuildConsentURL(consentCtx.Challenge), nil
+}
+
+type ConsentInfoQuery struct {
+	ConsentChallenge string `query:"consent_challenge"`
+}
+
+func (query *ConsentInfoQuery) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(query); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
+
+	return v.ValidateStruct(query,
+		v.Field(&query.ConsentChallenge, v.Required),
+	)
+}
 
 // ConsentInfoView bears data about current user authentication status
 type ConsentInfoView struct {
@@ -30,10 +114,12 @@ type ConsentInfoView struct {
 	} `json:"client"`
 }
 
-func (sso SSOService) ConsentInfo(ctx context.Context, loginChallenge string) (ConsentInfoView, error) {
+func (sso *SSOService) GetConsentInfo(ctx context.Context, gen request.Request) (interface{}, error) {
+	query := gen.(*ConsentInfoQuery)
+
 	view := ConsentInfoView{}
 
-	consentCtx, err := sso.authFlowService.GetConsentContext(ctx, loginChallenge)
+	consentCtx, err := sso.authFlowService.GetConsentContext(ctx, query.ConsentChallenge)
 	if err != nil {
 		return view, merror.Transform(err).Describe("could not get context")
 	}
@@ -57,66 +143,19 @@ type ConsentAcceptCmd struct {
 	ConsentedScopes  []string `json:"consented_scopes"`
 }
 
-func (cmd ConsentAcceptCmd) Validate() error {
-	return v.ValidateStruct(&cmd,
+func (cmd *ConsentAcceptCmd) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(cmd); err != nil {
+		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+	}
+
+	return v.ValidateStruct(cmd,
 		v.Field(&cmd.IdentityID, v.Required, is.UUIDv4.Error("identity id should be an uuid v4")),
 		v.Field(&cmd.ConsentChallenge, v.Required),
 	)
 }
 
-// Init a user consent stage (a.k.a. consent flow)
-// It interacts with hydra to know either user has already consented to share data with the RP
-// It returns a URL user's agent should be redirected to
-// Today, it accept directly the consent of the user with the email claim contained in the ID token
-func (sso SSOService) ConsentInit(ctx context.Context, consentChallenge string) string {
-	// 1. get consent context
-	consentCtx, err := sso.authFlowService.GetConsentContext(ctx, consentChallenge)
-	if err != nil {
-		return sso.authFlowService.ConsentRedirectErr(err)
-	}
-
-	// 2. retrieve subject information to put it in ID tokens as claims
-	identity, err := sso.identityService.Get(ctx, consentCtx.OIDCContext.MID())
-	if err != nil {
-		return sso.authFlowService.ConsentRedirectErr(err)
-	}
-
-	// 3. upsert the Sec Level authentication session
-	// this is the first time we receive a potentially new login session id
-	session := authn.Session{
-		ID:          consentCtx.LoginSessionID,
-		ACR:         consentCtx.ACR,
-		RememberFor: consentCtx.ACR.RememberFor(),
-		IdentityID:  consentCtx.OIDCContext.MID(),
-		AccountID:   consentCtx.OIDCContext.AID(),
-	}
-	if err := sso.AuthenticationService.UpsertSession(ctx, session); err != nil {
-		return sso.authFlowService.ConsentRedirectErr(err)
-	}
-
-	// 4. ask our consent service if the end-user manual consent can be skipped
-	skip, err := sso.authFlowService.ShouldSkipConsent(
-		ctx, consentCtx.RequestedScope,
-		consentCtx.Client.ID,
-		identity.AccountID,
-	)
-	if err != nil {
-		return sso.authFlowService.ConsentRedirectErr(err)
-	}
-
-	// consider both our's and hydra's decision about skipping the manual consent
-	if skip || consentCtx.Skip {
-		return sso.authFlowService.BuildAndAcceptConsent(ctx, consentCtx, identity.Identifier.Value)
-	}
-
-	if authflow.NonePrompt(consentCtx.RequestURL) {
-		return sso.authFlowService.ConsentRequiredErr()
-	}
-
-	return sso.authFlowService.BuildConsentURL(consentCtx.Challenge)
-}
-
-func (sso SSOService) ConsentAccept(ctx context.Context, cmd ConsentAcceptCmd) (consent.Redirect, error) {
+func (sso *SSOService) AcceptConsent(ctx context.Context, gen request.Request) (interface{}, error) {
+	cmd := gen.(*ConsentAcceptCmd)
 	redirect := consent.Redirect{}
 	// 1. get consent context
 	consentCtx, err := sso.authFlowService.GetConsentContext(ctx, cmd.ConsentChallenge)

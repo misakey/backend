@@ -11,6 +11,9 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/db"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/application"
 	bentrypoints "gitlab.misakey.dev/misakey/backend/api/src/modules/box/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
@@ -63,6 +66,7 @@ func InitModule(router *echo.Echo) Process {
 		viper.GetString("hydra.admin_endpoint"),
 		viper.GetBool("hydra.secure"),
 		http.SetFormat(http.URLENCODED_FORM_MIME_TYPE),
+		http.SetAuthenticator(&oidc.BearerTokenAuthenticator{}),
 	)
 
 	// init authorization middleware
@@ -72,8 +76,13 @@ func InitModule(router *echo.Echo) Process {
 		adminHydraFORM,
 	)
 
-	bindRoutes(router, &boxService, wsHandler, authzMidlw)
-
+	bindRoutes(
+		router,
+		&boxService,
+		wsHandler,
+		request.NewHandlerFactory(authzMidlw),
+		authzMidlw,
+	)
 	return Process{
 		BoxService:         &boxService,
 		QuotumIntraprocess: &quotumIntraprocess,

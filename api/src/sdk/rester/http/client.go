@@ -59,8 +59,6 @@ func NewClient(url string, secure bool, options ...func(*Client)) *Client {
 	// by default
 	// we consider the client is based on JSON formatting
 	SetFormat(JSON_MIME_TYPE)(cli)
-	// we consider authorization as the classic Authorization Header using a bearer token
-	SetAuthenticator(&BearerTokenAuthenticator{})(cli)
 
 	// run all potential options to set up the client
 	for _, option := range options {

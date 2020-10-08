@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/ajwt"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -27,7 +27,7 @@ func (req *ListUserStorageQuotaRequest) BindAndValidate(eCtx echo.Context) error
 func (bs *BoxApplication) ListUserStorageQuota(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListUserStorageQuotaRequest)
 
-	access := ajwt.GetAccesses(ctx)
+	access := oidc.GetAccesses(ctx)
 	if access == nil {
 		return nil, merror.Unauthorized()
 	}

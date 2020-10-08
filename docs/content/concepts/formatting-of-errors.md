@@ -105,7 +105,7 @@ Each detail object is built with a DetailKey and a DetailValue:
 :warning: In rare cases, the detail is used to give more information about an expected, required value or an resource identifier to allow a deeper error handling on consumer side.
 In this case, an normal formatted detail about the field goes along with this information to give more context and to still be processed in a generic way if wished.
 
-_Examples:_
+_Non-exhaustive list of examples:_
 
 _On user backup update:_
 ```json
@@ -118,7 +118,7 @@ _On user backup update:_
 _On any authenticated routes:_
 ```json
     {
-        "acr": "conflict",
+        "acr": "forbidden",
         "required_acr": "2"
     }
 ```

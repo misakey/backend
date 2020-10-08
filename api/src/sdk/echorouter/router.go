@@ -11,10 +11,11 @@ var env = os.Getenv("ENV")
 
 func New(logLevel string) *echo.Echo {
 	e := echo.New()
-	e.Use(NewZerologLogger(logLevel))
-	e.Use(NewLogger())
-	e.Use(middleware.Recover())
-	e.HTTPErrorHandler = Error
 	e.HideBanner = true
+	e.Use(newZerologLogger(logLevel))                                                 // init contextual logger for the request
+	e.Use(newLogger())                                                                // log received requests
+	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{StackSize: 4 << 16})) // increase default stack size to always print it fully
+	// e.Use(middleware.Gzip())                                                          // compress HTTP responses
+	e.HTTPErrorHandler = errorHandler // custom error handler
 	return e
 }

@@ -68,6 +68,7 @@ _JSON Body:_
   {
     "id": "89a27dec-c0bb-40ed-bfc8-dc74a1b99dc9",
     "account_id": null,
+    "has_account": false,
     "is_authable": true,
     "display_name": "iamagreat@dpo.com",
     "notifications": "minimal",
@@ -83,7 +84,8 @@ _JSON Body:_
 ```
 
 - `id` (uuid string): the unique identity id.
-- `account_id` (uuid string) (nullable): the linked account unique id.
+- `account_id` (uuid string) (nullable): the linked account unique id, always null if the end-user is connected with ACR 1.
+- `has_account` (boolean): tell either the identity is linked or not to an account.
 - `is_authable` (uuid string): either the identity can be used in a login flow.
 - `display_name` (uuid string): the name to display to represent the identity.
 - `notifications` (uuid string): the frequency of notifications for this identity.

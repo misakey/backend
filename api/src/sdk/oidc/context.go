@@ -76,6 +76,10 @@ func (ctx Context) AMRs() MethodRefs {
 }
 
 func (ctx Context) SetAID(accountID null.String) Context {
+	// ignore account id set if acr < 2
+	if ctx.ACRValues().Get().LessThan(ACR2) {
+		return ctx
+	}
 	ctx["aid"] = accountID.String
 	return ctx
 }
