@@ -23,7 +23,7 @@ func doDeleteMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redCo
 		return nil, err
 	}
 
-	msg, err := BuildMessage(ctx, exec, e.ReferrerID.String)
+	msg, err := buildMessage(ctx, exec, e.ReferrerID.String)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("building message")
 	}
@@ -34,11 +34,20 @@ func doDeleteMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redCo
 			return nil, merror.Transform(err).Describe("checking admins")
 		}
 	}
-
+	// if the message is already deleted, do not go further
 	if !msg.DeletedAt.IsZero() {
-		return nil, merror.Gone().Describe("event is already deleted")
+		return nil, merror.Gone().Describe("cannot delete an already deleted message")
 	}
 
+	if err := e.persist(ctx, exec); err != nil {
+		return nil, err
+	}
+	// add the recently created event to the built message
+	if err := msg.addEvent(ctx, *e); err != nil {
+		return nil, err
+	}
+
+	// NOTE: side effect, could be in after handler
 	// (potential) removal of the actual encrypted file (on S3)
 	// is done at the very end because the operation cannot be rolled back
 	if !msg.FileID.IsZero() {
@@ -52,17 +61,5 @@ func doDeleteMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redCo
 			}
 		}
 	}
-
-	// update the message
-	msg.Encrypted = ""
-	msg.PublicKey = ""
-	msg.DeletedAt = e.CreatedAt
-	msg.OldSize = msg.NewSize
-	msg.NewSize = 0
-
-	if err := e.persist(ctx, exec); err != nil {
-		return nil, err
-	}
-
 	return &msg, nil
 }

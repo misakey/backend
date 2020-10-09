@@ -324,22 +324,6 @@ func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFi
 	return notInIDs, nil
 }
 
-func FindByEncryptedFileID(ctx context.Context, exec boil.ContextExecutor, encryptedFileID string) ([]Event, error) {
-	// build expected content
-	events, err := list(ctx, exec, eventFilters{
-		eType:  null.StringFrom("msg.file"),
-		fileID: null.StringFrom(encryptedFileID),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if len(events) == 0 {
-		return events, merror.NotFound().Detail("id", merror.DVNotFound)
-	}
-	return events, nil
-}
-
 func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]string, error) {
 	events, err := list(ctx, exec, eventFilters{
 		boxID: null.StringFrom(boxID),

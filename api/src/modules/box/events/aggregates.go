@@ -13,7 +13,7 @@ import (
 func BuildAggregate(ctx context.Context, exec boil.ContextExecutor, e *Event) error {
 	// only msg.text and msg.file events can be aggregates
 	if e.Type == "msg.text" || e.Type == "msg.file" {
-		msg, err := BuildMessage(ctx, exec, e.ID)
+		msg, err := buildMessage(ctx, exec, e.ID)
 		if err != nil {
 			return merror.Transform(err).Describef("building message %s", e.ID)
 		}
@@ -26,7 +26,6 @@ func BuildAggregate(ctx context.Context, exec boil.ContextExecutor, e *Event) er
 				return merror.Transform(err).Describef("unmarshaling %s json", e.Type)
 			}
 			content.Deleted.ByIdentityID = msg.LastSenderID
-			content.Deleted.ByIdentityID = ""
 			if err := e.JSONContent.Marshal(content); err != nil {
 				return merror.Transform(err).Describef("marshalling %s content", e.Type)
 			}

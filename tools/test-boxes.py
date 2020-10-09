@@ -241,7 +241,7 @@ def test_box_messages(s1, s2):
                 'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
             }
         },
-        expected_status_code=401,
+        expected_status_code=403,
     )
 
     print('- cannot edit message of type "msg.file"')
@@ -255,7 +255,7 @@ def test_box_messages(s1, s2):
                 'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
             }
         },
-        expected_status_code=401,
+        expected_status_code=403,
     )
 
     print('- user cannot edit message they do not own')
@@ -306,11 +306,11 @@ def test_box_messages(s1, s2):
     check_response(
         r,
         [
-            lambda r: assert_fn(r.json()['content']['deleted']['by_identity']['identifier']['value'] == s1.email)
+            lambda r: assert_fn(r.json()['sender']['identifier']['value'] == s1.email)
         ]
     )
 
-    print('- deletion of file messages')
+    print(f'- deletion of file message {file_msg_id}')
     all_encrypted_files = list_encrypted_files()
     assert encrypted_file_id in all_encrypted_files
 
@@ -376,7 +376,7 @@ def test_box_messages(s1, s2):
     check_response(
         r,
         [
-            lambda r: assert_fn(r.json()['content']['deleted']['by_identity']['identifier']['value'] == s1.email)
+            lambda r: assert_fn(r.json()['sender']['identifier']['value'] == s1.email)
         ]
     )
 

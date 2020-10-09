@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"encoding/json"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -12,6 +11,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
@@ -44,12 +44,7 @@ func doEditMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn
 		return nil, err
 	}
 
-	var content MsgEditContent
-	if err := json.Unmarshal(e.JSONContent, &content); err != nil {
-		return nil, merror.Internal().Describe("unmarshaling content json")
-	}
-
-	msg, err := BuildMessage(ctx, exec, e.ReferrerID.String)
+	msg, err := buildMessage(ctx, exec, e.ReferrerID.String)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("building message")
 	}
@@ -57,21 +52,21 @@ func doEditMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn
 	if e.SenderID != msg.InitialSenderID {
 		return nil, merror.Forbidden().Describe("can only edit own messages")
 	}
-
+	// if the message is already deleted, do not go further
 	if !msg.DeletedAt.IsZero() {
-		return nil, merror.Gone().Describe("cannot edit a deleted event")
+		return nil, merror.Gone().Describe("cannot edit a deleted message")
 	}
-
-	// update the message
-	msg.Encrypted = content.NewEncrypted
-	msg.PublicKey = content.NewPublicKey
-	msg.LastEditedAt = e.CreatedAt
-	msg.OldSize = msg.NewSize
-	msg.NewSize = len(content.NewEncrypted)
+	if msg.Type == etype.Msgfile {
+		return msg, merror.Forbidden().Describef("cannot edit event type %s", msg.Type)
+	}
 
 	if err := e.persist(ctx, exec); err != nil {
 		return nil, err
 	}
 
+	// add the recently created event to the built message
+	if err := msg.addEvent(ctx, *e); err != nil {
+		return nil, err
+	}
 	return &msg, nil
 }

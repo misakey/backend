@@ -11,7 +11,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
@@ -42,37 +41,20 @@ func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.Re
 	if access == nil {
 		return nil, merror.Unauthorized()
 	}
-	// check identity
+	// check request identity consistency
 	if req.IdentityID != access.IdentityID {
 		return nil, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
 	}
 
-	// get the boxes with this file
-	events, err := events.FindByEncryptedFileID(ctx, bs.DB, req.EncryptedFileID)
+	// check identity has access to the original file
+	hasAccess, err := events.HasAccessToFile(
+		ctx, bs.DB, bs.RedConn, bs.Identities,
+		access.IdentityID, req.EncryptedFileID,
+	)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting events")
+		return nil, merror.Transform(err).Describe("checking file access")
 	}
-
-	identityBoxEvents, err := boxes.LastSenderBoxEvents(ctx, bs.DB, bs.RedConn, access.IdentityID, []string{})
-	if err != nil {
-		return nil, merror.Transform(err).Describe("getting identity boxes")
-	}
-	// creating an index to optimize next operation
-	identityBoxesIndex := make(map[string]bool, len(identityBoxEvents))
-	for _, boxEvent := range identityBoxEvents {
-		identityBoxesIndex[boxEvent.BoxID] = true
-	}
-
-	// check that the identity has access to at least one box
-	// containing this file
-	accessForbidden := true
-	for _, event := range events {
-		if _, ok := identityBoxesIndex[event.BoxID]; ok {
-			accessForbidden = false
-			break
-		}
-	}
-	if accessForbidden {
+	if !hasAccess {
 		return nil, merror.Forbidden()
 	}
 
