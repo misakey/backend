@@ -16,17 +16,21 @@ with testContext('Normal scenario'):
         'salt_base64': b64encode(os.urandom(16)).decode(),
     }
 
-    s.post(
+    r = s.post(
         'https://api.misakey.com.local/backup-key-shares',
         json=backup_key_share,
     )
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(r.json() == backup_key_share)
+        ]
+    )
+
 
     r = s.get(
         f'https://api.misakey.com.local/backup-key-shares/{backup_key_share["other_share_hash"]}'
     )
-
-    print(backup_key_share)
-    print(r.json())
     check_response(
         r,
         [

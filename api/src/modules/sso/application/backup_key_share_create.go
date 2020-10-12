@@ -67,5 +67,8 @@ func (sso *SSOService) CreateBackupKeyShare(ctx context.Context, gen request.Req
 		OtherShareHash: cmd.OtherShareHash,
 	}
 
-	return nil, sso.backupKeyShareService.CreateBackupKeyShare(ctx, backupKeyShare)
+	if err := sso.backupKeyShareService.CreateBackupKeyShare(ctx, backupKeyShare); err != nil {
+		return nil, merror.Transform(err).Describe("creating")
+	}
+	return backupKeyShare, nil
 }
