@@ -39,6 +39,7 @@ func NewSenderView(identity domain.Identity) SenderView {
 type View struct {
 	Type       string      `json:"type"`
 	Content    *types.JSON `json:"content"`
+	BoxID      string      `json:"box_id"`
 	ID         string      `json:"id"`
 	CreatedAt  time.Time   `json:"server_event_created_at"`
 	ReferrerID null.String `json:"referrer_id"`
@@ -54,6 +55,7 @@ func ToView(e Event, sender domain.Identity) View {
 		Type:       e.Type,
 		Content:    &e.JSONContent,
 		ID:         e.ID,
+		BoxID:      e.BoxID,
 		ReferrerID: e.ReferrerID,
 		CreatedAt:  e.CreatedAt,
 		Sender:     NewSenderView(sender),

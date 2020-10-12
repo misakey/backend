@@ -85,8 +85,6 @@ func bindRoutes(
 		request.ResponseOK,
 	))
 
-	boxPath.GET("/:id/events/ws", wsh.ListEventsWS, authzMidlw)
-
 	boxPath.HEAD(oidcHandlerFactory.NewACR1(
 		"/:id/events",
 		func() request.Request { return &application.CountEventsRequest{} },

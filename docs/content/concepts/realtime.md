@@ -24,19 +24,36 @@ As the javascript lib does not allow custom headers, we need to
 pass the access token through query parameters.
 We will improve this authentication process in the future.
 
-## Events
+Each user can subscribe to `wss://api.misakey.com/box-users/:id/ws` to have realtime messages.
+
+## Messages
+
+All websockets messages are under the following format:
+
+```json
+{
+    "type": "<msg type>",
+    "object": {
+        <content>
+    }
+}
+```
+
+## Server to client
+
+### `event.new` type
 
 The most important use of realtime at Misakey is to manage new events.
-Events are shipped through websockets thanks to the `wss://api.misakey.com/boxes/{id}/events/ws` endpoint.
 
-Here are the events that can be received on this socket:
+Here are the events that can be received:
 
-### `msg.text`
+#### `msg.text`
 
 ```json
 {
     "id": "(string) id of the event",
     "type": "msg.text",
+    "box_id": "(string) id of the box",
     "content": {
         encrypted content
     },
@@ -52,12 +69,13 @@ Here are the events that can be received on this socket:
 }
 ```
 
-### `msg.file`
+#### `msg.file`
 
 ```json
 {
     "id": "(string) id of the event",
     "type": "msg.file",
+    "box_id": "(string) id of the box",
     "content": {
         "encrypted_file_id": "(string) uuid of the file",
         encryption information
@@ -74,12 +92,13 @@ Here are the events that can be received on this socket:
 }
 ```
 
-### `msg.delete`
+#### `msg.delete`
 
 ```json
 {
     "id": "(string) id of the event",
     "type": "msg.delete",
+    "box_id": "(string) id of the box",
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
     "sender": {
       "display_name": "(string) the display name of the sender",
@@ -92,12 +111,13 @@ Here are the events that can be received on this socket:
     "referrer_id": "(string) uuid of the deleted message"
 }
 ```
-### `msg.edit`
+#### `msg.edit`
 
 ```json
 {
     "id": "(string) id of the event",
     "type": "msg.edit",
+    "box_id": "(string) id of the box",
     "content": {
         new encrypted content
     },
@@ -114,12 +134,13 @@ Here are the events that can be received on this socket:
 }
 ```
 
-### `member.join`
+#### `member.join`
 
 ```json
 {
     "id": "(string) id of the event",
     "type": "member.join",
+    "box_id": "(string) id of the box",
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
     "sender": {
       "display_name": "(string) the display name of the sender",
@@ -132,12 +153,13 @@ Here are the events that can be received on this socket:
 }
 ```
 
-### `member.leave`
+#### `member.leave`
 
 ```json
 {
     "id": "(string) id of the event",
     "type": "member.leave",
+    "box_id": "(string) id of the box",
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
     "sender": {
       "display_name": "(string) the display name of the sender",
@@ -151,12 +173,13 @@ Here are the events that can be received on this socket:
 }
 ```
 
-### `member.kick`
+#### `member.kick`
 
 ```json
 {
     "id": "(string) id of the event",
     "type": "member.kick",
+    "box_id": "(string) id of the box",
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
     "sender": {
       "display_name": "(string) the display name of the sender",
@@ -166,38 +189,17 @@ Here are the events that can be received on this socket:
         "kind": "(string) (one of: email): the kind of the identifier"
       }
     },
-    "referrer_id": "(string) uuid of the corresponding join event"
+    "referrer_id": "(string) uuid of the corresponding join event",
+    "content": {
+        "kicker": {
+            <kicker information>
+        }
+    },
 }
 ```
 
-## Notifications
+### `box.delete` type
 
-### Server to Client
-
-Notifications object are:
-
-```json
-{
-    "type": "<type>",
-    "object": {
-        <object>
-    }
-}
-```
-
-with `type` being `box` for any box event or `box-delete` for a box deletion.
-
-Object can be different types:
-
-#### `box` type
-
-This message is sent when a event is worth notify the user on a given box.
-
-```json
-{{% include "include/box.json" %}}
-```
-
-#### `box-delete` type
 
 This message notify a box deletion.
 
@@ -209,7 +211,7 @@ This message notify a box deletion.
 }
 ```
 
-### Client to server
+## Client to server
 
 Server accepts only events of the type `ack`:
 

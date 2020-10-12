@@ -58,7 +58,7 @@ type EventHandler struct {
 // Do handler is at least responsible for making the event persistent in storage (some events might do it differently though).
 // After handler must perform non-critical actions that might fail without altering the state of the box.
 var eventTypeHandlerMapping = map[string]EventHandler{
-	"state.lifecycle": {doLifecycle, gh(publish, notify, interrupt)},
+	"state.lifecycle": {doLifecycle, gh(publish, notify)},
 
 	"msg.text":   {doMessage, gh(publish, notify, computeUsedSpace)},
 	"msg.file":   {doMessage, gh(publish, notify, computeUsedSpace)},
@@ -67,9 +67,9 @@ var eventTypeHandlerMapping = map[string]EventHandler{
 	"access.add": {doAddAccess, gh()},
 	"access.rm":  {doRmAccess, gh()},
 
-	"member.leave": {doLeave, gh(publish, notify, interrupt, invalidateCaches)},
+	"member.leave": {doLeave, gh(publish, notify, invalidateCaches)},
 	"member.join":  {doJoin, gh(publish, notify, invalidateCaches)},
-	"member.kick":  {empty, gh(publish, notify, interrupt, invalidateCaches)},
+	"member.kick":  {empty, gh(publish, notify, invalidateCaches)},
 }
 
 func gh(handlers ...afterHandler) []afterHandler {

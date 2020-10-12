@@ -21,6 +21,7 @@ An event has the following fields:
 {
   "id": "(string) (uuid): unique id set by the server",
   "server_event_created_at": "(RFC3339 time): when the event was received by the server",
+  "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
   "sender": {
     "display_name": "(string) the display name of the sender",
     "avatar_url": "(string) (nullable) the potential avatar url of the sender",

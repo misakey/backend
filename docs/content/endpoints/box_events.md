@@ -58,6 +58,7 @@ HTTP 201 Created
 {
   "id": "f17169e0-61d8-4211-bb9f-bac29fe46d2d",
   "type": "msg.txt",
+  "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
   "server_event_created_at": "2020-04-01T20:22:45.691Z",
   "sender": {{% include "include/event-sender.json" 6 %}},
   "content": {
@@ -141,6 +142,7 @@ _JSON Body:_
         "content": null,
         "id": "b0e8dd9f-9c0c-42b3-b00f-d92088630fd2",
         "referrer_id": "2c2cefaf-732c-400b-b90a-3a425a1a6d99",
+        "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
         "sender": {
             "avatar_url": null,
             "display_name": "9ccbca-Test",
@@ -159,6 +161,7 @@ _JSON Body:_
         },
         "id": "7807fb85-27a3-49c4-8049-e654b60c9e1d",
         "referrer_id": null,
+        "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
         "sender": {
             "avatar_url": null,
             "display_name": "9ccbca-Test",
@@ -174,6 +177,7 @@ _JSON Body:_
         "content": null,
         "id": "33c05b94-3f15-4ed2-9ec9-b9c7d4c50a55",
         "referrer_id": "2c2cefaf-732c-400b-b90a-3a425a1a6d99",
+        "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
         "sender": {
             "avatar_url": null,
             "display_name": "9ccbca-Test",
@@ -240,34 +244,3 @@ HTTP 200 OK
 ```
 
 [Events](/concepts/box-events) are returned in chronological order.
-
-# 3. Realtime endpoints
-
-## 3.1 Getting new events on a box
-
-This websocket (`wss://`) endpoint open a socket.
-New events will be shipped through this websocket.
-
-[More info](/concepts/realtime) on the events format.
-
-### 3.1.1 request
-
-```bash
-    GET wss://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/events/ws?access_token=
-```
-
-_Query Parameters:_
-
-- `access_token`: For websockets, the access token is (for now) shipped through query parameters.
-
-### 3.1.2 response
-
-The Websocket Protocol handshake is interpreted by HTTP servers as an Upgrade request.
-The responses are similar to HTTP classic responses.
-
-_Code_:
-```bash
-HTTP 200 OK
-```
-
-The websocket is then open.

@@ -22,24 +22,14 @@ func (u *Update) ToJSON() ([]byte, error) {
 	return value, nil
 }
 
-func SendBoxUpdate(ctx context.Context, redConn *redis.Client, memberID string, update *Update) {
+func SendUpdate(ctx context.Context, redConn *redis.Client, memberID string, update *Update) {
 
 	msg, err := update.ToJSON()
 	if err != nil {
-		logger.FromCtx(ctx).Error().Err(err).Msgf("building box update")
+		logger.FromCtx(ctx).Error().Err(err).Msgf("building update")
 	}
-	logger.FromCtx(ctx).Debug().Msgf("send box update to user_%s:ws", memberID)
+	logger.FromCtx(ctx).Debug().Msgf("send update to user_%s:ws", memberID)
 	if _, err := redConn.Publish(fmt.Sprintf("user_%s:ws", memberID), msg).Result(); err != nil {
-		logger.FromCtx(ctx).Error().Err(err).Msgf("sending box update to user_%s:ws", memberID)
-	}
-}
-
-func SendInterruption(ctx context.Context, redConn *redis.Client, senderID, boxID string) {
-	logger.
-		FromCtx(ctx).
-		Debug().
-		Msgf("sending interruption message to %s:%s", boxID, senderID)
-	if _, err := redConn.Publish("interrupt:"+boxID+":"+senderID, []byte("stop")).Result(); err != nil {
-		logger.FromCtx(ctx).Error().Err(err).Msgf("interrupting channel interrupt:%s:%s", boxID, senderID)
+		logger.FromCtx(ctx).Error().Err(err).Msgf("sending update to user_%s:ws", memberID)
 	}
 }

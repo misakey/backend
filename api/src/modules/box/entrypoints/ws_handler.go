@@ -26,7 +26,6 @@ func (wh *WebsocketHandler) RedisListener(
 	c echo.Context,
 	wsName string,
 	chName string,
-	interruptChan string,
 	handler func(echo.Context, WebsocketHandler, []byte) error,
 ) error {
 	ws, err := mwebsockets.NewWebsocket(c, wh.allowedOrigins, wsName)
@@ -35,9 +34,6 @@ func (wh *WebsocketHandler) RedisListener(
 	}
 
 	go ws.Pump(c)
-	if interruptChan != "" {
-		go listenInterrupt(c, ws, wh.boxService.RedConn, interruptChan)
-	}
 
 	sub := wh.boxService.RedConn.Subscribe(chName)
 
@@ -81,52 +77,6 @@ func (wh *WebsocketHandler) RedisListener(
 			}
 			ws.Send <- mwebsockets.WebsocketMessage{
 				Msg: msg.Payload,
-			}
-		}
-	}
-}
-
-func listenInterrupt(c echo.Context, ws *mwebsockets.Websocket, redConn *redis.Client, interruptChan string) {
-	sub := redConn.Subscribe(interruptChan)
-	// we instantiate this interface to wait for
-	// the subscription to be active
-	// see: https://godoc.org/github.com/go-redis/redis#Client.Subscribe
-	iface, err := sub.Receive()
-	if err != nil {
-		return
-	}
-	// Should be *Subscription, but others are possible if other actions have been
-	// taken on sub since it was created.
-	switch msg := iface.(type) {
-	case *redis.Subscription:
-		logger.FromCtx(c.Request().Context()).Debug().Msgf("%s: redis Subscription successful", ws.ID)
-	case *redis.Message:
-		ws.Send <- mwebsockets.WebsocketMessage{
-			Msg: msg.Payload,
-		}
-	default:
-		logger.FromCtx(c.Request().Context()).Debug().Msgf("%s: unexpected redis notification type: %s", msg, ws.ID)
-	}
-
-	ch := sub.Channel()
-
-	logger.FromCtx(c.Request().Context()).Debug().Msgf("%s: websocket loop started", ws.ID)
-	for {
-		select {
-		case <-ws.EndPump:
-			return
-		case msg, ok := <-ch:
-			if !ok {
-				logger.FromCtx(c.Request().Context()).Error().Msgf("%s: cannot receive redis messages", ws.ID)
-			}
-			if msg.Payload == "stop" {
-				logger.FromCtx(c.Request().Context()).Error().Msgf("%s: interrupting websocket", ws.ID)
-				close(ws.Interrupt)
-			} else {
-				logger.
-					FromCtx(c.Request().Context()).
-					Error().
-					Msgf("%s: unexpected message in interrupt chan: %s", msg.String(), ws.ID)
 			}
 		}
 	}

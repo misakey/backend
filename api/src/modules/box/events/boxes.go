@@ -6,8 +6,8 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
@@ -23,7 +23,7 @@ type Box struct {
 	Lifecycle string    `json:"lifecycle"`
 
 	// aggregated data
-	EventsCount int        `json:"events_count"`
+	EventsCount null.Int   `json:"events_count,omitempty"`
 	Creator     SenderView `json:"creator"`
 	LastEvent   View       `json:"last_event"`
 }
@@ -93,7 +93,7 @@ func Compute(
 		return computer.box, err
 	}
 
-	// comput the box then return it
+	// compute the box then return it
 	err = computer.do(ctx)
 	return computer.box, err
 }

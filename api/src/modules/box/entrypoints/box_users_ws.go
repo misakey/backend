@@ -32,7 +32,6 @@ func (wh WebsocketHandler) BoxUsersWS(c echo.Context) error {
 		c,
 		fmt.Sprintf("user_%s", acc.IdentityID),
 		fmt.Sprintf("user_%s:ws", identityID),
-		"", // we don’t need an interrupt function here
 		boxUsersHandler,
 	)
 }

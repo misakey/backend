@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/go-redis/redis/v7"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
@@ -20,6 +21,22 @@ import (
 
 func Get(ctx context.Context, exec boil.ContextExecutor, identities entrypoints.IdentityIntraprocessInterface, boxID string) (events.Box, error) {
 	return events.Compute(ctx, boxID, exec, identities, nil)
+}
+
+func GetWithEventsCount(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, boxID, identityID string) (*events.Box, error) {
+	box, err := events.Compute(ctx, boxID, exec, identities, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// fill the eventCounts attribute
+	eventsCount, err := events.GetCountForIdentity(ctx, redConn, identityID, boxID)
+	if err != nil {
+		return nil, merror.Transform(err).Describef("counting new events")
+	}
+	box.EventsCount = null.IntFrom(eventsCount)
+
+	return &box, nil
 }
 
 func CountForSender(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, senderID string) (int, error) {
@@ -69,7 +86,7 @@ func ListSenderBoxes(
 		// we won’t return an error since the list
 		// can still be returned
 		// with a wrong amount of event counts
-		box.EventsCount = events.ComputeCount(ctx, redConn, senderID, box.ID)
+		box.EventsCount = null.IntFrom(events.ComputeCount(ctx, redConn, senderID, box.ID))
 	}
 
 	// 5. eventually return the boxes list
