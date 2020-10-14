@@ -181,7 +181,7 @@ func bindRoutes(
 	))
 	// exchange token
 	authPath.GET("/callback", func(ctx echo.Context) error {
-		oauthCodeFlow.ExchangeToken(ctx.Response().Writer, ctx.Request())
+		oauthCodeFlow.ExchangeToken(ctx)
 		return nil
 	})
 	// backup routes during the auth flow
@@ -204,5 +204,6 @@ func bindRoutes(
 		nil, // no request data required
 		ss.Logout,
 		request.ResponseNoContent,
+		ss.CleanCookie,
 	))
 }

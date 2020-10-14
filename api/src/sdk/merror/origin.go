@@ -11,6 +11,7 @@ const (
 	OriInternal Origin = "internal" // the error comes from internal logic
 	OriQuery    Origin = "query"    // the error comes from query parameters
 	OriPath     Origin = "path"     // the error comes from path parameters
+	OriCookies  Origin = "cookies"  // the error comes from cookies
 
 	OriNotDefined Origin = "not_defined" // the error has no origin defined yet
 )

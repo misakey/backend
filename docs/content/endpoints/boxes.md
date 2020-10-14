@@ -22,8 +22,12 @@ It is the base for data exchange, data access management...
   POST https://api.misakey.com/boxes
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): no identity check, just a valid token is required.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): no identity check, just a valid token is required.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _JSON Body:_
 ```json
@@ -61,8 +65,12 @@ which must be used to interact with the box.
   GET https://api.misakey.com/boxes/:id
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): no identity check, just a valid token is required.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): no identity check, just a valid token is required.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `id` (uuid string): the box id wished to be retrieved.
@@ -142,8 +150,12 @@ Today only the total count of boxes is returned as an response header.
   HEAD https://api.misakey.com/boxes/joined
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): a valid token.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 ### 2.4.2. response
 
@@ -169,8 +181,12 @@ This action removes all data related to the box (events, key-shares...).
 DELETE https://api.misakey.com/boxes/:id
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): the linked identity must be considered as a [box admin](../concepts/box-events/#21-admins).
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): the linked identity must be considered as a [box admin](../concepts/box-events/#21-admins).
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `id` (uuid string): the box id wished to be deleted.
@@ -217,8 +233,12 @@ _JSON Body:_
 
 where `identity_id` is the identity of the requester who wants to acknowledge.
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): a valid access token corresponding to the identity of the body
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): a valid access token corresponding to the identity of the body
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 ### 2.6.2. success response
 
@@ -252,8 +272,12 @@ GET https://api.misakey.com/boxes/:id/accesses
 _Path Parameter:_
 - `id` (string) (uuid): the box id to list accesses on.
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the access token should belongs the a box admin.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 2): the access token should belongs the a box admin.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 ### 3.2.2. success response
 
@@ -304,8 +328,12 @@ provided by the received bearer token.
 GET https://api.misakey.com/boxes/joined
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): a valid token.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Query Parameters:_
 
@@ -341,8 +369,12 @@ GET https://api.misakey.com/boxes/:id/members
 _Path Parameter:_
 - `id` (string) (uuid): the box id
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): a valid token.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 ### 4.2.2. response
 

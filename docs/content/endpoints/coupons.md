@@ -25,8 +25,12 @@ This route let a user attach a coupon to their identity.
 ```bash
 POST https://api.misakey.com/identities/:id/coupons
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks, delivered at the end of the auth flow
 
 _Path Parameters:_
 - `value` (string): the value of the coupon.

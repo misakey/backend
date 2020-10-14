@@ -23,8 +23,12 @@ Technically speaking, the hash is the SHA-512 hash of the other share.
 POST https://api.misakey.com/backup-key-shares
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the identity must be linked to an account and this account must fit the one given in the body
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): the identity must be linked to an account and this account must fit the one given in the body
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _JSON Body:_
 ```json
@@ -56,8 +60,12 @@ _JSON Body:_
 GET https://api.misakey.com/backup-key-shares/:other-share-hash
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the identity must be linked to an account and this account must fit the one for which the key has been created.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): the identity must be linked to an account and this account must fit the one for which the key has been created.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `other-share-hash` (string): the hash of the key share.

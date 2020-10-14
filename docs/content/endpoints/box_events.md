@@ -222,8 +222,12 @@ _JSON Body:_
   GET https://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/events
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): a valid token.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): a valid token.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Query Parameters:_
 

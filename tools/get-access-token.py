@@ -25,4 +25,5 @@ if creds.account_id:
     print('account_id:', creds.account_id)
 print('consent has been done' if creds.consent_done else 'no consent required')
 print('access token:', creds.access_token)
+print('CSRF token:', creds.csrf_token)
 print('id token:', creds.id_token)

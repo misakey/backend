@@ -21,8 +21,12 @@ This endpoints allows a user to add a file to their storage space.
   POST https://api.misakey.com/saved-files
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the identity of the token must be the same than the one in the request
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): the identity of the token must be the same than the one in the request.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks, delivered at the end of the auth flow
 
 _JSON Body:_
 ```json
@@ -55,8 +59,12 @@ _JSON Body:_
   GET https://api.misakey.com/saved-files
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the identity of the token must be the same than the one in the request
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): the identity of the token must be the same than the one in the request.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks, delivered at the end of the auth flow
 
 _Query Parameters:_
 - `identity_id` (string) (uuid): a filter to list only files belonging to this identity
@@ -93,8 +101,12 @@ The stored file will be deleted only in the saved file entity is the last one li
   DELETE https://api.misakey.com/saved-files/:id
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the identity of the token must be the same than the one in the request
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): the identity of the token must own the saved file to delete.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks, delivered at the end of the auth flow
 
 _Query Parameters:_
 - `id` (string) (uuid): id of the saved file to delete.

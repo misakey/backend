@@ -21,7 +21,7 @@ func NewAuthnProcessIntrospector(selfCliID string, tokens processRepo) echo.Midd
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			// handle bearer token - ignore invalid header
-			opaqueTok, err := GetBearerTok(ctx)
+			opaqueTok, err := GetBearerTokFromHeader(ctx)
 			if err != nil {
 				return next(ctx)
 			}

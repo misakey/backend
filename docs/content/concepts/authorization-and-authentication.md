@@ -267,3 +267,14 @@ while initing the auth flow to access the resource.
 [the authentication request]: https://openid.net/specs/openid-connect-core-1_0.html#ImplicitAuthRequest
 [Level of Assurance]: https://www.itu.int/rec/T-REC-X.1254-201209-I/en
 [Argon2 server relief]: https://password-hashing.net/submissions/specs/Argon-v3.pdf
+
+## 5. CSRF Protection
+
+The access token is stored in well-protected cookies (`http-only`, `secure` and `SameSite=strict` cookies), but some browser does not support those secure options.
+The cookies are thus still exposed to CSRF attacks.
+
+That is why every authenticated call must be protected by an anti-CSRF token (we will call it a *CSRF Token* for the sake of simplicity).
+
+The CSRF Token is sent at the end of the auth flow and must be sent with each request in the header `X-CSRF-Token`.
+
+It must be stored somewhere safe in the app.

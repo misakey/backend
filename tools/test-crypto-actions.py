@@ -8,7 +8,7 @@ from misapy.test_context import testContext
 from misapy.get_access_token import get_authenticated_session
 from misapy.check_response import check_response, assert_fn
 
-URL_PREFIX = 'http://127.0.0.1:5020'
+URL_PREFIX = 'https://api.misakey.com.local'
 
 def create_crypto_action(owner, sender, box_id, fake_data):
     sql_command = ' '.join([

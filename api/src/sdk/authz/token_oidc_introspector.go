@@ -1,8 +1,10 @@
 package authz
 
 import (
+	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/csrf"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
@@ -12,13 +14,13 @@ import (
 // Information must be passed through a bearer token in Authorization HTTP Header
 // The opaque token is instropected and information are set inside current context
 // to be checked later by different actors (modules...)
-func NewOIDCIntrospector(misakeyAudience string, selfRestrict bool, tokenRester rester.Client) echo.MiddlewareFunc {
+func NewOIDCIntrospector(misakeyAudience string, selfRestrict bool, tokenRester rester.Client, redConn *redis.Client, csrfProtected bool) echo.MiddlewareFunc {
 	tokens := newOIDCIntroHTTP(misakeyAudience, tokenRester)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			// handle bearer token
-			opaqueTok, err := GetBearerTok(ctx)
+			opaqueTok, err := GetBearerTokFromCookie(ctx)
 			if err != nil {
 				return err
 			}
@@ -35,6 +37,21 @@ func NewOIDCIntrospector(misakeyAudience string, selfRestrict bool, tokenRester 
 			// only Misakey client can access our API routes
 			if selfRestrict && acc.ClientID != misakeyAudience {
 				return merror.Unauthorized().Describe("unauthorized client")
+			}
+
+			if csrfProtected {
+				// checkCSRFTok
+				tok := ctx.Request().Header.Get("X-CSRF-Token")
+
+				if len(tok) == 0 {
+					return merror.Forbidden().From(merror.OriHeaders).
+						Detail("X-CSRF-Token", merror.DVRequired)
+				}
+
+				if !csrf.IsTokenValid(opaqueTok, tok, redConn) {
+					return merror.Forbidden().From(merror.OriHeaders).
+						Detail("X-CSRF-Token", merror.DVInvalid)
+				}
 			}
 
 			// set access claims in request context

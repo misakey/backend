@@ -23,8 +23,12 @@ This route is used to retrieve all the `storage_quotum` object associated to an 
 ```bash
 GET https://api.misakey.com/box-users/:id/storage-quota
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `id` (uuid string): the identity id.
@@ -57,8 +61,12 @@ This route is used to retrieve all the `box_used_space` object associated to an 
 ```bash
 POST https://api.misakey.com/box-used-spaces?&identity_id=
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Query Parameters:_
 - `identity_id` (uuid string): the identity id.
@@ -89,8 +97,12 @@ This route is used to retrieve the vault used space linked to an identity.
 ```bash
 POST https://api.misakey.com/box-users/:id/vault-used-space
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `id` (uuid string): the identity id.

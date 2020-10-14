@@ -400,7 +400,9 @@ On success, the route can return two possible json body:
 What is returned is the next URL the user's agent should be redirected to.
 This response is given when the authentication server consider the end-user has proven its identity sufficiently.
 
-Also part of the response, an access token that must be used for the next request as an `Authorization` header. This token allows us to authorize more advanced calls.
+Also part of the response, a CSRF token that must be used for the next request as a `X-CSRF-Token` header. This token prevents from CSRF attacks.
+
+The access token is sent and stored in an http-only cookie.
 
 _Code:_
 ```bash
@@ -418,7 +420,7 @@ _JSON Body:_
 
 - `next` (oneof: _redirect_, _authn_step_): the next action the authentication server is waiting for.
 - `redirect_to` (string): the URL the user's agent should be redirected to.
-- `access_token` (string): an access token allowing more advanced requests while being still in the login flow. Should be used as `Authorization` header.
+- `csrf\_token` (string): The CSRF token that must be sent in a `X-CSRF-Token`
 
 #### 6.2.2. the "more authentication required" response
 
@@ -431,7 +433,7 @@ The expected ACR can be set by:
 - the Relying Party expectations: `acr_values` paramenter on the init of the auth flow.
 - the choosen identity configuration.
 
-Also part of the response, an access token that must be used for the next request as an `Authorization` header. This token allows us to authorize more advanced calls.
+Also part of the response, an access token that must be used for the next request as an `accesstoken` cookie. This token allows us to authorize more advanced calls.
 
 _Code:_
 ```bash
@@ -749,8 +751,12 @@ account in this case.
 POST https://api.misakey.com/auth/logout
 ```
 
-_Headers_:
-- :key: `Authorization` (opaque token) (ACR >= 0): `mid` claim as the identity id sent in body.
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 0): `mid` claim as the identity id sent in body.
+- `tokentype`: must be `bearer`
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 ### 10.2. success response
 
@@ -779,7 +785,11 @@ _Query Parameters:_
 - `identity_id` (string) (uuid4): the id of the identity corresponding to the current auth flow.
 
 _Headers_:
-- :key: `Authorization` (opaque token) (ACR >= 2): the `login_challenge` token’s claim must be the login challenge sent in query.
+- `accesstoken` (opaque token) (ACR >= 2): the `login_challenge` token’s claim must be the login challenge sent in query.
+- `tokentype`: must be `bearer`
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 ### Success Response
 
@@ -811,8 +821,12 @@ This endpoint allows to create a backup key share in the auth flow.
   POST https://api.misakey.com/auth/backup-key-shares
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the access token is given during the auth flow. It must be generated for an identity id linked to the account id sent in the request.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): the access token is given during the auth flow. It must be generated for an identity id linked to the account id sent in the request.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks, delivered at the end of the auth flow
 
 _JSON Body:_
 ```json

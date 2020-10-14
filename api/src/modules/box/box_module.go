@@ -74,6 +74,16 @@ func InitModule(router *echo.Echo) Process {
 		viper.GetString("authflow.self_client_id"),
 		true,
 		adminHydraFORM,
+		redConn,
+		true,
+	)
+
+	authzMidlwWithoutCSRF := authz.NewOIDCIntrospector(
+		viper.GetString("authflow.self_client_id"),
+		true,
+		adminHydraFORM,
+		redConn,
+		false,
 	)
 
 	bindRoutes(
@@ -82,6 +92,7 @@ func InitModule(router *echo.Echo) Process {
 		wsHandler,
 		request.NewHandlerFactory(authzMidlw),
 		authzMidlw,
+		authzMidlwWithoutCSRF,
 	)
 	return Process{
 		BoxService:         &boxService,

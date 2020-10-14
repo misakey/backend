@@ -16,6 +16,7 @@ func bindRoutes(
 	wsh entrypoints.WebsocketHandler,
 	oidcHandlerFactory request.HandlerFactory,
 	authzMidlw echo.MiddlewareFunc,
+	authzMidlwWithoutCSRF echo.MiddlewareFunc,
 ) {
 	// ----------------------
 	// Boxes related routes
@@ -123,7 +124,7 @@ func bindRoutes(
 	// ----------------------
 	// Box Users related routes
 	boxUsersPath := router.Group("/box-users")
-	boxUsersPath.GET("/:id/ws", wsh.BoxUsersWS, authzMidlw)
+	boxUsersPath.GET("/:id/ws", wsh.BoxUsersWS, authzMidlwWithoutCSRF)
 
 	// ----------------------
 	// Box Key Shares related routes

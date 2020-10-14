@@ -13,7 +13,7 @@ from .test_context import testContext
 from .container_access import list_encrypted_files
 from .check_response import check_response, assert_fn
 
-URL_PREFIX = 'http://127.0.0.1:5020'
+URL_PREFIX = 'https://api.misakey.com.local'
 
 def create_box_and_post_some_events_to_it(session, close=True):
     s = session

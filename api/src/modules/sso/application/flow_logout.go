@@ -2,6 +2,10 @@ package application
 
 import (
 	"context"
+	"net/http"
+	"time"
+
+	"github.com/labstack/echo/v4"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
@@ -21,4 +25,31 @@ func (sso *SSOService) Logout(ctx context.Context, _ request.Request) (interface
 
 	// expire all current authentication steps for the logged out subject
 	return nil, sso.AuthenticationService.ExpireAll(ctx, acc.IdentityID)
+}
+
+// CleanCookie for authentication
+func (sso *SSOService) CleanCookie(eCtx echo.Context, _ interface{}) error {
+	// access token
+	eCtx.SetCookie(&http.Cookie{
+		Name:     "accesstoken",
+		Value:    "",
+		Expires:  time.Now(),
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+	})
+
+	// token type
+	eCtx.SetCookie(&http.Cookie{
+		Name:     "tokentype",
+		Value:    "",
+		Expires:  time.Now(),
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+	})
+
+	return nil
 }

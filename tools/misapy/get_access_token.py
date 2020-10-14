@@ -172,28 +172,34 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
         r = s.get(manual_redirection, raise_for_status=False)
 
     tokens = parse_query_string(urlparse(r.url).fragment)
-    access_token = tokens['access_token'][0]
+    csrf_token = tokens['csrf_token'][0]
     id_token = tokens['id_token'][0]
+    # for some reason the cookie does not appear in `r.cookies`
+    # but it appears in `s.cookies`
+    access_token = s.cookies['accesstoken']
 
     r = http.get(
         f'https://api.misakey.com.local/identities/{identity_id}',
-        headers={
-            'Authorization': f'Bearer {access_token}'
-        }
+        cookies={"accesstoken": access_token, "tokentype": "bearer"},
+        headers={"X-CSRF-Token": csrf_token}
     )
     account_id = r.json()['account_id']
 
     return namedtuple(
         'OAuth2Creds',
-        ['email', 'access_token', 'identity_id',
+        ['email', 'access_token', 'csrf_token', 'identity_id',
             'id_token', 'consent_done', 'account_id'],
-    )(email, access_token, identity_id, id_token, consent_done, account_id)
+    )(email, access_token, csrf_token, identity_id, id_token, consent_done, account_id)
 
 
 def get_authenticated_session(email=None, require_account=False, acr_values=None, reset_password=False):
     creds = get_credentials(email, require_account, acr_values, reset_password)
     session = http.Session()
-    session.headers.update({'Authorization': f'Bearer {creds.access_token}'})
+    cookie_obj = requests.cookies.create_cookie(domain='api.misakey.com.local',name='accesstoken',value=creds.access_token)
+    session.cookies.set_cookie(cookie_obj)
+    cookie_obj = requests.cookies.create_cookie(domain='api.misakey.com.local',name='tokentype',value='bearer')
+    session.cookies.set_cookie(cookie_obj)
+    session.headers.update({'X-CSRF-Token': creds.csrf_token})
     print(f'Tok - {creds.identity_id}: {creds.access_token}')
     session.email = creds.email
     session.account_id = creds.account_id

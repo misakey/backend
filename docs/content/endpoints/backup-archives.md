@@ -28,8 +28,12 @@ The frontend will also request the deletion of an archive after it has been succ
 GET https://api.misakey.com/backup-archives
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the identity must be linked to an account
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): the identity must be linked to an account
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 Only the backup archives related to the querier's account will be returned.
 
@@ -71,8 +75,12 @@ HTTP 200 OK
 GET https://api.misakey.com.local/backup-archives/99e0fad2-1191-44b7-9f78-4f10a8594c99/data
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the identity must be linked to an account and the archive must belong to this account
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): the identity must be linked to an account and the archive must belong to this account
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 ## Response (Success)
 
@@ -95,8 +103,12 @@ HTTP 410 Gone
 DELETE https://api.misakey.com.local/backup-archives/3beb62c1-b11a-4ad6-9830-380ded30afa7
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the identity must be linked to an account and the archive must belong to this account
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): the identity must be linked to an account and the archive must belong to this account
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 
 ```json

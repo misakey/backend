@@ -50,8 +50,12 @@ This route allows the retrieval of the information related to an identity.
 ```bash
 GET https://api.misakey.com/identities/:id
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `id` (uuid string): the identity unique id.
@@ -108,8 +112,12 @@ The request must be authenticated with a token corresponding to the updated iden
 ```bash
 PATCH https://api.misakey.com/identities/:id
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `id` (uuid string): the identity unique id.
@@ -134,8 +142,12 @@ The request must be authenticated with a token corresponding to the identity on 
 ```bash
 PUT https://api.misakey.com/identities/:id/avatar
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `id` (uuid string): the identity unique id.
@@ -161,8 +173,12 @@ If no avatar is set on the identity, the request will return a `409 CONFLICT`.
 ```bash
 DELETE https://api.misakey.com/identities/:id/avatar
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `id` (uuid string): the identity unique id.

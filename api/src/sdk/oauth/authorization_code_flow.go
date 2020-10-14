@@ -1,6 +1,10 @@
 package oauth
 
-import "gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
+import (
+	"github.com/go-redis/redis/v7"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
+)
 
 // AuthorizationCodeFlow (from OpenID Connect) using a private_key_jwt method for the final token exchange
 // more info: https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowSteps
@@ -10,6 +14,9 @@ import "gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
 type AuthorizationCodeFlow struct {
 	// clientID as OAuth2 Client ID
 	clientID string
+
+	// redis connector for csrf
+	redConn *redis.Client
 
 	// codeURL as the auth URL to request the authorization code.
 	codeURL string
@@ -26,13 +33,14 @@ type AuthorizationCodeFlow struct {
 
 // NewAuthorizationCodeFlow is AuthorizationCodeFlow's constructor
 func NewAuthorizationCodeFlow(
-	cliID string,
+	cliID string, redConn *redis.Client,
 	codeURL string, redirectCodeURL string,
 	tokenRester rester.Client, tokenURL string, redirectTokenURL string,
 ) (*AuthorizationCodeFlow, error) {
 	return &AuthorizationCodeFlow{
-		clientID: cliID,
-		codeURL:  codeURL, redirectCodeURL: redirectCodeURL,
-		tokenRester: tokenRester, tokenURL: tokenURL, redirectTokenURL: redirectTokenURL,
+		clientID: cliID, redConn: redConn,
+		codeURL: codeURL, redirectCodeURL: redirectCodeURL,
+		tokenRester: tokenRester,
+		tokenURL:    tokenURL, redirectTokenURL: redirectTokenURL,
 	}, nil
 }

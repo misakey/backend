@@ -23,8 +23,12 @@ The upload of an encrypted file triggers the creation of a `msg.file` event then
 ```bash
 POST https://api.misakey.com/boxes/:id/encrypted-files
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): just a valid access token
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): just a valid access token.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks, delivered at the end of the auth flow
 
 _Path Parameters:_
 - `id` (uuid string): the box unique id the file is uploaded in.
@@ -94,8 +98,12 @@ GET https://api.misakey.com/encrypted-files/:id
 _Path Parameters:_
 - `id` (string) (uuid): the encrypted file id contained in the content of the `msg.file` event.
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): just a valid access token
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 1): a valid access token.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks, delivered at the end of the auth flow
 
 ### 2.4.2. response
 

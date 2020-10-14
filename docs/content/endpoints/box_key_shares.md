@@ -41,8 +41,12 @@ Technically speaking, the invitation hash is the SHA-512 hash of the share sent 
   POST https://api.misakey.com/box-key-shares
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): no identity check, just a valid token is required.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 2): no identity check, just a valid token is required.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _JSON Body:_
 ```json
@@ -73,8 +77,12 @@ _JSON Body:_
   GET https://api.misakey.com/box-key-shares/:other-share-hash
 ```
 
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): no identity check, just a valid token is required.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- `Authorization` (opaque token) (ACR >= 1): no identity check, just a valid token is required.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `other-share-hash` (string): the invitation hash of the key share.

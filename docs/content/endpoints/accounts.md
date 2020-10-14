@@ -37,8 +37,12 @@ The `old_prehashed_password` and `new_prehashed_password` contain information fo
 ```bash
 PUT https://api.misakey.com/account/:id/password
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): `mid` claim as the identity id.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 2): `mid` claim as the identity id.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `id` (uuid string): the account id.
@@ -96,9 +100,6 @@ following [Argon2 server relief concepts](../../concepts/server-relief/).
 GET https://api.misakey.com/accounts/:id/pwd-params
 ```
 
-_Headers:_
-- No `Authorization` is required to retrieve the resource.
-
 ### 5.2. success response
 
 _Code:_
@@ -124,8 +125,12 @@ This route allows the retrieval of the account backup using the unique account i
 ```bash
 GET https://api.misakey.com/accounts/:id/backup
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): `mid` claim as an identity id linked to the account.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 2): `mid` claim as an identity id linked to the account.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `id` (uuid string): the unique account id.
@@ -157,8 +162,12 @@ This route allows the update of the account backup using the unique account id.
 ```bash
 PUT https://api.misakey.com/accounts/:id/backup
 ```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): `mid` claim as an identity id linked to the account.
+- `tokentype`: must be `bearer`
+
 _Headers:_
-- :key: `Authorization` (opaque token) (ACR >= 2): `mid` claim as an identity id linked to the account.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Path Parameters:_
 - `id` (uuid string): the unique account id.

@@ -1,7 +1,6 @@
 package oauth
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -9,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labstack/echo/v4"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/csrf"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
@@ -38,7 +39,9 @@ type TokenResponse struct {
 }
 
 // ExchangeToken using an authorization code then redirect the user agent with information related to operation's success or failure
-func (acf *AuthorizationCodeFlow) ExchangeToken(w http.ResponseWriter, r *http.Request) {
+func (acf *AuthorizationCodeFlow) ExchangeToken(c echo.Context) {
+	w := c.Response().Writer
+	r := c.Request()
 	// if an error has been transmitted, consider it
 	authErr := r.URL.Query().Get("error")
 	if authErr != "" {
@@ -88,7 +91,7 @@ func (acf *AuthorizationCodeFlow) ExchangeToken(w http.ResponseWriter, r *http.R
 		State:        state,
 		Scopes:       scopes,
 	}
-	redirectURL, err := acf.getURLWithAccessToken(r.Context(), params)
+	redirectURL, err := acf.getURLWithAccessToken(c, params)
 	if err != nil {
 		tokErr := TokenError{Code: string(merror.UnauthorizedCode), Desc: err.Error()}
 		acf.redirectErr(w, tokErr.Code, fmt.Sprintf("%s (%s)", tokErr.Desc, tokErr.Debug))
@@ -102,7 +105,8 @@ func (acf *AuthorizationCodeFlow) ExchangeToken(w http.ResponseWriter, r *http.R
 
 // getURLWithAccessToken by performing an authenticated http request using the autorization code on the token endpoint
 // then build the relying party redirection URL
-func (acf *AuthorizationCodeFlow) getURLWithAccessToken(ctx context.Context, tokenRequest TokenRequest) (*url.URL, error) {
+func (acf *AuthorizationCodeFlow) getURLWithAccessToken(c echo.Context, tokenRequest TokenRequest) (*url.URL, error) {
+	ctx := c.Request().Context()
 	params := url.Values{}
 	// prepare parameter for exchange the code against the token
 	params.Add("grant_type", "authorization_code")
@@ -119,17 +123,47 @@ func (acf *AuthorizationCodeFlow) getURLWithAccessToken(ctx context.Context, tok
 		return nil, err
 	}
 
+	// CSRF token generation
+	csrfToken, err := csrf.GenerateToken(tokenResp.AccessToken, time.Second*time.Duration(tokenResp.ExpiresIn), acf.redConn)
+	if err != nil {
+		return nil, err
+	}
+
+	urlParams := url.Values{}
 	// add token data as fragment to final URL then return it
 	// fragment parameters tends toward compliancy with https://tools.ietf.org/html/rfc6749#section-5.1
-	urlParams := url.Values{}
-	urlParams.Add("access_token", tokenResp.AccessToken)
-	urlParams.Add("token_type", tokenResp.TokenType)
+	urlParams.Add("csrf_token", csrfToken)
 	urlParams.Add("id_token", tokenResp.IDToken)
-	urlParams.Add("expires_in", strconv.Itoa(tokenResp.ExpiresIn))
 	// compute expiry time
-	expiry := time.Now().Add(time.Second * time.Duration(tokenResp.ExpiresIn)).Format(time.RFC3339)
+	urlParams.Add("expires_in", strconv.Itoa(tokenResp.ExpiresIn))
+	expirationTime := time.Now().Add(time.Second * time.Duration(tokenResp.ExpiresIn))
+	expiry := expirationTime.Format(time.RFC3339)
 	urlParams.Add("expiry", expiry)
 	urlParams.Add("scope", tokenResp.Scope)
 	urlParams.Add("state", tokenRequest.State)
+
+	// set auth cookies
+	// access token
+	c.SetCookie(&http.Cookie{
+		Name:     "accesstoken",
+		Value:    tokenResp.AccessToken,
+		Expires:  expirationTime,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+	})
+
+	// token type
+	c.SetCookie(&http.Cookie{
+		Name:     "tokentype",
+		Value:    tokenResp.TokenType,
+		Expires:  expirationTime,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+	})
+
 	return url.Parse(fmt.Sprintf("%s#%s", acf.redirectTokenURL, urlParams.Encode()))
 }

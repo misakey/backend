@@ -154,6 +154,7 @@ func InitModule(router *echo.Echo) Process {
 	)
 	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(
 		viper.GetString("authflow.self_client_id"),
+		redConn,
 		viper.GetString("authflow.auth_url"),
 		viper.GetString("authflow.code_redirect_url"),
 		publicHydraFORM,
@@ -169,12 +170,16 @@ func InitModule(router *echo.Echo) Process {
 		viper.GetString("authflow.self_client_id"),
 		true,
 		adminHydraFORM,
+		redConn,
+		true,
 	)
 
 	extOIDCAuthzMidlw := authz.NewOIDCIntrospector(
 		viper.GetString("authflow.self_client_id"),
 		false,
 		adminHydraFORM,
+		redConn,
+		false,
 	)
 
 	authnProcessAuthzMidlw := authz.NewAuthnProcessIntrospector(viper.GetString("authflow.self_client_id"), authnProcessRepo)
