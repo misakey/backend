@@ -52,13 +52,18 @@ func buildMessage(ctx context.Context, exec boil.ContextExecutor, eventID string
 		if err := initialEvent.JSONContent.Unmarshal(&content); err != nil {
 			return msg, err
 		}
-		file, err := files.Get(ctx, exec, content.EncryptedFileID)
-		if err != nil {
-			return msg, merror.Transform(err).Describe("getting file")
+		if content.EncryptedFileID != "" {
+			file, err := files.Get(ctx, exec, content.EncryptedFileID)
+			// if the file is not found, it should have been deleted previously
+			if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
+				return msg, merror.Transform(err).Describe("getting file")
+			}
+			if err == nil {
+				msg.NewSize = int(file.Size)
+				msg.FileID = null.StringFrom(content.EncryptedFileID)
+			}
 		}
-		msg.NewSize = int(file.Size)
 		msg.PublicKey = content.PublicKey
-		msg.FileID = null.StringFrom(content.EncryptedFileID)
 	default:
 		return msg, merror.Forbidden().Describef("wrong initial event type %s", initialEvent.Type)
 	}
