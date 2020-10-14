@@ -5,13 +5,12 @@ import (
 
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
-func doDeleteMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, filesRepo files.FileStorageRepo) (Metadata, error) {
+func doDeleteMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, filesRepo files.FileStorageRepo) (Metadata, error) {
 	// Authorization-related checks should come as soon as possible
 	// so we put them first.
 	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
@@ -19,7 +18,7 @@ func doDeleteMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redCo
 	}
 
 	// check that the event contains a referrer_id
-	if err := checkReferrer(ctx, *e); err != nil {
+	if err := checkReferrer(*e); err != nil {
 		return nil, err
 	}
 
@@ -43,7 +42,7 @@ func doDeleteMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redCo
 		return nil, err
 	}
 	// add the recently created event to the built message
-	if err := msg.addEvent(ctx, *e); err != nil {
+	if err := msg.addEvent(*e); err != nil {
 		return nil, err
 	}
 

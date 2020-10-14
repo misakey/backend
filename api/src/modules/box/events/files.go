@@ -9,7 +9,6 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
-	e "gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
@@ -61,7 +60,7 @@ func IsFileOrphan(ctx context.Context, exec boil.ContextExecutor, fileID string)
 
 func HasAccessOrHasSavedFile(
 	ctx context.Context,
-	exec boil.ContextExecutor, redConn *redis.Client, identities e.IdentityIntraprocessInterface,
+	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
 	identityID string, fileID string,
 ) (bool, error) {
 	// 1. identity has access to files contained in boxes they have access to
@@ -90,7 +89,7 @@ func HasAccessOrHasSavedFile(
 // identity has access to files contained in boxes they have access to
 func HasAccessToFile(
 	ctx context.Context,
-	exec boil.ContextExecutor, redConn *redis.Client, identities e.IdentityIntraprocessInterface,
+	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
 	identityID string, fileID string,
 ) (bool, error) {
 	// get all msg events mentionning the file

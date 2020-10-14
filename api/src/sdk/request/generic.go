@@ -55,78 +55,64 @@ func NewHandlerFactory(authzMdlw echo.MiddlewareFunc) HandlerFactory {
 	return HandlerFactory{authzMdlw: authzMdlw}
 }
 
-func (h *HandlerFactory) NewPublic(
+func (f *HandlerFactory) NewPublic(
 	subPath string,
 	initReq func() Request,
 	appFunc func(context.Context, Request) (interface{}, error),
 	responseFunc func(echo.Context, interface{}) error,
 	afterOpts ...func(echo.Context, interface{}) error,
 ) (string, echo.HandlerFunc) {
-	handler := func(
-		eCtx echo.Context,
-	) error {
+	handler := func(eCtx echo.Context) error {
 		// directly process the request
 		return processReq(eCtx, initReq, appFunc, responseFunc, afterOpts...)
 	}
 	return subPath, handler
 }
 
-func (h *HandlerFactory) NewOptional(
+func (f *HandlerFactory) NewOptional(
 	subPath string,
 	initReq func() Request,
 	appFunc func(context.Context, Request) (interface{}, error),
 	responseFunc func(echo.Context, interface{}) error,
 	afterOpts ...func(echo.Context, interface{}) error,
 ) (string, echo.HandlerFunc, echo.MiddlewareFunc) {
-	handler := func(
-		eCtx echo.Context,
-	) error {
+	handler := func(eCtx echo.Context) error {
 		// directly process the request
 		return processReq(eCtx, initReq, appFunc, responseFunc, afterOpts...)
 	}
-	return subPath, handler, h.authzMdlw
+	return subPath, handler, f.authzMdlw
 }
 
-func (h *HandlerFactory) NewACR2(
+func (f *HandlerFactory) NewACR2(
 	subPath string,
 	initReq func() Request,
 	appFunc func(context.Context, Request) (interface{}, error),
 	responseFunc func(echo.Context, interface{}) error,
 	afterOpts ...func(echo.Context, interface{}) error,
 ) (string, echo.HandlerFunc, echo.MiddlewareFunc) {
-
-	handler := func(
-		eCtx echo.Context,
-	) error {
+	handler := func(eCtx echo.Context) error {
 		if err := protectReq(eCtx, oidc.ACR2); err != nil {
 			return err
 		}
-
 		return processReq(eCtx, initReq, appFunc, responseFunc, afterOpts...)
 	}
-
-	return subPath, handler, h.authzMdlw
+	return subPath, handler, f.authzMdlw
 }
 
-func (h *HandlerFactory) NewACR1(
+func (f *HandlerFactory) NewACR1(
 	subPath string,
 	initReq func() Request,
 	appFunc func(context.Context, Request) (interface{}, error),
 	responseFunc func(echo.Context, interface{}) error,
 	afterOpts ...func(echo.Context, interface{}) error,
 ) (string, echo.HandlerFunc, echo.MiddlewareFunc) {
-
-	handler := func(
-		eCtx echo.Context,
-	) error {
+	handler := func(eCtx echo.Context) error {
 		if err := protectReq(eCtx, oidc.ACR1); err != nil {
 			return err
 		}
-
 		return processReq(eCtx, initReq, appFunc, responseFunc, afterOpts...)
 	}
-
-	return subPath, handler, h.authzMdlw
+	return subPath, handler, f.authzMdlw
 }
 
 func protectReq(eCtx echo.Context, minACR oidc.ClassRef) error {

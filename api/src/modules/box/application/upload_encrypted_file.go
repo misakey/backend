@@ -7,8 +7,8 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
@@ -45,20 +45,22 @@ func (req *UploadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) error 
 	)
 }
 
-func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*UploadEncryptedFileRequest)
+	// init an identity mapper for the operation
+	identityMapper := app.NewIM()
 
 	// checking accesses
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustMemberHaveAccess(ctx, bs.DB, bs.RedConn, bs.Identities, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustMemberHaveAccess(ctx, app.DB, app.RedConn, identityMapper, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 
 	// upload files works only on open boxes
-	if err := events.MustBoxBeOpen(ctx, bs.DB, req.boxID); err != nil {
+	if err := events.MustBoxBeOpen(ctx, app.DB, req.boxID); err != nil {
 		return nil, merror.Transform(err).Describe("checking open")
 	}
 
@@ -80,12 +82,12 @@ func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq reques
 		ID:   fileID,
 		Size: req.size,
 	}
-	if err := files.Create(ctx, bs.DB, eFile); err != nil {
+	if err := files.Create(ctx, app.DB, eFile); err != nil {
 		return nil, merror.Transform(err).Describe("creating file")
 	}
 
 	// upload the encrypted data
-	if err := files.Upload(ctx, bs.filesRepo, fileID, encData); err != nil {
+	if err := files.Upload(ctx, app.filesRepo, fileID, encData); err != nil {
 		return nil, merror.Transform(err).Describe("uploading file")
 	}
 
@@ -97,15 +99,15 @@ func (bs *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq reques
 	}
 
 	eReq := CreateEventRequest{
-		boxID:   e.BoxID,
-		Type:    e.Type,
-		Content: e.JSONContent,
+		boxID:               e.BoxID,
+		Type:                e.Type,
+		Content:             e.JSONContent,
 		MetadataForHandlers: metadata,
 	}
-	view, err := bs.CreateEvent(ctx, &eReq)
+	view, err := app.CreateEvent(ctx, &eReq)
 	if err != nil {
 		err = merror.Transform(err).Describe("inserting event in DB")
-		if delErr := files.Delete(ctx, bs.DB, bs.filesRepo, fileID); delErr != nil {
+		if delErr := files.Delete(ctx, app.DB, app.filesRepo, fileID); delErr != nil {
 			return nil, merror.Transform(err).Describef("deleting file: %v", delErr)
 		}
 		return nil, err

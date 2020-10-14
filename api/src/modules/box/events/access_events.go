@@ -12,9 +12,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
-
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
@@ -23,7 +20,7 @@ type accessContent struct {
 	Value           string `json:"value"`
 }
 
-func doAddAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func doAddAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")
@@ -63,7 +60,7 @@ func doAddAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redCo
 	return nil, e.persist(ctx, exec)
 }
 
-func doRmAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func doRmAccess(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")
@@ -104,7 +101,7 @@ func FindActiveAccesses(ctx context.Context, exec boil.ContextExecutor, boxID st
 
 func MustMemberHaveAccess(
 	ctx context.Context,
-	exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface,
+	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
 	boxID string, identityID string,
 ) error {
 	// 1. the identity must have access to the box
@@ -126,15 +123,15 @@ func MustMemberHaveAccess(
 
 func MustHaveAccess(
 	ctx context.Context,
-	exec boil.ContextExecutor, identities entrypoints.IdentityIntraprocessInterface,
+	exec boil.ContextExecutor, identities *IdentityMapper,
 	boxID string, identityID string,
 ) error {
 	// 1. admin is always allowed to see the box
-	isAdmin, err := isAdmin(ctx, exec, boxID, identityID)
+	IsAdmin, err := IsAdmin(ctx, exec, boxID, identityID)
 	if err != nil {
 		return err
 	}
-	if isAdmin {
+	if IsAdmin {
 		return nil
 	}
 
@@ -167,7 +164,7 @@ func MustHaveAccess(
 	}
 
 	// 6. if the box isn't public, get the identity to check whitelist rules
-	identity, err := identities.Get(ctx, identityID)
+	identity, err := identities.Get(ctx, identityID, true)
 	if err != nil {
 		return merror.Transform(err).Describe("getting identity for access check")
 	}
@@ -185,7 +182,7 @@ func MustHaveAccess(
 				return nil
 			}
 		case "email_domain":
-			if identity.Identifier.Kind == domain.EmailIdentifier &&
+			if identity.Identifier.Kind == "email" &&
 				emailHasDomain(identity.Identifier.Value, c.Value) {
 				return nil
 			}

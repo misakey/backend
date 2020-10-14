@@ -58,14 +58,7 @@ Here are the events that can be received:
         encrypted content
     },
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
-    "sender": {
-      "display_name": "(string) the display name of the sender",
-      "avatar_url": "(string) (nullable) the potential avatar url of the sender",
-      "identifier": {
-        "value": "(string) the value of the identifier",
-        "kind": "(string) (one of: email): the kind of the identifier"
-      }
-    }
+    "sender": {{% include "include/event-identity.json" 4 %}}
 }
 ```
 
@@ -81,14 +74,7 @@ Here are the events that can be received:
         encryption information
     },
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
-    "sender": {
-      "display_name": "(string) the display name of the sender",
-      "avatar_url": "(string) (nullable) the potential avatar url of the sender",
-      "identifier": {
-        "value": "(string) the value of the identifier",
-        "kind": "(string) (one of: email): the kind of the identifier"
-      }
-    }
+    "sender": {{% include "include/event-identity.json" 4 %}}
 }
 ```
 
@@ -100,15 +86,8 @@ Here are the events that can be received:
     "type": "msg.delete",
     "box_id": "(string) id of the box",
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
-    "sender": {
-      "display_name": "(string) the display name of the sender",
-      "avatar_url": "(string) (nullable) the potential avatar url of the sender",
-      "identifier": {
-        "value": "(string) the value of the identifier",
-        "kind": "(string) (one of: email): the kind of the identifier"
-      }
-    },
-    "referrer_id": "(string) uuid of the deleted message"
+    "referrer_id": "(string) uuid of the deleted message",
+    "sender": {{% include "include/event-identity.json" 4 %}}
 }
 ```
 #### `msg.edit`
@@ -122,15 +101,8 @@ Here are the events that can be received:
         new encrypted content
     },
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
-    "sender": {
-      "display_name": "(string) the display name of the sender",
-      "avatar_url": "(string) (nullable) the potential avatar url of the sender",
-      "identifier": {
-        "value": "(string) the value of the identifier",
-        "kind": "(string) (one of: email): the kind of the identifier"
-      }
-    },
-    "referrer_id": "(string) uuid of the message to edit"
+    "referrer_id": "(string) uuid of the message to edit",
+    "sender": {{% include "include/event-identity.json" 4 %}}
 }
 ```
 
@@ -142,14 +114,7 @@ Here are the events that can be received:
     "type": "member.join",
     "box_id": "(string) id of the box",
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
-    "sender": {
-      "display_name": "(string) the display name of the sender",
-      "avatar_url": "(string) (nullable) the potential avatar url of the sender",
-      "identifier": {
-        "value": "(string) the value of the identifier",
-        "kind": "(string) (one of: email): the kind of the identifier"
-      }
-    },
+    "sender": {{% include "include/event-identity.json" 4 %}}
 }
 ```
 
@@ -161,15 +126,8 @@ Here are the events that can be received:
     "type": "member.leave",
     "box_id": "(string) id of the box",
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
-    "sender": {
-      "display_name": "(string) the display name of the sender",
-      "avatar_url": "(string) (nullable) the potential avatar url of the sender",
-      "identifier": {
-        "value": "(string) the value of the identifier",
-        "kind": "(string) (one of: email): the kind of the identifier"
-      }
-    },
-    "referrer_id": "(string) uuid of the corresponding join event"
+    "referrer_id": "(string) uuid of the corresponding join event",
+    "sender": {{% include "include/event-identity.json" 4 %}}
 }
 ```
 
@@ -181,20 +139,26 @@ Here are the events that can be received:
     "type": "member.kick",
     "box_id": "(string) id of the box",
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
-    "sender": {
-      "display_name": "(string) the display name of the sender",
-      "avatar_url": "(string) (nullable) the potential avatar url of the sender",
-      "identifier": {
-        "value": "(string) the value of the identifier",
-        "kind": "(string) (one of: email): the kind of the identifier"
-      }
-    },
     "referrer_id": "(string) uuid of the corresponding join event",
+    "sender": {{% include "include/event-sender.json" 4 %}},
     "content": {
-        "kicker": {
-            <kicker information>
-        }
-    },
+        "kicker": {{% include "include/event-sender.json" 8 %}}
+    }
+}
+```
+
+## Notifications
+
+### Server to Client
+
+Notifications object are:
+
+```json
+{
+    "type": "<type>",
+    "object": {
+        <object>
+    }
 }
 ```
 

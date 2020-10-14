@@ -5,8 +5,8 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
@@ -27,8 +27,11 @@ func (req *ListBoxesRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) ListBoxes(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) ListBoxes(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListBoxesRequest)
+	// init an identity mapper for the operation
+	identityMapper := app.NewIM()
+
 	// default limit is 10
 	if req.Limit == 0 {
 		req.Limit = 10
@@ -41,7 +44,7 @@ func (bs *BoxApplication) ListBoxes(ctx context.Context, genReq request.Request)
 	}
 	boxes, err := boxes.ListSenderBoxes(
 		ctx,
-		bs.DB, bs.RedConn, bs.Identities,
+		app.DB, app.RedConn, identityMapper,
 		acc.IdentityID,
 		req.Limit, req.Offset,
 	)

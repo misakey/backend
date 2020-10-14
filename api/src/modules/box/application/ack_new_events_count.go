@@ -30,7 +30,7 @@ func (req *AckNewEventsCountRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) AckNewEventsCount(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) AckNewEventsCount(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*AckNewEventsCountRequest)
 
 	acc := oidc.GetAccesses(ctx)
@@ -38,7 +38,7 @@ func (bs *BoxApplication) AckNewEventsCount(ctx context.Context, genReq request.
 		return nil, merror.Forbidden()
 	}
 
-	if err := events.DelCounts(ctx, bs.RedConn, req.IdentityID, req.boxID); err != nil {
+	if err := events.DelCounts(ctx, app.RedConn, req.IdentityID, req.boxID); err != nil {
 		return nil, err
 	}
 

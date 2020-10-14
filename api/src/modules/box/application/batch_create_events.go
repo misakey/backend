@@ -7,10 +7,10 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
@@ -54,7 +54,7 @@ func (req BatchEvent) Validate() error {
 	)
 }
 
-func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*BatchCreateEventRequest)
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
@@ -62,16 +62,19 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.R
 	}
 
 	// check the box exists and is not closed
-	if err := events.MustBoxBeOpen(ctx, bs.DB, req.boxID); err != nil {
+	if err := events.MustBoxBeOpen(ctx, app.DB, req.boxID); err != nil {
 		return nil, merror.Transform(err).Describe("checking open")
 	}
 
 	// start a transaction to handle all event in one context and potentially rollback all of them
-	tr, err := bs.DB.BeginTx(ctx, nil)
+	tr, err := app.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("initing transaction")
 	}
 	defer atomic.SQLRollback(ctx, tr, err)
+
+	// init an identity mapper for the operation
+	identityMapper := app.NewIM()
 
 	createdList := make([]events.Event, len(req.Events))
 	metadatas := make(map[string]interface{}, len(req.Events))
@@ -85,7 +88,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.R
 		// call the proper event handlers
 		handler := events.Handler(event.Type)
 
-		metadatas[event.ID], err = handler.Do(ctx, &event, tr, bs.RedConn, bs.Identities, bs.filesRepo)
+		metadatas[event.ID], err = handler.Do(ctx, &event, tr, app.RedConn, identityMapper, app.filesRepo)
 		if err != nil {
 			return nil, merror.Transform(err).Describef("doing %s event", event.Type)
 		}
@@ -95,7 +98,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.R
 	// handle post-batching action according to the batch type
 	if req.BatchType == "accesses" {
 		var kicks []events.Event
-		kicks, err = events.KickDeprecatedMembers(ctx, tr, bs.Identities, req.boxID, acc.IdentityID)
+		kicks, err = events.KickDeprecatedMembers(ctx, tr, identityMapper, req.boxID, acc.IdentityID)
 		if err != nil {
 			return nil, merror.Transform(err).Describe("potentially kicking")
 		}
@@ -113,7 +116,7 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.R
 	go func(ctx context.Context, list []events.Event) {
 		for _, e := range list {
 			for _, after := range events.Handler(e.Type).After {
-				if err := after(ctx, &e, bs.DB, bs.RedConn, bs.Identities, bs.filesRepo, metadatas[e.ID]); err != nil {
+				if err := after(ctx, &e, app.DB, app.RedConn, identityMapper, app.filesRepo, metadatas[e.ID]); err != nil {
 					// we log the error but we don’t return it
 					logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", e.Type)
 				}
@@ -121,13 +124,11 @@ func (bs *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.R
 		}
 	}(subCtx, createdList)
 
-	sendersMap, err := events.MapSenderIdentities(ctx, createdList, bs.Identities)
-	if err != nil {
-		return nil, merror.Transform(err).Describe("retrieving events senders")
-	}
+	// build views
 	views := make([]events.View, len(createdList))
 	for i, e := range createdList {
-		views[i], err = events.FormatEvent(e, sendersMap)
+		// non-transparent mode
+		views[i], err = e.Format(ctx, identityMapper, false)
 		if err != nil {
 			return nil, merror.Transform(err).Describe("computing event view")
 		}

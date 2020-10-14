@@ -4,7 +4,7 @@ import (
 	"context"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
@@ -118,8 +118,8 @@ func GetSignedToken(ac AccessClaims) (string, error) {
 // AcccountConnect return boolean corresponding to the presence of an Account ID in claims
 // it doesn't mean the connected identity has an existing linked account but either the end-user
 // is connected on the account or just the identity (different ACRs)
-func (acc AccessClaims) AccountConnected() bool {
-	return acc.AccountID.Valid
+func (c AccessClaims) AccountConnected() bool {
+	return c.AccountID.Valid
 }
 
 // ----- helpers

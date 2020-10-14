@@ -26,7 +26,7 @@ func (req *ListSavedFilesRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) ListSavedFiles(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) ListSavedFiles(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListSavedFilesRequest)
 
 	access := oidc.GetAccesses(ctx)
@@ -39,5 +39,5 @@ func (bs *BoxApplication) ListSavedFiles(ctx context.Context, genReq request.Req
 		return nil, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
 	}
 
-	return files.ListSavedFilesByIdentityID(ctx, bs.DB, req.IdentityID)
+	return files.ListSavedFilesByIdentityID(ctx, app.DB, req.IdentityID)
 }

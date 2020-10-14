@@ -15,25 +15,25 @@ import (
 
 // output as structure to decode received application/json entity
 func (r *Client) jsonGet(ctx context.Context, route string, params url.Values, output interface{}) error {
-	return r.Perform(ctx, "GET", route, params, nil, output, BLANK_MIME_TYPE)
+	return r.Perform(ctx, "GET", route, params, nil, output, MimeTypeBlank)
 }
 
 // input as structure to encode into application/json as a body
 // output as structure to decode as an application/json entity
 func (r *Client) jsonPost(ctx context.Context, route string, params url.Values, input interface{}, output interface{}) error {
-	return r.Perform(ctx, "POST", route, params, input, output, JSON_MIME_TYPE)
+	return r.Perform(ctx, "POST", route, params, input, output, MimeTypeJSON)
 }
 
 // input as structure to encode into application/json as a body
 // output as structure to decode as an  application/json entity
 func (r *Client) jsonPut(ctx context.Context, route string, params url.Values, input interface{}, output interface{}) error {
-	return r.Perform(ctx, "PUT", route, params, input, output, JSON_MIME_TYPE)
+	return r.Perform(ctx, "PUT", route, params, input, output, MimeTypeJSON)
 }
 
 // input as structure to encode into application/json as a body
 // no output expected
 func (r *Client) jsonPatch(ctx context.Context, route string, input interface{}) error {
-	return r.Perform(ctx, "PATCH", route, nil, input, nil, JSON_MIME_TYPE)
+	return r.Perform(ctx, "PATCH", route, nil, input, nil, MimeTypeJSON)
 }
 
 // handleJSON takes a http response and try to unmarshal it as JSON into given output interface

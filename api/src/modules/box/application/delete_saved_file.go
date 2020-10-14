@@ -25,7 +25,7 @@ func (req *DeleteSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) DeleteSavedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) DeleteSavedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*DeleteSavedFileRequest)
 
 	access := oidc.GetAccesses(ctx)
@@ -34,7 +34,7 @@ func (bs *BoxApplication) DeleteSavedFile(ctx context.Context, genReq request.Re
 	}
 
 	// get saved file
-	savedFile, err := files.GetSavedFile(ctx, bs.DB, req.ID)
+	savedFile, err := files.GetSavedFile(ctx, app.DB, req.ID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting saved file")
 	}
@@ -42,17 +42,17 @@ func (bs *BoxApplication) DeleteSavedFile(ctx context.Context, genReq request.Re
 		return nil, merror.Forbidden().Detail("id", merror.DVForbidden)
 	}
 
-	if err := files.DeleteSavedFile(ctx, bs.DB, req.ID); err != nil {
+	if err := files.DeleteSavedFile(ctx, app.DB, req.ID); err != nil {
 		return nil, err
 	}
 
 	// delete stored file if orphan
-	isOrphan, err := events.IsFileOrphan(ctx, bs.DB, savedFile.EncryptedFileID)
+	isOrphan, err := events.IsFileOrphan(ctx, app.DB, savedFile.EncryptedFileID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("deleting stored file")
 	}
 	if isOrphan {
-		if err := files.Delete(ctx, bs.DB, bs.filesRepo, savedFile.EncryptedFileID); err != nil {
+		if err := files.Delete(ctx, app.DB, app.filesRepo, savedFile.EncryptedFileID); err != nil {
 			return nil, merror.Transform(err).Describe("deleting stored file")
 		}
 	}

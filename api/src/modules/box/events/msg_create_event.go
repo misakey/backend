@@ -6,11 +6,10 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
-func doMessage(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func doMessage(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ files.FileStorageRepo) (Metadata, error) {
 	// check that the current sender has access to the box
 	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
 		return nil, err

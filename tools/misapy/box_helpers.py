@@ -86,8 +86,7 @@ def create_box_and_post_some_events_to_it(session, close=True):
         assert 'server_event_created_at' in event
         assert 'type' in event
         assert 'content' in event
-
-        sender = event['sender']
-        assert sender['identifier']['value'] == s.email
+        # impossible to see identifier value while listing events
+        assert event['sender']['identifier']['value'] == ""
 
     return box_id, key_share["other_share_hash"]

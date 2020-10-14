@@ -24,7 +24,7 @@ func (req *GetVaultUsedSpaceRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) GetVaultUsedSpace(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) GetVaultUsedSpace(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*GetVaultUsedSpaceRequest)
 
 	access := oidc.GetAccesses(ctx)
@@ -35,7 +35,7 @@ func (bs *BoxApplication) GetVaultUsedSpace(ctx context.Context, genReq request.
 		return nil, merror.Forbidden().Detail("id", merror.DVForbidden)
 	}
 
-	vaultSpace, err := quota.GetVault(ctx, bs.DB, req.IdentityID)
+	vaultSpace, err := quota.GetVault(ctx, app.DB, req.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("get vault space")
 	}

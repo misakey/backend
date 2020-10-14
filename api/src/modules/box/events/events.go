@@ -123,6 +123,7 @@ func newWithAnyContent(eType string, content anyContent, boxID, senderID string,
 	return New(eType, jsonContent, boxID, senderID, referrerID)
 }
 
+//TODO (perf): struct of size 240 bytes could be of size 224 bytes (maligned)
 type eventFilters struct {
 	// focus on one column filter
 	idOnly    bool

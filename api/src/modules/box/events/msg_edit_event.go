@@ -8,11 +8,10 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 // MsgEditContent is exported
@@ -33,14 +32,14 @@ func (c MsgEditContent) Validate() error {
 	)
 }
 
-func doEditMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func doEditMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ files.FileStorageRepo) (Metadata, error) {
 	// check that the current sender has access to the box
 	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
 		return nil, err
 	}
 
 	// check that the event contains a referrer_id
-	if err := checkReferrer(ctx, *e); err != nil {
+	if err := checkReferrer(*e); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +64,7 @@ func doEditMsg(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn
 	}
 
 	// add the recently created event to the built message
-	if err := msg.addEvent(ctx, *e); err != nil {
+	if err := msg.addEvent(*e); err != nil {
 		return nil, err
 	}
 	return &msg, nil

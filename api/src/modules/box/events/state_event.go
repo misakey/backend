@@ -7,17 +7,16 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 type StateLifecycleContent struct {
 	State string `json:"state"`
 }
 
-func doLifecycle(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redis.Client, _ entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func doLifecycle(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redis.Client, _ *IdentityMapper, _ files.FileStorageRepo) (Metadata, error) {
 	// check accesses
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")

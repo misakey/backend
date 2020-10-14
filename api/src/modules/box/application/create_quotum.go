@@ -31,7 +31,7 @@ func (req *CreateQuotumRequest) BindAndValidate(eCtx echo.Context) error {
 }
 
 // only call be intraprocess entrypoints so no check required
-func (bs *BoxApplication) CreateQuotum(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) CreateQuotum(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateQuotumRequest)
 
 	id, err := uuid.NewString()
@@ -46,7 +46,7 @@ func (bs *BoxApplication) CreateQuotum(ctx context.Context, genReq request.Reque
 		Origin:     req.Origin,
 	}
 
-	if err := quota.Create(ctx, bs.DB, &quotum); err != nil {
+	if err := quota.Create(ctx, app.DB, &quotum); err != nil {
 		return nil, merror.Transform(err).Describe("creating quotum")
 	}
 

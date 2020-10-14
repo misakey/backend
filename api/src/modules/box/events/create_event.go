@@ -9,7 +9,6 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
@@ -60,7 +59,11 @@ func GetCreateEvent(
 	})
 }
 
-func CreateCreateEvent(ctx context.Context, title, publicKey, senderID string, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, filesRepo files.FileStorageRepo) (Event, error) {
+func CreateCreateEvent(
+	ctx context.Context,
+	title, publicKey, senderID string,
+	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, filesRepo files.FileStorageRepo,
+) (Event, error) {
 	event, err := NewCreate(title, publicKey, senderID)
 	if err != nil {
 		return Event{}, merror.Transform(err).Describe("creating create event")

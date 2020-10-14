@@ -16,14 +16,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/cache"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
-func Get(ctx context.Context, exec boil.ContextExecutor, identities entrypoints.IdentityIntraprocessInterface, boxID string) (events.Box, error) {
+func Get(ctx context.Context, exec boil.ContextExecutor, identities *events.IdentityMapper, boxID string) (events.Box, error) {
 	return events.Compute(ctx, boxID, exec, identities, nil)
 }
 
-func GetWithEventsCount(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, boxID, identityID string) (*events.Box, error) {
+func GetWithEventsCount(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identities *events.IdentityMapper, boxID, identityID string) (*events.Box, error) {
 	box, err := events.Compute(ctx, boxID, exec, identities, nil)
 	if err != nil {
 		return nil, err
@@ -48,7 +47,7 @@ func ListSenderBoxes(
 	ctx context.Context,
 	exec boil.ContextExecutor,
 	redConn *redis.Client,
-	identities entrypoints.IdentityIntraprocessInterface,
+	identities *events.IdentityMapper,
 	senderID string,
 	limit, offset int,
 ) ([]*events.Box, error) {

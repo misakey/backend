@@ -71,13 +71,13 @@ func InitModule(router *echo.Echo) Process {
 	publicHydraFORM := http.NewClient(
 		viper.GetString("hydra.public_endpoint"),
 		viper.GetBool("hydra.secure"),
-		http.SetFormat(http.URLENCODED_FORM_MIME_TYPE),
+		http.SetFormat(http.MimeTypeURLEncodedForm),
 		http.SetAuthenticator(oidc.NewPrivateKeyJWTAuthenticator(selfAuth)),
 	)
 	adminHydraFORM := http.NewClient(
 		viper.GetString("hydra.admin_endpoint"),
 		viper.GetBool("hydra.secure"),
-		http.SetFormat(http.URLENCODED_FORM_MIME_TYPE),
+		http.SetFormat(http.MimeTypeURLEncodedForm),
 		http.SetAuthenticator(&oidc.BearerTokenAuthenticator{}),
 	)
 
@@ -196,7 +196,6 @@ func InitModule(router *echo.Echo) Process {
 		extOIDCHandlerFactory,
 		&ssoService,
 		*oauthCodeFlow,
-		backupArchiveService,
 	)
 	// bind static assets for avatars only if configuration has been set up
 	avatarLocation := viper.GetString("server.avatars")
@@ -204,15 +203,13 @@ func InitModule(router *echo.Echo) Process {
 		router.Static("/avatars", avatarLocation)
 	}
 
-	identityIntraprocess := entrypoints.NewIdentityIntraprocess(identityService)
-
 	return Process{
-		IdentityIntraprocess: &identityIntraprocess,
-		SSOService:           &ssoService,
+		SSOService:   &ssoService,
+		IdentityRepo: entrypoints.NewIdentityIntraprocess(identityService),
 	}
 }
 
 type Process struct {
-	SSOService           *application.SSOService
-	IdentityIntraprocess entrypoints.IdentityIntraprocessInterface
+	SSOService   *application.SSOService
+	IdentityRepo entrypoints.IdentityIntraprocess
 }

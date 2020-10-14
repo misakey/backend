@@ -91,9 +91,7 @@ func (ws *Websocket) Pump(eCtx echo.Context) {
 	}()
 
 	// readPump routine
-	if err := ws.readPump(eCtx); err != nil {
-		logger.FromCtx(eCtx.Request().Context()).Error().Err(err).Msgf("%s: read pump error", ws.ID)
-	}
+	ws.readPump(eCtx)
 	close(ws.EndPump)
 	logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: pump closed", ws.ID)
 }
@@ -123,7 +121,7 @@ func (ws *Websocket) writePump() error {
 	}
 }
 
-func (ws *Websocket) listener(eCtx echo.Context) {
+func (ws *Websocket) listener() {
 	for {
 		// NOTE: manage normal message when the client
 		// communicates with the server
@@ -135,7 +133,7 @@ func (ws *Websocket) listener(eCtx echo.Context) {
 	}
 }
 
-func (ws *Websocket) readPump(eCtx echo.Context) error {
+func (ws *Websocket) readPump(eCtx echo.Context) {
 	defer ws.Close()
 
 	ws.Websocket.SetReadLimit(maxMessageSizekB)
@@ -150,14 +148,14 @@ func (ws *Websocket) readPump(eCtx echo.Context) error {
 		return nil
 	})
 
-	go ws.listener(eCtx)
+	go ws.listener()
 
 	for {
 		select {
 		case recMsg := <-ws.Receive:
 			if recMsg.err != nil {
 				logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: error message: %s", ws.ID, recMsg.err.Error())
-				return nil
+				return
 			}
 			logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: read message: %s", ws.ID, recMsg.msg)
 			ws.Handler <- recMsg.msg
@@ -165,7 +163,7 @@ func (ws *Websocket) readPump(eCtx echo.Context) error {
 			// trying to gracefully close the socket
 			_ = ws.SendCloseMessage()
 			time.Sleep(closeGracePeriod)
-			return nil
+			return
 		}
 	}
 }

@@ -11,7 +11,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/go-playground/assert/v2 v2.0.1
-	github.com/go-playground/validator/v10 v10.2.0
+	github.com/go-playground/validator/v10 v10.2.0 // indirect
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2
@@ -30,7 +30,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
-	github.com/volatiletech/null v8.0.0+incompatible
+	github.com/volatiletech/null v8.0.0+incompatible // indirect
 	github.com/volatiletech/null/v8 v8.1.0
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible // indirect
 	github.com/volatiletech/sqlboiler/v4 v4.2.0

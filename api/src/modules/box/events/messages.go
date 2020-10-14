@@ -75,14 +75,14 @@ func buildMessage(ctx context.Context, exec boil.ContextExecutor, eventID string
 
 	// consider modifiers
 	for _, e := range msgEvents[1:] {
-		if err := msg.addEvent(ctx, e); err != nil {
+		if err := msg.addEvent(e); err != nil {
 			return msg, err
 		}
 	}
 	return msg, nil
 }
 
-func (msg *Message) addEvent(ctx context.Context, e Event) error {
+func (msg *Message) addEvent(e Event) error {
 	msg.LastSenderID = e.SenderID
 	switch e.Type {
 	case etype.Msgdelete:

@@ -22,9 +22,12 @@ func (n EchoNeedle) Explode(err error) error {
 	var desc string
 
 	// act according to error http code:
+	// - 400 means echo detected a bad request
 	// - 404 means echo router did not find the route
 	// - 405 means echo router did not find method for requested verb
 	switch echoErr.Code {
+	case http.StatusBadRequest:
+		errCode = merror.BadRequestCode
 	case http.StatusUnauthorized:
 		errCode = merror.UnauthorizedCode
 	case http.StatusNotFound:
@@ -41,5 +44,5 @@ func (n EchoNeedle) Explode(err error) error {
 	}
 
 	// final transformation of echo error into merror
-	return merror.Transform(echoErr).Code(errCode).Describe(desc)
+	return merror.Transform(err).Code(errCode).Describe(desc)
 }

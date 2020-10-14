@@ -17,17 +17,17 @@ func TestHandleErr(t *testing.T) {
 		"raw error raises internal code error": {
 			inputErr:     errors.New("raw error"),
 			expectedCode: http.StatusInternalServerError,
-			expectedErr:  Error{InternalError, InternalCode, OriNotDefined, "raw error", make(map[string]string), false},
+			expectedErr:  Error{ErrInternal, InternalCode, OriNotDefined, "raw error", make(map[string]string), false},
 		},
 		"merror raises a badrequest code error": {
 			inputErr:     BadRequest().Describe("uuid is required").From(OriBody),
 			expectedCode: http.StatusBadRequest,
-			expectedErr:  Error{BadRequestError, BadRequestCode, OriBody, "uuid is required", make(map[string]string), false},
+			expectedErr:  Error{ErrBadRequest, BadRequestCode, OriBody, "uuid is required", make(map[string]string), false},
 		},
 		"merror raises a client closed request code error": {
 			inputErr:     ClientClosedRequest().Describe("canceled context").From(OriBody),
 			expectedCode: StatusClientClosedRequest,
-			expectedErr:  Error{ClientClosedRequestError, ClientClosedRequestCode, OriBody, "canceled context", make(map[string]string), false},
+			expectedErr:  Error{ErrClientClosedRequest, ClientClosedRequestCode, OriBody, "canceled context", make(map[string]string), false},
 		},
 	}
 	for description, test := range tests {

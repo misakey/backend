@@ -5,6 +5,8 @@ import (
 
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
@@ -19,7 +21,7 @@ func MustBeAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID
 	return nil
 }
 
-func isAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (bool, error) {
+func IsAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (bool, error) {
 	err := MustBeAdmin(ctx, exec, boxID, senderID)
 	if err != nil && merror.HasCode(err, merror.ForbiddenCode) {
 		return false, nil
@@ -30,7 +32,7 @@ func isAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID str
 
 func GetAdminID(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
 	createEvent, err := get(ctx, exec, eventFilters{
-		eType: null.StringFrom("create"),
+		eType: null.StringFrom(etype.Create),
 		boxID: null.StringFrom(boxID),
 	})
 	if err != nil {

@@ -6,8 +6,8 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
@@ -31,33 +31,32 @@ func (req *ListEventsRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) ListEvents(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) ListEvents(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListEventsRequest)
+	// init an identity mapper for the operation
+	identityMapper := app.NewIM()
 
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustMemberHaveAccess(ctx, bs.DB, bs.RedConn, bs.Identities, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustMemberHaveAccess(ctx, app.DB, app.RedConn, identityMapper, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 
-	boxEvents, err := events.ListForMembersByBoxID(ctx, bs.DB, req.boxID, req.Offset, req.Limit)
+	boxEvents, err := events.ListForMembersByBoxID(ctx, app.DB, req.boxID, req.Offset, req.Limit)
 	if err != nil {
 		return nil, err
 	}
 
-	sendersMap, err := events.MapSenderIdentities(ctx, boxEvents, bs.Identities)
-	if err != nil {
-		return nil, merror.Transform(err).Describe("retrieving events senders")
-	}
 	views := make([]events.View, len(boxEvents))
 	for i, e := range boxEvents {
-		if err := events.BuildAggregate(ctx, bs.DB, &e); err != nil {
+		if err := events.BuildAggregate(ctx, app.DB, &e); err != nil {
 			return views, merror.Transform(err).Describe("building aggregate")
 		}
 
-		views[i], err = events.FormatEvent(e, sendersMap)
+		// non-transparent mode to list the event stream
+		views[i], err = e.Format(ctx, identityMapper, false)
 		if err != nil {
 			return views, merror.Transform(err).Describe("computing event view")
 		}

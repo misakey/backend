@@ -68,25 +68,25 @@ func HasCode(err error, code Code) bool {
 func ToCode(err error) Code {
 	errType := Cause(err)
 	switch errType {
-	case BadRequestError:
+	case ErrBadRequest:
 		return BadRequestCode
-	case UnauthorizedError:
+	case ErrUnauthorized:
 		return UnauthorizedCode
-	case ForbiddenError:
+	case ErrForbidden:
 		return ForbiddenCode
-	case NotFoundError:
+	case ErrNotFound:
 		return NotFoundCode
-	case MethodNotAllowedError:
+	case ErrMethodNotAllowed:
 		return MethodNotAllowedCode
-	case ConflictError:
+	case ErrConflict:
 		return ConflictCode
-	case RequestEntityTooLargeError:
+	case ErrRequestEntityTooLarge:
 		return RequestEntityTooLargeCode
-	case UnprocessableEntityError:
+	case ErrUnprocessableEntity:
 		return UnprocessableEntityCode
-	case ClientClosedRequestError:
+	case ErrClientClosedRequest:
 		return ClientClosedRequestCode
-	case ServiceUnavailableError:
+	case ErrServiceUnavailable:
 		return ServiceUnavailableCode
 	}
 	return InternalCode

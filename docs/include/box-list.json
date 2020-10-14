@@ -5,7 +5,7 @@
     "title": "Test Box",
     "lifecycle": "open",
     "events_count": 10,
-    "creator": {{ include include/event-sender.json 6 }},
+    "creator": {{% include include/event-identity.json 6 %}},
     "last_event": {
         "id": "ff6114f3-9838-40ed-a80d-bb376fd929f5",
         "type": "create",
@@ -15,6 +15,6 @@
             "state": "open"
         },
         "server_event_created_at": "2020-06-12T13:38:32.142857839Z",
-        "sender": {{ include include/event-sender.json 8 }}
+        "sender": {{% include include/event-identity.json 8 %}}
     }
 }

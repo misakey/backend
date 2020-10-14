@@ -303,12 +303,8 @@ def test_box_messages(s1, s2):
         },
         expected_status_code=201,
     )
-    check_response(
-        r,
-        [
-            lambda r: assert_fn(r.json()['sender']['identifier']['value'] == s1.email)
-        ]
-    )
+    assert r.json()['referrer_id'] == text_msg_id
+    assert r.json()['sender']['identifier_id'] == s1.identifier_id
 
     print(f'- deletion of file message {file_msg_id}')
     all_encrypted_files = list_encrypted_files()
@@ -373,12 +369,8 @@ def test_box_messages(s1, s2):
             'referrer_id': msg_id
         },
     )
-    check_response(
-        r,
-        [
-            lambda r: assert_fn(r.json()['sender']['identifier']['value'] == s1.email)
-        ]
-    )
+    assert r.json()['referrer_id'] == msg_id
+    assert r.json()['sender']['identifier_id'] == s1.identifier_id
 
 def test_accesses(s1, s2):
     box_id, box_share_hash = create_box_and_post_some_events_to_it(session=s1, close=False)
@@ -393,11 +385,13 @@ def test_accesses(s1, s2):
     print('- identity 2 becomes a member by getting the key share')
     join_box(s2, box_id)
 
-    print('- identity 2 can then can get the box')
-    s2.get(
+    print('- identity 2 can then can get the box and see its creator')
+    r = s2.get(
         f'{URL_PREFIX}/boxes/{box_id}',
         expected_status_code=200
     )
+    assert r.json()['creator']['identifier_id'] == s1.identifier_id
+
 
     print('- identity 1 makes the box now private')
     r = s1.get(
@@ -488,6 +482,14 @@ def test_accesses(s1, s2):
     s2_email_referrer_id = r.json()[0]['id']
     random_email_referrer_id = r.json()[1]['id']
 
+    print('- identity 2 can list members but cannot see identifier.value')
+    r = s2.get(
+        f'{URL_PREFIX}/boxes/{box_id}/members',
+        expected_status_code=200
+    )
+    for member in r.json():
+        assert member['identifier']['value'] == ""
+
     print('- batch events removes accesses and add email_domain')
     access_email_domain = {
         'restriction_type': 'email_domain',
@@ -515,6 +517,7 @@ def test_accesses(s1, s2):
         f'{URL_PREFIX}/boxes/{box_id}',
         expected_status_code=403
     )
+
     print('- identity 2 is kicked and is not part anymore of the members list')
     r = s1.get(
         f'{URL_PREFIX}/boxes/{box_id}/members',
@@ -528,8 +531,8 @@ def test_accesses(s1, s2):
         f'{URL_PREFIX}/boxes/joined',
         expected_status_code=200
     )
-    # for box in r.json():
-    #     assert box['id'] != box_id
+    for box in r.json():
+        assert box['id'] != box_id
 
     print('- the removed access is not listed anymore')
     r = s1.get(

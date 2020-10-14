@@ -12,7 +12,7 @@ import (
 
 func bindRoutes(
 	router *echo.Echo,
-	bs *application.BoxApplication,
+	app *application.BoxApplication,
 	wsh entrypoints.WebsocketHandler,
 	oidcHandlerFactory request.HandlerFactory,
 	authzMidlw echo.MiddlewareFunc,
@@ -24,25 +24,26 @@ func bindRoutes(
 	boxPath.POST(oidcHandlerFactory.NewACR2(
 		"",
 		func() request.Request { return &application.CreateBoxRequest{} },
-		bs.CreateBox,
+		app.CreateBox,
 		request.ResponseCreated,
 	))
+
 	boxPath.GET(oidcHandlerFactory.NewACR1(
 		"/:id",
 		func() request.Request { return &application.ReadBoxRequest{} },
-		bs.ReadBox,
+		app.ReadBox,
 		request.ResponseOK,
 	))
 	boxPath.GET(oidcHandlerFactory.NewPublic(
 		"/:id/public",
 		func() request.Request { return &application.ReadBoxPublicRequest{} },
-		bs.ReadBoxPublic,
+		app.ReadBoxPublic,
 		request.ResponseOK,
 	))
 	boxPath.HEAD(oidcHandlerFactory.NewACR2(
 		"/joined",
 		func() request.Request { return &application.CountBoxesRequest{} },
-		bs.CountBoxes,
+		app.CountBoxes,
 		request.ResponseNoContent,
 		func(ctx echo.Context, data interface{}) error {
 			ctx.Response().Header().Set("X-Total-Count", strconv.Itoa(data.(int)))
@@ -52,19 +53,19 @@ func bindRoutes(
 	boxPath.GET(oidcHandlerFactory.NewACR2(
 		"/joined",
 		func() request.Request { return &application.ListBoxesRequest{} },
-		bs.ListBoxes,
+		app.ListBoxes,
 		request.ResponseOK,
 	))
 	boxPath.GET(oidcHandlerFactory.NewACR1(
 		"/:id/members",
 		func() request.Request { return &application.ListBoxMembersRequest{} },
-		bs.ListBoxMembers,
+		app.ListBoxMembers,
 		request.ResponseOK,
 	))
 	boxPath.DELETE(oidcHandlerFactory.NewACR2(
 		"/:id",
 		func() request.Request { return &application.DeleteBoxRequest{} },
-		bs.DeleteBox,
+		app.DeleteBox,
 		request.ResponseNoContent,
 	))
 
@@ -73,7 +74,7 @@ func bindRoutes(
 	boxPath.GET(oidcHandlerFactory.NewACR2(
 		"/:id/accesses",
 		func() request.Request { return &application.ListAccessesRequest{} },
-		bs.ListAccesses,
+		app.ListAccesses,
 		request.ResponseOK,
 	))
 
@@ -82,14 +83,14 @@ func bindRoutes(
 	boxPath.GET(oidcHandlerFactory.NewACR1(
 		"/:id/events",
 		func() request.Request { return &application.ListEventsRequest{} },
-		bs.ListEvents,
+		app.ListEvents,
 		request.ResponseOK,
 	))
 
 	boxPath.HEAD(oidcHandlerFactory.NewACR1(
 		"/:id/events",
 		func() request.Request { return &application.CountEventsRequest{} },
-		bs.CountEvents,
+		app.CountEvents,
 		request.ResponseNoContent,
 		func(ctx echo.Context, data interface{}) error {
 			ctx.Response().Header().Set("X-Total-Count", strconv.Itoa(data.(int)))
@@ -99,25 +100,25 @@ func bindRoutes(
 	boxPath.POST(oidcHandlerFactory.NewACR1(
 		"/:id/events",
 		func() request.Request { return &application.CreateEventRequest{} },
-		bs.CreateEvent,
+		app.CreateEvent,
 		request.ResponseCreated,
 	))
 	boxPath.POST(oidcHandlerFactory.NewACR2(
 		"/:id/batch-events",
 		func() request.Request { return &application.BatchCreateEventRequest{} },
-		bs.BatchCreateEvent,
+		app.BatchCreateEvent,
 		request.ResponseCreated,
 	))
 	boxPath.POST(oidcHandlerFactory.NewACR1(
 		"/:bid/encrypted-files",
 		func() request.Request { return &application.UploadEncryptedFileRequest{} },
-		bs.UploadEncryptedFile,
+		app.UploadEncryptedFile,
 		request.ResponseCreated,
 	))
 	boxPath.PUT(oidcHandlerFactory.NewACR1(
 		"/:id/new-events-count/ack",
 		func() request.Request { return &application.AckNewEventsCountRequest{} },
-		bs.AckNewEventsCount,
+		app.AckNewEventsCount,
 		request.ResponseNoContent,
 	))
 
@@ -132,13 +133,13 @@ func bindRoutes(
 	keySharePath.POST(oidcHandlerFactory.NewACR2(
 		"",
 		func() request.Request { return &application.CreateKeyShareRequest{} },
-		bs.CreateKeyShare,
+		app.CreateKeyShare,
 		request.ResponseCreated,
 	))
 	keySharePath.GET(oidcHandlerFactory.NewACR1(
 		"/:other-share-hash",
 		func() request.Request { return &application.GetKeyShareRequest{} },
-		bs.GetKeyShare,
+		app.GetKeyShare,
 		request.ResponseOK,
 	))
 
@@ -148,19 +149,19 @@ func bindRoutes(
 	savedFilePath.POST(oidcHandlerFactory.NewACR2(
 		"",
 		func() request.Request { return &application.CreateSavedFileRequest{} },
-		bs.CreateSavedFile,
+		app.CreateSavedFile,
 		request.ResponseCreated,
 	))
 	savedFilePath.DELETE(oidcHandlerFactory.NewACR2(
 		"/:id",
 		func() request.Request { return &application.DeleteSavedFileRequest{} },
-		bs.DeleteSavedFile,
+		app.DeleteSavedFile,
 		request.ResponseNoContent,
 	))
 	savedFilePath.GET(oidcHandlerFactory.NewACR2(
 		"",
 		func() request.Request { return &application.ListSavedFilesRequest{} },
-		bs.ListSavedFiles,
+		app.ListSavedFiles,
 		request.ResponseOK,
 	))
 
@@ -170,7 +171,7 @@ func bindRoutes(
 	encryptedFilePath.GET(oidcHandlerFactory.NewACR1(
 		"/:id",
 		func() request.Request { return &application.DownloadEncryptedFileRequest{} },
-		bs.DownloadEncryptedFile,
+		app.DownloadEncryptedFile,
 		request.ResponseStream,
 	))
 
@@ -180,13 +181,13 @@ func bindRoutes(
 	boxUserPath.GET(oidcHandlerFactory.NewACR1(
 		"/:id/storage-quota",
 		func() request.Request { return &application.ListUserStorageQuotaRequest{} },
-		bs.ListUserStorageQuota,
+		app.ListUserStorageQuota,
 		request.ResponseOK,
 	))
 	boxUserPath.GET(oidcHandlerFactory.NewACR1(
 		"/:id/vault-used-space",
 		func() request.Request { return &application.GetVaultUsedSpaceRequest{} },
-		bs.GetVaultUsedSpace,
+		app.GetVaultUsedSpace,
 		request.ResponseOK,
 	))
 
@@ -196,7 +197,7 @@ func bindRoutes(
 	boxUsedSpacesPath.GET(oidcHandlerFactory.NewACR1(
 		"",
 		func() request.Request { return &application.ListBoxUsedSpaceRequest{} },
-		bs.ListBoxUsedSpace,
+		app.ListBoxUsedSpace,
 		request.ResponseOK,
 	))
 }

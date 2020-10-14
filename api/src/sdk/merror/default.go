@@ -6,24 +6,24 @@ import (
 
 // Declares some classic errors as variables to use it as a base for our error system
 var (
-	BadRequestError            = errors.New("bad request")
-	UnauthorizedError          = errors.New("not authorized")
-	ForbiddenError             = errors.New("forbidden")
-	NotFoundError              = errors.New("not found")
-	MethodNotAllowedError      = errors.New("method not allowed")
-	ConflictError              = errors.New("conflict")
-	GoneError                  = errors.New("gone")
-	RequestEntityTooLargeError = errors.New("request entity too large")
-	UnprocessableEntityError   = errors.New("unprocessable entity")
-	ClientClosedRequestError   = errors.New("client closed request")
-	BadGatewayError            = errors.New("bad gateway")
-	ServiceUnavailableError    = errors.New("service unavailable")
-	InternalError              = errors.New("internal server")
+	ErrBadRequest            = errors.New("bad request")
+	ErrUnauthorized          = errors.New("not authorized")
+	ErrForbidden             = errors.New("forbidden")
+	ErrNotFound              = errors.New("not found")
+	ErrMethodNotAllowed      = errors.New("method not allowed")
+	ErrConflict              = errors.New("conflict")
+	ErrGone                  = errors.New("gone")
+	ErrRequestEntityTooLarge = errors.New("request entity too large")
+	ErrUnprocessableEntity   = errors.New("unprocessable entity")
+	ErrClientClosedRequest   = errors.New("client closed request")
+	ErrBadGateway            = errors.New("bad gateway")
+	ErrServiceUnavailable    = errors.New("service unavailable")
+	ErrInternal              = errors.New("internal server")
 )
 
 func BadRequest() Error {
 	return Error{
-		error:   BadRequestError,
+		error:   ErrBadRequest,
 		Co:      BadRequestCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -32,7 +32,7 @@ func BadRequest() Error {
 
 func Unauthorized() Error {
 	return Error{
-		error:   UnauthorizedError,
+		error:   ErrUnauthorized,
 		Co:      UnauthorizedCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -41,7 +41,7 @@ func Unauthorized() Error {
 
 func Forbidden() Error {
 	return Error{
-		error:   ForbiddenError,
+		error:   ErrForbidden,
 		Co:      ForbiddenCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -50,7 +50,7 @@ func Forbidden() Error {
 
 func NotFound() Error {
 	return Error{
-		error:   NotFoundError,
+		error:   ErrNotFound,
 		Co:      NotFoundCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -59,7 +59,7 @@ func NotFound() Error {
 
 func MethodNotAllowed() Error {
 	return Error{
-		error:   MethodNotAllowedError,
+		error:   ErrMethodNotAllowed,
 		Co:      MethodNotAllowedCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -68,7 +68,7 @@ func MethodNotAllowed() Error {
 
 func Conflict() Error {
 	return Error{
-		error:   ConflictError,
+		error:   ErrConflict,
 		Co:      ConflictCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -77,7 +77,7 @@ func Conflict() Error {
 
 func RequestEntityTooLarge() Error {
 	return Error{
-		error:   RequestEntityTooLargeError,
+		error:   ErrRequestEntityTooLarge,
 		Co:      RequestEntityTooLargeCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -86,7 +86,7 @@ func RequestEntityTooLarge() Error {
 
 func UnprocessableEntity() Error {
 	return Error{
-		error:   UnprocessableEntityError,
+		error:   ErrUnprocessableEntity,
 		Co:      UnprocessableEntityCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -95,7 +95,7 @@ func UnprocessableEntity() Error {
 
 func ClientClosedRequest() Error {
 	return Error{
-		error:   ClientClosedRequestError,
+		error:   ErrClientClosedRequest,
 		Co:      ClientClosedRequestCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -104,7 +104,7 @@ func ClientClosedRequest() Error {
 
 func BadGateway() Error {
 	return Error{
-		error:   BadGatewayError,
+		error:   ErrBadGateway,
 		Co:      BadGatewayCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -113,7 +113,7 @@ func BadGateway() Error {
 
 func ServiceUnavailable() Error {
 	return Error{
-		error:   ServiceUnavailableError,
+		error:   ErrServiceUnavailable,
 		Co:      ServiceUnavailableCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -122,7 +122,7 @@ func ServiceUnavailable() Error {
 
 func Internal() Error {
 	return Error{
-		error:   InternalError,
+		error:   ErrInternal,
 		Co:      InternalCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),
@@ -131,7 +131,7 @@ func Internal() Error {
 
 func Gone() Error {
 	return Error{
-		error:   GoneError,
+		error:   ErrGone,
 		Co:      GoneCode,
 		Ori:     OriNotDefined,
 		Details: make(map[string]string),

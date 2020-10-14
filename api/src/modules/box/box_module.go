@@ -65,7 +65,7 @@ func InitModule(router *echo.Echo) Process {
 	adminHydraFORM := http.NewClient(
 		viper.GetString("hydra.admin_endpoint"),
 		viper.GetBool("hydra.secure"),
-		http.SetFormat(http.URLENCODED_FORM_MIME_TYPE),
+		http.SetFormat(http.MimeTypeURLEncodedForm),
 		http.SetAuthenticator(&oidc.BearerTokenAuthenticator{}),
 	)
 

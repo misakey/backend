@@ -5,8 +5,8 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
@@ -27,7 +27,7 @@ func (req *CreateBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) CreateBox(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateBoxRequest)
 
 	acc := oidc.GetAccesses(ctx)
@@ -35,22 +35,25 @@ func (bs *BoxApplication) CreateBox(ctx context.Context, genReq request.Request)
 		return nil, merror.Unauthorized()
 	}
 
+	// init an identity mapper for the operation
+	identityMapper := app.NewIM()
+
 	event, err := events.CreateCreateEvent(
 		ctx,
 		req.Title,
 		req.PublicKey,
 		acc.IdentityID,
-		bs.DB,
-		bs.RedConn,
-		bs.Identities,
-		bs.filesRepo,
+		app.DB,
+		app.RedConn,
+		identityMapper,
+		app.filesRepo,
 	)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating create event")
 	}
 
 	// build the box view and return it
-	box, err := events.Compute(ctx, event.BoxID, bs.DB, bs.Identities, &event)
+	box, err := events.Compute(ctx, event.BoxID, app.DB, identityMapper, &event)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("building box")
 	}

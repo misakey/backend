@@ -37,7 +37,7 @@ func (req *DeleteBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*DeleteBoxRequest)
 
 	acc := oidc.GetAccesses(ctx)
@@ -46,24 +46,24 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request)
 	}
 
 	// 1. verify the deletion sender is an admin of the box
-	if err := events.MustBeAdmin(ctx, bs.DB, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustBeAdmin(ctx, app.DB, req.boxID, acc.IdentityID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")
 	}
 
 	// get box files before deleting events
-	boxFileIDs, err := events.ListFilesID(ctx, bs.DB, req.boxID)
+	boxFileIDs, err := events.ListFilesID(ctx, app.DB, req.boxID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting files")
 	}
 
 	// get box members (to notify them)
-	memberIDs, err := events.ListBoxMemberIDs(ctx, bs.DB, bs.RedConn, req.boxID)
+	memberIDs, err := events.ListBoxMemberIDs(ctx, app.DB, app.RedConn, req.boxID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting members list")
 	}
 
 	// init a transaction to ensure all entities are removed
-	tr, err := bs.DB.BeginTx(ctx, nil)
+	tr, err := app.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("initing transaction")
 	}
@@ -75,7 +75,7 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request)
 	}
 
 	// 3. Get public key
-	createEvent, err := events.GetCreateEvent(ctx, bs.DB, req.boxID)
+	createEvent, err := events.GetCreateEvent(ctx, app.DB, req.boxID)
 	if err != nil {
 		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not get publicKey for %s", req.boxID)
 	}
@@ -105,12 +105,12 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request)
 		// since it is set to "" when msg.delete is called on the msg.file
 		// TODO: clean this up
 		if fileID != "" {
-			isOrphan, err := events.IsFileOrphan(ctx, bs.DB, fileID)
+			isOrphan, err := events.IsFileOrphan(ctx, app.DB, fileID)
 			if err != nil {
 				return nil, merror.Transform(err).Describe("checking file is orphan")
 			}
 			if isOrphan {
-				if err := files.Delete(ctx, bs.DB, bs.filesRepo, fileID); err != nil {
+				if err := files.Delete(ctx, app.DB, app.filesRepo, fileID); err != nil {
 					return nil, merror.Transform(err).Describe("deleting stored file")
 				}
 			}
@@ -118,7 +118,7 @@ func (bs *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request)
 	}
 
 	// 7. Send event to websockets
-	events.SendDeleteBox(ctx, bs.RedConn, req.boxID, acc.IdentityID, memberIDs, creationContent.PublicKey)
+	events.SendDeleteBox(ctx, app.RedConn, req.boxID, acc.IdentityID, memberIDs, creationContent.PublicKey)
 
 	return nil, nil
 

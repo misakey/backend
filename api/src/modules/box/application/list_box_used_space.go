@@ -28,7 +28,7 @@ func (req *ListBoxUsedSpaceRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) ListBoxUsedSpace(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) ListBoxUsedSpace(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListBoxUsedSpaceRequest)
 
 	access := oidc.GetAccesses(ctx)
@@ -39,7 +39,7 @@ func (bs *BoxApplication) ListBoxUsedSpace(ctx context.Context, genReq request.R
 		return nil, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
 	}
 
-	creates, err := events.ListCreatorIDEvents(ctx, bs.DB, req.IdentityID)
+	creates, err := events.ListCreatorIDEvents(ctx, app.DB, req.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing creator box ids")
 	}
@@ -48,5 +48,5 @@ func (bs *BoxApplication) ListBoxUsedSpace(ctx context.Context, genReq request.R
 		boxIDs[idx] = event.BoxID
 	}
 
-	return quota.ListBoxUsedSpaces(ctx, bs.DB, boxIDs)
+	return quota.ListBoxUsedSpaces(ctx, app.DB, boxIDs)
 }

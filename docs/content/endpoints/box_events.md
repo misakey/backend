@@ -60,7 +60,7 @@ HTTP 201 Created
   "type": "msg.txt",
   "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
   "server_event_created_at": "2020-04-01T20:22:45.691Z",
-  "sender": {{% include "include/event-sender.json" 6 %}},
+  "sender": {{% include "include/event-identity.json" 2 %}},
   "content": {
     "encrypted": "UrxdLg+Z5cyeRMz8/zk2aKxRlW9jwKf9FPskm8QO8EeiSm3B+Hj3JbvTdCnbsLVB8bjVC/GHYuzabHogpbXNuBTiFSMau3G81OkSoLDo58q6X8Rq7PE/ULcHhB1sClJ63Qk5DyTOXSPA3yr2LQTY0gfKLSnAT45H3d6w+fg5LEAtsJV3hRAZfiKd0dRjv7UZxS4rUAr2BM5EDA2lGP4az8Vd9xyhSmYiNPPDXEWwBmFFSUM8PaA9Lnectl2VjLLY4mDmhbjnBF+9WntV42Baa4zfP46Zxhq1EbGjPItStWPSZl4onKg1BUP2qcHQBqjoliIiuru7rw3Qd/7zse8A=="
   },
@@ -139,55 +139,34 @@ _JSON Body:_
 ```json
 [
     {
-        "content": null,
         "id": "b0e8dd9f-9c0c-42b3-b00f-d92088630fd2",
+        "type": "access.rm",
+        "content": null,
         "referrer_id": "2c2cefaf-732c-400b-b90a-3a425a1a6d99",
         "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
-        "sender": {
-            "avatar_url": null,
-            "display_name": "9ccbca-Test",
-            "identifier": {
-                "kind": "email",
-                "value": "9ccbca-test@misakey.com"
-            }
-        },
         "server_event_created_at": "2020-09-14T08:06:04.054352682Z",
-        "type": "access.rm"
+        "sender": {{% include "include/event-identity.json" 8 %}}
     },
     {
+        "id": "7807fb85-27a3-49c4-8049-e654b60c9e1d",
+        "type": "access.add",
         "content": {
             "restriction_type": "identifier",
             "value": "any@email.com"
         },
-        "id": "7807fb85-27a3-49c4-8049-e654b60c9e1d",
         "referrer_id": null,
-        "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
-        "sender": {
-            "avatar_url": null,
-            "display_name": "9ccbca-Test",
-            "identifier": {
-                "kind": "email",
-                "value": "9ccbca-test@misakey.com"
-            }
-        },
         "server_event_created_at": "2020-09-14T08:06:04.056930075Z",
-        "type": "access.add"
+        "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
+        "sender": {{% include "include/event-sender.json" 8 %}}
     },
     {
-        "content": null,
         "id": "33c05b94-3f15-4ed2-9ec9-b9c7d4c50a55",
+        "type": "member.kick",
+        "content": null,
         "referrer_id": "2c2cefaf-732c-400b-b90a-3a425a1a6d99",
-        "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
-        "sender": {
-            "avatar_url": null,
-            "display_name": "9ccbca-Test",
-            "identifier": {
-                "kind": "email",
-                "value": "9ccbca-test@misakey.com"
-            }
-        },
         "server_event_created_at": "2020-09-14T08:06:04.065076788Z",
-        "type": "member.kick"
+        "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
+        "sender": {{% include "include/event-sender.json" 8 %}}
     }
 ]
 ```

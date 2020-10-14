@@ -6,9 +6,9 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
@@ -30,20 +30,23 @@ func (req *CreateKeyShareRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) CreateKeyShare(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) CreateKeyShare(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateKeyShareRequest)
+
+	// init an identity mapper for the operation
+	identityMapper := app.NewIM()
 
 	// check accesses
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustMemberHaveAccess(ctx, bs.DB, bs.RedConn, bs.Identities, req.BoxID, acc.IdentityID); err != nil {
+	if err := events.MustMemberHaveAccess(ctx, app.DB, app.RedConn, identityMapper, req.BoxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 
 	if err := keyshares.Create(
-		ctx, bs.DB,
+		ctx, app.DB,
 		req.OtherShareHash, req.Share, req.BoxID, acc.IdentityID,
 	); err != nil {
 		return nil, merror.Transform(err).Describe("creating key share")

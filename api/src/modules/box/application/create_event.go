@@ -46,17 +46,20 @@ func (req *CreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) CreateEvent(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateEventRequest)
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
 
+	// init an identity mapper for the operation
+	identityMapper := app.NewIM()
+
 	view := events.View{}
 
 	// check the box exists and is not closed
-	if err := events.MustBoxBeOpen(ctx, bs.DB, req.boxID); err != nil {
+	if err := events.MustBoxBeOpen(ctx, app.DB, req.boxID); err != nil {
 		return view, merror.Transform(err).Describe("checking open")
 	}
 
@@ -70,13 +73,13 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq request.Reques
 
 	// call the proper event handlers
 	// initialize transaction
-	tx, err := bs.DB.BeginTx(ctx, nil)
+	tx, err := app.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating DB transaction")
 	}
 
 	handler := events.Handler(event.Type)
-	metadata, err := handler.Do(ctx, &event, tx, bs.RedConn, bs.Identities, bs.filesRepo)
+	metadata, err := handler.Do(ctx, &event, tx, app.RedConn, identityMapper, app.filesRepo)
 	if err != nil {
 		atomic.SQLRollback(ctx, tx, err)
 		return nil, merror.Transform(err).Describef("during %s event", event.Type)
@@ -93,19 +96,15 @@ func (bs *BoxApplication) CreateEvent(ctx context.Context, genReq request.Reques
 	subCtx := context.WithValue(oidc.SetAccesses(context.Background(), acc), logger.CtxKey{}, logger.FromCtx(ctx))
 	go func(ctx context.Context, e events.Event) {
 		for _, after := range handler.After {
-			if err := after(ctx, &e, bs.DB, bs.RedConn, bs.Identities, bs.filesRepo, metadata); err != nil {
+			if err := after(ctx, &e, app.DB, app.RedConn, identityMapper, app.filesRepo, metadata); err != nil {
 				// we log the error but we don’t return it
 				logger.FromCtx(ctx).Warn().Err(err).Msgf("after %s event", e.Type)
 			}
 		}
 	}(subCtx, event)
 
-	identityMap, err := events.MapSenderIdentities(ctx, []events.Event{event}, bs.Identities)
-	if err != nil {
-		return view, merror.Transform(err).Describe("retrieving identities for view")
-	}
-
-	view, err = events.FormatEvent(event, identityMap)
+	// finally format the event (non-transparent mode)
+	view, err = event.Format(ctx, identityMapper, false)
 	if err != nil {
 		return view, merror.Transform(err).Describe("computing event view")
 	}

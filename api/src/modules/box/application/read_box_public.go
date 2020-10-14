@@ -35,11 +35,13 @@ type PublicBoxView struct {
 }
 
 // Since ReadBoxPublic returns public data, there is no access check performed
-func (bs *BoxApplication) ReadBoxPublic(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) ReadBoxPublic(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ReadBoxPublicRequest)
+	// init an identity mapper for the operation
+	identityMapper := app.NewIM()
 
 	// get key share
-	keyShare, err := keyshares.Get(ctx, bs.DB, req.OtherShareHash)
+	keyShare, err := keyshares.Get(ctx, app.DB, req.OtherShareHash)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +50,7 @@ func (bs *BoxApplication) ReadBoxPublic(ctx context.Context, genReq request.Requ
 	}
 
 	// get box title
-	box, err := boxes.Get(ctx, bs.DB, bs.Identities, req.boxID)
+	box, err := boxes.Get(ctx, app.DB, identityMapper, req.boxID)
 	if err != nil {
 		return nil, err
 	}

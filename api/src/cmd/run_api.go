@@ -13,7 +13,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/generic"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/generic/pprof"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/bubble"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/echorouter"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
@@ -38,7 +37,6 @@ var RootCmd = &cobra.Command{
 }
 
 func initService() {
-
 	initDefaultConfig()
 
 	// init logger
@@ -46,8 +44,8 @@ func initService() {
 
 	// add error needles to auto handle some specific errors on layers we use everywhere
 	bubble.AddNeedle(bubble.PSQLNeedle{})
-	bubble.AddNeedle(sdk.NewOzzoNeedle())
-	bubble.AddNeedle(sdk.EchoNeedle{})
+	bubble.AddNeedle(bubble.NewOzzoNeedle())
+	bubble.AddNeedle(bubble.EchoNeedle{})
 	bubble.Lock()
 
 	// init echo router using sdk call
@@ -60,7 +58,7 @@ func initService() {
 	ssoProcess := sso.InitModule(e)
 	boxProcess := box.InitModule(e)
 
-	boxProcess.BoxService.SetIdentities(ssoProcess.IdentityIntraprocess)
+	boxProcess.BoxService.SetIdentityRepo(ssoProcess.IdentityRepo)
 	ssoProcess.SSOService.AuthenticationService.SetQuotaService(boxProcess.QuotumIntraprocess)
 
 	// finally launch the echo server

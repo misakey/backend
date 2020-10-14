@@ -47,7 +47,7 @@ func NewPrivateKeyJWTAuthenticator(oidcCli *Client, options ...func(*PrivateKeyJ
 	authenticator.tokenRester = mhttp.NewClient(
 		oidcCli.tokenURL,
 		true,
-		mhttp.SetFormat(mhttp.URLENCODED_FORM_MIME_TYPE),
+		mhttp.SetFormat(mhttp.MimeTypeURLEncodedForm),
 		mhttp.SetAuthenticator(&BearerTokenAuthenticator{}),
 		mhttp.IgnoreProtocol(),
 		mhttp.IgnoreInsecureHTTPS(),

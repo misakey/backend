@@ -6,8 +6,8 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/quota"
@@ -24,7 +24,7 @@ func (req *ListUserStorageQuotaRequest) BindAndValidate(eCtx echo.Context) error
 	)
 }
 
-func (bs *BoxApplication) ListUserStorageQuota(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) ListUserStorageQuota(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListUserStorageQuotaRequest)
 
 	access := oidc.GetAccesses(ctx)
@@ -35,7 +35,7 @@ func (bs *BoxApplication) ListUserStorageQuota(ctx context.Context, genReq reque
 		return nil, merror.Forbidden().Detail("id", merror.DVForbidden)
 	}
 
-	quota, err := quota.List(ctx, bs.DB, req.IdentityID)
+	quota, err := quota.List(ctx, app.DB, req.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing user quota")
 	}

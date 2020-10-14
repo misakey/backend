@@ -6,8 +6,8 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 
@@ -34,8 +34,11 @@ func (req *CreateSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateSavedFileRequest)
+
+	// init an identity mapper for the operation
+	identityMapper := app.NewIM()
 
 	access := oidc.GetAccesses(ctx)
 	if access == nil {
@@ -48,7 +51,7 @@ func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.Re
 
 	// check identity has access to the original file
 	hasAccess, err := events.HasAccessToFile(
-		ctx, bs.DB, bs.RedConn, bs.Identities,
+		ctx, app.DB, app.RedConn, identityMapper,
 		access.IdentityID, req.EncryptedFileID,
 	)
 	if err != nil {
@@ -71,7 +74,7 @@ func (bs *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.Re
 		EncryptedMetadata: req.EncryptedMetadata,
 		KeyFingerprint:    req.KeyFingerprint,
 	}
-	if err := files.CreateSavedFile(ctx, bs.DB, savedFile); err != nil {
+	if err := files.CreateSavedFile(ctx, app.DB, savedFile); err != nil {
 		return nil, merror.Transform(err).Describe("creating saved file")
 	}
 

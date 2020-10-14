@@ -25,11 +25,14 @@ func (req *DownloadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) erro
 	)
 }
 
-func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
+func (app *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*DownloadEncryptedFileRequest)
 
+	// init an identity mapper for the operation
+	identityMapper := app.NewIM()
+
 	// check the file does exist
-	_, err := files.Get(ctx, bs.DB, req.fileID)
+	_, err := files.Get(ctx, app.DB, req.fileID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("finding msg.file event")
 	}
@@ -39,7 +42,7 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq requ
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	allowed, err := events.HasAccessOrHasSavedFile(ctx, bs.DB, bs.RedConn, bs.Identities, acc.IdentityID, req.fileID)
+	allowed, err := events.HasAccessOrHasSavedFile(ctx, app.DB, app.RedConn, identityMapper, acc.IdentityID, req.fileID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("checking access to file")
 	}
@@ -48,7 +51,7 @@ func (bs *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq requ
 	}
 
 	// download the file then render it
-	readCloser, err := files.Download(ctx, bs.filesRepo, req.fileID)
+	readCloser, err := files.Download(ctx, app.filesRepo, req.fileID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("downloading")
 	}

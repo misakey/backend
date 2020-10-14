@@ -16,11 +16,11 @@ import (
 )
 
 // HTTP formats
-const BLANK_MIME_TYPE = ""
-const HEAD_MIME_TYPE = "head"
-const JSON_MIME_TYPE = "application/json"
-const MULTIPART_FORM_MIME_TYPE = "multipart/form-data"
-const URLENCODED_FORM_MIME_TYPE = "application/x-www-form-urlencoded"
+const MimeTypeBlank = ""
+const MimeTypeHead = "head"
+const MimeTypeJSON = "application/json"
+const MimeTypeMultipartForm = "multipart/form-data"
+const MimeTypeURLEncodedForm = "application/x-www-form-urlencoded"
 
 // Client represents a HTTP REST API client requesting a configured endpoint.
 type Client struct {
@@ -58,7 +58,7 @@ func NewClient(url string, secure bool, options ...func(*Client)) *Client {
 
 	// by default
 	// we consider the client is based on JSON formatting
-	SetFormat(JSON_MIME_TYPE)(cli)
+	SetFormat(MimeTypeJSON)(cli)
 
 	// run all potential options to set up the client
 	for _, option := range options {
@@ -78,9 +78,9 @@ func SetAuthenticator(authenticator authenticator) func(*Client) {
 func SetFormat(format string) func(*Client) {
 	return func(c *Client) {
 		switch format {
-		case URLENCODED_FORM_MIME_TYPE:
+		case MimeTypeURLEncodedForm:
 			c.get, c.post, c.put, c.patch = c.urlFormGet, c.urlFormPost, c.urlFormPut, c.urlFormPatch
-		case MULTIPART_FORM_MIME_TYPE:
+		case MimeTypeMultipartForm:
 			c.get, c.post, c.put, c.patch = c.multipartGet, c.multipartPost, c.multipartPut, c.multipartPatch
 		default:
 			c.get, c.post, c.put, c.patch = c.jsonGet, c.jsonPost, c.jsonPut, c.jsonPatch
@@ -110,14 +110,14 @@ func IgnoreInsecureHTTPS() func(*Client) {
 // A head request is agnostic from the format since no body input/output format is considered
 // the output is built based on http headers
 func (r *Client) Head(ctx context.Context, route string, params url.Values, output map[string][]string) error {
-	return r.Perform(ctx, "HEAD", route, params, nil, output, HEAD_MIME_TYPE)
+	return r.Perform(ctx, "HEAD", route, params, nil, output, MimeTypeHead)
 }
 
 // Fixed HTTP method
 // Delete an entity using route as base url then params as query parameters
 // A delete request is agnostic from the format since no body input/output is considered
 func (r *Client) Delete(ctx context.Context, route string, params url.Values) error {
-	return r.Perform(ctx, "DELETE", route, params, nil, nil, BLANK_MIME_TYPE)
+	return r.Perform(ctx, "DELETE", route, params, nil, nil, MimeTypeBlank)
 }
 
 // Overridable HTTP method
@@ -161,16 +161,16 @@ func (r *Client) Perform(
 	if input != nil {
 		var data []byte
 		switch format {
-		case JSON_MIME_TYPE:
+		case MimeTypeJSON:
 			data, err = json.Marshal(input)
 			if err != nil {
 				return merror.Transform(err).Describe("could not encode body")
 			}
-		case URLENCODED_FORM_MIME_TYPE:
+		case MimeTypeURLEncodedForm:
 			params := input.(url.Values)
 			data = []byte(params.Encode())
-		default: // handle special MULTIPART_FORM_MIME_TYPE
-			if strings.HasPrefix(format, MULTIPART_FORM_MIME_TYPE) {
+		default: // handle special MultipartForm mime type
+			if strings.HasPrefix(format, MimeTypeMultipartForm) {
 				buffer, ok := input.(*bytes.Buffer)
 				if !ok {
 					return merror.Internal().Describe("expecting input as a bytes.Buffer pointer")
@@ -201,8 +201,8 @@ func (r *Client) Perform(
 		return merror.Transform(err).Describe("could perform request")
 	}
 
-	// Head format is a special case where we want to retrievee headers instead of body
-	if format == HEAD_MIME_TYPE {
+	// Head format is a special case where we want to retrieve headers instead of body
+	if format == MimeTypeHead {
 		return handleHeaders(resp, output, r.limit)
 	}
 	return handleJSON(resp, output, r.limit)

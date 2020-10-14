@@ -15,8 +15,8 @@ type QuotumInterface interface {
 	CreateBase(ctx context.Context, identityID string) (interface{}, error)
 }
 
-func (s *Service) SetQuotaService(quota QuotumInterface) {
-	s.quotaService = quota
+func (as *Service) SetQuotaService(quota QuotumInterface) {
+	as.quotaService = quota
 }
 
 type Service struct {

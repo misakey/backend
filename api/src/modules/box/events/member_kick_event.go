@@ -10,7 +10,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
 type MemberKickContent struct {
@@ -33,7 +32,7 @@ func (c MemberKickContent) Validate() error {
 
 func KickDeprecatedMembers(
 	ctx context.Context,
-	exec boil.ContextExecutor, identities entrypoints.IdentityIntraprocessInterface,
+	exec boil.ContextExecutor, identities *IdentityMapper,
 	boxID string, kickerID string,
 ) ([]Event, error) {
 	var kicks []Event

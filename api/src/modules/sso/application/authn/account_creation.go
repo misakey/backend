@@ -34,7 +34,7 @@ func (am accountMetadata) Validate() error {
 func (as *Service) assertAccountCreation(ctx context.Context, challenge string, identity *domain.Identity, step Step) error {
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil ||
-		oidc.ClassRef(acc.ACR).LessThan(oidc.ACR1) {
+		acc.ACR.LessThan(oidc.ACR1) {
 		return merror.Forbidden()
 	}
 

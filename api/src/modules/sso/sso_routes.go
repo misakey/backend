@@ -5,7 +5,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/backuparchive"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oauth"
 )
 
@@ -16,7 +15,6 @@ func bindRoutes(
 	extOIDCHandlers request.HandlerFactory,
 	ss *application.SSOService,
 	oauthCodeFlow oauth.AuthorizationCodeFlow,
-	backupArchiveService backuparchive.BackupArchiveService,
 ) {
 	// ACCOUNT ROUTES
 	accountPath := router.Group("/accounts")

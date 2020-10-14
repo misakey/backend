@@ -7,32 +7,25 @@ import (
 
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 // SenderView is how an event sender (or box creator)
 // is represented in JSON reponses
 type SenderView struct {
-	DisplayName string      `json:"display_name"`
-	AvatarURL   null.String `json:"avatar_url"`
-	Identifier  struct {
+	DisplayName  string      `json:"display_name"`
+	AvatarURL    null.String `json:"avatar_url"`
+	IdentifierID string      `json:"identifier_id"`
+	Identifier   struct {
 		Value string `json:"value"`
 		Kind  string `json:"kind"`
 	} `json:"identifier"`
 }
 
-func NewSenderView(identity domain.Identity) SenderView {
-	result := SenderView{
-		DisplayName: identity.DisplayName,
-		AvatarURL:   identity.AvatarURL,
-	}
-
-	result.Identifier.Kind = string(identity.Identifier.Kind)
-	result.Identifier.Value = identity.Identifier.Value
-
-	return result
+func (sender SenderView) copyOpaque() SenderView {
+	sender.Identifier.Value = ""
+	sender.Identifier.Kind = ""
+	return sender
 }
 
 // View represent an event as it is represented in JSON responses
@@ -50,21 +43,22 @@ func (v *View) ToJSON() ([]byte, error) {
 	return json.Marshal(v)
 }
 
-func ToView(e Event, sender domain.Identity) View {
-	return View{
+// FormatEvent transforms an event into its JSON view.
+func (e Event) Format(ctx context.Context, identities *IdentityMapper, transparent bool) (View, error) {
+	view := View{
 		Type:       e.Type,
 		Content:    &e.JSONContent,
 		ID:         e.ID,
 		BoxID:      e.BoxID,
 		ReferrerID: e.ReferrerID,
 		CreatedAt:  e.CreatedAt,
-		Sender:     NewSenderView(sender),
 	}
-}
-
-// FormatEvent transforms an event into its JSON view.
-func FormatEvent(e Event, identityMap map[string]domain.Identity) (View, error) {
-	view := ToView(e, identityMap[e.SenderID])
+	// map the sender
+	var err error
+	view.Sender, err = identities.Get(ctx, e.SenderID, transparent)
+	if err != nil {
+		return view, merror.Transform(err).Describe("getting sender")
+	}
 
 	// For deleted messages
 	// we put the deletor identifier in the content
@@ -76,11 +70,13 @@ func FormatEvent(e Event, identityMap map[string]domain.Identity) (View, error) 
 		}
 
 		if content.Deleted.ByIdentityID != "" {
-			deletor := NewSenderView(identityMap[content.Deleted.ByIdentityID])
+			deletor, err := identities.Get(ctx, content.Deleted.ByIdentityID, transparent)
+			if err != nil {
+				return view, merror.Transform(err).Describe("getting delelor")
+			}
 			content.Deleted.ByIdentity = &deletor
 			content.Deleted.ByIdentityID = ""
-			err := view.Content.Marshal(content)
-			if err != nil {
+			if err := view.Content.Marshal(content); err != nil {
 				return view, merror.Transform(err).Describef("marshalling %s content", e.Type)
 			}
 		}
@@ -94,8 +90,11 @@ func FormatEvent(e Event, identityMap map[string]domain.Identity) (View, error) 
 		}
 
 		if content.KickerID != "" {
-			kicked := NewSenderView(identityMap[content.KickerID])
-			content.Kicker = &kicked
+			kicker, err := identities.Get(ctx, content.KickerID, transparent)
+			if err != nil {
+				return view, merror.Transform(err).Describe("getting kicker")
+			}
+			content.Kicker = &kicker
 		}
 		content.KickerID = ""
 		if err := view.Content.Marshal(content); err != nil {
@@ -107,67 +106,4 @@ func FormatEvent(e Event, identityMap map[string]domain.Identity) (View, error) 
 		view.Content = nil
 	}
 	return view, nil
-}
-
-func MapSenderIdentities(ctx context.Context, events []Event, identityRepo entrypoints.IdentityIntraprocessInterface) (map[string]domain.Identity, error) {
-	// getting senders IDs without duplicates
-	// we build both a set (map to bool) and a list
-	// because we need a list in "domain.IdentityFilters"
-	var senderIDs []string
-	idMap := make(map[string]bool)
-	for _, event := range events {
-		IDsInEvent, err := getIdentityIDs(event)
-		if err != nil {
-			return nil, merror.Transform(err).Describe("getting identity IDs in event")
-		}
-
-		for _, ID := range IDsInEvent {
-			_, alreadyPresent := idMap[ID]
-			if !alreadyPresent {
-				senderIDs = append(senderIDs, ID)
-				idMap[ID] = true
-			}
-		}
-	}
-
-	identities, err := identityRepo.List(ctx, domain.IdentityFilters{IDs: senderIDs})
-	if err != nil {
-		return nil, merror.Transform(err).Describe("retrieving Identities from IDs")
-	}
-
-	var sendersMap = make(map[string]domain.Identity, len(identities))
-	for _, identity := range identities {
-		sendersMap[identity.ID] = *identity
-	}
-
-	return sendersMap, nil
-}
-
-func getIdentityIDs(event Event) ([]string, error) {
-	ids := []string{event.SenderID}
-
-	if event.Type == "msg.text" || event.Type == "msg.file" {
-		var content DeletedContent
-		err := json.Unmarshal(event.JSONContent, &content)
-		if err != nil {
-			return ids, merror.Transform(err).Describef("unmarshaling %s json", event.Type)
-		}
-
-		if content.Deleted.ByIdentityID != "" {
-			ids = append(ids, content.Deleted.ByIdentityID)
-		}
-	}
-	if event.Type == "member.kick" {
-		var content MemberKickContent
-		err := json.Unmarshal(event.JSONContent, &content)
-		if err != nil {
-			return ids, merror.Transform(err).Describef("unmarshaling %s json", event.Type)
-		}
-
-		if content.KickerID != "" {
-			ids = append(ids, content.KickerID)
-		}
-	}
-
-	return ids, nil
 }

@@ -4,14 +4,12 @@ import (
 	"context"
 	"time"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
-
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/identities"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 // Box is a volatile object built based on events linked to its ID
@@ -28,22 +26,6 @@ type Box struct {
 	LastEvent   View       `json:"last_event"`
 }
 
-func MustBeAtLeastLevel20(
-	ctx context.Context,
-	exec boil.ContextExecutor,
-	identities entrypoints.IdentityIntraprocessInterface,
-	identityID string,
-) error {
-	identity, err := identities.Get(ctx, identityID)
-	if err != nil {
-		return merror.Transform(err).Describe("Getting identity")
-	}
-	if identity.Level < 20 {
-		return merror.Forbidden().Detail("level", merror.DVInvalid)
-	}
-	return nil
-}
-
 type computer struct {
 	// binding of event type - play func
 	ePlayer map[string]func(context.Context, Event) error
@@ -51,7 +33,7 @@ type computer struct {
 	events []Event
 
 	exec       boil.ContextExecutor
-	identities entrypoints.IdentityIntraprocessInterface
+	identities *IdentityMapper
 
 	// the output
 	box Box
@@ -69,7 +51,7 @@ func Compute(
 	ctx context.Context,
 	boxID string,
 	exec boil.ContextExecutor,
-	identities entrypoints.IdentityIntraprocessInterface,
+	identities *IdentityMapper,
 	lastEvent *Event,
 ) (Box, error) {
 	// init the computer system
@@ -82,8 +64,8 @@ func Compute(
 	computer.ePlayer = map[string]func(context.Context, Event) error{
 		// NOTE: to add an new event here should involve attention on the RequireToBuild method
 		// used to retrieve events to compute the box
-		"create":          computer.playCreate,
-		"state.lifecycle": computer.playState,
+		etype.Create:         computer.playCreate,
+		etype.Statelifecycle: computer.playState,
 	}
 
 	// automatically retrieve events if 0 events loaded
@@ -138,15 +120,11 @@ func (c *computer) handleLast(ctx context.Context) error {
 		c.lastEvent = &last
 	}
 
-	identityMap, err := MapSenderIdentities(ctx, []Event{*c.lastEvent}, c.identities)
-	if err != nil {
-		return merror.Transform(err).Describe("retrieving identities for view")
-	}
-
 	if err := BuildAggregate(ctx, c.exec, c.lastEvent); err != nil {
 		return merror.Transform(err).Describe("building aggregate")
 	}
-	view, err := FormatEvent(*c.lastEvent, identityMap)
+	// non-transparent mode for the last event
+	view, err := c.lastEvent.Format(ctx, c.identities, false)
 	if err != nil {
 		return merror.Transform(err).Describe("computing view of last event")
 	}
@@ -168,11 +146,15 @@ func (c *computer) playCreate(ctx context.Context, e Event) error {
 	c.creatorID = e.SenderID
 
 	// set the creator information
-	identity, err := identities.Get(ctx, c.identities, e.SenderID)
+	var err error
+	// need transparency on creator email if the connected user is the creator
+	// so the client can attest either the user is creator or
+	// NOTE: must change implementing advanced admin role
+	acc := oidc.GetAccesses(ctx)
+	c.box.Creator, err = c.identities.Get(ctx, e.SenderID, (acc.IdentityID == e.SenderID))
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving creator")
 	}
-	c.box.Creator = NewSenderView(identity)
 	return nil
 }
 

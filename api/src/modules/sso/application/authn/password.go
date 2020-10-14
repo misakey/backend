@@ -3,10 +3,10 @@ package authn
 import (
 	"context"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/argon2"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 // AssertPasswordExistence

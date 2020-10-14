@@ -9,7 +9,6 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
 type Metadata interface{}
@@ -19,7 +18,7 @@ type doHandler func(
 	*Event,
 	boil.ContextExecutor, // transaction
 	*redis.Client,
-	entrypoints.IdentityIntraprocessInterface,
+	*IdentityMapper,
 	files.FileStorageRepo,
 ) (Metadata, error)
 
@@ -28,17 +27,17 @@ type afterHandler func(
 	*Event,
 	boil.ContextExecutor, // db connector
 	*redis.Client,
-	entrypoints.IdentityIntraprocessInterface,
+	*IdentityMapper,
 	files.FileStorageRepo,
 	Metadata,
 ) error
 
-func empty(_ context.Context, _ *Event, _ boil.ContextExecutor, _ *redis.Client, _ entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func empty(_ context.Context, _ *Event, _ boil.ContextExecutor, _ *redis.Client, _ *IdentityMapper, _ files.FileStorageRepo) (Metadata, error) {
 	return nil, nil
 }
 
 // checkReferrer id is set
-func checkReferrer(ctx context.Context, e Event) error {
+func checkReferrer(e Event) error {
 	// check that the current sender has access to the box
 	if err := v.ValidateStruct(&e,
 		v.Field(&e.ReferrerID, v.Required, is.UUIDv4),
@@ -64,14 +63,15 @@ var eventTypeHandlerMapping = map[string]EventHandler{
 	"msg.file":   {doMessage, gh(publish, notify, computeUsedSpace)},
 	"msg.edit":   {doEditMsg, gh(publish, computeUsedSpace)},
 	"msg.delete": {doDeleteMsg, gh(publish, computeUsedSpace)},
-	"access.add": {doAddAccess, gh()},
-	"access.rm":  {doRmAccess, gh()},
+	"access.add": {doAddAccess, nil},
+	"access.rm":  {doRmAccess, nil},
 
 	"member.leave": {doLeave, gh(publish, notify, invalidateCaches)},
 	"member.join":  {doJoin, gh(publish, notify, invalidateCaches)},
 	"member.kick":  {empty, gh(publish, notify, invalidateCaches)},
 }
 
+// group handlers declaration
 func gh(handlers ...afterHandler) []afterHandler {
 	return handlers
 }

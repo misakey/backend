@@ -4,7 +4,6 @@ import (
 	"context"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
@@ -33,7 +32,7 @@ func (cmd *AuthenticationStepCmd) BindAndValidate(eCtx echo.Context) error {
 	}
 
 	return v.ValidateStruct(cmd,
-		v.Field(&cmd.LoginChallenge, validation.Required),
+		v.Field(&cmd.LoginChallenge, v.Required),
 	)
 }
 

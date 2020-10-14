@@ -386,6 +386,6 @@ HTTP 200 OK
 A list of senders is returned.
 ```json
 [
-  {{% include "include/event-sender.json" %}}
+  {{% include "include/event-identity.json" %}}
 ]
 ```

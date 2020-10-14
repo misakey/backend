@@ -8,13 +8,12 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
-func doJoin(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities entrypoints.IdentityIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func doJoin(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ files.FileStorageRepo) (Metadata, error) {
 	// check that the current sender is not already a box member
 	isMember, err := isMember(ctx, exec, redConn, e.BoxID, e.SenderID)
 	if err != nil {

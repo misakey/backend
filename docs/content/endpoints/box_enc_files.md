@@ -45,7 +45,7 @@ HTTP 201 CREATED
 ```
 
 _JSON Body_:
-```
+```json
 {
     "id": "cac1f19f-46eb-4be9-ba21-8346f1fd3838",
     "type": "msg.file",
@@ -54,14 +54,7 @@ _JSON Body_:
         "encrypted_file_id": "9b2c3cdc-d768-43ef-ba23-350b56b3d8ed"
     },
     "server_event_created_at": "2020-06-19T15:36:28.092359097Z",
-    "sender": {
-        "display_name": "898d05-test@misakey.com",
-        "avatar_url": null,
-        "identifier": {
-            "value": "898d05-test@misakey.com",
-            "kind": "email"
-        }
-    }
+    "sender": {{% include "include/event-identity.json" 4 %}}
 }
 ```
 
