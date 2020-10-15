@@ -151,7 +151,7 @@ func (c *computer) playCreate(ctx context.Context, e Event) error {
 	// so the client can attest either the user is creator or
 	// NOTE: must change implementing advanced admin role
 	acc := oidc.GetAccesses(ctx)
-	c.box.Creator, err = c.identities.Get(ctx, e.SenderID, (acc.IdentityID == e.SenderID))
+	c.box.Creator, err = c.identities.Get(ctx, e.SenderID, (acc != nil && acc.IdentityID == e.SenderID))
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving creator")
 	}
