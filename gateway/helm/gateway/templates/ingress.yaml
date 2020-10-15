@@ -31,4 +31,37 @@ spec:
               serviceName: {{ $fullName }}
               servicePort: http
 {{- end }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-protected
+  labels:
+    app: {{ template "nginx.name" . }}-protected
+    chart: {{ template "nginx.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+{{- with .Values.ingress.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: htpasswd
+spec:
+  tls:
+    - hosts:
+{{- range $domain, $_ := .Values.protectedSubdomains }}
+      - {{ $domain }}.{{ $dns }}
+{{- end }}
+      secretName: letsencrypt
+  rules:
+{{- range $domain, $path := .Values.protectedSubdomains }}
+    - host: {{ $domain }}.{{ $dns }}
+      http:
+        paths:
+          - path: {{ $path }}
+            backend:
+              serviceName: {{ $fullName }}
+              servicePort: http
+{{- end }}
 {{- end }}

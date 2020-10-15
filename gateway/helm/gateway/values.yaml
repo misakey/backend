@@ -16,6 +16,9 @@ subdomains:
   - api
   - app
 
+protectedSubdomains:
+  api: "/debug"
+
 service:
   type: ClusterIP
   port: 80
