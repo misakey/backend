@@ -7,8 +7,8 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
@@ -59,6 +59,13 @@ func boxUsersHandler(c echo.Context, wh WebsocketHandler, receivedMsg []byte) er
 		if err := events.DelCounts(c.Request().Context(), wh.boxService.RedConn, obj.SenderID, obj.BoxID); err != nil {
 			return err
 		}
+		// resend the ack event
+		// to make sure all user websockets get it
+		// and ignore error
+		_ = wh.boxService.RedConn.Publish(
+			fmt.Sprintf("user_%s:ws", obj.SenderID),
+			receivedMsg,
+		)
 	}
 	return nil
 }
