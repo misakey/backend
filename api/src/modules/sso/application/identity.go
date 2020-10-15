@@ -24,7 +24,7 @@ type IdentityQuery struct {
 func (query *IdentityQuery) BindAndValidate(eCtx echo.Context) error {
 	query.identityID = eCtx.Param("id")
 	if err := v.ValidateStruct(query,
-		v.Field(&query.identityID, v.Required, is.UUIDv4.Error("identity id must be an uuid v4")),
+		v.Field(&query.identityID, v.Required, is.UUIDv4),
 	); err != nil {
 		return merror.Transform(err).Describe("validating identity query")
 	}
@@ -68,7 +68,7 @@ func (sso *SSOService) GetIdentity(ctx context.Context, gen request.Request) (in
 
 // PartialUpdateIdentityCmd
 type PartialUpdateIdentityCmd struct {
-	IdentityID    string
+	identityID    string
 	DisplayName   string      `json:"display_name"`
 	Notifications string      `json:"notifications"`
 	Color         null.String `json:"color"`
@@ -80,8 +80,9 @@ func (cmd *PartialUpdateIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
 	}
 
+	cmd.identityID = eCtx.Param("id")
 	if err := v.ValidateStruct(cmd,
-		v.Field(&cmd.IdentityID, v.Required, is.UUIDv4),
+		v.Field(&cmd.identityID, v.Required, is.UUIDv4),
 		v.Field(&cmd.Notifications, v.In("minimal", "moderate", "frequent")),
 		v.Field(&cmd.DisplayName, v.Length(3, 254)),
 		v.Field(&cmd.Color, v.Length(7, 7)),
@@ -97,11 +98,11 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 	acc := oidc.GetAccesses(ctx)
 
 	// verify requested user id and authenticated user id are the same.
-	if acc == nil || acc.IdentityID != cmd.IdentityID {
+	if acc == nil || acc.IdentityID != cmd.identityID {
 		return nil, merror.Forbidden()
 	}
 
-	identity, err := sso.identityService.Get(ctx, cmd.IdentityID)
+	identity, err := sso.identityService.Get(ctx, cmd.identityID)
 	if err != nil {
 		return nil, err
 	}

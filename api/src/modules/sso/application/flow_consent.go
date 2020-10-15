@@ -149,7 +149,7 @@ func (cmd *ConsentAcceptCmd) BindAndValidate(eCtx echo.Context) error {
 	}
 
 	return v.ValidateStruct(cmd,
-		v.Field(&cmd.IdentityID, v.Required, is.UUIDv4.Error("identity id should be an uuid v4")),
+		v.Field(&cmd.IdentityID, v.Required, is.UUIDv4),
 		v.Field(&cmd.ConsentChallenge, v.Required),
 	)
 }
