@@ -140,9 +140,9 @@ Here are the events that can be received:
     "box_id": "(string) id of the box",
     "server_event_created_at": "(RFC3339 time): when the event was received by the server",
     "referrer_id": "(string) uuid of the corresponding join event",
-    "sender": {{% include "include/event-sender.json" 4 %}},
+    "sender": {{% include "include/event-identity.json" 4 %}},
     "content": {
-        "kicker": {{% include "include/event-sender.json" 8 %}}
+        "kicker": {{% include "include/event-identity.json" 8 %}}
     }
 }
 ```

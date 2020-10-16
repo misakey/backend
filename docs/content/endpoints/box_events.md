@@ -157,7 +157,7 @@ _JSON Body:_
         "referrer_id": null,
         "server_event_created_at": "2020-09-14T08:06:04.056930075Z",
         "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
-        "sender": {{% include "include/event-sender.json" 8 %}}
+        "sender": {{% include "include/event-identity.json" 8 %}}
     },
     {
         "id": "33c05b94-3f15-4ed2-9ec9-b9c7d4c50a55",
@@ -166,7 +166,7 @@ _JSON Body:_
         "referrer_id": "2c2cefaf-732c-400b-b90a-3a425a1a6d99",
         "server_event_created_at": "2020-09-14T08:06:04.065076788Z",
         "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
-        "sender": {{% include "include/event-sender.json" 8 %}}
+        "sender": {{% include "include/event-identity.json" 8 %}}
     }
 ]
 ```

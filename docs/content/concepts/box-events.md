@@ -41,7 +41,7 @@ An event has the following fields:
   "id": "(string) (uuid): unique id set by the server",
   "server_event_created_at": "(RFC3339 time): when the event was received by the server",
   "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
-  "sender": {{% include "include/event-sender.json" 2 %}},
+  "sender": {{% include "include/event-identity.json" 2 %}},
   "type": "(string) (one of: create, msg.txt, msg.file, state.lifecycle, member.join, member.leave): the type of the event",
   "content": "(json object) (nullable): its shape depends on the type of event - see definitions below",
   "referrer_id": "(string) (uuid) (nullable): the uuid of a potential referrer event"
