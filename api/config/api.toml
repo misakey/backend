@@ -42,7 +42,7 @@
   port = 6379
 
 [backup_key_share]
-  expiration = "1h"
+  expiration = "24h"
 
 [websockets]
   allowed_origins = ["https://app.misakey.com.local"]

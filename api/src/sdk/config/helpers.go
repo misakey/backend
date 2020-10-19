@@ -33,7 +33,7 @@ func Print(moduleName string, fieldsToHide []string) {
 		}
 		splitKey := strings.Split(key, ".")
 		if len(splitKey) == 2 {
-			key = fmt.Sprintf("\033[0;90m%s\033[0m.\033[1;32m%s\033[0m", splitKey[0], splitKey[1])
+			key = fmt.Sprintf("\033[0;1m%s\033[0m.\033[0;1m%s\033[0m", splitKey[0], splitKey[1])
 		}
 		configMsg = fmt.Sprintf("%s\t %s = \033[0;94m%v\033[0m\n", configMsg, key, value)
 	}
