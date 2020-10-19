@@ -73,7 +73,9 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 		return nil, err
 	}
 
-	if c.RestrictionType == "invitation_link" {
+	// the "&& forServerNoStoreJSON.Valid" is to avoid introducing a breaking change
+	// TODO remove when the frontend implements this feeature
+	if c.RestrictionType == "invitation_link" && forServerNoStoreJSON.Valid {
 		err = applyInvitationLinkSideEffects(ctx, e, c, forServerNoStoreJSON, exec, redConn, identityMapper, cryptoActionService)
 		if err != nil {
 			return nil, err
