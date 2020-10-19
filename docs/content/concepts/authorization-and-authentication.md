@@ -41,11 +41,12 @@ the `private_key_jwt` method only can be used.
 
 There are two types of tokens obtained at the end of an authorization code flow:
 - an `access Token`, which allows any client to obtain authorizations to Misakey
-- resources on behalf of the end user.
+  resources on behalf of the end user.
+  **This access token is now a `HttpOnly` cookie and as a result it is managed entirely by the browser (`HttpOnly` actually makes it inaccessible for the JavaScript)**
 - an `identity Token (ID Token)`, described in [the authentication][] section,
-which allows identification of the authenticated user and contains many information
-such as when the token expires or how secure was the authentication process
-(using or not 2FA, as an example).
+  which allows identification of the authenticated user and contains many information
+  such as when the token expires or how secure was the authentication process
+  (using or not 2FA, as an example).
 
 The access token is opaque, bearing authorizations to access resources.
 It cannot be introspected from the external world.
@@ -86,8 +87,8 @@ If requested, the legal scopes must be consented by the end-user during the cons
 There are two types of tokens obtained at the end of an authorization code flow:
 - an `access Token`, which is an authorization token (see [the authorization][] section).
 - an `identity Token (ID Token)`, which allows the identification of the authenticated user
-and contains many information such as when the token expires
-or how secure was the authentication process.
+  and contains many information such as when the token expires
+  or how secure was the authentication process.
 
 The identity token is a signed [JWT][] containing information
 about who is authenticated and the authentication process used.

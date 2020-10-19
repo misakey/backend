@@ -66,7 +66,7 @@ sequenceDiagram
     api.misakey.com->>+app.misakey.com: redirects user's agent to redirect url with code
     app.misakey.com->>-api.misakey.com: 
     api.misakey.com-->auth.misakey.com/_: fetches tokens as an authenticated client
-    api.misakey.com->>app.misakey.com: redirects user's agent to final url with tokens
+    api.misakey.com->>app.misakey.com: redirects user's agent to final url with CSRF token (and access token as cookie)
 {{</mermaid>}}
 
 ## 3. Initiate an authorization code flow
@@ -414,7 +414,7 @@ _JSON Body:_
 {
   "next": "redirect",
   "redirect_to": "https://auth.misakey.com/_/oauth2/auth",
-  "access_token": "NaEOLikFLklPERz1Cq-umthWAXKBgwWQ-S3cmWqWt8Q.fPAN_Hxyp8eFRQ0zPT5_lNcFANXENcYGlgLiUrS2xY4"
+  "csrf_token": "3eb193b251a24dcb8bb5aa5c3cca3487"
 }
 ```
 
