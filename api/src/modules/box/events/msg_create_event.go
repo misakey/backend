@@ -11,7 +11,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
-func doMessage(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func doMessage(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
 	// check that the current sender has access to the box
 	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
 		return nil, err

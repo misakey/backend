@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -43,12 +44,11 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 	}
 
 	// check the access doesn't exist yet
-	var content string
+	content := e.JSONContent.String()
 	if c.RestrictionType == "invitation_link" {
 		content = fmt.Sprintf("{\"restriction_type\":\"%s\"}", c.RestrictionType)
-	} else {
-		content = e.JSONContent.String()
 	}
+
 	_, err := get(ctx, exec, eventFilters{
 		eType:      null.StringFrom("access.add"),
 		unreferred: true,
@@ -74,91 +74,101 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 	}
 
 	if c.RestrictionType == "invitation_link" {
-		forServerNoStore := struct {
-			EncryptedCryptoAction string `json:"encrypted_crypto_action"`
-			MisakeyShare          string `json:"misakey_share"`
-		}{}
-
-		if err := forServerNoStoreJSON.Unmarshal(&forServerNoStore); err != nil {
-			return nil, merror.Transform(err).Describe("marshalling \"for server no store\"")
-		}
-
-		if err := v.ValidateStruct(&forServerNoStore,
-			v.Field(&forServerNoStore.MisakeyShare, v.Required),
-			// strictly speaking we don't need a crypto action if there is no members,
-			// but since the frontend is always able to create one
-			// it is simpler to always require it
-			v.Field(&forServerNoStore.EncryptedCryptoAction, v.Required),
-		); err != nil {
-			return nil, merror.Transform(err).Describe("validating \"for server no store\"")
-		}
-
-		err = keyshares.EmptyAll(ctx, exec, e.BoxID)
+		err = applyInvitationLinkSideEffects(ctx, e, c, forServerNoStoreJSON, exec, redConn, identityMapper, cryptoActionService)
 		if err != nil {
-			return nil, merror.Transform(err).Describe("deleting previous key shares")
-		}
-
-		if err = keyshares.Create(
-			ctx, exec,
-			c.Value, forServerNoStore.MisakeyShare, e.BoxID, e.SenderID,
-		); err != nil {
-			return nil, merror.Transform(err).Describe("creating key share")
-		}
-
-		// Creation of crypto actions
-
-		// TODO find a way to avoid this extra SQL request
-		// since we already had to fetch the creation event for `MustBeAdmin`
-		boxPublicKey, err := GetBoxPublicKey(ctx, exec, e.BoxID)
-		if err != nil {
-			return nil, merror.Transform(err).Describe("getting box public key")
-		}
-
-		membersIdentityID, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
-		if err != nil {
-			return nil, merror.Transform(err).Describe("listing box members IDs")
-		}
-
-		accountIDs, err := identityMapper.MapToAccountID(ctx, membersIdentityID)
-		if err != nil {
-			return nil, merror.Transform(err).Describe("getting members identities")
-		}
-
-		// it would be tempting to set an initial size for the crypto action slice,
-		// but if there is a single one that is left empty
-		// it's going to mess everything up,
-		// and we don't really know how many crypto actions will be needed
-		var cryptoActions []domain.CryptoAction
-
-		// set for uniqueness
-		processedAccounts := make(map[string]bool, len(accountIDs)-1)
-
-		for identityID, accountID := range accountIDs {
-			_, processed := processedAccounts[accountID]
-			if !processed && identityID != e.SenderID {
-				action := domain.CryptoAction{
-					AccountID:           accountID,
-					Type:                "set_box_key_share",
-					SenderIdentityID:    null.StringFrom(e.SenderID),
-					BoxID:               null.StringFrom(e.BoxID),
-					Encrypted:           forServerNoStore.EncryptedCryptoAction,
-					EncryptionPublicKey: boxPublicKey,
-				}
-				cryptoActions = append(cryptoActions, action)
-				processedAccounts[accountID] = true
-			}
-		}
-
-		err = cryptoActionService.Create(ctx, cryptoActions)
-		if err != nil {
-			return nil, merror.Transform(err).Describe("creating crypto actions")
+			return nil, err
 		}
 	}
 
 	return nil, nil
 }
 
-func doRmAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func applyInvitationLinkSideEffects(ctx context.Context, e *Event, c accessContent, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionService entrypoints.CryptoActionIntraprocessInterface) error {
+	forServerNoStore := struct {
+		EncryptedCryptoAction string `json:"encrypted_crypto_action"`
+		MisakeyShare          string `json:"misakey_share"`
+	}{}
+
+	if err := forServerNoStoreJSON.Unmarshal(&forServerNoStore); err != nil {
+		return merror.Transform(err).Describe("marshalling \"for server no store\"")
+	}
+
+	if err := v.ValidateStruct(&forServerNoStore,
+		v.Field(&forServerNoStore.MisakeyShare, v.Required),
+		// strictly speaking we don't need a crypto action if there is no members,
+		// but since the frontend is always able to create one
+		// it is simpler to always require it
+		v.Field(&forServerNoStore.EncryptedCryptoAction, v.Required),
+	); err != nil {
+		return merror.Transform(err).Describe("validating \"for server no store\"")
+	}
+
+	err := keyshares.EmptyAll(ctx, exec, e.BoxID)
+	if err != nil {
+		return merror.Transform(err).Describe("deleting previous key shares")
+	}
+
+	if err = keyshares.Create(
+		ctx, exec,
+		c.Value, forServerNoStore.MisakeyShare, e.BoxID, e.SenderID,
+	); err != nil {
+		return merror.Transform(err).Describe("creating key share")
+	}
+
+	// Creation of crypto actions
+
+	// TODO (perf): find a way to avoid this extra SQL request
+	// since we already had to fetch the creation event for `MustBeAdmin`
+	boxPublicKey, err := GetBoxPublicKey(ctx, exec, e.BoxID)
+	if err != nil {
+		return merror.Transform(err).Describe("getting box public key")
+	}
+
+	membersIdentityID, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
+	if err != nil {
+		return merror.Transform(err).Describe("listing box members IDs")
+	}
+
+	accountIDs, err := identityMapper.MapToAccountID(ctx, membersIdentityID)
+	if err != nil {
+		return merror.Transform(err).Describe("getting members identities")
+	}
+
+	// it would be tempting to set an initial size for the crypto action slice,
+	// but if there is a single one that is left empty
+	// it's going to mess everything up,
+	// and we don't really know how many crypto actions will be needed
+	var cryptoActions []domain.CryptoAction
+
+	// set for uniqueness
+	processedAccounts := make(map[string]bool, len(accountIDs)-1)
+
+	for identityID, accountID := range accountIDs {
+		_, processed := processedAccounts[accountID]
+		if !processed && identityID != e.SenderID {
+			action := domain.CryptoAction{
+				AccountID:           accountID,
+				Type:                "set_box_key_share",
+				SenderIdentityID:    null.StringFrom(e.SenderID),
+				BoxID:               null.StringFrom(e.BoxID),
+				Encrypted:           forServerNoStore.EncryptedCryptoAction,
+				EncryptionPublicKey: boxPublicKey,
+				CreatedAt:           time.Now(),
+			}
+			cryptoActions = append(cryptoActions, action)
+			processedAccounts[accountID] = true
+		}
+	}
+
+	err = cryptoActionService.Create(ctx, cryptoActions)
+	if err != nil {
+		return merror.Transform(err).Describe("creating crypto actions")
+	}
+
+	return nil
+}
+
+func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")

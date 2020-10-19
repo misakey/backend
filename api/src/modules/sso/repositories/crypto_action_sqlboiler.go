@@ -10,6 +10,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories/sqlboiler"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
@@ -51,6 +52,7 @@ func (repo CryptoActionSQLBoiler) toSQLBoiler(src domain.CryptoAction) *sqlboile
 
 func (repo CryptoActionSQLBoiler) Create(ctx context.Context, actions []domain.CryptoAction) error {
 	tx, err := repo.db.BeginTx(ctx, nil)
+	defer atomic.SQLRollback(ctx, tx, err)
 	if err != nil {
 		return err
 	}
@@ -66,14 +68,7 @@ func (repo CryptoActionSQLBoiler) Create(ctx context.Context, actions []domain.C
 
 		err = sqlAction.Insert(ctx, repo.db, boil.Infer())
 		if err != nil {
-			errToReturn := merror.Transform(err).Describe("inserting action")
-
-			err2 := tx.Rollback()
-			if err2 != nil {
-				errToReturn = errToReturn.Describef("(plus, rollback error: %s)", err2.Error())
-			}
-
-			return errToReturn
+			return merror.Transform(err).Describe("inserting action")
 		}
 	}
 

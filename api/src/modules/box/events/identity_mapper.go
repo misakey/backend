@@ -115,7 +115,7 @@ func (mapper *IdentityMapper) MapToAccountID(ctx context.Context, identityIDs []
 	result := make(map[string]string)
 	for _, identity := range identities {
 		accountID := identity.AccountID.String
-		if accountID != "" {
+		if identity.AccountID.Valid {
 			result[identity.ID] = accountID
 		}
 	}

@@ -17,7 +17,7 @@ type StateLifecycleContent struct {
 	State string `json:"state"`
 }
 
-func doLifecycle(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, _ *redis.Client, _ *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func doLifecycle(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, _ *redis.Client, _ *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
 	// check accesses
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")

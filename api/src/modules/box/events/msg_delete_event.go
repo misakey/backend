@@ -12,7 +12,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
-func doDeleteMsg(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, filesRepo files.FileStorageRepo) (Metadata, error) {
+func doDeleteMsg(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, filesRepo files.FileStorageRepo) (Metadata, error) {
 	// Authorization-related checks should come as soon as possible
 	// so we put them first.
 	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
