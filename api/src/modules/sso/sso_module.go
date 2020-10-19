@@ -204,12 +204,14 @@ func InitModule(router *echo.Echo) Process {
 	}
 
 	return Process{
-		SSOService:   &ssoService,
-		IdentityRepo: entrypoints.NewIdentityIntraprocess(identityService),
+		IdentityRepo:     entrypoints.NewIdentityIntraprocess(identityService),
+		CryptoActionRepo: entrypoints.NewCryptoActionIntraprocess(cryptoActionService),
+		SSOService:       &ssoService,
 	}
 }
 
 type Process struct {
-	SSOService   *application.SSOService
-	IdentityRepo entrypoints.IdentityIntraprocess
+	SSOService       *application.SSOService
+	IdentityRepo     entrypoints.IdentityIntraprocess
+	CryptoActionRepo entrypoints.CryptoActionIntraprocess
 }

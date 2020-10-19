@@ -6,20 +6,24 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/go-redis/redis/v7"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
 type Metadata interface{}
 
 type doHandler func(
-	context.Context,
-	*Event,
-	boil.ContextExecutor, // transaction
-	*redis.Client,
-	*IdentityMapper,
-	files.FileStorageRepo,
+	ctx context.Context,
+	event *Event,
+	forServerNoStoreJSON null.JSON,
+	exec boil.ContextExecutor, // transaction
+	redConn *redis.Client,
+	identityMapper *IdentityMapper,
+	cryptoactions entrypoints.CryptoActionIntraprocessInterface,
+	files files.FileStorageRepo,
 ) (Metadata, error)
 
 type afterHandler func(
@@ -32,7 +36,7 @@ type afterHandler func(
 	Metadata,
 ) error
 
-func empty(_ context.Context, _ *Event, _ boil.ContextExecutor, _ *redis.Client, _ *IdentityMapper, _ files.FileStorageRepo) (Metadata, error) {
+func empty(_ context.Context, _ *Event, _ null.JSON, _ boil.ContextExecutor, _ *redis.Client, _ *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
 	return nil, nil
 }
 

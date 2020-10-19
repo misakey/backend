@@ -11,6 +11,10 @@ from urllib.parse import urlparse
 import requests
 import urllib3; urllib3.disable_warnings()
 
+STATUS_OK = 200
+STATUS_NOT_FOUND = 404
+STATUS_CONFLICT = 409
+
 LATEST_LOGFILE_LINK = '/tmp/misapy-log-latest'
 now = datetime.datetime.now()
 suffix = now.strftime('%Y-%m-%dT%H-%M-%S')

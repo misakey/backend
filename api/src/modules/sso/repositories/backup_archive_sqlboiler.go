@@ -119,7 +119,7 @@ func (repo BackupArchiveSQLBoiler) DeleteArchive(ctx context.Context, ID string,
 		return err
 	}
 
-	// it seems that this is how you create null values with "volatiletech/null"
+	// it seems that this is how you create null values with "volatiletech/null/v8"
 	// (see https://github.com/volatiletech/null/blob/fed49d7/string_test.go#L134)
 	archive.Data = null.StringFromPtr(nil)
 

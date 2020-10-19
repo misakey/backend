@@ -246,6 +246,9 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 	}
 	// add referrers ids
 	if len(filters.referrerIDs) > 0 {
+		// Note that there is no risk of SQL injection
+		// even if we build a query string ourselves
+		// because there is no way the attacker can control `sqlboiler.EventColumns.ReferrerID`
 		mods = append(mods, qm.AndIn(sqlboiler.EventColumns.ReferrerID+" IN ?", slice.StringSliceToInterfaceSlice(filters.referrerIDs)...))
 	}
 	// add box query

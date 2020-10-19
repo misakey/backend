@@ -106,6 +106,22 @@ func (mapper *IdentityMapper) List(ctx context.Context, identityIDs []string, tr
 	return views, nil
 }
 
+func (mapper *IdentityMapper) MapToAccountID(ctx context.Context, identityIDs []string) (map[string]string, error) {
+	identities, err := mapper.querier.List(ctx, domain.IdentityFilters{IDs: identityIDs})
+	if err != nil {
+		return nil, merror.Transform(err).Describe("listing identities")
+	}
+
+	result := make(map[string]string)
+	for _, identity := range identities {
+		accountID := identity.AccountID.String
+		if accountID != "" {
+			result[identity.ID] = accountID
+		}
+	}
+	return result, nil
+}
+
 func senderViewFrom(identity domain.Identity) SenderView {
 	sender := SenderView{
 		IdentifierID: identity.IdentifierID,

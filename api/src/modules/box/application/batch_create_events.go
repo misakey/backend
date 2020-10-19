@@ -6,6 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
@@ -24,9 +25,10 @@ type BatchCreateEventRequest struct {
 }
 
 type BatchEvent struct {
-	Type       string     `json:"type"`
-	Content    types.JSON `json:"content"`
-	ReferrerID *string    `json:"referrer_id"`
+	Type             string     `json:"type"`
+	Content          types.JSON `json:"content"`
+	ReferrerID       *string    `json:"referrer_id"`
+	ForServerNoStore null.JSON  `json:"for_server_no_store"`
 }
 
 func (req *BatchCreateEventRequest) BindAndValidate(eCtx echo.Context) error {
@@ -88,7 +90,7 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 		// call the proper event handlers
 		handler := events.Handler(event.Type)
 
-		metadatas[event.ID], err = handler.Do(ctx, &event, tr, app.RedConn, identityMapper, app.filesRepo)
+		metadatas[event.ID], err = handler.Do(ctx, &event, batchE.ForServerNoStore, tr, app.RedConn, identityMapper, app.cryptoActionsRepo, app.filesRepo)
 		if err != nil {
 			return nil, merror.Transform(err).Describef("doing %s event", event.Type)
 		}

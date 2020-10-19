@@ -6,8 +6,8 @@ import sys
 from time import sleep
 from base64 import b64encode, b64decode
 
-from misapy import http
-from misapy.box_helpers import URL_PREFIX, create_box_and_post_some_events_to_it
+from misapy import http, URL_PREFIX
+from misapy.box_helpers import create_box_and_post_some_events_to_it, create_add_invitation_link_event
 from misapy.box_key_shares import create_key_share, get_key_share
 from misapy.box_members import join_box
 from misapy.check_response import check_response, assert_fn
@@ -424,17 +424,12 @@ def test_accesses(s1, s2):
     )
 
     print('- identity 1 create acceses and identity 2 cannot access')
-    access_invitation_link = {
-        'restriction_type': 'invitation_link',
-        'value': box_share_hash
-    }
+    invitation_link_event = create_add_invitation_link_event()
     s1.post(
         f'{URL_PREFIX}/boxes/{box_id}/batch-events',
         json={
             'batch_type': 'accesses',
-            'events' : [
-                { 'type': 'access.add', 'content': access_invitation_link }
-            ]
+            'events' : [ invitation_link_event ]
         },
         expected_status_code=201,
     )
@@ -541,7 +536,8 @@ def test_accesses(s1, s2):
     )
     assert len(r.json()) == 2
     assert r.json()[0]['content'] == access_email_domain
-    assert r.json()[1]['content'] == access_invitation_link
+    assert r.json()[1]['content'] == invitation_link_event['content']
+    current_invitation_link_event = r.json()[1]
 
     print('- email_domain access rule gives correctly accesses')
     access_email_domain['value'] = 'misakey.com'

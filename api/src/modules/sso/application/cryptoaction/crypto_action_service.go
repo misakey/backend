@@ -10,7 +10,7 @@ import (
 type cryptoActionRepo interface {
 	Get(ctx context.Context, actionID string) (domain.CryptoAction, error)
 	List(ctx context.Context, accountID string) ([]domain.CryptoAction, error)
-	Create(ctx context.Context, action domain.CryptoAction) error
+	Create(ctx context.Context, actions []domain.CryptoAction) error
 	DeleteUntil(ctx context.Context, accountID string, untilTime time.Time) error
 }
 
@@ -30,8 +30,8 @@ func (service CryptoActionService) ListCryptoActions(ctx context.Context, accoun
 	return service.cryptoActions.List(ctx, accountID)
 }
 
-func (service CryptoActionService) CreateCryptoAction(ctx context.Context, action domain.CryptoAction) error {
-	return service.cryptoActions.Create(ctx, action)
+func (service CryptoActionService) CreateCryptoAction(ctx context.Context, actions []domain.CryptoAction) error {
+	return service.cryptoActions.Create(ctx, actions)
 }
 
 func (service CryptoActionService) DeleteCryptoActionsUntil(ctx context.Context, accountID string, untilTime time.Time) error {

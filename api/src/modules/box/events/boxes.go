@@ -172,3 +172,16 @@ func (c *computer) playState(_ context.Context, e Event) error {
 
 	return nil
 }
+
+func GetBoxPublicKey(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
+	createEvent, err := GetCreateEvent(ctx, exec, boxID)
+	if err != nil {
+		return "", merror.Transform(err).Describef("getting creation event")
+	}
+	content := CreationContent{}
+	if err = createEvent.JSONContent.Unmarshal(&content); err != nil {
+		return "", merror.Transform(err).Describef("unmarshaling creation event content")
+	}
+
+	return content.PublicKey, nil
+}

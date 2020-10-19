@@ -11,10 +11,15 @@ import (
 )
 
 type BoxApplication struct {
-	DB              *sql.DB
-	RedConn         *redis.Client
-	identityQuerier external.IdentityRepo
-	filesRepo       files.FileStorageRepo
+	DB                *sql.DB
+	RedConn           *redis.Client
+	identityQuerier   external.IdentityRepo
+	cryptoActionsRepo external.CryptoActionRepo
+	filesRepo         files.FileStorageRepo
+}
+
+func (app *BoxApplication) SetCryptoActionsRepo(repo external.CryptoActionRepo) {
+	app.cryptoActionsRepo = repo
 }
 
 func NewBoxApplication(db *sql.DB, redConn *redis.Client, filesRepo files.FileStorageRepo) BoxApplication {

@@ -49,17 +49,35 @@ func (repo CryptoActionSQLBoiler) toSQLBoiler(src domain.CryptoAction) *sqlboile
 	}
 }
 
-func (repo CryptoActionSQLBoiler) Create(ctx context.Context, action domain.CryptoAction) error {
-	id, err := uuid.NewRandom()
+func (repo CryptoActionSQLBoiler) Create(ctx context.Context, actions []domain.CryptoAction) error {
+	tx, err := repo.db.BeginTx(ctx, nil)
 	if err != nil {
-		return merror.Transform(err).Describe("generating UUID")
+		return err
 	}
 
-	action.ID = id.String()
+	for _, action := range actions {
+		id, err := uuid.NewRandom()
+		if err != nil {
+			return merror.Transform(err).Describe("generating UUID")
+		}
+		action.ID = id.String()
 
-	sqlAction := repo.toSQLBoiler(action)
+		sqlAction := repo.toSQLBoiler(action)
 
-	return sqlAction.Insert(ctx, repo.db, boil.Infer())
+		err = sqlAction.Insert(ctx, repo.db, boil.Infer())
+		if err != nil {
+			errToReturn := merror.Transform(err).Describe("inserting action")
+
+			err2 := tx.Rollback()
+			if err2 != nil {
+				errToReturn = errToReturn.Describef("(plus, rollback error: %s)", err2.Error())
+			}
+
+			return errToReturn
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (repo CryptoActionSQLBoiler) List(ctx context.Context, accountID string) ([]domain.CryptoAction, error) {
