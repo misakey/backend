@@ -15,16 +15,17 @@ import (
 type MailerAmazonSES struct {
 	encoding string
 	config   *aws.Config
+	configurationSet string
 }
 
 // NewMailerAmazonSES is MailerAmazonSES's constructor
-func NewMailerAmazonSES(region string) *MailerAmazonSES {
+func NewMailerAmazonSES(region string, configurationSet string) *MailerAmazonSES {
 	m := &MailerAmazonSES{
 		encoding: "UTF-8",
+		configurationSet: configurationSet,
 	}
 	// defaults config get AWS region from AWS_REGION
 	m.config = defaults.Config().WithRegion(region)
-
 	// custom config:
 	// credentials based on env: AWS_ACCESS_KEY / AWS_SECRET_KEY
 	m.config.Credentials = credentials.NewEnvCredentials()
@@ -45,6 +46,7 @@ func (m *MailerAmazonSES) Send(ctx context.Context, email *EmailNotification) er
 
 	// Assemble the email.
 	input := &ses.SendEmailInput{
+		ConfigurationSetName: &m.configurationSet,
 		Destination: &ses.Destination{
 			CcAddresses: []*string{},
 			ToAddresses: []*string{&recipient},
