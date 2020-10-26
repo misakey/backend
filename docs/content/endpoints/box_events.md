@@ -226,4 +226,92 @@ HTTP 200 OK
 ]
 ```
 
+
+## 2.4 Getting File Events in a Box
+
+### 2.4.1. request
+
+```bash
+  GET https://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/files
+```
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): a valid token.
+- `tokentype`: must be `bearer`
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+
+_Query Parameters:_
+
+Pagination ([more info](/concepts/pagination)). No pagination by default.
+
+
+### 2.4.2. response
+
+_Code_:
+```bash
+HTTP 200 OK
+```
+
+```json
+[
+  (a list of events of type `msg.file`)
+]
+```
+
+
 [Events](/concepts/box-events) are returned in chronological order.
+
+
+
+## 2.5 Get the total count of events for a given box
+
+### 2.5.1. request
+
+```bash
+  HEAD https://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/events
+```
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): a valid token.
+- `tokentype`: must be `bearer`
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+
+### 2.5.2. response
+
+_Code:_
+```bash
+HTTP 204 NO CONTENT
+```
+
+_Headers:_
+- `X-Total-Count` (integer): the total count of events that the user can see.
+
+
+## 2.6 Get the total count of file events for a given box
+
+### 2.6.1. request
+
+```bash
+  HEAD https://api.misakey.com/boxes/74ee16b5-89be-44f7-bcdd-117f496a90a7/files
+```
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): a valid token.
+- `tokentype`: must be `bearer`
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+
+### 2.6.2. response
+
+_Code:_
+```bash
+HTTP 204 NO CONTENT
+```
+
+_Headers:_
+- `X-Total-Count` (integer): the total count of file events.

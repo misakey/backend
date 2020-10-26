@@ -68,6 +68,8 @@ _Headers:_
 
 _Query Parameters:_
 - `identity_id` (string) (uuid): a filter to list only files belonging to this identity
+- Pagination ([more info](/concepts/pagination)). No pagination by default.
+
 
 ### 3.2. response
 
@@ -117,3 +119,32 @@ _Code:_
 ```bash
 HTTP 204 No Content
 ```
+
+
+## 4.3 Get the total count of saved files for a user
+
+### 4.3.1. request
+
+```bash
+  HEAD https://api.misakey.com/saved-files
+```
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): a valid token.
+- `tokentype`: must be `bearer`
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+
+_Query Parameters:_
+- `identity_id` (string) (uuid): a filter to count only files belonging to this identity
+
+### 4.3.2. response
+
+_Code:_
+```bash
+HTTP 204 NO CONTENT
+```
+
+_Headers:_
+- `X-Total-Count` (integer): the total count of file saved for a given identity_id.

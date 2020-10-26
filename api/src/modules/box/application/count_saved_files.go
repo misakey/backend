@@ -13,26 +13,22 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
-type ListSavedFilesRequest struct {
-	Offset     *int   `query:"offset" json:"-"`
-	Limit      *int   `query:"limit" json:"-"`
+type CountSavedFilesRequest struct {
 	IdentityID string `query:"identity_id" json:"-"`
 }
 
-func (req *ListSavedFilesRequest) BindAndValidate(eCtx echo.Context) error {
+func (req *CountSavedFilesRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
 	}
 	return v.ValidateStruct(req,
 		v.Field(&req.IdentityID, v.Required, is.UUIDv4),
-		v.Field(&req.Offset, v.Min(0)),
-		v.Field(&req.Limit, v.Min(0)),
 	)
 }
 
-func (app *BoxApplication) ListSavedFiles(ctx context.Context, genReq request.Request) (interface{}, error) {
-	req := genReq.(*ListSavedFilesRequest)
-
+func (app *BoxApplication) CountSavedFiles(ctx context.Context, genReq request.Request) (interface{}, error) {
+	req := genReq.(*CountSavedFilesRequest)
+	
 	access := oidc.GetAccesses(ctx)
 	if access == nil {
 		return nil, merror.Unauthorized()
@@ -43,5 +39,11 @@ func (app *BoxApplication) ListSavedFiles(ctx context.Context, genReq request.Re
 		return nil, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
 	}
 
-	return files.ListSavedFilesByIdentityID(ctx, app.DB, req.IdentityID, req.Offset, req.Limit)
+
+	count, err := files.CountSavedFilesByIdentityID(ctx, app.DB, req.IdentityID)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("counting user saved files")
+	}
+
+	return count, nil
 }

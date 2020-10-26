@@ -87,6 +87,24 @@ func bindRoutes(
 		request.ResponseOK,
 	))
 
+	boxPath.GET(oidcHandlerFactory.NewACR1(
+		"/:id/files",
+		func() request.Request { return &application.ListBoxFilesRequest{} },
+		app.ListBoxFiles,
+		request.ResponseOK,
+	))
+
+	boxPath.HEAD(oidcHandlerFactory.NewACR1(
+		"/:id/files",
+		func() request.Request { return &application.CountBoxFilesRequest{} },
+		app.CountBoxFiles,
+		request.ResponseNoContent,
+		func(ctx echo.Context, data interface{}) error {
+			ctx.Response().Header().Set("X-Total-Count", strconv.Itoa(data.(int)))
+			return nil
+		},
+	))
+
 	boxPath.HEAD(oidcHandlerFactory.NewACR1(
 		"/:id/events",
 		func() request.Request { return &application.CountEventsRequest{} },
@@ -163,6 +181,16 @@ func bindRoutes(
 		func() request.Request { return &application.ListSavedFilesRequest{} },
 		app.ListSavedFiles,
 		request.ResponseOK,
+	))
+	savedFilePath.HEAD(oidcHandlerFactory.NewACR2(
+		"",
+		func() request.Request { return &application.CountSavedFilesRequest{} },
+		app.CountSavedFiles,
+		request.ResponseNoContent,
+		func(ctx echo.Context, data interface{}) error {
+			ctx.Response().Header().Set("X-Total-Count", strconv.Itoa(data.(int)))
+			return nil
+		},
 	))
 
 	// ----------------------

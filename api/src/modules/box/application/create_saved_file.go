@@ -74,7 +74,7 @@ func (app *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.R
 		EncryptedMetadata: req.EncryptedMetadata,
 		KeyFingerprint:    req.KeyFingerprint,
 	}
-	if err := files.CreateSavedFile(ctx, app.DB, savedFile); err != nil {
+	if err := files.CreateSavedFile(ctx, app.DB, &savedFile); err != nil {
 		return nil, merror.Transform(err).Describe("creating saved file")
 	}
 

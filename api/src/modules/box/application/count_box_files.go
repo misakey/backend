@@ -13,19 +13,19 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 )
 
-type CountEventsRequest struct {
+type CountBoxFilesRequest struct {
 	boxID string
 }
 
-func (req *CountEventsRequest) BindAndValidate(eCtx echo.Context) error {
+func (req *CountBoxFilesRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 	return v.ValidateStruct(req,
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
 	)
 }
 
-func (app *BoxApplication) CountEvents(ctx context.Context, genReq request.Request) (interface{}, error) {
-	req := genReq.(*CountEventsRequest)
+func (app *BoxApplication) CountBoxFiles(ctx context.Context, genReq request.Request) (interface{}, error) {
+	req := genReq.(*CountBoxFilesRequest)
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Unauthorized()
@@ -38,9 +38,9 @@ func (app *BoxApplication) CountEvents(ctx context.Context, genReq request.Reque
 		return nil, err
 	}
 
-	count, err := events.CountByBoxID(ctx, app.DB, req.boxID)
+	count, err := events.CountFilesByBoxID(ctx, app.DB, req.boxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("counting boxes events")
+		return nil, merror.Transform(err).Describe("counting boxes files")
 	}
 
 	return count, nil

@@ -72,9 +72,19 @@ func GetLast(ctx context.Context, exec boil.ContextExecutor, boxID string) (Even
 func ListForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string, offset, limit *int) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
 		boxID:  null.StringFrom(boxID),
-		eTypes: etype.MembersCanSee(),
 		offset: offset,
 		limit:  limit,
+		eTypes: etype.MembersCanSee(),
+	})
+}
+
+func ListFilesForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string, offset, limit *int) ([]Event, error) {
+	return list(ctx, exec, eventFilters{
+		boxID:      null.StringFrom(boxID),
+		offset:     offset,
+		limit:      limit,
+		eTypes:     []string{etype.Msgfile},
+		unreferred: true,
 	})
 }
 
@@ -331,7 +341,7 @@ func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFi
 func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]string, error) {
 	events, err := list(ctx, exec, eventFilters{
 		boxID: null.StringFrom(boxID),
-		eType: null.StringFrom("msg.file"),
+		eType: null.StringFrom(etype.Msgfile),
 	})
 	if err != nil {
 		return nil, err
@@ -354,6 +364,31 @@ func CountByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) 
 	mods := []qm.QueryMod{
 		sqlboiler.EventWhere.BoxID.EQ(boxID),
 		sqlboiler.EventWhere.Type.IN(etype.MembersCanSee()),
+	}
+	count, err := sqlboiler.Events(mods...).Count(ctx, exec)
+	if err != nil {
+		return 0, merror.Transform(err).Describe("retrieving db events")
+	}
+
+	return int(count), nil
+}
+
+func CountFilesByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (int, error) {
+	// by default, count only the events a member can see
+	mods := []qm.QueryMod{
+		sqlboiler.EventWhere.BoxID.EQ(boxID),
+		sqlboiler.EventWhere.Type.IN([]string{etype.Msgfile}),
+	}
+	filters := eventFilters{
+		boxID: null.StringFrom(boxID),
+		eType: null.StringFrom(etype.Msgfile),
+	}
+	notInIDs, err := referentIDs(ctx, exec, filters)
+	if err != nil {
+		return 0, merror.Transform(err).Describe("sub selecting referents")
+	}
+	if len(notInIDs) > 0 {
+		mods = append(mods, qm.WhereIn(sqlboiler.EventColumns.ID+" NOT IN ?", slice.StringSliceToInterfaceSlice(notInIDs)...))
 	}
 	count, err := sqlboiler.Events(mods...).Count(ctx, exec)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/repositories/sqlboiler"
@@ -20,7 +21,7 @@ type SavedFile struct {
 	CreatedAt         time.Time `json:"created_at"`
 }
 
-func CreateSavedFile(ctx context.Context, exec boil.ContextExecutor, savedFile SavedFile) error {
+func CreateSavedFile(ctx context.Context, exec boil.ContextExecutor, savedFile *SavedFile) error {
 	toStore := sqlboiler.SavedFile{
 		ID:                savedFile.ID,
 		IdentityID:        savedFile.IdentityID,
@@ -28,7 +29,11 @@ func CreateSavedFile(ctx context.Context, exec boil.ContextExecutor, savedFile S
 		EncryptedMetadata: savedFile.EncryptedMetadata,
 		KeyFingerprint:    savedFile.KeyFingerprint,
 	}
-	return toStore.Insert(ctx, exec, boil.Infer())
+	if err := toStore.Insert(ctx, exec, boil.Infer()); err != nil {
+		return err
+	}
+	savedFile.CreatedAt = toStore.CreatedAt
+	return nil
 }
 
 func DeleteSavedFile(ctx context.Context, exec boil.ContextExecutor, id string) error {
@@ -42,8 +47,34 @@ func DeleteSavedFile(ctx context.Context, exec boil.ContextExecutor, id string) 
 	return nil
 }
 
-func ListSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor, identityID string) ([]SavedFile, error) {
-	dbSavedFiles, err := sqlboiler.SavedFiles(sqlboiler.SavedFileWhere.IdentityID.EQ(identityID)).All(ctx, exec)
+
+
+func CountSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor, identityID string) (int, error) {
+	mods := []qm.QueryMod{
+		sqlboiler.SavedFileWhere.IdentityID.EQ(identityID),
+	}
+	count, err := sqlboiler.SavedFiles(mods...).Count(ctx, exec)
+	if err != nil {
+		return 0, merror.Transform(err).Describe("count save files db")
+	}
+
+	return int(count), nil
+}
+
+func ListSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor, identityID string, offset *int, limit *int) ([]SavedFile, error) {
+	mods := []qm.QueryMod{
+		sqlboiler.SavedFileWhere.IdentityID.EQ(identityID),
+		qm.OrderBy("created_at DESC"),
+	}
+	// add offset for pagination
+	if offset != nil {
+		mods = append(mods, qm.Offset(*offset))
+	}
+	// add limit for pagination
+	if limit != nil {
+		mods = append(mods, qm.Limit(*limit))
+	}
+	dbSavedFiles, err := sqlboiler.SavedFiles(mods...).All(ctx, exec)
 	if err == sql.ErrNoRows {
 		return []SavedFile{}, nil
 	}
