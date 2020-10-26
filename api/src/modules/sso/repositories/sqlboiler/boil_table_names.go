@@ -4,19 +4,21 @@
 package sqlboiler
 
 var TableNames = struct {
-	Account            string
-	AuthenticationStep string
-	BackupArchive      string
-	CryptoAction       string
-	Identifier         string
-	Identity           string
-	UsedCoupon         string
+	Account                       string
+	AuthenticationStep            string
+	BackupArchive                 string
+	CryptoAction                  string
+	Identifier                    string
+	Identity                      string
+	IdentityProfileSharingConsent string
+	UsedCoupon                    string
 }{
-	Account:            "account",
-	AuthenticationStep: "authentication_step",
-	BackupArchive:      "backup_archive",
-	CryptoAction:       "crypto_action",
-	Identifier:         "identifier",
-	Identity:           "identity",
-	UsedCoupon:         "used_coupon",
+	Account:                       "account",
+	AuthenticationStep:            "authentication_step",
+	BackupArchive:                 "backup_archive",
+	CryptoAction:                  "crypto_action",
+	Identifier:                    "identifier",
+	Identity:                      "identity",
+	IdentityProfileSharingConsent: "identity_profile_sharing_consent",
+	UsedCoupon:                    "used_coupon",
 }

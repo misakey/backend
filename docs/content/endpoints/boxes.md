@@ -134,7 +134,8 @@ HTTP 200 OK
 _JSON Body:_
 ```json
 {
-    "title": "<title of the box>"
+    "title": "<title of the box>",
+    "creator": {{% include "include/event-identity.json" %}}
 }
 ```
 

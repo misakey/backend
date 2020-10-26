@@ -7,10 +7,9 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/types"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
-
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 )
 
 // Step in a multi-factor authentication process.
@@ -24,7 +23,7 @@ type Step struct {
 	CompleteAt      null.Time
 }
 
-func (as *Service) InitStep(ctx context.Context, identity domain.Identity, methodName oidc.MethodRef) error {
+func (as *Service) InitStep(ctx context.Context, identity identity.Identity, methodName oidc.MethodRef) error {
 	switch methodName {
 	case oidc.AMREmailedCode:
 		return as.CreateEmailedCode(ctx, identity)
@@ -39,7 +38,7 @@ func (as *Service) InitStep(ctx context.Context, identity domain.Identity, metho
 // AssertStep considering the method name and the received metadata
 // It takes a pointer on the identity since the identity might be atlered by the authn step
 // Return a nil error in case of success
-func (as *Service) AssertStep(ctx context.Context, challenge string, identity *domain.Identity, assertion Step) error {
+func (as *Service) AssertStep(ctx context.Context, challenge string, identity *identity.Identity, assertion Step) error {
 	// check the metadata
 	var metadataErr error
 	switch assertion.MethodName {
@@ -66,7 +65,7 @@ func (as *Service) AssertStep(ctx context.Context, challenge string, identity *d
 //       -> unauthorized: return emailed_code
 //       -> authorized: return account_creation
 //     * with account: return prehashed_password
-func (as *Service) NextStep(ctx context.Context, identity domain.Identity, currentACR oidc.ClassRef, expectations oidc.ClassRefs) (Step, error) {
+func (as *Service) NextStep(ctx context.Context, identity identity.Identity, currentACR oidc.ClassRef, expectations oidc.ClassRefs) (Step, error) {
 	var err error
 	var step Step
 
@@ -87,7 +86,7 @@ func (as *Service) NextStep(ctx context.Context, identity domain.Identity, curre
 	return step, err
 }
 
-func (as *Service) requireAccount(ctx context.Context, identity domain.Identity, currentACR oidc.ClassRef, step *Step) error {
+func (as *Service) requireAccount(ctx context.Context, identity identity.Identity, currentACR oidc.ClassRef, step *Step) error {
 	// if the ACR brought by authorization is less than 1, return an emailed code step to upgrade it
 	if currentACR.LessThan(oidc.ACR1) {
 		return as.prepareEmailedCode(ctx, identity, step)
@@ -102,7 +101,7 @@ func (as *Service) requireAccount(ctx context.Context, identity domain.Identity,
 // preferredStep is defined according to the identity state
 // - has no account: emailed_code
 // - has a linked account: prehashed_password
-func (as *Service) preferredStep(ctx context.Context, identity domain.Identity, step *Step) error {
+func (as *Service) preferredStep(ctx context.Context, identity identity.Identity, step *Step) error {
 	// if the identity has no linked account, we automatically init a emailed code authentication step
 	if identity.AccountID.IsZero() {
 		return as.prepareEmailedCode(ctx, identity, step)

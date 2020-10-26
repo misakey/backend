@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/external"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
@@ -34,20 +34,20 @@ func (mapper *IdentityMapper) Get(ctx context.Context, identityID string, transp
 	sender, ok = mapper.mem[identityID]
 	if !ok {
 		// get unknown identity and save it
-		identity, err := mapper.querier.Get(ctx, identityID)
+		existingIdentity, err := mapper.querier.Get(ctx, identityID)
 		// NOTE: on not found, the system still fills the SenderView with anonymous information
 		if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
 			return sender, merror.Transform(err).Describe("getting identity")
 		}
 
 		if err == nil {
-			sender = senderViewFrom(identity)
+			sender = senderViewFrom(existingIdentity)
 		} else { // it is a not found identity
 			sender = anonymousSenderView()
 		}
 
 		mapper.Lock()
-		mapper.mem[identity.ID] = sender
+		mapper.mem[existingIdentity.ID] = sender
 		mapper.Unlock()
 	}
 
@@ -73,7 +73,7 @@ func (mapper *IdentityMapper) List(ctx context.Context, identityIDs []string, tr
 
 	if len(unknownIDs) > 0 {
 		// get all unknowns and save them
-		identities, err := mapper.querier.List(ctx, domain.IdentityFilters{IDs: unknownIDs})
+		identities, err := mapper.querier.List(ctx, identity.IdentityFilters{IDs: unknownIDs})
 		if err != nil {
 			return nil, merror.Transform(err).Describe("listing identities")
 		}
@@ -107,23 +107,24 @@ func (mapper *IdentityMapper) List(ctx context.Context, identityIDs []string, tr
 }
 
 func (mapper *IdentityMapper) MapToAccountID(ctx context.Context, identityIDs []string) (map[string]string, error) {
-	identities, err := mapper.querier.List(ctx, domain.IdentityFilters{IDs: identityIDs})
+	identities, err := mapper.querier.List(ctx, identity.IdentityFilters{IDs: identityIDs})
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing identities")
 	}
 
 	result := make(map[string]string)
-	for _, identity := range identities {
-		accountID := identity.AccountID.String
-		if identity.AccountID.Valid {
-			result[identity.ID] = accountID
+	for _, existing := range identities {
+		accountID := existing.AccountID.String
+		if existing.AccountID.Valid {
+			result[existing.ID] = accountID
 		}
 	}
 	return result, nil
 }
 
-func senderViewFrom(identity domain.Identity) SenderView {
+func senderViewFrom(identity identity.Identity) SenderView {
 	sender := SenderView{
+		ID:           identity.ID,
 		IdentifierID: identity.IdentifierID,
 		DisplayName:  identity.DisplayName,
 		AvatarURL:    identity.AvatarURL,
@@ -135,6 +136,7 @@ func senderViewFrom(identity domain.Identity) SenderView {
 
 func anonymousSenderView() SenderView {
 	sender := SenderView{
+		ID:           "anonymous-user",
 		IdentifierID: "anonymous-user",
 		DisplayName:  "Anonymous User",
 	}

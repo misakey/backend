@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow/login"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )
 
 type AuthFlowService struct {

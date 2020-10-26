@@ -7,7 +7,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/account"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 

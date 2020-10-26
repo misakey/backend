@@ -10,11 +10,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 )
 
 type IdentityQuery struct {
@@ -32,7 +32,7 @@ func (query *IdentityQuery) BindAndValidate(eCtx echo.Context) error {
 }
 
 type IdentityView struct {
-	domain.Identity
+	identity.Identity
 	HasAccount bool `json:"has_account"`
 }
 
@@ -164,22 +164,22 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 	}
 
 	// get avatar's corresponding user
-	identity, err := sso.identityService.Get(ctx, cmd.identityID)
+	existingIdentity, err := sso.identityService.Get(ctx, cmd.identityID)
 	if err != nil {
 		return nil, err
 	}
 
 	// first remove existing avatar if it does exist
-	if !identity.AvatarURL.IsZero() {
-		avatarToDel := &domain.AvatarFile{
-			Filename: filepath.Base(identity.AvatarURL.String),
+	if !existingIdentity.AvatarURL.IsZero() {
+		avatarToDel := &identity.AvatarFile{
+			Filename: filepath.Base(existingIdentity.AvatarURL.String),
 		}
 		if err := sso.identityService.DeleteAvatar(ctx, avatarToDel); err != nil {
 			return nil, err
 		}
 	}
 
-	avatar := domain.AvatarFile{}
+	avatar := identity.AvatarFile{}
 	// generate an UUID to use as a filename
 	filename, err := uuid.NewRandom()
 	if err != nil {
@@ -196,8 +196,8 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 	}
 
 	// then save into user account the new avatar uri
-	identity.AvatarURL = null.StringFrom(url)
-	return nil, sso.identityService.Update(ctx, &identity)
+	existingIdentity.AvatarURL = null.StringFrom(url)
+	return nil, sso.identityService.Update(ctx, &existingIdentity)
 }
 
 // DeleteAvatarCmd
@@ -215,7 +215,7 @@ func (cmd *DeleteAvatarCmd) BindAndValidate(eCtx echo.Context) error {
 // DeleteAvatar for a given identity
 func (sso *SSOService) DeleteAvatar(ctx context.Context, gen request.Request) (interface{}, error) {
 	cmd := gen.(*DeleteAvatarCmd)
-	avatar := domain.AvatarFile{}
+	avatar := identity.AvatarFile{}
 
 	acc := oidc.GetAccesses(ctx)
 

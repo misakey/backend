@@ -62,23 +62,41 @@ func bindRoutes(
 		ss.GetIdentity,
 		request.ResponseOK,
 	))
-	identityPath.PATCH(oidcHandlers.NewACR2(
+	identityPath.PATCH(oidcHandlers.NewACR1(
 		"/:id",
 		func() request.Request { return &application.PartialUpdateIdentityCmd{} },
 		ss.PartialUpdateIdentity,
 		request.ResponseNoContent,
 	))
-	identityPath.PUT(oidcHandlers.NewACR2(
+	identityPath.PUT(oidcHandlers.NewACR1(
 		"/:id/avatar",
 		func() request.Request { return &application.UploadAvatarCmd{} },
 		ss.UploadAvatar,
 		request.ResponseNoContent,
 	))
-	identityPath.DELETE(oidcHandlers.NewACR2(
+	identityPath.DELETE(oidcHandlers.NewACR1(
 		"/:id/avatar",
 		func() request.Request { return &application.DeleteAvatarCmd{} },
 		ss.DeleteAvatar,
 		request.ResponseNoContent,
+	))
+	identityPath.GET(oidcHandlers.NewPublic(
+		"/:id/profile",
+		func() request.Request { return &application.ProfileQuery{} },
+		ss.GetProfile,
+		request.ResponseOK,
+	))
+	identityPath.PATCH(oidcHandlers.NewACR1(
+		"/:id/profile/config",
+		func() request.Request { return &application.ConfigProfileCmd{} },
+		ss.SetProfileConfig,
+		request.ResponseNoContent,
+	))
+	identityPath.GET(oidcHandlers.NewACR1(
+		"/:id/profile/config",
+		func() request.Request { return &application.ConfigProfileQuery{} },
+		ss.GetProfileConfig,
+		request.ResponseOK,
 	))
 	identityPath.POST(oidcHandlers.NewACR2(
 		"/:id/coupons",

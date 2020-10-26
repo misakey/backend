@@ -10,6 +10,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/argon2"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
@@ -31,7 +32,7 @@ func (am accountMetadata) Validate() error {
 }
 
 // assertAccountCreation
-func (as *Service) assertAccountCreation(ctx context.Context, challenge string, identity *domain.Identity, step Step) error {
+func (as *Service) assertAccountCreation(ctx context.Context, challenge string, identity *identity.Identity, step Step) error {
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil ||
 		acc.ACR.LessThan(oidc.ACR1) {

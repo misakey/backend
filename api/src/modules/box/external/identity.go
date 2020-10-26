@@ -3,10 +3,10 @@ package external
 import (
 	"context"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )
 
 type IdentityRepo interface {
-	Get(ctx context.Context, identityID string) (domain.Identity, error)
-	List(ctx context.Context, filters domain.IdentityFilters) ([]*domain.Identity, error)
+	Get(ctx context.Context, identityID string) (identity.Identity, error)
+	List(ctx context.Context, filters identity.IdentityFilters) ([]*identity.Identity, error)
 }

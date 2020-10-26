@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/volatiletech/sqlboiler/strmangle"
 	"github.com/volatiletech/sqlboiler/v4/drivers"
-	"github.com/volatiletech/strmangle"
 )
 
 // buildUpsertQueryPostgres builds a SQL statement string using the upsertData provided.

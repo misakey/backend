@@ -185,12 +185,13 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
     )
     account_id = r.json()['account_id']
     identifier_id = r.json()['identifier_id']
+    display_name = r.json()['display_name']
 
     return namedtuple(
         'OAuth2Creds',
         ['email', 'access_token', 'csrf_token', 'identity_id',
-            'id_token', 'consent_done', 'account_id', 'identifier_id'],
-    )(email, access_token, csrf_token, identity_id, id_token, consent_done, account_id, identifier_id)
+            'id_token', 'consent_done', 'account_id', 'identifier_id', 'display_name'],
+    )(email, access_token, csrf_token, identity_id, id_token, consent_done, account_id, identifier_id, display_name)
 
 
 def get_authenticated_session(email=None, require_account=False, acr_values=None, reset_password=False):
@@ -206,4 +207,5 @@ def get_authenticated_session(email=None, require_account=False, acr_values=None
     session.account_id = creds.account_id
     session.identity_id = creds.identity_id
     session.identifier_id = creds.identifier_id
+    session.display_name = creds.display_name
     return session

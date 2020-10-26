@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/volatiletech/null/v8"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 )
 
 // GetConsentContext
@@ -76,7 +76,7 @@ func (afs AuthFlowService) ShouldSkipConsent(
 	}
 	// on misakey client only, we auto-consent legal scopes considering linked identities
 	// get consents for all identity linked to the account
-	filters := domain.IdentityFilters{
+	filters := identity.IdentityFilters{
 		AccountID: accountID,
 	}
 	identities, err := afs.identityService.List(ctx, filters)

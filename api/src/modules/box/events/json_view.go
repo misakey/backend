@@ -13,6 +13,7 @@ import (
 // SenderView is how an event sender (or box creator)
 // is represented in JSON reponses
 type SenderView struct {
+	ID           string      `json:"id"`
 	DisplayName  string      `json:"display_name"`
 	AvatarURL    null.String `json:"avatar_url"`
 	IdentifierID string      `json:"identifier_id"`

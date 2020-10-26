@@ -3,14 +3,14 @@ package authn
 import (
 	"context"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/argon2"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 // AssertPasswordExistence
-func (as *Service) AssertPasswordExistence(ctx context.Context, identity domain.Identity) error {
+func (as *Service) AssertPasswordExistence(ctx context.Context, identity identity.Identity) error {
 	if identity.AccountID.String == "" {
 		return merror.Conflict().Describe("identity has no linked account").
 			Detail("identity_id", merror.DVConflict).
@@ -20,7 +20,7 @@ func (as *Service) AssertPasswordExistence(ctx context.Context, identity domain.
 }
 
 // prepare password step by setting password hash information
-func (as *Service) preparePassword(ctx context.Context, identity domain.Identity, step *Step) error {
+func (as *Service) preparePassword(ctx context.Context, identity identity.Identity, step *Step) error {
 	step.MethodName = oidc.AMRPrehashedPassword
 	account, err := as.accountService.Get(ctx, identity.AccountID.String)
 	if err != nil {
@@ -36,7 +36,7 @@ func (as *Service) preparePassword(ctx context.Context, identity domain.Identity
 	return nil
 }
 
-func (as *Service) assertPassword(ctx context.Context, identity domain.Identity, assertion Step) error {
+func (as *Service) assertPassword(ctx context.Context, identity identity.Identity, assertion Step) error {
 	// transform metadata into argon2 password metadata structure
 	pwdMetadata, err := argon2.ToMetadata(assertion.RawJSONMetadata)
 	if err != nil {

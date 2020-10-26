@@ -22,6 +22,16 @@ def test_basics(s1, s2):
     r = get_key_share(s1, box1_share_hash)
     check_response(r,[lambda r: assert_fn(r.json()["other_share_hash"] == box1_share_hash)])
 
+    print("- get box public information")
+    r = s1.get(
+        f'{URL_PREFIX}/boxes/{box1_id}/public?other_share_hash={box1_share_hash}',
+        expected_status_code=200,
+    )
+    assert r.json()['title'] != ''
+    assert r.json()['creator']['display_name'] == s1.display_name
+    assert r.json()['creator']['id'] == s1.identity_id
+    assert r.json()['creator']['identifier']['value'] == ''
+
     print('- file upload')
     r = s1.post(
         f'{URL_PREFIX}/boxes/{box1_id}/encrypted-files',
@@ -305,6 +315,7 @@ def test_box_messages(s1, s2):
     )
     assert r.json()['referrer_id'] == text_msg_id
     assert r.json()['sender']['identifier_id'] == s1.identifier_id
+    assert r.json()['sender']['id'] == s1.identity_id
 
     print(f'- deletion of file message {file_msg_id}')
     all_encrypted_files = list_encrypted_files()
@@ -371,9 +382,10 @@ def test_box_messages(s1, s2):
     )
     assert r.json()['referrer_id'] == msg_id
     assert r.json()['sender']['identifier_id'] == s1.identifier_id
+    assert r.json()['sender']['id'] == s1.identity_id
 
 def test_accesses(s1, s2):
-    box_id, box_share_hash = create_box_and_post_some_events_to_it(session=s1, close=False)
+    box_id, _ = create_box_and_post_some_events_to_it(session=s1, close=False)
     print(f' ~ testing accesses on {box_id}')
 
     print('- identity 2 is not a member, they cannot get the box')
@@ -537,7 +549,6 @@ def test_accesses(s1, s2):
     assert len(r.json()) == 2
     assert r.json()[0]['content'] == access_email_domain
     assert r.json()[1]['content'] == invitation_link_event['content']
-    current_invitation_link_event = r.json()[1]
 
     print('- email_domain access rule gives correctly accesses')
     access_email_domain['value'] = 'misakey.com'

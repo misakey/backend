@@ -31,7 +31,7 @@ func FromSQLBoiler(src *sqlboiler.Event) Event {
 		Type:        src.Type,
 		JSONContent: src.Content.JSON,
 		BoxID:       src.BoxID,
-		ReferrerID:   src.ReferrerID,
+		ReferrerID:  src.ReferrerID,
 	}
 	return dst
 }

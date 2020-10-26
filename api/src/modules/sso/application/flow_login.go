@@ -9,13 +9,14 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
 type LoginInitCmd struct {
@@ -84,7 +85,7 @@ func (sso *SSOService) LoginInit(ctx context.Context, gen request.Request) (inte
 // IdentityAuthableCmd orders:
 // - the assurance of an identifier matching the received value
 // - a new account if not authable identity linked to such identifier is found
-// - a new identity (authable & unconfirmed) linking both previous entities
+// - a new identity authable linking both previous entities
 // - a init of confirmation code authencation method for the identity
 type IdentityAuthableCmd struct {
 	LoginChallenge string `json:"login_challenge"`
@@ -156,8 +157,8 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 
 	// 2. check if an identity exist for the identifier
 	identityNotFound := func(err error) bool { return err != nil && merror.HasCode(err, merror.NotFoundCode) }
-	var identity domain.Identity
-	identity, err = sso.identityService.GetAuthableByIdentifierID(ctx, identifier.ID)
+	var authable identity.Identity
+	authable, err = sso.identityService.GetAuthableByIdentifierID(ctx, identifier.ID)
 	if err != nil && !identityNotFound(err) {
 		return view, err
 	}
@@ -165,26 +166,26 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 	// 3. create an identity if nothing was found
 	if identityNotFound(err) {
 		// a. create the Identity without account
-		identity = domain.Identity{
+		authable = identity.Identity{
 			IdentifierID: identifier.ID,
 			DisplayName:  strings.Title(strings.Replace(strings.Split(cmd.Identifier.Value, "@")[0], ".", " ", -1)),
 			IsAuthable:   true,
 			// fill the identifier manually for later use
 			Identifier: identifier,
 		}
-		if err := sso.identityService.Create(ctx, &identity); err != nil {
+		if err := sso.identityService.Create(ctx, &authable); err != nil {
 			return view, err
 		}
 	}
 
 	// bind identity information on view
-	view.Identity.DisplayName = identity.DisplayName
-	view.Identity.AvatarURL = identity.AvatarURL
-	view.AuthnStep.IdentityID = identity.ID
+	view.Identity.DisplayName = authable.DisplayName
+	view.Identity.AvatarURL = authable.AvatarURL
+	view.AuthnStep.IdentityID = authable.ID
 
 	// get the appropriate authn step
 	// NOTE: not handled - authnsession ACR
-	step, err := sso.AuthenticationService.NextStep(ctx, identity, oidc.ACR0, logCtx.OIDCContext.ACRValues())
+	step, err := sso.AuthenticationService.NextStep(ctx, authable, oidc.ACR0, logCtx.OIDCContext.ACRValues())
 	if err != nil {
 		return view, merror.Transform(err).Describe("getting next authn step")
 	}

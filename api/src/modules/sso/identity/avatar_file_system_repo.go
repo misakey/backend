@@ -1,4 +1,4 @@
-package repositories
+package identity
 
 import (
 	"context"
@@ -6,30 +6,29 @@ import (
 	"os"
 	"path"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
-// AvatarFileSystem
-type AvatarFileSystem struct {
+// avatarFileSystem
+type avatarFileSystem struct {
 	location  string
 	avatarURL string
 }
 
 // NewAvatarFileSystem's constructor - /!\ not safe to use in production
-func NewAvatarFileSystem(avatarLocation, avatarURL string) *AvatarFileSystem {
+func NewAvatarFileSystem(avatarLocation, avatarURL string) *avatarFileSystem {
 	// create avatars directory
 	if _, err := os.Stat(avatarLocation); os.IsNotExist(err) {
 		_ = os.Mkdir(avatarLocation, os.ModePerm)
 	}
-	return &AvatarFileSystem{
+	return &avatarFileSystem{
 		location:  avatarLocation,
 		avatarURL: avatarURL,
 	}
 }
 
 // Upload an avatar in file system directory and return its path
-func (fs *AvatarFileSystem) Upload(ctx context.Context, avatar *domain.AvatarFile) (string, error) {
+func (fs *avatarFileSystem) Upload(ctx context.Context, avatar *AvatarFile) (string, error) {
 	body, err := ioutil.ReadAll(avatar.Data)
 	if err != nil {
 		return "", err
@@ -54,7 +53,7 @@ func (fs *AvatarFileSystem) Upload(ctx context.Context, avatar *domain.AvatarFil
 }
 
 // Delete an avatar from the file system
-func (fs *AvatarFileSystem) Delete(ctx context.Context, avatar *domain.AvatarFile) error {
+func (fs *avatarFileSystem) Delete(ctx context.Context, avatar *AvatarFile) error {
 	path := path.Join(fs.location, avatar.Filename)
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {

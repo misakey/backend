@@ -3,8 +3,7 @@ package entrypoints
 import (
 	"context"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )
 
 type IdentityIntraprocess struct {
@@ -17,10 +16,10 @@ func NewIdentityIntraprocess(identityService identity.IdentityService) IdentityI
 	}
 }
 
-func (intraproc IdentityIntraprocess) Get(ctx context.Context, identityID string) (ret domain.Identity, err error) {
+func (intraproc IdentityIntraprocess) Get(ctx context.Context, identityID string) (ret identity.Identity, err error) {
 	return intraproc.service.Get(ctx, identityID)
 }
 
-func (intraproc IdentityIntraprocess) List(ctx context.Context, filters domain.IdentityFilters) ([]*domain.Identity, error) {
+func (intraproc IdentityIntraprocess) List(ctx context.Context, filters identity.IdentityFilters) ([]*identity.Identity, error) {
 	return intraproc.service.List(ctx, filters)
 }

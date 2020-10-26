@@ -6,15 +6,15 @@ import (
 	"time"
 
 	"github.com/volatiletech/null/v8"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/code"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 // CreateEmailedCode authentication step
-func (as *Service) CreateEmailedCode(ctx context.Context, identity domain.Identity) error {
+func (as *Service) CreateEmailedCode(ctx context.Context, identity identity.Identity) error {
 	// try to retrieve an existing code for this identity
 	existing, err := as.steps.Last(ctx, identity.ID, oidc.AMREmailedCode)
 	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
@@ -72,7 +72,7 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identity domain.Identi
 	return nil
 }
 
-func (as *Service) prepareEmailedCode(ctx context.Context, identity domain.Identity, step *Step) error {
+func (as *Service) prepareEmailedCode(ctx context.Context, identity identity.Identity, step *Step) error {
 	step.MethodName = oidc.AMREmailedCode
 	// we ignore the conflict error code - if a code already exist, we still want to return authable identity information
 	err := as.CreateEmailedCode(ctx, identity)

@@ -9,7 +9,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/coupon"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/cryptoaction"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )
 
 type SSOService struct {

@@ -31,7 +31,6 @@ type Identity struct {
 	DisplayName   string      `boil:"display_name" json:"display_name" toml:"display_name" yaml:"display_name"`
 	Notifications string      `boil:"notifications" json:"notifications" toml:"notifications" yaml:"notifications"`
 	AvatarURL     null.String `boil:"avatar_url" json:"avatar_url,omitempty" toml:"avatar_url" yaml:"avatar_url,omitempty"`
-	Confirmed     bool        `boil:"confirmed" json:"confirmed" toml:"confirmed" yaml:"confirmed"`
 	CreatedAt     time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	Color         null.String `boil:"color" json:"color,omitempty" toml:"color" yaml:"color,omitempty"`
 	Level         int         `boil:"level" json:"level" toml:"level" yaml:"level"`
@@ -48,7 +47,6 @@ var IdentityColumns = struct {
 	DisplayName   string
 	Notifications string
 	AvatarURL     string
-	Confirmed     string
 	CreatedAt     string
 	Color         string
 	Level         string
@@ -60,7 +58,6 @@ var IdentityColumns = struct {
 	DisplayName:   "display_name",
 	Notifications: "notifications",
 	AvatarURL:     "avatar_url",
-	Confirmed:     "confirmed",
 	CreatedAt:     "created_at",
 	Color:         "color",
 	Level:         "level",
@@ -85,7 +82,6 @@ var IdentityWhere = struct {
 	DisplayName   whereHelperstring
 	Notifications whereHelperstring
 	AvatarURL     whereHelpernull_String
-	Confirmed     whereHelperbool
 	CreatedAt     whereHelpertime_Time
 	Color         whereHelpernull_String
 	Level         whereHelperint
@@ -97,7 +93,6 @@ var IdentityWhere = struct {
 	DisplayName:   whereHelperstring{field: "\"identity\".\"display_name\""},
 	Notifications: whereHelperstring{field: "\"identity\".\"notifications\""},
 	AvatarURL:     whereHelpernull_String{field: "\"identity\".\"avatar_url\""},
-	Confirmed:     whereHelperbool{field: "\"identity\".\"confirmed\""},
 	CreatedAt:     whereHelpertime_Time{field: "\"identity\".\"created_at\""},
 	Color:         whereHelpernull_String{field: "\"identity\".\"color\""},
 	Level:         whereHelperint{field: "\"identity\".\"level\""},
@@ -105,26 +100,29 @@ var IdentityWhere = struct {
 
 // IdentityRels is where relationship names are stored.
 var IdentityRels = struct {
-	Account                     string
-	Identifier                  string
-	AuthenticationSteps         string
-	SenderIdentityCryptoActions string
-	UsedCoupons                 string
+	Account                        string
+	Identifier                     string
+	AuthenticationSteps            string
+	SenderIdentityCryptoActions    string
+	IdentityProfileSharingConsents string
+	UsedCoupons                    string
 }{
-	Account:                     "Account",
-	Identifier:                  "Identifier",
-	AuthenticationSteps:         "AuthenticationSteps",
-	SenderIdentityCryptoActions: "SenderIdentityCryptoActions",
-	UsedCoupons:                 "UsedCoupons",
+	Account:                        "Account",
+	Identifier:                     "Identifier",
+	AuthenticationSteps:            "AuthenticationSteps",
+	SenderIdentityCryptoActions:    "SenderIdentityCryptoActions",
+	IdentityProfileSharingConsents: "IdentityProfileSharingConsents",
+	UsedCoupons:                    "UsedCoupons",
 }
 
 // identityR is where relationships are stored.
 type identityR struct {
-	Account                     *Account                `boil:"Account" json:"Account" toml:"Account" yaml:"Account"`
-	Identifier                  *Identifier             `boil:"Identifier" json:"Identifier" toml:"Identifier" yaml:"Identifier"`
-	AuthenticationSteps         AuthenticationStepSlice `boil:"AuthenticationSteps" json:"AuthenticationSteps" toml:"AuthenticationSteps" yaml:"AuthenticationSteps"`
-	SenderIdentityCryptoActions CryptoActionSlice       `boil:"SenderIdentityCryptoActions" json:"SenderIdentityCryptoActions" toml:"SenderIdentityCryptoActions" yaml:"SenderIdentityCryptoActions"`
-	UsedCoupons                 UsedCouponSlice         `boil:"UsedCoupons" json:"UsedCoupons" toml:"UsedCoupons" yaml:"UsedCoupons"`
+	Account                        *Account                           `boil:"Account" json:"Account" toml:"Account" yaml:"Account"`
+	Identifier                     *Identifier                        `boil:"Identifier" json:"Identifier" toml:"Identifier" yaml:"Identifier"`
+	AuthenticationSteps            AuthenticationStepSlice            `boil:"AuthenticationSteps" json:"AuthenticationSteps" toml:"AuthenticationSteps" yaml:"AuthenticationSteps"`
+	SenderIdentityCryptoActions    CryptoActionSlice                  `boil:"SenderIdentityCryptoActions" json:"SenderIdentityCryptoActions" toml:"SenderIdentityCryptoActions" yaml:"SenderIdentityCryptoActions"`
+	IdentityProfileSharingConsents IdentityProfileSharingConsentSlice `boil:"IdentityProfileSharingConsents" json:"IdentityProfileSharingConsents" toml:"IdentityProfileSharingConsents" yaml:"IdentityProfileSharingConsents"`
+	UsedCoupons                    UsedCouponSlice                    `boil:"UsedCoupons" json:"UsedCoupons" toml:"UsedCoupons" yaml:"UsedCoupons"`
 }
 
 // NewStruct creates a new relationship struct
@@ -136,9 +134,9 @@ func (*identityR) NewStruct() *identityR {
 type identityL struct{}
 
 var (
-	identityAllColumns            = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "notifications", "avatar_url", "confirmed", "created_at", "color", "level"}
+	identityAllColumns            = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "notifications", "avatar_url", "created_at", "color", "level"}
 	identityColumnsWithoutDefault = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "avatar_url", "color"}
-	identityColumnsWithDefault    = []string{"notifications", "confirmed", "created_at", "level"}
+	identityColumnsWithDefault    = []string{"notifications", "created_at", "level"}
 	identityPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -298,6 +296,27 @@ func (o *Identity) SenderIdentityCryptoActions(mods ...qm.QueryMod) cryptoAction
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"crypto_action\".*"})
+	}
+
+	return query
+}
+
+// IdentityProfileSharingConsents retrieves all the identity_profile_sharing_consent's IdentityProfileSharingConsents with an executor.
+func (o *Identity) IdentityProfileSharingConsents(mods ...qm.QueryMod) identityProfileSharingConsentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"identity_profile_sharing_consent\".\"identity_id\"=?", o.ID),
+	)
+
+	query := IdentityProfileSharingConsents(queryMods...)
+	queries.SetFrom(query.Query, "\"identity_profile_sharing_consent\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"identity_profile_sharing_consent\".*"})
 	}
 
 	return query
@@ -702,6 +721,97 @@ func (identityL) LoadSenderIdentityCryptoActions(ctx context.Context, e boil.Con
 	return nil
 }
 
+// LoadIdentityProfileSharingConsents allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (identityL) LoadIdentityProfileSharingConsents(ctx context.Context, e boil.ContextExecutor, singular bool, maybeIdentity interface{}, mods queries.Applicator) error {
+	var slice []*Identity
+	var object *Identity
+
+	if singular {
+		object = maybeIdentity.(*Identity)
+	} else {
+		slice = *maybeIdentity.(*[]*Identity)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &identityR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &identityR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`identity_profile_sharing_consent`),
+		qm.WhereIn(`identity_profile_sharing_consent.identity_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load identity_profile_sharing_consent")
+	}
+
+	var resultSlice []*IdentityProfileSharingConsent
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice identity_profile_sharing_consent")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on identity_profile_sharing_consent")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for identity_profile_sharing_consent")
+	}
+
+	if singular {
+		object.R.IdentityProfileSharingConsents = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &identityProfileSharingConsentR{}
+			}
+			foreign.R.Identity = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.IdentityID {
+				local.R.IdentityProfileSharingConsents = append(local.R.IdentityProfileSharingConsents, foreign)
+				if foreign.R == nil {
+					foreign.R = &identityProfileSharingConsentR{}
+				}
+				foreign.R.Identity = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadUsedCoupons allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (identityL) LoadUsedCoupons(ctx context.Context, e boil.ContextExecutor, singular bool, maybeIdentity interface{}, mods queries.Applicator) error {
@@ -1093,6 +1203,59 @@ func (o *Identity) RemoveSenderIdentityCryptoActions(ctx context.Context, exec b
 		}
 	}
 
+	return nil
+}
+
+// AddIdentityProfileSharingConsents adds the given related objects to the existing relationships
+// of the identity, optionally inserting them as new records.
+// Appends related to o.R.IdentityProfileSharingConsents.
+// Sets related.R.Identity appropriately.
+func (o *Identity) AddIdentityProfileSharingConsents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*IdentityProfileSharingConsent) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.IdentityID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"identity_profile_sharing_consent\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"identity_id"}),
+				strmangle.WhereClause("\"", "\"", 2, identityProfileSharingConsentPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.IdentityID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &identityR{
+			IdentityProfileSharingConsents: related,
+		}
+	} else {
+		o.R.IdentityProfileSharingConsents = append(o.R.IdentityProfileSharingConsents, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &identityProfileSharingConsentR{
+				Identity: o,
+			}
+		} else {
+			rel.R.Identity = o
+		}
+	}
 	return nil
 }
 

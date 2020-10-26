@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"time"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
@@ -42,7 +42,7 @@ type processRepo interface {
 	GetClaims(ctx context.Context, token string) (oidc.AccessClaims, error)
 }
 
-func (as *Service) computeNextStep(ctx context.Context, identity domain.Identity, p Process) (Process, error) {
+func (as *Service) computeNextStep(ctx context.Context, identity identity.Identity, p Process) (Process, error) {
 	s, err := as.NextStep(ctx, identity, p.CompleteAMRs.ToACR(), oidc.NewClassRefs(p.ExpectedACR))
 	if err != nil {
 		return p, merror.Transform(err).Describe("getting next step")
@@ -82,7 +82,7 @@ func (as *Service) InitProcess(ctx context.Context, challenge string, sessionACR
 func (as *Service) UpgradeProcess(
 	ctx context.Context,
 	challenge string,
-	identity domain.Identity,
+	identity identity.Identity,
 	amr oidc.MethodRef,
 ) (Process, error) {
 	process := Process{}

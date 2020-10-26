@@ -11,6 +11,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/boxes"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/keyshares"
 )
 
@@ -31,7 +32,8 @@ func (req *ReadBoxPublicRequest) BindAndValidate(eCtx echo.Context) error {
 }
 
 type PublicBoxView struct {
-	Title string `json:"title"`
+	Title   string            `json:"title"`
+	Creator events.SenderView `json:"creator"`
 }
 
 // Since ReadBoxPublic returns public data, there is no access check performed
@@ -56,7 +58,8 @@ func (app *BoxApplication) ReadBoxPublic(ctx context.Context, genReq request.Req
 	}
 
 	view := PublicBoxView{
-		Title: box.Title,
+		Title:   box.Title,
+		Creator: box.Creator,
 	}
 	return view, nil
 }

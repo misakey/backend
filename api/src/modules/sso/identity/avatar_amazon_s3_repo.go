@@ -1,4 +1,4 @@
-package repositories
+package identity
 
 import (
 	"context"
@@ -13,11 +13,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 )
 
-type AvatarAmazonS3 struct {
+type avatarAmazonS3 struct {
 	session  *s3.S3
 	uploader *s3manager.Uploader
 
@@ -25,7 +23,7 @@ type AvatarAmazonS3 struct {
 }
 
 // NewAvatarAmazonS3 init an S3 session
-func NewAvatarAmazonS3(region, bucket string) (*AvatarAmazonS3, error) {
+func NewAvatarAmazonS3(region, bucket string) (*avatarAmazonS3, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(region)},
 	)
@@ -35,7 +33,7 @@ func NewAvatarAmazonS3(region, bucket string) (*AvatarAmazonS3, error) {
 
 	// create all required actors to interact with s3
 	s3Cli := s3.New(sess)
-	s := &AvatarAmazonS3{
+	s := &avatarAmazonS3{
 		session:  s3Cli,
 		uploader: s3manager.NewUploaderWithClient(s3Cli),
 		bucket:   bucket,
@@ -44,11 +42,11 @@ func NewAvatarAmazonS3(region, bucket string) (*AvatarAmazonS3, error) {
 }
 
 // getKey by concatenating some info
-func (s *AvatarAmazonS3) getKey(avatar *domain.AvatarFile) string {
+func (s *avatarAmazonS3) getKey(avatar *AvatarFile) string {
 	return filepath.Join("identity-avatars", avatar.Filename)
 }
 
-func (s *AvatarAmazonS3) Upload(ctx context.Context, avatar *domain.AvatarFile) (string, error) {
+func (s *avatarAmazonS3) Upload(ctx context.Context, avatar *AvatarFile) (string, error) {
 	uo, err := s.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(s.getKey(avatar)),
@@ -65,7 +63,7 @@ func (s *AvatarAmazonS3) Upload(ctx context.Context, avatar *domain.AvatarFile) 
 	return avatarURL.String(), nil
 }
 
-func (s *AvatarAmazonS3) Delete(ctx context.Context, avatar *domain.AvatarFile) error {
+func (s *avatarAmazonS3) Delete(ctx context.Context, avatar *AvatarFile) error {
 	delObj := &s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(s.getKey(avatar)),

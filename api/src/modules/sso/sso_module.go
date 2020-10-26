@@ -21,8 +21,8 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/coupon"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/cryptoaction"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/db"
@@ -84,7 +84,8 @@ func InitModule(router *echo.Echo) Process {
 	// init repositories
 	accountRepo := repositories.NewAccountSQLBoiler(dbConn)
 	identifierRepo := repositories.NewIdentifierSQLBoiler(dbConn)
-	identityRepo := repositories.NewIdentitySQLBoiler(dbConn)
+	identityRepo := identity.NewIdentitySQLRepo(dbConn)
+	profileSharingConsentRepo := identity.NewProfileSharingConsentSQLRepo(dbConn)
 	authnStepRepo := authn.NewAuthnStepSQLBoiler(dbConn)
 	backupArchiveRepo := repositories.NewBackupArchiveSQLBoiler(dbConn)
 	usedCouponRepo := repositories.NewUsedCouponSQLBoiler(dbConn)
@@ -99,10 +100,10 @@ func InitModule(router *echo.Echo) Process {
 	env := os.Getenv("ENV")
 	if env == "development" {
 		emailRepo = email.NewLogMailer()
-		avatarRepo = repositories.NewAvatarFileSystem(viper.GetString("server.avatars"), viper.GetString("server.avatar_url"))
+		avatarRepo = identity.NewAvatarFileSystem(viper.GetString("server.avatars"), viper.GetString("server.avatar_url"))
 	} else if env == "production" {
-		emailRepo = email.NewMailerAmazonSES(viper.GetString("aws.ses_region"), viper.GetString("aws.ses_configuration_set"),)
-		avatarRepo, err = repositories.NewAvatarAmazonS3(viper.GetString("aws.s3_region"), viper.GetString("aws.user_content_bucket"))
+		emailRepo = email.NewMailerAmazonSES(viper.GetString("aws.ses_region"), viper.GetString("aws.ses_configuration_set"))
+		avatarRepo, err = identity.NewAvatarAmazonS3(viper.GetString("aws.s3_region"), viper.GetString("aws.user_content_bucket"))
 		if err != nil {
 			log.Fatal().Msg("could not initiate AWS S3 avatar bucket connection")
 		}
@@ -123,7 +124,7 @@ func InitModule(router *echo.Echo) Process {
 	// init services
 	accountService := account.NewAccountService(accountRepo)
 	identifierService := identifier.NewIdentifierService(identifierRepo)
-	identityService := identity.NewIdentityService(identityRepo, avatarRepo, identifierService)
+	identityService := identity.NewIdentityService(identityRepo, profileSharingConsentRepo, avatarRepo, identifierService)
 	backupArchiveService := backuparchive.NewBackupArchiveService(backupArchiveRepo)
 	usedCouponService := coupon.NewUsedCouponService(usedCouponRepo)
 	cryptoActionService := cryptoaction.NewCryptoActionService(cryptoActionRepo)

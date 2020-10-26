@@ -11,6 +11,7 @@ func initCreateCryptoActionsTable() {
 }
 
 func upCreateCryptoActionsTable(tx *sql.Tx) error {
+	// ON DELETE CASCADE & NOT NULL on account_id column are not linked
 	_, err := tx.Exec(`
 		CREATE TABLE crypto_action(
 			id UUID PRIMARY KEY,
