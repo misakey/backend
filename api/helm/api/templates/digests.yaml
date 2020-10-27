@@ -1,0 +1,65 @@
+{{- $fullName := include "api.fullname" . -}}
+{{- $env := .Values.env -}}
+{{- $release := .Release.Name -}}
+{{- $chart := .Chart.Name -}}
+{{- $repository := .Values.image.repository -}}
+{{- $tag := .Values.image.tag -}}
+{{- range $frequency, $cronValue := .Values.digests -}}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ $fullName }}-digests-{{ $frequency }}
+spec:
+  schedule: "{{ $cronValue }}"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: {{ $fullName}}-digests-{{ $frequency }}
+            release: {{ $release }}
+            env: {{ required "env is required" $env }}
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: {{ $chart }}-digests-{{ $frequency }}
+              image: {{ $repository }}:{{ $tag }}
+              args:
+                - digests-job
+                - "--frequency={{ $frequency }}"
+              env:
+                - name: ENV
+                  value: {{ required "env is required" $env }}
+                - name: AWS_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $fullName }}
+                      key: aws_access_key
+                - name: AWS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $fullName }}
+                      key: aws_secret_key
+                - name: DSN_SSO
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $fullName }}
+                      key: dsn_sso
+                - name: DSN_BOX
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $fullName }}
+                      key: dsn_box
+              volumeMounts:
+                - mountPath: /etc/digests.toml
+                  subPath: api-config.toml
+                  name: config
+          imagePullSecrets:
+            - name: regcred
+          volumes:
+            - name: config
+              configMap:
+                name: {{ $fullName }}
+---
+{{- end }}

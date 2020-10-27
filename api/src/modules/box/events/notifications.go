@@ -22,12 +22,29 @@ func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *r
 		return merror.Transform(err).Describe("notifying member: listing members")
 	}
 
-	// delete the notification sender id from the list
+	// get box settings for all users
+	boxSettings, err := ListBoxSettings(ctx, exec, e.BoxID)
+	if err != nil {
+		return err
+	}
+	isMuted := make(map[string]bool, len(boxSettings))
+	for _, boxSetting := range boxSettings {
+		isMuted[boxSetting.IdentityID] = boxSetting.Muted
+	}
+
+	// delete the notification sender id and the
+	// senders who muted the box from the list
 	for i, id := range memberIDs {
-		if id == e.SenderID {
+		muted, ok := isMuted[e.SenderID]
+		if id == e.SenderID || (ok && muted) {
 			memberIDs = append(memberIDs[:i], memberIDs[i+1:]...)
 			break
 		}
+	}
+
+	// incr toNotify for a given box for all received identityIDs
+	if err := IncrToNotify(ctx, redConn, memberIDs, e.BoxID); err != nil {
+		return err
 	}
 
 	// incr counts for a given box for all received identityIDs

@@ -144,6 +144,19 @@ func bindRoutes(
 	// Box Users related routes
 	boxUsersPath := router.Group("/box-users")
 	boxUsersPath.GET("/:id/ws", wsh.BoxUsersWS, authzMidlwWithoutCSRF)
+	boxUsersPath.PUT(oidcHandlerFactory.NewACR1(
+		"/:id/boxes/:bid/settings",
+		func() request.Request { return &application.UpdateBoxSettingsRequest{} },
+		app.UpdateBoxSettings,
+		request.ResponseNoContent,
+	))
+
+	boxUsersPath.GET(oidcHandlerFactory.NewACR1(
+		"/:id/boxes/:bid/settings",
+		func() request.Request { return &application.GetBoxSettingsRequest{} },
+		app.GetBoxSettings,
+		request.ResponseOK,
+	))
 
 	// ----------------------
 	// Box Key Shares related routes

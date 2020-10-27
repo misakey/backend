@@ -19,6 +19,7 @@ func Launch() {
 	initAddReferColumnOnBoxEvents()
 	initCreateStorageQuotumTable()
 	initCreateBoxUsedSpaceTable()
+	initCreateBoxSettingsTable()
 
 	db.StartMigration(os.Getenv("DSN_BOX"), os.Getenv("MIGRATION_DIR_BOX"))
 }

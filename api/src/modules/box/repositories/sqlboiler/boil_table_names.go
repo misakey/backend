@@ -5,6 +5,7 @@ package sqlboiler
 
 var TableNames = struct {
 	BoxKeyShare   string
+	BoxSetting    string
 	BoxUsedSpace  string
 	EncryptedFile string
 	Event         string
@@ -12,6 +13,7 @@ var TableNames = struct {
 	StorageQuotum string
 }{
 	BoxKeyShare:   "box_key_share",
+	BoxSetting:    "box_setting",
 	BoxUsedSpace:  "box_used_space",
 	EncryptedFile: "encrypted_file",
 	Event:         "event",

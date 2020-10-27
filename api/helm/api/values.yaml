@@ -13,6 +13,11 @@ image:
   tag:
   pullPolicy: IfNotPresent
 
+digests:
+  minimal: "0 8 * * *"
+  moderate: "0 * * * *"
+  frequent: "*/5 * * * *"
+
 service:
   type: ClusterIP
   port: 5000

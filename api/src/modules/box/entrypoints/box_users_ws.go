@@ -7,6 +7,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 
@@ -57,7 +58,10 @@ func boxUsersHandler(c echo.Context, wh WebsocketHandler, receivedMsg []byte) er
 			return err
 		}
 		if err := events.DelCounts(c.Request().Context(), wh.boxService.RedConn, obj.SenderID, obj.BoxID); err != nil {
-			return err
+			logger.FromCtx(c.Request().Context()).Error().Err(err).Msg("could not remove eventCounts key")
+		}
+		if err := events.DelToNotify(c.Request().Context(), wh.boxService.RedConn, obj.SenderID, obj.BoxID); err != nil {
+			logger.FromCtx(c.Request().Context()).Error().Err(err).Msg("could not remove toNotify key")
 		}
 		// resend the ack event
 		// to make sure all user websockets get it

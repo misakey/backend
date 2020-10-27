@@ -1,6 +1,9 @@
 package authz
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
 
@@ -53,6 +56,10 @@ func NewOIDCIntrospector(misakeyAudience string, selfRestrict bool, tokenRester 
 						Detail("X-CSRF-Token", merror.DVInvalid)
 				}
 			}
+
+			// store last interaction
+			// ignore error because this information can be lost
+			_ = redConn.Set(fmt.Sprintf("lastInteraction:user_%s", acc.IdentityID), time.Now().Unix(), 0*time.Second)
 
 			// set access claims in request context
 			ctx.SetRequest(ctx.Request().WithContext(oidc.SetAccesses(ctx.Request().Context(), &acc)))

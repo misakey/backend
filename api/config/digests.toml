@@ -1,0 +1,18 @@
+[mail]
+  templates = "/etc/templates"
+  from = "Misakey <local-protection@misakey.com>"
+
+[redis]
+  address = "redis"
+  port = 6379
+
+[log]
+  level = "debug"
+
+# only used if ENV=production
+# [aws]
+#   # region slug name used for Amazon SES
+#   ses_region = "eu-west-1"
+
+[digests]
+  domain = "app.misakey.com.local"
