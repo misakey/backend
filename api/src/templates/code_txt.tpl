@@ -1,16 +1,19 @@
-We have received an authentication request with a confirmation code.
+Voici votre code: {{.code}}
 
-Here is your code: {{.code}}
-
-------------------------------------------------------------
-
-If you didn't request this code, send an email to feedback@misakey.com (mailto:feedback@misakey.com) . Please don't transfer this code to anyone.
-
-Stay secure and keep your data confidential, 
-Misakey Team,
+Nous avons reçu une demande d'authentication avec un code de confirmation.
 
 ------------------------------------------------------------
 
-This email address can't receive responses. If you want to know more, check Misakey help section. 
+Si vous n'êtes pas à l'origine de cette demande, envoyez nous un email à l'adresse feedback@misakey.com
+Veuillez ne pas transférer ce code à qui que ce soit.
+
+
+
+Restez en sécurité et gardez vos données confidentielles, 
+L'équipe Misakey
+
+------------------------------------------------------------
+
+Cette adresse e-mail ne peut pas recevoir de réponse. Plus d’informations dans la section Aide de Misakey.
 © Misakey SAS, 66 avenue des champs Elysée, 75008 Paris, France
 

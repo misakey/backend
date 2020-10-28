@@ -10,7 +10,7 @@
       <table cellpadding="0" cellspacing="0" id="bodyTable" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0;mso-table-rspace: 0;width: 600px;margin: 0;margin-top: 20px;padding: 0;border: 0;font-family: Roboto,sans-serif;background-color: #fff;border-collapse: collapse!important;max-width: 600px!important;">
         <tr>
           <td id="preheaderText" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0;mso-table-rspace: 0;visibility: hidden;mso-hide: all;font-size: 1px;color: #fff;line-height: 1px;max-height: 0;max-width: 0;opacity: 0;overflow: hidden;margin: 0;font-family: Roboto,sans-serif;text-align: center;padding: 20px;display: none!important;">
-            Here is your code: {{.code}}
+            Voici votre code: {{.code}}
           </td>
           <td style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0;mso-table-rspace: 0;margin: 0;font-family: Roboto,sans-serif;text-align: center;padding: 20px;">
             <p id="logo" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;text-align: left;margin-bottom: 30px;margin-left: 50px;">
@@ -19,22 +19,22 @@
               </a>
             </p>
 
-            <p style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;">We have received an authentication request with a confirmation code.</p>
+            <p style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;">Nous avons reçu une demande d'authentication avec un code de confirmation.</p>
 
             <h3>Here is your code</h3>
 
             <h2>{{.code}}</h2>
 
-            <p style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;">If you didn't request this code, send an email to <a href="mailto:feedback@misakey.com" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;color: #e32e72;">feedback@misakey.com</a>. Please don't transfer this code to anyone.</p>
+            <p style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;">Si vous n'êtes pas à l'origine de cette demande, envoyez nous un email à l'adresse feedback@misakey.com<br/>Veuillez ne pas transférer ce code à qui que ce soit.</p>
             <p style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;">
-              Stay secure and keep your data confidential,
+              Restez en sécurité et gardez vos données confidentielles,
               <br>
-              Misakey Team,              
+              L'équipe Misakey              
             </p>
 
             <hr style="border-width: 2px;border-style: solid;border-color: #eaeef3;border-bottom: 0;margin-top: 20px;margin-bottom: 20px;margin-left: 0;margin-right: 0;">
             <p id="footer" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;text-align: center;color: #a9b3bc;">
-              This email address can't receive responses. If you want to know more, check Misakey help section.
+              Cette adresse e-mail ne peut pas recevoir de réponse. Plus d’informations dans la section Aide de Misakey.
               <br> © Misakey SAS, 66 avenue des champs Elysée, 75008 Paris, France
             </p>
           </td>

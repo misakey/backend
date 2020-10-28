@@ -2,39 +2,40 @@
 <html>
     <head>
       <style type="text/css">
-        img{line-height:100%}#outlook a{padding:0}.ReadMsgBody{width:100%}a,blockquote,body,li,p,table,td{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}table,td{mso-table-lspace:0;mso-table-rspace:0}img{-ms-interpolation-mode:bicubic;border:0;height:auto;outline:0;text-decoration:none}table{border-collapse:collapse!important}body{background-color:#d9d9d9}@font-face{font-family:Roboto;src:url(https://static.misakey.com/fonts/Roboto/Roboto-Medium.ttf);src:url(https://static.misakey.com/fonts/Roboto/Roboto-Medium.ttf) format('ttf'),url(https://static.misakey.com/fonts/Roboto/Roboto-Medium.woff) format('woff'),url(https://static.misakey.com/fonts/Roboto/Roboto-Medium.woff2) format('woff2');font-weight:400;font-style:normal}@font-face{font-family:Roboto;src:url(https://static.misakey.com/fonts/Roboto/Roboto-Bold.ttf);src:url(https://static.misakey.com/fonts/Roboto/Roboto-Bold.ttf) format('ttf'),url(https://static.misakey.com/fonts/Roboto/roboto-latin-700.woff) format('woff'),url(https://static.misakey.com/fonts/Roboto/roboto-latin-700.woff2) format('woff2');font-weight:600;font-style:normal}#bodyTable{width:600px;mso-table-lspace:0;mso-table-rspace:0;margin:0;margin-top:20px;padding:0;border:0;font-family:Roboto,sans-serif;border-collapse:collapse!important;background-color:#fff}a{color:#e32e72}hr{border-width:2px;border-style:solid;border-color:#eaeef3;border-bottom:0;margin-top:20px;margin-bottom:20px;margin-left:0;margin-right:0}#preheaderText{display:none!important;visibility:hidden;mso-hide:all;font-size:1px;color:#fff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden}#logo{text-align:left;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;margin-bottom:30px;margin-left:50px}#logo img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:0;text-decoration:none;width:150px}#bodyTable td{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;mso-table-lspace:0;mso-table-rspace:0;margin:0;font-family:Roboto,sans-serif;text-align:center;padding:20px}.normal-weight{font-weight:400}.smalltext{font-size:.8em}#footer{text-align:center;color:#a9b3bc;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}.bottom-border{border-bottom-style:solid;border-bottom-width:1px;border-bottom-color:#e32e72}@media only screen and (max-width:600px){a,blockquote,body,li,p,table,td{-webkit-text-size-adjust:none!important}body{min-width:100%!important}table{max-width:600px!important}}#channels-list{width:490px;margin-left:35px}#channels-list td{margin:0;padding:0;padding-top:2px;padding-bottom:2px;text-align:left}#channels-list td.channel-name{color:#696969;width:230px;text-align:left}#channels-list td.channel-unread{width:200px;padding-left:5px;padding-right:5px}#channels-list td.notif-off{text-align:right;font-size:.6em;width:50px}#channels-list td.notif-off a{color:#999}
+        @media only screen and (max-width:600px){a,blockquote,body,li,p,table,td{-webkit-text-size-adjust:none}body{min-width:100%}table{max-width:600px}}
       </style>
     </head>
-    <body style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;background-color: #d9d9d9;min-width: 100%!important;">
+    <body style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; background-color:#d9d9d9" bgcolor="#d9d9d9">
       <center>
-        <table cellpadding="0" cellspacing="0" id="bodyTable" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;width: 600px;margin: 0;margin-top: 20px;padding: 0;border: 0;font-family: Roboto,sans-serif;background-color: #FFFFFF;border-collapse: collapse !important;max-width: 600px!important;">
+        <table cellpadding="0" cellspacing="0" id="bodyTable" style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; mso-table-lspace:0; mso-table-rspace:0; background-color:#FFF; border:0; font-family:Roboto, sans-serif; margin:0; margin-top:20px; padding:0; width:600px; border-collapse:collapse" bgcolor="#FFFFFF" width="600">
           <tr>
-            <td id="preheaderText" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;visibility: hidden;mso-hide: all;font-size: 1px;color: #ffffff;line-height: 1px;max-height: 0px;max-width: 0px;opacity: 0;overflow: hidden;margin: 0;font-family: Roboto, sans-serif;text-align: center;padding: 20px;display: none !important;">
-              {{.total}} nouveau(x) message(s) pour {{.displayName}}
+            <td id="preheaderText" style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; mso-table-lspace:0; mso-table-rspace:0; color:#fff; font-size:1px; line-height:1px; max-height:0; max-width:0; mso-hide:all; opacity:0; overflow:hidden; visibility:hidden; font-family:Roboto, sans-serif; margin:0; padding:20px; text-align:center; display:none" align="center">
+                {{.total}} nouveau(x) message(s) pour {{.displayName}}
             </td>
           </tr>
-          <tr class="bottom-border" style="border-bottom-style: solid;border-bottom-width: 1px;border-bottom-color: #e32e72;">
-            <td style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;margin: 0;font-family: Roboto, sans-serif;text-align: center;padding: 20px;">
-              <div id="logo" style="text-align: left;-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;margin-bottom: 30px;margin-left: 50px;">
-                <a href="https://www.misakey.com?utm_source=notification&utm_medium=email&utm_campaign=emailConfirmationCode&utm_content=logo" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;color: #e32e72;">
-                  <img src="https://static.misakey.com/img/MisakeyLogoTypo.png" alt="Misakey" style="line-height: 100%;-ms-interpolation-mode: bicubic;border: 0;height: auto;outline: none;text-decoration: none;width: 150px;">
+          <tr style="border-bottom-color:#e32e72; border-bottom-style:solid; border-bottom-width:1px">
+            <td style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; mso-table-lspace:0; mso-table-rspace:0; font-family:Roboto, sans-serif; margin:0; padding:20px; text-align:center" align="center">
+              <div id="logo" style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; margin-bottom:30px; margin-left:50px; text-align:left" align="left">
+                <a href="https://www.misakey.com?utm_source=notification&amp;utm_medium=email&amp;utm_campaign=emailConfirmationCode&amp;utm_content=logo" style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; color:#e32e72">
+                  <img src="https://static.misakey.com/img/MisakeyLogoTypo.png" alt="Misakey" style="line-height:100%; -ms-interpolation-mode:bicubic; border:0; height:auto; outline:none; text-decoration:none; width:150px" height="auto" width="150">
                 </a>
               </div>
 
-              <h2>{{.total}} <span class="normal-weight" style="font-weight: normal;">nouveau(x) message(s) pour</span></h2>
-              <h2 class="normal-weight" style="font-weight: normal;">
+              <h2>{{.total}} <span style="font-weight:normal">nouveau(x) message(s) pour</span></h2>
+              <h2 style="font-weight:normal">
                 <!-- If we have an image -->
                 {{ if .avatarURL }}
-                <img src="{{.avatarURL}}" style="margin:0;line-height:100%;-ms-interpolation-mode:bicubic;border:0;outline:0;text-decoration:none;object-fit:cover;border-radius:50%;width:40px;height:40px;vertical-align:middle;">
+                <img src="{{.avatarURL}}" width="40" height="40" style="line-height:100%; -ms-interpolation-mode:bicubic; border:0; height:40px; outline:0; text-decoration:none; border-radius:40px; margin:0; width:40px" alt="{{.firstLetter}}">
                 {{ else }}
+                <!-- Else -->
                 <span>
                   <!--[if mso]>
                     <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" style="height:40px;v-text-anchor:middle;width:40px;" arcsize="100%" strokecolor="#e32e72" fillcolor="#ffffff">
                       <w:anchorlock/>
-                      <center style="color:#000000;font-family:sans-serif;font-size:18px;">{{.displayName}}</center>
+                      <center style="color:#000000;font-family:sans-serif;font-size:18px;">{{.firstLetter}}</center>
                     </v:roundrect>
                   <![endif]-->
-                  <span style="background-color:#ffffff;border:1px solid #e32e72;border-radius:40px;color:#000000;display:inline-block;font-family:sans-serif;font-size:18px;line-height:40px;text-align:center;text-decoration:none;width:40px;-webkit-text-size-adjust:none;mso-hide:all;">
+                  <span style="background-color:#ffffff;border:1px solid #e32e72;border-radius:40px;color:#000000;display:inline-block;font-family:sans-serif;font-size:18px;line-height:40px; height:40px;text-align:center;text-decoration:none;width:40px;-webkit-text-size-adjust:none;mso-hide:all;">
                     {{.firstLetter}}
                   </span>
                 </span>
@@ -43,26 +44,28 @@
                 <span>{{.displayName}}</span>
               </h2>
 
-              <div><!--[if mso]>
+              <div>
+<!--[if mso]>
                 <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://{{.domain}}/?utm_source=notification&utm_medium=email&utm_campaign=emailNotificationPreference&utm_content=openApp" style="height:40px;v-text-anchor:middle;width:350px;" arcsize="100%" stroke="f" fillcolor="#e32e72">
                   <w:anchorlock/>
                   <center>
                 <![endif]-->
-                    <a href="https://{{.domain}}/?utm_source=notification&utm_medium=email&utm_campaign=emailNotificationPreference&utm_content=openApp" style="background-color: #e32e72;border-radius: 40px;color: #ffffff;display: inline-block;font-family: sans-serif;font-size: 15px;line-height: 40px;text-align: center;text-decoration: none;width: 350px;-webkit-text-size-adjust: none;-ms-text-size-adjust: 100%;">OUVRIR MON APPLICATION</a>
+                    <a href="https://{{.domain}}/?utm_source=notification&amp;utm_medium=email&amp;utm_campaign=emailNotificationPreference&amp;utm_content=openApp" style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:none; color:#fff; background-color:#e32e72; border-radius:40px; display:inline-block; font-family:sans-serif; font-size:15px; height:40yypx; line-height:40px; text-align:center; text-decoration:none; width:350px" bgcolor="#e32e72" height="40yy" align="center" width="350">OUVRIR MON APPLICATION</a>
                 <!--[if mso]>
                   </center>
                 </v:roundrect>
-              <![endif]--></div>
+              <![endif]-->
+</div>
 
-              <p class="smalltext" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;font-size: 0.8em;">
+              <p style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; font-size:0.8em">
                 Les messages et documents envoyés dans les discussions sont protégés avec le chiffrement de bout-en-bout.
               </p>
             </td>
           </tr>
-          <tr class="bottom-border" style="border-bottom-style: solid;border-bottom-width: 1px;border-bottom-color: #e32e72;">
-            <td style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;margin: 0;font-family: Roboto, sans-serif;text-align: center;padding: 20px;">
+          <tr style="border-bottom-color:#e32e72; border-bottom-style:solid; border-bottom-width:1px">
+            <td style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; mso-table-lspace:0; mso-table-rspace:0; font-family:Roboto, sans-serif; margin:0; padding:20px; text-align:center" align="center">
               <!-- Refacto with table, force channel name to 20chars max -->
-              <table id="channels-list" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0;mso-table-rspace: 0;width: 490px;margin-left: 35px;border-collapse: collapse!important;max-width: 600px!important;">
+              <table id="channels-list" style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; mso-table-lspace:0; mso-table-rspace:0; margin-left:35px; width:490px; border-collapse:collapse" width="490">
 {{ range $key, $value := .boxes }}
                 <tr>
                   <td class="channel-name" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;margin: 0;font-family: Roboto, sans-serif;text-align: left;padding: 0;padding-top: 2px;padding-bottom: 2px;color: #696969;width: 230px;">{{ $value.Title }}&nbsp;:</td>
@@ -74,11 +77,11 @@
             </td>
           </tr>
           <tr>
-            <td style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;margin: 0;font-family: Roboto, sans-serif;text-align: center;padding: 20px;">
-              <p style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;">Pour configurer la fréquence de réception des notifications&nbsp;:</p>
-              <a href="{{.accountBaseURL}}/notifications?utm_source=notification&utm_medium=email&utm_campaign=emailNotificationPreference&utm_content=notifsParamsFooter" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;color: #e32e72;">Paramètres de notifications</a>
-              <hr style="border-width: 2px;border-style: solid;border-color: #EAEEF3;border-bottom: 0;margin-top: 20px;margin-bottom: 20px;margin-left: 0;margin-right: 0;">
-              <p id="footer" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;text-align: center;color: #A9B3BC;">
+            <td style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; mso-table-lspace:0; mso-table-rspace:0; font-family:Roboto, sans-serif; margin:0; padding:20px; text-align:center" align="center">
+              <p style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%">Pour configurer la fréquence de réception des notifications :</p>
+              <a href="{{.accountBaseURL}}/notifications?utm_source=notification&amp;utm_medium=email&amp;utm_campaign=emailNotificationPreference&amp;utm_content=notifsParamsFooter" style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; color:#e32e72">Paramètres de notifications</a>
+              <hr style="border-bottom:0; border-color:#EAEEF3; border-style:solid; border-width:2px; margin-bottom:20px; margin-left:0; margin-right:0; margin-top:20px">
+              <p id="footer" style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; color:#A9B3BC; text-align:center" align="center">
                 Cette adresse e-mail ne peut pas recevoir de réponse. Plus d’informations dans la section Aide de Misakey.
                 <br> © Misakey SAS, 66 avenue des champs Elysée, 75008 Paris, France
               </p>
@@ -88,4 +91,3 @@
       </center>
     </body>
   </html>
-  

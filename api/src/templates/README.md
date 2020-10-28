@@ -23,7 +23,8 @@ You can use [this tool](https://cssminifier.com/)
 
 #### Inlinize CSS
 
-You can use [Mailchimp inline-css tool](https://templates.mailchimp.com/resources/inline-css/)
+You can use [this tool](https://premailer.io/) (previously we used: [Mailchimp inline-css tool](https://templates.mailchimp.com/resources/inline-css/), but it's less complete)
+
 
 ### HTML to TXT
 

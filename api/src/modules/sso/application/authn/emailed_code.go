@@ -58,7 +58,7 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identity identity.Iden
 		"to":   identity.Identifier.Value,
 		"code": decodedCode.Code,
 	}
-	subject := fmt.Sprintf("Your confirmation code is %s", decodedCode.Code)
+	subject := fmt.Sprintf("Votre code de confirmation est %s", decodedCode.Code)
 	content, err := as.templates.NewEmail(ctx, identity.Identifier.Value, subject, "code", data)
 	if err != nil {
 		return err
