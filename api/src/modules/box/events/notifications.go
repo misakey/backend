@@ -23,7 +23,10 @@ func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *r
 	}
 
 	// get box settings for all users
-	boxSettings, err := ListBoxSettings(ctx, exec, e.BoxID)
+	filters := BoxSettingFilters{
+		BoxIDs: []string{e.BoxID},
+	}
+	boxSettings, err := ListBoxSettings(ctx, exec, filters)
 	if err != nil {
 		return err
 	}

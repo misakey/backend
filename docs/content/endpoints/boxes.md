@@ -84,7 +84,7 @@ HTTP 200 OK
 
 _JSON Body:_
 ```json
-{{% include "include/box.json" %}}
+{{% include "include/box-read.json" %}}
 ```
 
 ### 2.2.3. notable error reponses
@@ -350,7 +350,7 @@ HTTP 200 OK
 A list of event is returned.
 ```json
 [
-  {{% include "include/box-list.json" %}}
+  {{% include "include/box-read.json" %}}
 ]
 ```
 

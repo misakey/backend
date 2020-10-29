@@ -40,5 +40,5 @@ func (app *BoxApplication) ReadBox(ctx context.Context, genReq request.Request) 
 		return nil, err
 	}
 
-	return boxes.GetWithEventsCount(ctx, app.DB, app.RedConn, identityMapper, req.boxID, acc.IdentityID)
+	return boxes.GetWithSenderInfo(ctx, app.DB, app.RedConn, identityMapper, req.boxID, acc.IdentityID)
 }

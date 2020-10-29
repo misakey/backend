@@ -21,9 +21,10 @@ type Box struct {
 	Lifecycle string    `json:"lifecycle"`
 
 	// aggregated data
-	EventsCount null.Int   `json:"events_count,omitempty"`
-	Creator     SenderView `json:"creator"`
-	LastEvent   View       `json:"last_event"`
+	EventsCount null.Int    `json:"events_count,omitempty"`
+	Creator     SenderView  `json:"creator"`
+	LastEvent   View        `json:"last_event"`
+	BoxSettings *BoxSetting `json:"settings,omitempty"`
 }
 
 type computer struct {

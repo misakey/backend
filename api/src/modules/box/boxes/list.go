@@ -22,7 +22,7 @@ func Get(ctx context.Context, exec boil.ContextExecutor, identities *events.Iden
 	return events.Compute(ctx, boxID, exec, identities, nil)
 }
 
-func GetWithEventsCount(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identities *events.IdentityMapper, boxID, identityID string) (*events.Box, error) {
+func GetWithSenderInfo(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identities *events.IdentityMapper, boxID, identityID string) (*events.Box, error) {
 	box, err := events.Compute(ctx, boxID, exec, identities, nil)
 	if err != nil {
 		return nil, err
@@ -31,9 +31,15 @@ func GetWithEventsCount(ctx context.Context, exec boil.ContextExecutor, redConn 
 	// fill the eventCounts attribute
 	eventsCount, err := events.GetCountForIdentity(ctx, redConn, identityID, boxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describef("counting new events")
+		return nil, merror.Transform(err).Describe("counting new events")
 	}
 	box.EventsCount = null.IntFrom(eventsCount)
+
+	boxSetting, err := events.GetBoxSetting(ctx, exec, identityID, boxID)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("getting box setting")
+	}
+	box.BoxSettings = boxSetting
 
 	return &box, nil
 }
@@ -71,6 +77,7 @@ func ListSenderBoxes(
 	}
 
 	// 3. compute all boxes
+	boxIDs := make([]string, len(list))
 	boxes = make([]*events.Box, len(list))
 	for i, e := range list {
 		// TODO (perf): computation in redis
@@ -79,16 +86,38 @@ func ListSenderBoxes(
 			return boxes, merror.Transform(err).Describef("computing box %s", e.BoxID)
 		}
 		boxes[i] = &box
+		boxIDs = append(boxIDs, box.ID)
 	}
 
+	// 4. retrieve box settings
+	settingsFilters := events.BoxSettingFilters{
+		BoxIDs:     boxIDs,
+		IdentityID: senderID,
+	}
+	boxSettings, err := events.ListBoxSettings(ctx, exec, settingsFilters)
+	if err != nil {
+		return boxes, merror.Transform(err).Describe("listing box settings")
+	}
+	indexedBoxSettings := make(map[string]events.BoxSetting, len(boxSettings))
+	for _, boxSetting := range boxSettings {
+		indexedBoxSettings[boxSetting.BoxID] = *boxSetting
+	}
+
+	// 5. add events count and box settings data to boxes
 	for _, box := range boxes {
 		// we won’t return an error since the list
 		// can still be returned
 		// with a wrong amount of event counts
 		box.EventsCount = null.IntFrom(events.ComputeCount(ctx, redConn, senderID, box.ID))
+
+		// add box settings
+		boxSetting, ok := indexedBoxSettings[box.ID]
+		if !ok {
+			boxSetting = *events.GetDefaultBoxSetting(senderID, box.ID)
+		}
+		box.BoxSettings = &boxSetting
 	}
 
-	// 5. eventually return the boxes list
 	return boxes, nil
 }
 

@@ -16,6 +16,11 @@ type BoxSetting struct {
 	Muted      bool   `json:"muted"`
 }
 
+type BoxSettingFilters struct {
+	BoxIDs     []string
+	IdentityID string
+}
+
 func UpdateBoxSetting(ctx context.Context, exec boil.ContextExecutor, boxSetting BoxSetting) error {
 	toUpsert := sqlboiler.BoxSetting{
 		IdentityID: boxSetting.IdentityID,
@@ -36,12 +41,8 @@ func GetBoxSetting(ctx context.Context, exec boil.ContextExecutor, identityID, b
 		return nil, err
 	}
 	if err != nil && err == sql.ErrNoRows {
-		// we set a default value
-		boxSetting = &sqlboiler.BoxSetting{
-			IdentityID: identityID,
-			BoxID:      boxID,
-			Muted:      false,
-		}
+		// we return a default value
+		return GetDefaultBoxSetting(identityID, boxID), nil
 	}
 
 	return &BoxSetting{
@@ -51,9 +52,23 @@ func GetBoxSetting(ctx context.Context, exec boil.ContextExecutor, identityID, b
 	}, nil
 }
 
-func ListBoxSettings(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]*BoxSetting, error) {
-	mods := []qm.QueryMod{
-		sqlboiler.BoxSettingWhere.BoxID.EQ(boxID),
+func GetDefaultBoxSetting(identityID, boxID string) *BoxSetting {
+	return &BoxSetting{
+		IdentityID: identityID,
+		BoxID:      boxID,
+		Muted:      false,
+	}
+}
+
+func ListBoxSettings(ctx context.Context, exec boil.ContextExecutor, filters BoxSettingFilters) ([]*BoxSetting, error) {
+	mods := []qm.QueryMod{}
+
+	if filters.IdentityID != "" {
+		sqlboiler.BoxSettingWhere.IdentityID.EQ(filters.IdentityID)
+	}
+
+	if len(filters.BoxIDs) != 0 {
+		sqlboiler.BoxSettingWhere.BoxID.IN(filters.BoxIDs)
 	}
 
 	dbBoxSettings, err := sqlboiler.BoxSettings(mods...).All(ctx, exec)
@@ -62,12 +77,12 @@ func ListBoxSettings(ctx context.Context, exec boil.ContextExecutor, boxID strin
 	}
 
 	boxSettings := make([]*BoxSetting, len(dbBoxSettings))
-	for _, boxSetting := range boxSettings {
-		boxSettings = append(boxSettings, &BoxSetting{
+	for idx, boxSetting := range dbBoxSettings {
+		boxSettings[idx] = &BoxSetting{
 			IdentityID: boxSetting.IdentityID,
 			BoxID:      boxSetting.BoxID,
 			Muted:      boxSetting.Muted,
-		})
+		}
 	}
 
 	return boxSettings, nil

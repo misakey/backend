@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -14,6 +13,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/notifications"
 )
 
 type UpdateBoxSettingsRequest struct {
@@ -33,11 +33,6 @@ func (req *UpdateBoxSettingsRequest) BindAndValidate(eCtx echo.Context) error {
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
 		v.Field(&req.identityID, v.Required, is.UUIDv4),
 	)
-}
-
-type BoxSettingsMessage struct {
-	Type   string            `json:"type"`
-	Object events.BoxSetting `json:"object"`
 }
 
 func (app *BoxApplication) UpdateBoxSettings(ctx context.Context, genReq request.Request) (interface{}, error) {
@@ -71,13 +66,10 @@ func (app *BoxApplication) UpdateBoxSettings(ctx context.Context, genReq request
 	}
 
 	// send the update to websockets
-	_ = app.RedConn.Publish(
-		fmt.Sprintf("user_%s:ws", req.identityID),
-		BoxSettingsMessage{
-			Type:   "box.settings",
-			Object: boxSetting,
-		},
-	)
+	notifications.SendUpdate(ctx, app.RedConn, acc.IdentityID, &notifications.Update{
+		Type:   "box.settings",
+		Object: boxSetting,
+	})
 
 	return boxSetting, nil
 }
