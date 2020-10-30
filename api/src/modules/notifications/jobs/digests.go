@@ -97,7 +97,7 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 			"accountBaseURL": fmt.Sprintf("https://%s/accounts/%s", dj.domain, id),
 		}
 
-		subject := "Misakey - Nouveau(x) messages"
+		subject := "Misakey - Nouveau(x) message(s)"
 		template := "notification"
 		if digestInfo.identity.AccountID.IsZero() {
 			template = "notificationNoAccount"
