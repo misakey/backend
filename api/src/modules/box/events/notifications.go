@@ -37,21 +37,21 @@ func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *r
 
 	// delete the notification sender id and the
 	// senders who muted the box from the list
-	for i, id := range memberIDs {
+	filteredMemberIDs := memberIDs[:0]
+	for _, id := range memberIDs {
 		muted, ok := isMuted[e.SenderID]
-		if id == e.SenderID || (ok && muted) {
-			memberIDs = append(memberIDs[:i], memberIDs[i+1:]...)
-			break
+		if id != e.SenderID && !(ok && muted) {
+			filteredMemberIDs = append(filteredMemberIDs, id)
 		}
 	}
 
 	// incr toNotify for a given box for all received identityIDs
-	if err := IncrToNotify(ctx, redConn, memberIDs, e.BoxID); err != nil {
+	if err := IncrToNotify(ctx, redConn, filteredMemberIDs, e.BoxID); err != nil {
 		return err
 	}
 
 	// incr counts for a given box for all received identityIDs
-	return IncrCounts(ctx, redConn, memberIDs, e.BoxID)
+	return IncrCounts(ctx, redConn, filteredMemberIDs, e.BoxID)
 
 }
 
