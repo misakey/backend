@@ -39,7 +39,7 @@ func notify(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *r
 	// senders who muted the box from the list
 	filteredMemberIDs := memberIDs[:0]
 	for _, id := range memberIDs {
-		muted, ok := isMuted[e.SenderID]
+		muted, ok := isMuted[id]
 		if id != e.SenderID && !(ok && muted) {
 			filteredMemberIDs = append(filteredMemberIDs, id)
 		}
