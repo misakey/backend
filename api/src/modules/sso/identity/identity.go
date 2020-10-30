@@ -20,6 +20,7 @@ type Identity struct {
 	AvatarURL     null.String `json:"avatar_url"`
 	Color         null.String `json:"color"`
 	Level         int         `json:"level"`
+	Pubkey        null.String `json:"pubkey"`
 
 	// Identifier is always returned within the identity entity as a nested JSON object
 	Identifier domain.Identifier `json:"identifier"`
@@ -45,6 +46,7 @@ func (i Identity) toSQLBoiler() *sqlboiler.Identity {
 		AvatarURL:     i.AvatarURL,
 		Color:         i.Color,
 		Level:         i.Level,
+		Pubkey:        i.Pubkey,
 	}
 }
 
@@ -58,6 +60,7 @@ func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 	i.AvatarURL = src.AvatarURL
 	i.Color = src.Color
 	i.Level = src.Level
+	i.Pubkey = src.Pubkey
 
 	if src.R != nil {
 		identifier := src.R.Identifier
@@ -121,4 +124,16 @@ func (ids IdentityService) Update(ctx context.Context, identity *Identity) error
 		return merror.Transform(err).Describe("updating identity")
 	}
 	return nil
+}
+
+func (ids IdentityService) ListByIdentifier(ctx context.Context, identifier domain.Identifier) ([]*Identity, error) {
+	identifier, err := ids.identifierService.GetByKindValue(ctx, identifier)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("retrieving identifier")
+	}
+
+	return ids.identities.List(ctx,
+		IdentityFilters{
+			IdentifierID: null.StringFrom(identifier.ID),
+		})
 }

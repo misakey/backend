@@ -12,6 +12,11 @@ often to give the recipient account a new cryptographic secret (key share, key..
 The frontend regularly lists its crypto actions,
 processes them, and deletes the ones that have been processed.
 
+Right now the only type of crypto action is `invitation`,
+in which case the `encrypted` part decrypts to
+the user key share of the box identified by `box_id`
+(this is the same data one receives through an invitation link).
+
 ## Listing One's Crypto Actions
 
 ```bash

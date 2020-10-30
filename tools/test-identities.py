@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import json
 import os
 import sys
@@ -54,7 +53,6 @@ with testContext('check profile routes'):
         expected_status_code=200
     )
     assert r.json()['email'] == True
-
 
     # another connected identities cannot change another identities profile config
     s2.get(

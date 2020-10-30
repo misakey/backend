@@ -31,7 +31,7 @@ with testContext('init invitation changing link test'):
     # retrieve the corresponding access id and join the box
     r = s1.get(f'{URL_PREFIX}/boxes/{box_id}/accesses')
     current_invitation_link_event = r.json()[0]
-    join_box(s1, box_id)
+    join_box(s2, box_id)
 
 with testContext('cannot reset invitation link if one is already active'):
     new_invitation_link_event = create_add_invitation_link_event()

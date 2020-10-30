@@ -4,6 +4,7 @@ but it logs the requests to a file in "/tmp",
 and you can provide a "expected_status_code" during calls'''
 import datetime
 import json
+import os
 import sys
 import os
 from urllib.parse import urlparse
@@ -12,6 +13,8 @@ import requests
 import urllib3; urllib3.disable_warnings()
 
 STATUS_OK = 200
+STATUS_CREATED = 201
+STATUS_BAD_REQUEST = 400
 STATUS_NOT_FOUND = 404
 STATUS_CONFLICT = 409
 
@@ -87,9 +90,11 @@ class Session(requests.Session):
         return call_request_fn_decorated(super().put, *args, **kwargs)
     def delete(self, *args, **kwargs):
         return call_request_fn_decorated(super().delete, *args, **kwargs)
+    def patch(self, *args, **kwargs):
+        return call_request_fn_decorated(super().patch, *args, **kwargs)
 
 
-def pretty_string_of_response(response):
+def pretty_string_of_response(response: requests.Response):
     try:
         body = json.dumps(response.json(), indent=4)
     except ValueError:

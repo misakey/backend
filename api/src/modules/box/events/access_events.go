@@ -23,6 +23,7 @@ import (
 type accessContent struct {
 	RestrictionType string `json:"restriction_type"`
 	Value           string `json:"value"`
+	AutoInvite      bool   `json:"auto_invite"`
 }
 
 func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionService entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
@@ -79,6 +80,23 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 		err = applyInvitationLinkSideEffects(ctx, e, c, forServerNoStoreJSON, exec, redConn, identityMapper, cryptoActionService)
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	if c.RestrictionType == "identifier" {
+		// potential side effects of an "identifier" access
+		// (auto invitation)
+		if c.AutoInvite {
+			if forServerNoStoreJSON.Valid {
+				err = cryptoActionService.CreateInvitationActions(ctx, e.SenderID, e.BoxID, c.Value, forServerNoStoreJSON)
+				if err != nil {
+					return nil, merror.Transform(err).Describe("creating crypto actions")
+				}
+			} else {
+				return nil, merror.BadRequest().Detail("for_server_no_store", merror.DVRequired)
+			}
+		} else if forServerNoStoreJSON.Valid {
+			return nil, merror.BadRequest().Detail("auto_invite", merror.DVInvalid)
 		}
 	}
 

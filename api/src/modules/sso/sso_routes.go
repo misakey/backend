@@ -104,6 +104,12 @@ func bindRoutes(
 		ss.AttachCoupon,
 		request.ResponseNoContent,
 	))
+	identityPath.GET(oidcHandlers.NewACR2(
+		"/pubkey",
+		func() request.Request { return &application.IdentityPubkeyByIdentifierQuery{} },
+		ss.GetIdentityPubkeyByIdentifier,
+		request.ResponseOK,
+	))
 	// NOTE: part of the auth flow - the path would be clearer with /auth/identities
 	identityPath.PUT(authnProcessHandlers.NewOptional(
 		"/authable",

@@ -235,11 +235,15 @@ The add of an access is represented by this event shape
     "type": "access.add",
     "content": {
         "restriction_type": "(string) (one of : invitation_link, identifier or email_domain): the type of restriction the access bears",
-        "value": "(string): a value describing the restriction"
+        "value": "(string): a value describing the restriction",
+        "auto_invite": "(optional) (boolean)",
     },
     "referrer_id": null
 }
 ```
+
+Where `auto_invite` is only required if `restriction_type` is `identifier` under some circumstances
+(see Section “to a specific identifier”).
 
 #### 2.5.1.1. Via Invitation Link
 
@@ -270,6 +274,29 @@ If another kind of access restriction exists, both the invitation link and the o
     "referrer_id": null
 }
 ```
+
+Or, in order to automatically invite the identifier
+(through [crypto actions](/concepts/crypto-actions)):
+
+```json
+{
+    "type": "access.add",
+    "content": {
+        "restriction_type": "(string) (must be: identifier)",
+        "value": "(string): the identifier value",
+        "auto_invite": true
+    },
+    "for_server_no_store": {
+      "a6cBxJMq8": "(encrypted)",
+      "b7x94c1wG": "(encrypted)"
+    }
+}
+```
+
+Where `for_server_no_store` is a mapping from each identity public key of the identifier being added
+to the encrypted crypto action to send to the corresponding identity.
+The crypto actions created will have the `invitation` type.
+
 
 #### 2.5.1.3. To an entire email domain
 

@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
@@ -72,6 +73,7 @@ type PartialUpdateIdentityCmd struct {
 	DisplayName   string      `json:"display_name"`
 	Notifications string      `json:"notifications"`
 	Color         null.String `json:"color"`
+	Pubkey        null.String `json:"pubkey"`
 }
 
 // Validate the IdentityAuthableCmd
@@ -117,6 +119,10 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 
 	if cmd.Color.Valid {
 		identity.Color = cmd.Color
+	}
+
+	if cmd.Pubkey.Valid {
+		identity.Pubkey = cmd.Pubkey
 	}
 
 	return nil, sso.identityService.Update(ctx, &identity)
@@ -307,4 +313,52 @@ func (sso *SSOService) AttachCoupon(ctx context.Context, gen request.Request) (i
 	// }
 
 	// return nil
+}
+
+type IdentityPubkeyByIdentifierQuery struct {
+	IdentifierValue string `query:"identifier_value"`
+}
+
+func (query *IdentityPubkeyByIdentifierQuery) BindAndValidate(eCtx echo.Context) error {
+	err := eCtx.Bind(query)
+	if err != nil {
+		return merror.BadRequest().Describe(err.Error())
+	}
+	return v.ValidateStruct(query,
+		v.Field(&query.IdentifierValue, v.Required),
+	)
+}
+
+func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen request.Request) (interface{}, error) {
+	query := gen.(*IdentityPubkeyByIdentifierQuery)
+
+	// must only be authenticated
+	acc := oidc.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merror.Forbidden()
+	}
+
+	identities, err := sso.identityService.ListByIdentifier(ctx,
+		domain.Identifier{
+			Value: query.IdentifierValue,
+			Kind:  domain.EmailIdentifier,
+		},
+	)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("retrieving identities")
+	}
+
+	var result []string
+	for _, identity := range identities {
+		if !identity.Pubkey.Valid {
+			// If one of the identities does not have a public key
+			// then invitation should be made through an invitation link
+			// so let's just not expose the public keys
+			return make([]string, 0), nil
+		} else {
+			result = append(result, identity.Pubkey.String)
+		}
+	}
+
+	return result, nil
 }

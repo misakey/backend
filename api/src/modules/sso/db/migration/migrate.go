@@ -21,6 +21,7 @@ func Launch() {
 	initAddCouponAndIdentityLevel()
 	initCreateCryptoActionsTable()
 	initCreateIdentityProfileSharingConsentAndRemoveIdentityConfirmed()
+	initAddIdentityPubkey()
 
 	db.StartMigration(os.Getenv("DSN_SSO"), os.Getenv("MIGRATION_DIR_SSO"))
 }

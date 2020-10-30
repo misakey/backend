@@ -127,7 +127,7 @@ func InitModule(router *echo.Echo) Process {
 	identityService := identity.NewIdentityService(identityRepo, profileSharingConsentRepo, avatarRepo, identifierService)
 	backupArchiveService := backuparchive.NewBackupArchiveService(backupArchiveRepo)
 	usedCouponService := coupon.NewUsedCouponService(usedCouponRepo)
-	cryptoActionService := cryptoaction.NewCryptoActionService(cryptoActionRepo)
+	cryptoActionService := cryptoaction.NewCryptoActionService(cryptoActionRepo, identityService)
 	authFlowService := authflow.NewAuthFlowService(
 		identityService, hydraRepo,
 		viper.GetString("authflow.login_page_url"),

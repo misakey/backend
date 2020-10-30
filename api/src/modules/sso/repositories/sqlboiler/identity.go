@@ -34,6 +34,7 @@ type Identity struct {
 	CreatedAt     time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	Color         null.String `boil:"color" json:"color,omitempty" toml:"color" yaml:"color,omitempty"`
 	Level         int         `boil:"level" json:"level" toml:"level" yaml:"level"`
+	Pubkey        null.String `boil:"pubkey" json:"pubkey,omitempty" toml:"pubkey" yaml:"pubkey,omitempty"`
 
 	R *identityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L identityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -50,6 +51,7 @@ var IdentityColumns = struct {
 	CreatedAt     string
 	Color         string
 	Level         string
+	Pubkey        string
 }{
 	ID:            "id",
 	AccountID:     "account_id",
@@ -61,6 +63,7 @@ var IdentityColumns = struct {
 	CreatedAt:     "created_at",
 	Color:         "color",
 	Level:         "level",
+	Pubkey:        "pubkey",
 }
 
 // Generated where
@@ -85,6 +88,7 @@ var IdentityWhere = struct {
 	CreatedAt     whereHelpertime_Time
 	Color         whereHelpernull_String
 	Level         whereHelperint
+	Pubkey        whereHelpernull_String
 }{
 	ID:            whereHelperstring{field: "\"identity\".\"id\""},
 	AccountID:     whereHelpernull_String{field: "\"identity\".\"account_id\""},
@@ -96,6 +100,7 @@ var IdentityWhere = struct {
 	CreatedAt:     whereHelpertime_Time{field: "\"identity\".\"created_at\""},
 	Color:         whereHelpernull_String{field: "\"identity\".\"color\""},
 	Level:         whereHelperint{field: "\"identity\".\"level\""},
+	Pubkey:        whereHelpernull_String{field: "\"identity\".\"pubkey\""},
 }
 
 // IdentityRels is where relationship names are stored.
@@ -134,8 +139,8 @@ func (*identityR) NewStruct() *identityR {
 type identityL struct{}
 
 var (
-	identityAllColumns            = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "notifications", "avatar_url", "created_at", "color", "level"}
-	identityColumnsWithoutDefault = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "avatar_url", "color"}
+	identityAllColumns            = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "notifications", "avatar_url", "created_at", "color", "level", "pubkey"}
+	identityColumnsWithoutDefault = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "avatar_url", "color", "pubkey"}
 	identityColumnsWithDefault    = []string{"notifications", "created_at", "level"}
 	identityPrimaryKeyColumns     = []string{"id"}
 )

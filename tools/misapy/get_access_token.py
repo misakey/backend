@@ -9,6 +9,7 @@ from urllib.parse import parse_qs as parse_query_string
 
 import requests
 from . import http
+from .sessions import Session
 from .check_response import check_response, assert_fn
 from .password_hashing import hash_password
 from .container_access import get_emailed_code
@@ -196,16 +197,14 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
 
 def get_authenticated_session(email=None, require_account=False, acr_values=None, reset_password=False):
     creds = get_credentials(email, require_account, acr_values, reset_password)
-    session = http.Session()
+    session = Session(identity_id=creds.identity_id, email=creds.email)
     cookie_obj = requests.cookies.create_cookie(domain='api.misakey.com.local',name='accesstoken',value=creds.access_token)
     session.cookies.set_cookie(cookie_obj)
     cookie_obj = requests.cookies.create_cookie(domain='api.misakey.com.local',name='tokentype',value='bearer')
     session.cookies.set_cookie(cookie_obj)
     session.headers.update({'X-CSRF-Token': creds.csrf_token})
     print(f'Tok - {creds.identity_id}: {creds.access_token}')
-    session.email = creds.email
     session.account_id = creds.account_id
-    session.identity_id = creds.identity_id
     session.identifier_id = creds.identifier_id
     session.display_name = creds.display_name
     return session

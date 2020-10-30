@@ -80,6 +80,7 @@ _JSON Body:_
     "notifications": "minimal",
     "avatar_url": null,
     "identifier_id": "abc9dd47-0c4e-4ef3-ae27-0c21ea6d7450",
+    "pubkey": "(null or url-safe base64)",
     "identifier": {
       "id": "e5d889de-6be1-4201-bb7e-0772fbbf41e2",
       "value": "iamagreat@dpo.com",
@@ -122,9 +123,10 @@ _Headers:_
 _Path Parameters:_
 - `id` (uuid string): the identity unique id.
 
-_Body Parameters:_
+The fiels that can be patched are:
 - `display_name` (string): the identity display name.
 - `notifications` (string): notification setting. Must be one of `minimal`, `moderate`, `frequent`.
+- `pubkey`
 
 ### 2.4.2. success response
 
@@ -189,6 +191,29 @@ _Code:_
 ```bash
 HTTP 204 No Content
 ```
+
+## 2.7 Getting All Identity Public Keys Associated to an Identifier
+
+This must be used to build data for automatic invitations to boxes
+(see [`access.add`-type events](/concepts/box-events/#2512-to-a-specific-identifier))
+
+```bash
+GET /identities/pubkey?identifier_value=michel@misakey.com
+```
+
+Success response:
+
+```bash
+HTTP 200 OK
+```
+
+```json
+[
+  "urlSafeBase64PubKey",
+  "anotherUrlSafeBase64PubKey"
+]
+```
+
 
 # 3. Identity Profiles
 

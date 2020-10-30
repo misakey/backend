@@ -44,3 +44,7 @@ func (ids IdentifierService) RequireIdentifier(ctx context.Context, identifier *
 	// otherwise at this point we know we got a not found error so we create the identifier
 	return ids.identifiers.Create(ctx, identifier)
 }
+
+func (ids IdentifierService) GetByKindValue(ctx context.Context, identifier domain.Identifier) (domain.Identifier, error) {
+	return ids.identifiers.GetByKindValue(ctx, identifier.Kind, identifier.Value)
+}
