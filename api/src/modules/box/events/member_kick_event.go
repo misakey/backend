@@ -2,14 +2,18 @@ package events
 
 import (
 	"context"
+	"encoding/json"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/go-redis/redis/v7"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
 type MemberKickContent struct {
@@ -64,4 +68,27 @@ func KickDeprecatedMembers(
 		}
 	}
 	return kicks, nil
+}
+
+func notifyKick(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ files.FileStorageRepo, _ Metadata) error {
+	// TODO (perf): use metadahandlers to bear already retrieved data accross handlers ?
+	box, err := Compute(ctx, e.BoxID, exec, identities, e)
+	if err != nil {
+		return merror.Transform(err).Describe("computing box")
+	}
+
+	// notify the kicked identity they have been kicked.
+	kickDetails := struct {
+		BoxID    string `json:"id"`
+		BoxTitle string `json:"title"`
+	}{
+		BoxID:    box.ID,
+		BoxTitle: box.Title,
+	}
+	bytes, err := json.Marshal(kickDetails)
+	if err != nil {
+		return merror.Transform(err).Describe("marshalling kick details")
+	}
+	identities.CreateNotifs(ctx, []string{e.SenderID}, "member.kick", null.JSONFrom(bytes))
+	return nil
 }

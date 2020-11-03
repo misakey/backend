@@ -1,6 +1,8 @@
 package sso
 
 import (
+	"strconv"
+
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -80,6 +82,34 @@ func bindRoutes(
 		ss.DeleteAvatar,
 		request.ResponseNoContent,
 	))
+	identityPath.POST(oidcHandlers.NewACR2(
+		"/:id/coupons",
+		func() request.Request { return &application.AttachCouponCmd{} },
+		ss.AttachCoupon,
+		request.ResponseNoContent,
+	))
+	identityPath.HEAD(oidcHandlers.NewACR1(
+		"/:id/notifications",
+		func() request.Request { return &application.IdentityNotifCountQuery{} },
+		ss.CountIdentityNotification,
+		request.ResponseNoContent,
+		func(ctx echo.Context, count interface{}) error {
+			ctx.Response().Header().Set("X-Total-Count", strconv.Itoa(count.(int)))
+			return nil
+		},
+	))
+	identityPath.GET(oidcHandlers.NewACR1(
+		"/:id/notifications",
+		func() request.Request { return &application.IdentityNotifListQuery{} },
+		ss.ListIdentityNotification,
+		request.ResponseOK,
+	))
+	identityPath.PUT(oidcHandlers.NewACR1(
+		"/:id/notifications/acknowledgement",
+		func() request.Request { return &application.IdentityNotifAckCmd{} },
+		ss.AckIdentityNotification,
+		request.ResponseNoContent,
+	))
 	identityPath.GET(oidcHandlers.NewPublic(
 		"/:id/profile",
 		func() request.Request { return &application.ProfileQuery{} },
@@ -97,12 +127,6 @@ func bindRoutes(
 		func() request.Request { return &application.ConfigProfileQuery{} },
 		ss.GetProfileConfig,
 		request.ResponseOK,
-	))
-	identityPath.POST(oidcHandlers.NewACR2(
-		"/:id/coupons",
-		func() request.Request { return &application.AttachCouponCmd{} },
-		ss.AttachCoupon,
-		request.ResponseNoContent,
 	))
 	identityPath.GET(oidcHandlers.NewACR2(
 		"/pubkey",

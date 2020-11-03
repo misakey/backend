@@ -4,9 +4,13 @@ import (
 	"context"
 	"sync"
 
+	"github.com/volatiletech/null/v8"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 type IdentityMapper struct {
@@ -106,7 +110,14 @@ func (mapper *IdentityMapper) List(ctx context.Context, identityIDs []string, tr
 	return views, nil
 }
 
-func (mapper *IdentityMapper) MapToAccountID(ctx context.Context, identityIDs []string) (map[string]string, error) {
+// Create Identity Notification
+func (mapper *IdentityMapper) CreateNotifs(ctx context.Context, identityIDs []string, nType string, details null.JSON) {
+	if err := mapper.querier.NotificationBulkCreate(ctx, identityIDs, nType, details); err != nil {
+		logger.FromCtx(ctx).Err(err).Msgf("creating %v notifs", identityIDs)
+	}
+}
+
+func (mapper *IdentityMapper) mapToAccountID(ctx context.Context, identityIDs []string) (map[string]string, error) {
 	identities, err := mapper.querier.List(ctx, identity.IdentityFilters{IDs: identityIDs})
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing identities")

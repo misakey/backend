@@ -13,7 +13,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/notifications"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/realtime"
 )
 
 type UpdateBoxSettingsRequest struct {
@@ -58,15 +58,15 @@ func (app *BoxApplication) UpdateBoxSettings(ctx context.Context, genReq request
 		return nil, err
 	}
 
-	// remove the key used to send notifications
+	// remove the key used to send digests
 	if req.Muted {
-		if err := events.DelToNotify(ctx, app.RedConn, req.identityID, req.boxID); err != nil {
-			logger.FromCtx(ctx).Error().Err(err).Msg("could not delete to notify key")
+		if err := events.DelDigestCount(ctx, app.RedConn, req.identityID, req.boxID); err != nil {
+			logger.FromCtx(ctx).Error().Err(err).Msg("could not delete digest key")
 		}
 	}
 
 	// send the update to websockets
-	notifications.SendUpdate(ctx, app.RedConn, acc.IdentityID, &notifications.Update{
+	realtime.SendUpdate(ctx, app.RedConn, acc.IdentityID, &realtime.Update{
 		Type:   "box.settings",
 		Object: boxSetting,
 	})

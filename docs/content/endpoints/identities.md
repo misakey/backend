@@ -1,8 +1,8 @@
 +++
 categories = ["Endpoints"]
-date = "2020-09-11"
+date = "2020-10-27"
 description = "Identities endpoints"
-tags = ["sso", "identities", "api", "endpoints"]
+tags = ["sso", "identities", "api", "endpoints", "notifications"]
 title = "SSO - Identities"
 +++
 
@@ -132,7 +132,7 @@ The fiels that can be patched are:
 
 _Code:_
 ```bash
-HTTP 204 No Content
+HTTP 204 NO CONTENT
 ```
 
 ## 2.5. Upload an avatar
@@ -161,7 +161,7 @@ _Body Parameters (multipart/form\_data):_
 
 _Code:_
 ```bash
-HTTP 204 No Content
+HTTP 204 NO CONTENT
 ```
 
 ## 2.6. Delete an avatar
@@ -189,7 +189,7 @@ _Path Parameters:_
 
 _Code:_
 ```bash
-HTTP 204 No Content
+HTTP 204 NO CONTENT
 ```
 
 ## 2.7 Getting All Identity Public Keys Associated to an Identifier
@@ -290,7 +290,7 @@ with attributes:
 
 _Code:_
 ```bash
-HTTP 204 No Content
+HTTP 204 NO CONTENT
 ```
 
 ## 3.3. Get the identity profile configuration
@@ -328,3 +328,155 @@ _Body Parameters:_
 ```
 with attributes:
 - `email`: (boolean) **true** if shared publicly, **false** if private.
+
+# 4. Identity Notifications
+
+Sometimes, the end-user must know some things happened that are linked to him:
+- they have been kicked out a box: tell the end-user about it...
+- they have reset their password: tell the implication of such a procedure for the crypto...
+- they have just created their account: welcome the end-user...
+
+This notifications are represented via a ressource on server side call identity notifications.
+
+They can be acknowledged by their owner to let the system know they've seen it.
+
+## 4.1. Count unacknowldeged notifications for an identity
+
+This request returns the number of identity notifications that have not been acknowledged yet.
+
+### 4.1.1. request
+
+```bash
+HEAD https://api.misakey.com/identities/:id/notifications
+```
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `tokentype` (optional): must be `bearer`.
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+
+_Path Parameters:_
+- `id` (uuid string): the identity unique id.
+
+### 4.1.2. success response
+
+_Code:_
+```bash
+HTTP 204 NO CONTENT
+```
+_Headers:_
+- `X-Total-Count` (integer): the total count of unacknowledged identity notifications.
+
+
+## 4.2. List notifications for an identity
+
+This request returns the identity notification entities linked to an identity.
+It handles pagination.
+
+### 4.2.1. request
+
+```bash
+GET https://api.misakey.com/identities/:id/notifications?offset=&limit=
+```
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `tokentype` (optional): must be `bearer`.
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+
+_Path Parameters:_
+- `id` (uuid string): the identity unique id.
+
+_Query Parameters:_
+- Pagination ([more info](/concepts/pagination)). Default: infinite.
+
+
+### 4.2.2. success response
+
+_Code:_
+```bash
+HTTP 200 OK
+```
+
+_JSON Body:_
+```json
+[
+  {
+   "id": 11,
+   "type": "user.create_account", // the user has just created an account !
+   "details": null,
+   "created_at": "2038-11-05T00:00:02.000Z",
+   "acknowledged_at": "2038-11-05T00:00:00.000Z",
+  }, 
+  {
+   "id": 34,
+   "type": "member.kick", // the user receiving this have been kicked out of a box
+   "details": {
+     "id": "e5d889de-6be1-4201-bb7e-0772fbbf41e2", // id of the concerned box
+     "title": "Dossier client 33129" // title of the box
+   },
+   "created_at": "2038-11-05T00:00:00.000Z",
+   "acknowledged_at": "2038-11-05T00:00:05.000Z",
+  }, 
+  {
+   "id": 76,
+   "type": "box.lifecycle", // not necessary closed
+   "details": {
+     "id": "da9cf1ac-bdb5-4296-99be-9add90d92a9a", // id of the concerned box
+     "title": "Dossier client 66593", // title of the box
+     "lifecycle": "closed" // planned to have other lifecycle (re-opened, as an example).
+   },
+   "created_at": "2038-11-05T00:00:06.000Z",
+   "acknowledged_at": null,
+  },
+  {
+   "id": 87,
+   "type": "user.reset_password", // the user has reset its password
+   "details": null,
+   "created_at": "2038-11-05T00:00:07.000Z",
+   "acknowledged_at": null,
+  }, 
+]
+```
+
+with attributes for each object of the list:
+- `id`: (integer) a unique integer corresponding to the identity notification.
+- `type`: (string, one of: _member.kick_, _box.lifecycle_, _user.reset_password_, _user.create_account_) the type of notification - details and displayed text should be set considering this value.
+- `details`: (object) (nullable) a JSON object filled or `null` depending of the type of notification (see all JSON example to get info about it)
+- `created_at`: (date) the moment the server created the notification.
+- `acknowledged_at`: (date) (nullable) the moment the end-user has acknowledged the notification.
+
+## 4.3. Acknowledge all notifications for an identity
+
+This request acknowledges all the current unacknowledged notifications for an identity.
+A query parameter `ids` can be filled optionally to only acknowledge some specific notifications.
+
+### 4.3.1. request
+
+```bash
+PUT https://api.misakey.com/identities/:id/notifications/acknowledgement
+```
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): `mid` claim as the identity id.
+- `tokentype` (optional): must be `bearer`.
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+
+_Path Parameters:_
+- `id` (uuid string): the identity unique id.
+
+_Query Parameters:_
+- `ids` (string) (optional): coma-separated list of integer mentioning specific notifications to acknowledege, ex `34,35,65,1`. Ignored if not valid.
+
+### 4.3.2. success response
+
+_Code:_
+```bash
+HTTP 204 NO CONTENT
+```

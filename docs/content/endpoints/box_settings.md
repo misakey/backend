@@ -47,7 +47,7 @@ _JSON Body:_
 
 _Code:_
 ```bash
-HTTP 204 No Content
+HTTP 204 NO CONTENT
 ```
 
 ## 2. Getting a Box Setting

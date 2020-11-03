@@ -8,6 +8,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -180,5 +181,14 @@ func (sso *SSOService) resetPassword(ctx context.Context, cmd PasswordResetCmd, 
 	account.BackupVersion += 1
 
 	// save account
-	return sso.accountService.Update(ctx, &account)
+	if err := sso.accountService.Update(ctx, &account); err != nil {
+		return err
+	}
+
+	// create identity notification about password reset
+	if err := sso.identityService.NotificationCreate(ctx, identity.ID, "user.reset_password", null.JSONFromPtr(nil)); err != nil {
+		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", identity.ID)
+	}
+	return nil
+
 }

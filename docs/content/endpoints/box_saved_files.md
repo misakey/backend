@@ -117,11 +117,11 @@ _Query Parameters:_
 
 _Code:_
 ```bash
-HTTP 204 No Content
+HTTP 204 NO CONTENT
 ```
 
 
-## 4.3 Get the total count of saved files for a user
+## 4. Count saved files for a user
 
 ### 4.3.1. request
 

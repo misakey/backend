@@ -150,6 +150,26 @@ def test_basics(s1, s2):
         },
         expected_status_code=403
     )
+    
+    print('- identity 2 close the box and the identity 1 is notified')
+    r = s2.post(
+        f'{URL_PREFIX}/boxes/{box2_id}/events',
+        json={
+            'type': 'state.lifecycle',
+            'content': {
+                'state': 'closed'
+            }
+        },
+        expected_status_code=201,
+    )
+    r = s1.get(
+        f'{URL_PREFIX}/identities/{s1.identity_id}/notifications?offset=0&limit=2',
+        expected_status_code=200
+    )
+    assert len(r.json()) == 2 # user.account_creation is also there
+    assert r.json()[0]['type'] == 'box.lifecycle'
+    assert r.json()[0]['details']['lifecycle'] == 'closed'
+    assert r.json()[0]['details']['id'] == box2_id
 
     print(f'- boxes listing should return {box2_id} and {box1_id}')
     r = s1.get(f'{URL_PREFIX}/boxes/joined', expected_status_code=200)
@@ -434,6 +454,15 @@ def test_accesses(s1, s2):
         f'{URL_PREFIX}/boxes/{box_id}',
         expected_status_code=403
     )
+
+    print('- identity 2 has been notified about the kick event')
+    r = s2.get(
+        f'{URL_PREFIX}/identities/{s2.identity_id}/notifications',
+        expected_status_code=200
+    )
+    assert len(r.json()) == 2 # user.account_creation is already there so there is 2 notifs
+    assert r.json()[0]['details']['id'] == box_id
+    assert r.json()[0]['type'] == 'member.kick'
 
     print('- identity 1 create acceses and identity 2 cannot access')
     invitation_link_event = create_add_invitation_link_event()

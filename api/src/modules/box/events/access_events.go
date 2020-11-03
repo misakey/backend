@@ -14,10 +14,10 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/keyshares"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
 type accessContent struct {
@@ -26,7 +26,7 @@ type accessContent struct {
 	AutoInvite      bool   `json:"auto_invite"`
 }
 
-func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionService entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionRepo external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")
@@ -77,7 +77,7 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 	// the "&& forServerNoStoreJSON.Valid" is to avoid introducing a breaking change
 	// TODO remove when the frontend implements this feeature
 	if c.RestrictionType == "invitation_link" && forServerNoStoreJSON.Valid {
-		err = applyInvitationLinkSideEffects(ctx, e, c, forServerNoStoreJSON, exec, redConn, identityMapper, cryptoActionService)
+		err = applyInvitationLinkSideEffects(ctx, e, c, forServerNoStoreJSON, exec, redConn, identityMapper, cryptoActionRepo)
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +88,7 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 		// (auto invitation)
 		if c.AutoInvite {
 			if forServerNoStoreJSON.Valid {
-				err = cryptoActionService.CreateInvitationActions(ctx, e.SenderID, e.BoxID, c.Value, forServerNoStoreJSON)
+				err = cryptoActionRepo.CreateInvitationActions(ctx, e.SenderID, e.BoxID, c.Value, forServerNoStoreJSON)
 				if err != nil {
 					return nil, merror.Transform(err).Describe("creating crypto actions")
 				}
@@ -103,7 +103,7 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 	return nil, nil
 }
 
-func applyInvitationLinkSideEffects(ctx context.Context, e *Event, c accessContent, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionService entrypoints.CryptoActionIntraprocessInterface) error {
+func applyInvitationLinkSideEffects(ctx context.Context, e *Event, c accessContent, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionRepo external.CryptoActionRepo) error {
 	forServerNoStore := struct {
 		EncryptedCryptoAction string `json:"encrypted_crypto_action"`
 		MisakeyShare          string `json:"misakey_share"`
@@ -149,7 +149,7 @@ func applyInvitationLinkSideEffects(ctx context.Context, e *Event, c accessConte
 		return merror.Transform(err).Describe("listing box members IDs")
 	}
 
-	accountIDs, err := identityMapper.MapToAccountID(ctx, membersIdentityID)
+	accountIDs, err := identityMapper.mapToAccountID(ctx, membersIdentityID)
 	if err != nil {
 		return merror.Transform(err).Describe("getting members identities")
 	}
@@ -180,7 +180,7 @@ func applyInvitationLinkSideEffects(ctx context.Context, e *Event, c accessConte
 		}
 	}
 
-	err = cryptoActionService.Create(ctx, cryptoActions)
+	err = cryptoActionRepo.CreateCryptoAction(ctx, cryptoActions)
 	if err != nil {
 		return merror.Transform(err).Describe("creating crypto actions")
 	}
@@ -188,7 +188,7 @@ func applyInvitationLinkSideEffects(ctx context.Context, e *Event, c accessConte
 	return nil
 }
 
-func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")

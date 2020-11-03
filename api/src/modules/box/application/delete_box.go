@@ -17,6 +17,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/keyshares"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/quota"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/realtime"
 )
 
 type DeleteBoxRequest struct {
@@ -113,8 +114,22 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 		}
 	}
 
-	// 7. Send event to websockets
-	events.SendDeleteBox(ctx, app.RedConn, req.boxID, acc.IdentityID, memberIDs, boxPublicKey)
+	// 7. Send delete events to websockets
+	bu := realtime.Update{
+		Type: "box.delete",
+		Object: struct {
+			BoxID     string `json:"id"`
+			SenderID  string `json:"sender_id"`
+			PublicKey string `json:"public_key"`
+		}{
+			BoxID:     req.boxID,
+			SenderID:  acc.IdentityID,
+			PublicKey: boxPublicKey,
+		},
+	}
+	for _, memberID := range memberIDs {
+		realtime.SendUpdate(ctx, app.RedConn, memberID, &bu)
+	}
 
 	return nil, nil
 

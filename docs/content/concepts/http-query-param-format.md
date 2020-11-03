@@ -11,5 +11,5 @@ how to format some data types
 in HTTP query parameters:
 
     https://api.misakey.com/fake?
-      dates=2020-04-01T20:22:45.691Z
+      dates=2038-11-05T00:00:00.000Z
       &lists=one,two,three

@@ -1,4 +1,4 @@
-package notifications
+package realtime
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/go-redis/redis/v7"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 )
 
@@ -14,19 +15,11 @@ type Update struct {
 	Object interface{} `json:"object"`
 }
 
-func (u *Update) ToJSON() ([]byte, error) {
-	value, err := json.Marshal(u)
-	if err != nil {
-		return []byte{}, err
-	}
-	return value, nil
-}
-
 func SendUpdate(ctx context.Context, redConn *redis.Client, memberID string, update *Update) {
-
-	msg, err := update.ToJSON()
+	msg, err := json.Marshal(update)
 	if err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("building update")
+		return
 	}
 	logger.FromCtx(ctx).Debug().Msgf("send update to user_%s:ws", memberID)
 	if _, err := redConn.Publish(fmt.Sprintf("user_%s:ws", memberID), msg).Result(); err != nil {

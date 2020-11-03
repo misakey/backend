@@ -1,6 +1,8 @@
 package application
 
 import (
+	"database/sql"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/account"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
@@ -22,6 +24,9 @@ type SSOService struct {
 	backupArchiveService  backuparchive.BackupArchiveService
 	usedCouponService     coupon.UsedCouponService
 	cryptoActionService   cryptoaction.CryptoActionService
+
+	// NOTE: start to remove repositories components by having storer here (cf box modules)
+	sqlDB *sql.DB
 }
 
 func NewSSOService(
@@ -32,6 +37,8 @@ func NewSSOService(
 	backupArchiveService backuparchive.BackupArchiveService,
 	usedCouponService coupon.UsedCouponService,
 	cryptoActionService cryptoaction.CryptoActionService,
+
+	ssoDB *sql.DB,
 ) SSOService {
 	return SSOService{
 		accountService: as, identityService: ids, identifierService: idfs,
@@ -41,5 +48,7 @@ func NewSSOService(
 		backupArchiveService:  backupArchiveService,
 		usedCouponService:     usedCouponService,
 		cryptoActionService:   cryptoActionService,
+
+		sqlDB: ssoDB,
 	}
 }

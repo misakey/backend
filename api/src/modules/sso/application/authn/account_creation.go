@@ -90,6 +90,11 @@ func (as *Service) assertAccountCreation(ctx context.Context, challenge string, 
 	if err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("setting base quota for %s", identity.ID)
 	}
+
+	// create identity notification about account creation
+	if err := as.identityService.NotificationCreate(ctx, identity.ID, "user.create_account", null.JSONFromPtr(nil)); err != nil {
+		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", identity.ID)
+	}
 	return nil
 }
 

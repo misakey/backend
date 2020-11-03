@@ -183,7 +183,7 @@ func listEventAndReferrers(ctx context.Context, exec boil.ContextExecutor, id st
 	mods := []qm.QueryMod{
 		sqlboiler.EventWhere.ID.EQ(id),
 		qm.Or2(sqlboiler.EventWhere.ReferrerID.EQ(null.StringFrom(id))),
-		qm.OrderBy("created_at ASC"),
+		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " ASC"),
 	}
 
 	dbEvents, err := sqlboiler.Events(mods...).All(ctx, exec)

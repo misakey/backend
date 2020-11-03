@@ -2,8 +2,12 @@ package identity
 
 import (
 	"context"
+	"database/sql"
 
+	"github.com/google/uuid"
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories/sqlboiler"
@@ -76,16 +80,31 @@ func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 //
 
 func (ids IdentityService) Create(ctx context.Context, identity *Identity) error {
-	if err := ids.identities.Create(ctx, identity); err != nil {
-		return merror.Transform(err).Describe("creating identity")
+	// generate new UUID
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return merror.Transform(err).Describe("could not generate uuid v4")
 	}
-	return nil
+
+	identity.ID = id.String()
+	// default value is minimal
+	if identity.Notifications == "" {
+		identity.Notifications = "minimal"
+	}
+
+	// convert to sql model
+	return identity.toSQLBoiler().Insert(ctx, ids.sqlDB, boil.Infer())
 }
 
 func (ids IdentityService) Get(ctx context.Context, identityID string) (ret Identity, err error) {
-	if ret, err = ids.identities.Get(ctx, identityID); err != nil {
-		return ret, merror.Transform(err).Describe("getting identity")
+	record, err := sqlboiler.FindIdentity(ctx, ids.sqlDB, identityID)
+	if err == sql.ErrNoRows {
+		return ret, merror.NotFound().Describe(err.Error()).Detail("id", merror.DVNotFound)
 	}
+	if err != nil {
+		return ret, err
+	}
+	ret.fromSQLBoiler(*record)
 
 	// retrieve the related identifier
 	ret.Identifier, err = ids.identifierService.Get(ctx, ret.IdentifierID)
@@ -96,7 +115,36 @@ func (ids IdentityService) Get(ctx context.Context, identityID string) (ret Iden
 }
 
 func (ids IdentityService) List(ctx context.Context, filters IdentityFilters) ([]*Identity, error) {
-	return ids.identities.List(ctx, filters)
+	mods := []qm.QueryMod{}
+	if filters.IdentifierID.Valid {
+		mods = append(mods, sqlboiler.IdentityWhere.IdentifierID.EQ(filters.IdentifierID.String))
+	}
+	if filters.IsAuthable.Valid {
+		mods = append(mods, sqlboiler.IdentityWhere.IsAuthable.EQ(filters.IsAuthable.Bool))
+	}
+	if len(filters.IDs) > 0 {
+		mods = append(mods, sqlboiler.IdentityWhere.ID.IN(filters.IDs))
+	}
+	if filters.AccountID.Valid {
+		mods = append(mods, sqlboiler.IdentityWhere.AccountID.EQ(filters.AccountID))
+	}
+
+	// eager loading
+	mods = append(mods, qm.Load("Identifier"))
+
+	identityRecords, err := sqlboiler.Identities(mods...).All(ctx, ids.sqlDB)
+	identities := make([]*Identity, len(identityRecords))
+	if err == sql.ErrNoRows {
+		return identities, nil
+	}
+	if err != nil {
+		return identities, err
+	}
+
+	for i, record := range identityRecords {
+		identities[i] = newIdentity().fromSQLBoiler(*record)
+	}
+	return identities, nil
 }
 
 func (ids IdentityService) GetAuthableByIdentifierID(ctx context.Context, identifierID string) (Identity, error) {
@@ -104,7 +152,7 @@ func (ids IdentityService) GetAuthableByIdentifierID(ctx context.Context, identi
 		IdentifierID: null.StringFrom(identifierID),
 		IsAuthable:   null.BoolFrom(true),
 	}
-	identities, err := ids.identities.List(ctx, filters)
+	identities, err := ids.List(ctx, filters)
 	if err != nil {
 		return Identity{}, err
 	}
@@ -120,8 +168,12 @@ func (ids IdentityService) GetAuthableByIdentifierID(ctx context.Context, identi
 }
 
 func (ids IdentityService) Update(ctx context.Context, identity *Identity) error {
-	if err := ids.identities.Update(ctx, identity); err != nil {
-		return merror.Transform(err).Describe("updating identity")
+	rowsAff, err := identity.toSQLBoiler().Update(ctx, ids.sqlDB, boil.Infer())
+	if err != nil {
+		return err
+	}
+	if rowsAff == 0 {
+		return merror.NotFound().Describe("no rows affected").Detail("id", merror.DVNotFound)
 	}
 	return nil
 }
@@ -132,7 +184,7 @@ func (ids IdentityService) ListByIdentifier(ctx context.Context, identifier doma
 		return nil, merror.Transform(err).Describe("retrieving identifier")
 	}
 
-	return ids.identities.List(ctx,
+	return ids.List(ctx,
 		IdentityFilters{
 			IdentifierID: null.StringFrom(identifier.ID),
 		})

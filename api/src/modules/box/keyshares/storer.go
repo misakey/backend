@@ -40,7 +40,7 @@ func GetLastForBoxID(
 ) (*BoxKeyShare, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.BoxKeyShareWhere.BoxID.EQ(boxID),
-		qm.OrderBy("created_at DESC"),
+		qm.OrderBy(sqlboiler.BoxKeyShareColumns.CreatedAt + " DESC"),
 	}
 	record, err := sqlboiler.BoxKeyShares(mods...).One(ctx, exec)
 	if err != nil {

@@ -263,7 +263,7 @@ This method is retured when:
 - the end-user has provided a valid login session corresponding to a previous ACR 1 authentication.
 
 :information_source: The authorization server might return first an `emailed_code` authn step in order to proove the user owns the identifier.
-:mag: The `account_creation` will then come as a second authn step as a [More Authentication Required Response](http://localhost:1313/endpoints/auth_flow/#the-more-authentication-required-response).
+:mag: The `account_creation` will then come as a second authn step as a [More Authentication Required Response](http://localhost:1313/endpoints/auth_flow/#622-the-more-authentication-required-response).
 :information_source: This step is skipped if the end-user has provided a valid login session corresponding to a previous ACR 1 authentication.
 
 ## 6. Perform an authentication step in the login flow
@@ -569,7 +569,7 @@ This route does not return any content.
 
 _Code:_
 ```bash
-HTTP 204 No Content
+HTTP 204 NO CONTENT
 ```
 
 ### 7.3. notable error responses
@@ -764,7 +764,7 @@ This route does not return any content.
 
 _Code:_
 ```bash
-HTTP 204 No Content
+HTTP 204 NO CONTENT
 ```
 
 ## Get Backup

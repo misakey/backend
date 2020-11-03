@@ -139,7 +139,7 @@ _JSON Body:_
 }
 ```
 
-## 2.4. 2.4 Get the total count of boxes for the current user
+## 2.4. Count boxes for the current user
 
 ### 2.4.1. request
 
@@ -289,7 +289,7 @@ Only the current valid accesses are returned.
     {
       "id": "f17169e0-61d8-4211-bb9f-bac29fe46d2d",
       "type": "access.add",
-      "server_event_created_at": "2020-04-01T20:22:45.691Z",
+      "server_event_created_at": "2038-11-05T00:00:00.000Z",
       "content": {
           "restriction_type": "email_domain",
           "value": "misakey.com"
@@ -298,7 +298,7 @@ Only the current valid accesses are returned.
     {
       "id": "f17169e0-61d8-4211-bb9f-bac29fe46d2d",
       "type": "access.add",
-      "server_event_created_at": "2020-04-01T20:22:45.691Z",
+      "server_event_created_at": "2038-11-05T00:00:00.000Z",
       "content": {
           "restriction_type": "email",
           "value": "sadin.nicolas7@gmail.com"

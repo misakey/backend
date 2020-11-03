@@ -14,16 +14,16 @@ func GetEventCountKey(identityID, boxID string) string {
 	return fmt.Sprintf("eventCounts:user_%s:%s", identityID, boxID)
 }
 
-func GetToNotifyKey(identityID, boxID string) string {
-	return fmt.Sprintf("toNotify:user_%s:%s", identityID, boxID)
+func GetDigestCountKey(identityID, boxID string) string {
+	return fmt.Sprintf("digestCount:user_%s:%s", identityID, boxID)
 }
 
-func GetAllToNotifyKeysForIdentity(identityID string) string {
-	return fmt.Sprintf("toNotify:user_%s:*", identityID)
+func GetAllDigestCountKeysForIdentity(identityID string) string {
+	return fmt.Sprintf("digestCount:user_%s:*", identityID)
 }
 
-func GetAllToNotifyKeys() string {
-	return "toNotify:*"
+func GetAllDigestCountKeys() string {
+	return "digestCount:*"
 }
 
 func GetEventCountKeys(identityID string) string {

@@ -98,11 +98,10 @@ func initDigestsJob() {
 		log.Fatal().Msg("could not instantiate email renderer")
 	}
 
-	identityRepo := identity.NewIdentitySQLRepo(ssoDBConn)
 	identifierRepo := repositories.NewIdentifierSQLBoiler(ssoDBConn)
 	identifierService := identifier.NewIdentifierService(identifierRepo)
-	identityMapper := events.NewIdentityMapper(identityRepo)
-	identityService := identity.NewIdentityService(identityRepo, nil, nil, identifierService)
+	identityService := identity.NewIdentityService(nil, nil, identifierService, ssoDBConn)
+	identityMapper := events.NewIdentityMapper(identityService)
 
 	digestService, err := jobs.NewDigestJob(frequency, viper.GetString("digests.domain"), boxDBConn, redConn, identityMapper, identityService, emailRepo, emailRenderer)
 	if err != nil {

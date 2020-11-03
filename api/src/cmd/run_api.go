@@ -58,8 +58,8 @@ func initService() {
 	ssoProcess := sso.InitModule(e)
 	boxProcess := box.InitModule(e)
 
-	boxProcess.BoxService.SetIdentityRepo(ssoProcess.IdentityRepo)
-	boxProcess.BoxService.SetCryptoActionsRepo(ssoProcess.CryptoActionRepo)
+	boxProcess.BoxService.SetIdentityRepo(ssoProcess.IdentityIntraProcess)
+	boxProcess.BoxService.SetCryptoActionsRepo(ssoProcess.CryptoActionIntraProcess)
 	ssoProcess.SSOService.AuthenticationService.SetQuotaService(boxProcess.QuotumIntraprocess)
 
 	// finally launch the echo server

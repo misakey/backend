@@ -80,7 +80,7 @@ func CreateCreateEvent(
 	}
 
 	// send notification to creator
-	if err := publish(ctx, &event, exec, redConn, identities, filesRepo, nil); err != nil {
+	if err := sendRealtimeUpdate(ctx, &event, exec, redConn, identities, filesRepo, nil); err != nil {
 		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not send create notification for box %s", event.BoxID)
 	}
 

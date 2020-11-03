@@ -176,8 +176,8 @@ func LastSenderBoxEvents(
 	mods := []qm.QueryMod{
 		qm.Select("DISTINCT ON (box_id) box_id, event.*"),
 		sqlboiler.EventWhere.BoxID.IN(boxIDs),
-		qm.OrderBy("box_id"),
-		qm.OrderBy("created_at DESC"),
+		qm.OrderBy(sqlboiler.EventColumns.BoxID),
+		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " DESC"),
 	}
 
 	if len(etypes) > 0 {

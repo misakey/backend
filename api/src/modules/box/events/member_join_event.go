@@ -3,18 +3,18 @@ package events
 import (
 	"context"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
-
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 )
 
-func doJoin(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func doJoin(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// check that the current sender is not already a box member
 	isMember, err := isMember(ctx, exec, redConn, e.BoxID, e.SenderID)
 	if err != nil {

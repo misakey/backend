@@ -60,8 +60,8 @@ func boxUsersHandler(c echo.Context, wh WebsocketHandler, receivedMsg []byte) er
 		if err := events.DelCounts(c.Request().Context(), wh.boxService.RedConn, obj.SenderID, obj.BoxID); err != nil {
 			logger.FromCtx(c.Request().Context()).Error().Err(err).Msg("could not remove eventCounts key")
 		}
-		if err := events.DelToNotify(c.Request().Context(), wh.boxService.RedConn, obj.SenderID, obj.BoxID); err != nil {
-			logger.FromCtx(c.Request().Context()).Error().Err(err).Msg("could not remove toNotify key")
+		if err := events.DelDigestCount(c.Request().Context(), wh.boxService.RedConn, obj.SenderID, obj.BoxID); err != nil {
+			logger.FromCtx(c.Request().Context()).Error().Err(err).Msg("could not remove digestCount key")
 		}
 		// resend the ack event
 		// to make sure all user websockets get it

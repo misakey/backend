@@ -21,7 +21,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/coupon"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/cryptoaction"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
@@ -84,7 +83,6 @@ func InitModule(router *echo.Echo) Process {
 	// init repositories
 	accountRepo := repositories.NewAccountSQLBoiler(dbConn)
 	identifierRepo := repositories.NewIdentifierSQLBoiler(dbConn)
-	identityRepo := identity.NewIdentitySQLRepo(dbConn)
 	profileSharingConsentRepo := identity.NewProfileSharingConsentSQLRepo(dbConn)
 	authnStepRepo := authn.NewAuthnStepSQLBoiler(dbConn)
 	backupArchiveRepo := repositories.NewBackupArchiveSQLBoiler(dbConn)
@@ -124,7 +122,7 @@ func InitModule(router *echo.Echo) Process {
 	// init services
 	accountService := account.NewAccountService(accountRepo)
 	identifierService := identifier.NewIdentifierService(identifierRepo)
-	identityService := identity.NewIdentityService(identityRepo, profileSharingConsentRepo, avatarRepo, identifierService)
+	identityService := identity.NewIdentityService(profileSharingConsentRepo, avatarRepo, identifierService, dbConn)
 	backupArchiveService := backuparchive.NewBackupArchiveService(backupArchiveRepo)
 	usedCouponService := coupon.NewUsedCouponService(usedCouponRepo)
 	cryptoActionService := cryptoaction.NewCryptoActionService(cryptoActionRepo, identityService)
@@ -152,6 +150,8 @@ func InitModule(router *echo.Echo) Process {
 		backupArchiveService,
 		usedCouponService,
 		cryptoActionService,
+
+		dbConn,
 	)
 	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(
 		viper.GetString("authflow.self_client_id"),
@@ -203,16 +203,15 @@ func InitModule(router *echo.Echo) Process {
 	if len(avatarLocation) > 0 {
 		router.Static("/avatars", avatarLocation)
 	}
-
 	return Process{
-		IdentityRepo:     entrypoints.NewIdentityIntraprocess(identityService),
-		CryptoActionRepo: entrypoints.NewCryptoActionIntraprocess(cryptoActionService),
-		SSOService:       &ssoService,
+		IdentityIntraProcess:     &identityService,
+		CryptoActionIntraProcess: &cryptoActionService,
+		SSOService:               &ssoService,
 	}
 }
 
 type Process struct {
-	SSOService       *application.SSOService
-	IdentityRepo     entrypoints.IdentityIntraprocess
-	CryptoActionRepo entrypoints.CryptoActionIntraprocess
+	SSOService               *application.SSOService
+	IdentityIntraProcess     *identity.IdentityService
+	CryptoActionIntraProcess *cryptoaction.CryptoActionService
 }

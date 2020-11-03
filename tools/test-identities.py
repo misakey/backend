@@ -2,6 +2,7 @@
 import json
 import os
 import sys
+import random
 from time import sleep
 from base64 import b64encode, b64decode
 
@@ -10,6 +11,61 @@ from misapy.box_helpers import create_box_and_post_some_events_to_it, create_add
 from misapy.container_access import list_encrypted_files
 from misapy.get_access_token import get_authenticated_session
 from misapy.test_context import testContext
+
+
+with testContext('check identity notifications routes'):
+    s1 = get_authenticated_session(acr_values=2)
+
+    with testContext('count/get/ack user.account_creation'):
+        r = s1.head(
+            f'{URL_PREFIX}/identities/{s1.identity_id}/notifications',
+            expected_status_code=204
+        )
+        assert r.headers['X-Total-Count'] == '1'
+
+        r = s1.get(
+            f'{URL_PREFIX}/identities/{s1.identity_id}/notifications?offset=0',
+            expected_status_code=200
+        )
+        assert len(r.json()) == 1
+        notif_id = r.json()[0]['id']
+        assert r.json()[0]['type'] == 'user.create_account'
+        assert r.json()[0]['details'] == None
+        assert r.json()[0]['acknowledged_at'] == None
+    
+        # acknowldege random id which is not the existing one
+        id = random.randrange(10000, 100000)
+        r = s1.put(
+            f'{URL_PREFIX}/identities/{s1.identity_id}/notifications?ids={id}',
+            expected_status_code=204
+        )
+        # notif is still there
+        r = s1.head(
+            f'{URL_PREFIX}/identities/{s1.identity_id}/notifications',
+            expected_status_code=204
+        )
+        assert r.headers['X-Total-Count'] == '1'
+        # acknowledge for real the notif
+        r = s1.put(
+            f'{URL_PREFIX}/identities/{s1.identity_id}/notifications?ids={notif_id}',
+            expected_status_code=204
+        )
+        # notif not here anymore
+        r = s1.head(
+            f'{URL_PREFIX}/identities/{s1.identity_id}/notifications',
+            expected_status_code=204
+        )
+        assert r.headers['X-Total-Count'] == '0'
+        # notif acknowledged
+        r = s1.get(
+            f'{URL_PREFIX}/identities/{s1.identity_id}/notifications?offset=0&limit=2',
+            expected_status_code=200
+        )
+        assert len(r.json()) == 1
+        assert r.json()[0]['id'] == notif_id
+        assert r.json()[0]['type'] == 'user.create_account'
+        assert r.json()[0]['details'] == None
+        assert r.json()[0]['acknowledged_at'] != None
 
 
 with testContext('check profile routes'):

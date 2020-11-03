@@ -9,8 +9,8 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/entrypoints"
 )
 
 type Metadata interface{}
@@ -22,7 +22,7 @@ type doHandler func(
 	exec boil.ContextExecutor, // transaction
 	redConn *redis.Client,
 	identityMapper *IdentityMapper,
-	cryptoactions entrypoints.CryptoActionIntraprocessInterface,
+	cryptoactions external.CryptoActionRepo,
 	files files.FileStorageRepo,
 ) (Metadata, error)
 
@@ -36,7 +36,7 @@ type afterHandler func(
 	Metadata,
 ) error
 
-func empty(_ context.Context, _ *Event, _ null.JSON, _ boil.ContextExecutor, _ *redis.Client, _ *IdentityMapper, _ entrypoints.CryptoActionIntraprocessInterface, _ files.FileStorageRepo) (Metadata, error) {
+func empty(_ context.Context, _ *Event, _ null.JSON, _ boil.ContextExecutor, _ *redis.Client, _ *IdentityMapper, _ external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
 	return nil, nil
 }
 
@@ -61,18 +61,18 @@ type EventHandler struct {
 // Do handler is at least responsible for making the event persistent in storage (some events might do it differently though).
 // After handler must perform non-critical actions that might fail without altering the state of the box.
 var eventTypeHandlerMapping = map[string]EventHandler{
-	"state.lifecycle": {doLifecycle, gh(publish, notify)},
+	"state.lifecycle": {doLifecycle, gh(notifyLifecycle, sendRealtimeUpdate, countActivity)},
+	"msg.text":        {doMessage, gh(sendRealtimeUpdate, countActivity, computeUsedSpace)},
+	"msg.file":        {doMessage, gh(sendRealtimeUpdate, countActivity, computeUsedSpace)},
+	"msg.edit":        {doEditMsg, gh(sendRealtimeUpdate, computeUsedSpace)},
+	"msg.delete":      {doDeleteMsg, gh(sendRealtimeUpdate, computeUsedSpace)},
+	"access.add":      {doAddAccess, nil},
+	"access.rm":       {doRmAccess, nil},
+	"member.leave":    {doLeave, gh(sendRealtimeUpdate, countActivity, invalidateCaches)},
+	"member.join":     {doJoin, gh(sendRealtimeUpdate, countActivity, invalidateCaches)},
 
-	"msg.text":   {doMessage, gh(publish, notify, computeUsedSpace)},
-	"msg.file":   {doMessage, gh(publish, notify, computeUsedSpace)},
-	"msg.edit":   {doEditMsg, gh(publish, computeUsedSpace)},
-	"msg.delete": {doDeleteMsg, gh(publish, computeUsedSpace)},
-	"access.add": {doAddAccess, nil},
-	"access.rm":  {doRmAccess, nil},
-
-	"member.leave": {doLeave, gh(publish, notify, invalidateCaches)},
-	"member.join":  {doJoin, gh(publish, notify, invalidateCaches)},
-	"member.kick":  {empty, gh(publish, notify, invalidateCaches)},
+	// never added by end-users directly but the system
+	"member.kick": {empty, gh(notifyKick, sendRealtimeUpdate, countActivity, invalidateCaches)},
 }
 
 // group handlers declaration

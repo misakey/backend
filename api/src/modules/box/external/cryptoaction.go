@@ -8,6 +8,6 @@ import (
 )
 
 type CryptoActionRepo interface {
-	Create(ctx context.Context, actions []domain.CryptoAction) error
+	CreateCryptoAction(ctx context.Context, actions []domain.CryptoAction) error
 	CreateInvitationActions(ctx context.Context, senderID string, boxID string, identifierValue string, actionsData null.JSON) error
 }

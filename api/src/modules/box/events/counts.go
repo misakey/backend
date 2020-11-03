@@ -59,8 +59,8 @@ func GetCountForIdentity(ctx context.Context, redConn *redis.Client, identityID,
 	return eventsCount, nil
 }
 
-// incrCounts for a given box for all received identityIDs
-func IncrCounts(ctx context.Context, redConn *redis.Client, identityIDs []string, boxID string) error {
+// IncrBoxCounts for a given box for all received identityIDs
+func IncrBoxCounts(ctx context.Context, redConn *redis.Client, identityIDs []string, boxID string) error {
 	pipe := redConn.TxPipeline()
 	for _, identityID := range identityIDs {
 		if _, err := pipe.Incr(cache.GetEventCountKey(identityID, boxID)).Result(); err != nil {

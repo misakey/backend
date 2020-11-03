@@ -59,7 +59,7 @@ HTTP 201 Created
   "id": "f17169e0-61d8-4211-bb9f-bac29fe46d2d",
   "type": "msg.txt",
   "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
-  "server_event_created_at": "2020-04-01T20:22:45.691Z",
+  "server_event_created_at": "2038-11-05T00:00:00.000Z",
   "sender": {{% include "include/event-identity.json" 2 %}},
   "content": {
     "encrypted": "UrxdLg+Z5cyeRMz8/zk2aKxRlW9jwKf9FPskm8QO8EeiSm3B+Hj3JbvTdCnbsLVB8bjVC/GHYuzabHogpbXNuBTiFSMau3G81OkSoLDo58q6X8Rq7PE/ULcHhB1sClJ63Qk5DyTOXSPA3yr2LQTY0gfKLSnAT45H3d6w+fg5LEAtsJV3hRAZfiKd0dRjv7UZxS4rUAr2BM5EDA2lGP4az8Vd9xyhSmYiNPPDXEWwBmFFSUM8PaA9Lnectl2VjLLY4mDmhbjnBF+9WntV42Baa4zfP46Zxhq1EbGjPItStWPSZl4onKg1BUP2qcHQBqjoliIiuru7rw3Qd/7zse8A=="
@@ -209,7 +209,6 @@ _Headers:_
 - `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
 _Query Parameters:_
-
 Pagination ([more info](/concepts/pagination)). No pagination by default.
 
 
@@ -265,7 +264,7 @@ HTTP 200 OK
 
 
 
-## 2.5 Get the total count of events for a given box
+## 2.5 Count events for a given box
 
 ### 2.5.1. request
 
@@ -291,7 +290,7 @@ _Headers:_
 - `X-Total-Count` (integer): the total count of events that the user can see.
 
 
-## 2.6 Get the total count of file events for a given box
+## 2.6 Count file events for a given box
 
 ### 2.6.1. request
 

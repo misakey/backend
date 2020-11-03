@@ -123,5 +123,5 @@ or `"deletion"` (if the user requested deletion of the archive).
 ## Response
 
 ```bash
-HTTP 204 No Content
+HTTP 204 NO CONTENT
 ```

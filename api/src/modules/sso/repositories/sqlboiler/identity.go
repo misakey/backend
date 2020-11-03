@@ -109,6 +109,7 @@ var IdentityRels = struct {
 	Identifier                     string
 	AuthenticationSteps            string
 	SenderIdentityCryptoActions    string
+	IdentityNotifications          string
 	IdentityProfileSharingConsents string
 	UsedCoupons                    string
 }{
@@ -116,6 +117,7 @@ var IdentityRels = struct {
 	Identifier:                     "Identifier",
 	AuthenticationSteps:            "AuthenticationSteps",
 	SenderIdentityCryptoActions:    "SenderIdentityCryptoActions",
+	IdentityNotifications:          "IdentityNotifications",
 	IdentityProfileSharingConsents: "IdentityProfileSharingConsents",
 	UsedCoupons:                    "UsedCoupons",
 }
@@ -126,6 +128,7 @@ type identityR struct {
 	Identifier                     *Identifier                        `boil:"Identifier" json:"Identifier" toml:"Identifier" yaml:"Identifier"`
 	AuthenticationSteps            AuthenticationStepSlice            `boil:"AuthenticationSteps" json:"AuthenticationSteps" toml:"AuthenticationSteps" yaml:"AuthenticationSteps"`
 	SenderIdentityCryptoActions    CryptoActionSlice                  `boil:"SenderIdentityCryptoActions" json:"SenderIdentityCryptoActions" toml:"SenderIdentityCryptoActions" yaml:"SenderIdentityCryptoActions"`
+	IdentityNotifications          IdentityNotificationSlice          `boil:"IdentityNotifications" json:"IdentityNotifications" toml:"IdentityNotifications" yaml:"IdentityNotifications"`
 	IdentityProfileSharingConsents IdentityProfileSharingConsentSlice `boil:"IdentityProfileSharingConsents" json:"IdentityProfileSharingConsents" toml:"IdentityProfileSharingConsents" yaml:"IdentityProfileSharingConsents"`
 	UsedCoupons                    UsedCouponSlice                    `boil:"UsedCoupons" json:"UsedCoupons" toml:"UsedCoupons" yaml:"UsedCoupons"`
 }
@@ -301,6 +304,27 @@ func (o *Identity) SenderIdentityCryptoActions(mods ...qm.QueryMod) cryptoAction
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"crypto_action\".*"})
+	}
+
+	return query
+}
+
+// IdentityNotifications retrieves all the identity_notification's IdentityNotifications with an executor.
+func (o *Identity) IdentityNotifications(mods ...qm.QueryMod) identityNotificationQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"identity_notification\".\"identity_id\"=?", o.ID),
+	)
+
+	query := IdentityNotifications(queryMods...)
+	queries.SetFrom(query.Query, "\"identity_notification\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"identity_notification\".*"})
 	}
 
 	return query
@@ -718,6 +742,97 @@ func (identityL) LoadSenderIdentityCryptoActions(ctx context.Context, e boil.Con
 					foreign.R = &cryptoActionR{}
 				}
 				foreign.R.SenderIdentity = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadIdentityNotifications allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (identityL) LoadIdentityNotifications(ctx context.Context, e boil.ContextExecutor, singular bool, maybeIdentity interface{}, mods queries.Applicator) error {
+	var slice []*Identity
+	var object *Identity
+
+	if singular {
+		object = maybeIdentity.(*Identity)
+	} else {
+		slice = *maybeIdentity.(*[]*Identity)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &identityR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &identityR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`identity_notification`),
+		qm.WhereIn(`identity_notification.identity_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load identity_notification")
+	}
+
+	var resultSlice []*IdentityNotification
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice identity_notification")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on identity_notification")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for identity_notification")
+	}
+
+	if singular {
+		object.R.IdentityNotifications = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &identityNotificationR{}
+			}
+			foreign.R.Identity = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.IdentityID {
+				local.R.IdentityNotifications = append(local.R.IdentityNotifications, foreign)
+				if foreign.R == nil {
+					foreign.R = &identityNotificationR{}
+				}
+				foreign.R.Identity = local
 				break
 			}
 		}
@@ -1208,6 +1323,59 @@ func (o *Identity) RemoveSenderIdentityCryptoActions(ctx context.Context, exec b
 		}
 	}
 
+	return nil
+}
+
+// AddIdentityNotifications adds the given related objects to the existing relationships
+// of the identity, optionally inserting them as new records.
+// Appends related to o.R.IdentityNotifications.
+// Sets related.R.Identity appropriately.
+func (o *Identity) AddIdentityNotifications(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*IdentityNotification) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.IdentityID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"identity_notification\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"identity_id"}),
+				strmangle.WhereClause("\"", "\"", 2, identityNotificationPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.IdentityID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &identityR{
+			IdentityNotifications: related,
+		}
+	} else {
+		o.R.IdentityNotifications = append(o.R.IdentityNotifications, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &identityNotificationR{
+				Identity: o,
+			}
+		} else {
+			rel.R.Identity = o
+		}
+	}
 	return nil
 }
 

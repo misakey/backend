@@ -29,7 +29,7 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 
 	logger.FromCtx(ctx).Info().Msgf("starting digests job with frequency %s", dj.frequency)
 
-	digestInfos, identityIDs, err := dj.buildToNotifyInfo(ctx)
+	digestInfos, identityIDs, err := dj.buildDigestCountInfo(ctx)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 					continue
 				}
 			}
-			newMessages, err := dj.redConn.Get(cache.GetToNotifyKey(id, boxID)).Int()
+			newMessages, err := dj.redConn.Get(cache.GetDigestCountKey(id, boxID)).Int()
 			if err != nil {
 				logger.FromCtx(ctx).Error().Err(err).Msgf("could not get new messages for box %s", boxID)
 				continue
@@ -114,21 +114,21 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 			continue
 		}
 
-		//delete the keys toNotify:user_*
-		if err := events.DelAllToNotifyForIdentity(ctx, dj.redConn, id); err != nil {
-			logger.FromCtx(ctx).Error().Err(err).Msgf("could not del toNotify key for user %s", id)
+		//delete the keys digestCount:user_*
+		if err := events.DelAllDigestCountForIdentity(ctx, dj.redConn, id); err != nil {
+			logger.FromCtx(ctx).Error().Err(err).Msgf("could not del digestCount key for user %s", id)
 		}
 	}
 
 	return nil
 }
 
-// BuildToNotifyInfo build useful information to send users notifications
+// BuildDigestCountInfo build useful information to send users notifications
 // It returns a map of digest info per user
 // and a list of user ids to notify
-func (dj *DigestJob) buildToNotifyInfo(ctx context.Context) (map[string]*DigestInfo, []string, error) {
+func (dj *DigestJob) buildDigestCountInfo(ctx context.Context) (map[string]*DigestInfo, []string, error) {
 
-	keys, err := events.GetAllToNotifyKeys(ctx, dj.redConn)
+	keys, err := events.GetAllDigestCountKeys(ctx, dj.redConn)
 	if err != nil {
 		return nil, nil, err
 	}

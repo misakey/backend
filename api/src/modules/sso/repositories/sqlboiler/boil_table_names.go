@@ -10,6 +10,7 @@ var TableNames = struct {
 	CryptoAction                  string
 	Identifier                    string
 	Identity                      string
+	IdentityNotification          string
 	IdentityProfileSharingConsent string
 	UsedCoupon                    string
 }{
@@ -19,6 +20,7 @@ var TableNames = struct {
 	CryptoAction:                  "crypto_action",
 	Identifier:                    "identifier",
 	Identity:                      "identity",
+	IdentityNotification:          "identity_notification",
 	IdentityProfileSharingConsent: "identity_profile_sharing_consent",
 	UsedCoupon:                    "used_coupon",
 }

@@ -47,8 +47,6 @@ func DeleteSavedFile(ctx context.Context, exec boil.ContextExecutor, id string) 
 	return nil
 }
 
-
-
 func CountSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor, identityID string) (int, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.SavedFileWhere.IdentityID.EQ(identityID),
@@ -64,7 +62,7 @@ func CountSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor,
 func ListSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor, identityID string, offset *int, limit *int) ([]SavedFile, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.SavedFileWhere.IdentityID.EQ(identityID),
-		qm.OrderBy("created_at DESC"),
+		qm.OrderBy(sqlboiler.SavedFileColumns.CreatedAt + " DESC"),
 	}
 	// add offset for pagination
 	if offset != nil {
