@@ -231,6 +231,12 @@ func bindRoutes(
 		app.GetVaultUsedSpace,
 		request.ResponseOK,
 	))
+	boxUserPath.POST(oidcHandlerFactory.NewACR2(
+		"/:id/saved-files",
+		func() request.Request { return &application.UploadSavedFileRequest{} },
+		app.UploadSavedFile,
+		request.ResponseCreated,
+	))
 
 	// ----------------------
 	// box-used-space related routes

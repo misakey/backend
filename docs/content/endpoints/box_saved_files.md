@@ -37,7 +37,6 @@ _JSON Body:_
 - `encrypted_file_id` (string) (uuid): id of the encrypted file.
 - `encrypted_metadata` (string): encrypted metadata about the file.
 - `key_fingerprint` (string): fingerprint of the key used to encrypt to file.
-- `created_at` (string) (iso-8601 date): date of creation server-side
 
 ### 2.2. response
 
@@ -148,3 +147,37 @@ HTTP 204 NO CONTENT
 
 _Headers:_
 - `X-Total-Count` (integer): the total count of file saved for a given identity_id.
+
+## 5. Upload directly a file to saved files
+
+### 5.1. request
+
+```bash
+  POST https://api.misakey.com/box-users/:id/saved-files
+```
+
+_Path Parameters:_
+- `id` (uuid string): the identity id.
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the identity of the token must be the same than the one in the request
+- `tokentype`: must be `bearer`
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks, delivered at the end of the auth flow
+
+_Multipart Form Data Body:_
+- `encrypted_metadata` (string): encrypted metadata about the file.
+- `key_fingerprint` (string): fingerprint of the key used to encrypt to file.
+
+### 2.2. response
+
+_Code:_
+```bash
+HTTP 201 CREATED
+```
+
+_JSON Body:_
+```json
+{{% include "include/saved-file.json" %}}
+```
