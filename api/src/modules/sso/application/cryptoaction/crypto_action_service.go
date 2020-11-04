@@ -11,10 +11,11 @@ import (
 )
 
 type cryptoActionRepo interface {
-	Get(ctx context.Context, actionID string) (domain.CryptoAction, error)
+	Get(ctx context.Context, actionID string, accountID string) (domain.CryptoAction, error)
 	List(ctx context.Context, accountID string) ([]domain.CryptoAction, error)
 	Create(ctx context.Context, actions []domain.CryptoAction) error
 	DeleteUntil(ctx context.Context, accountID string, untilTime time.Time) error
+	Delete(ctx context.Context, actionID string, accountID string) error
 }
 
 type CryptoActionService struct {
@@ -44,8 +45,12 @@ func (service CryptoActionService) DeleteCryptoActionsUntil(ctx context.Context,
 	return service.cryptoActions.DeleteUntil(ctx, accountID, untilTime)
 }
 
-func (service CryptoActionService) GetCryptoAction(ctx context.Context, actionID string) (domain.CryptoAction, error) {
-	return service.cryptoActions.Get(ctx, actionID)
+func (service CryptoActionService) DeleteCryptoAction(ctx context.Context, actionID string, accountID string) error {
+	return service.cryptoActions.Delete(ctx, actionID, accountID)
+}
+
+func (service CryptoActionService) GetCryptoAction(ctx context.Context, actionID string, accountID string) (domain.CryptoAction, error) {
+	return service.cryptoActions.Get(ctx, actionID, accountID)
 }
 
 func (service CryptoActionService) CreateInvitationActions(ctx context.Context, senderID string, boxID string, identifierValue string, actionsDataJSON null.JSON) error {

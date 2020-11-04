@@ -28,7 +28,7 @@ def create_crypto_action(owner, sender, box_id, fake_data):
     )
     proc.check_returncode()
 
-with testContext('Listing one\'s actions'):
+with testContext():
     s1 = get_authenticated_session(require_account=True)
     s2 = get_authenticated_session(require_account=True)
 
@@ -44,6 +44,7 @@ with testContext('Listing one\'s actions'):
     for i in range(5):
         create_crypto_action(s1, s2, box_id, f'Fake Data Action {i}')
 
+with testContext('Listing one\'s actions'):
     r = s1.get(f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions')
     check_response(
         r,
@@ -52,6 +53,22 @@ with testContext('Listing one\'s actions'):
         ]
     )
     actions = r.json()
+
+with testContext('Getting one specific action'):
+    action = actions[0]
+    r = s1.get(f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions/{action["id"]}')
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(r.json() == action)
+        ]
+    )
+
+with testContext('Deleting one specific action'):
+    s1.delete(
+        f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions/{action["id"]}',
+        expected_status_code=http.STATUS_NO_CONTENT
+    )
 
 with testContext('No actions'):
     r = s2.get(f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions')
@@ -84,6 +101,34 @@ with testContext('Cannot list someone else\'s actions'):
     s2.get(
         f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions',
         expected_status_code=403,
+    )
+
+with testContext("Cannot get someone else's action"):
+    # s2 cannot use s1's account ID
+    s2.get(
+        f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions/{actions[0]["id"]}',
+        expected_status_code=http.STATUS_FORBIDDEN,
+    )
+
+with testContext("Cannot get an action not tied to account in path"):
+    # this time s2 uses her own account ID but still tries to get s1's action
+    s2.get(
+        f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions/{actions[0]["id"]}',
+        expected_status_code=http.STATUS_NOT_FOUND,
+    )
+
+with testContext("Cannot delete someone else's action"):
+    # s2 cannot use s1's account ID
+    s2.delete(
+        f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions/{actions[0]["id"]}',
+        expected_status_code=http.STATUS_FORBIDDEN,
+    )
+
+with testContext("Cannot delete an action not tied to account in path"):
+    # this time s2 uses her own account ID but still tries to delete s1's action
+    s2.delete(
+        f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions/{actions[0]["id"]}',
+        expected_status_code=http.STATUS_NOT_FOUND,
     )
 
 with testContext('Cannot deleted someone else\'s actions'):

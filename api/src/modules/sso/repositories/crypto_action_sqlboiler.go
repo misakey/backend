@@ -94,8 +94,11 @@ func (repo CryptoActionSQLBoiler) List(ctx context.Context, accountID string) ([
 	return result, nil
 }
 
-func (repo CryptoActionSQLBoiler) Get(ctx context.Context, actionID string) (domain.CryptoAction, error) {
-	record, err := sqlboiler.FindCryptoAction(ctx, repo.db, actionID)
+func (repo CryptoActionSQLBoiler) Get(ctx context.Context, actionID string, accountID string) (domain.CryptoAction, error) {
+	record, err := sqlboiler.CryptoActions(
+		sqlboiler.CryptoActionWhere.ID.EQ(actionID),
+		sqlboiler.CryptoActionWhere.AccountID.EQ(accountID),
+	).One(ctx, repo.db)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return domain.CryptoAction{}, merror.NotFound().Describef("no action with ID %s", actionID)
@@ -119,6 +122,20 @@ func (repo CryptoActionSQLBoiler) DeleteUntil(ctx context.Context, accountID str
 		// because the HTTP query is "delete until action with such ID"
 		// and the action with this ID should be retrieved first by application layer
 		// so it should exists, and at least this one should be deleted
+		return merror.NotFound().Describe("no crypto actions to delete")
+	}
+	return nil
+}
+
+func (repo CryptoActionSQLBoiler) Delete(ctx context.Context, actionID string, accountID string) error {
+	rowsAff, err := sqlboiler.CryptoActions(
+		sqlboiler.CryptoActionWhere.ID.EQ(actionID),
+		sqlboiler.CryptoActionWhere.AccountID.EQ(accountID),
+	).DeleteAll(ctx, repo.db)
+	if err != nil {
+		return err
+	}
+	if rowsAff == 0 {
 		return merror.NotFound().Describe("no crypto actions to delete")
 	}
 	return nil

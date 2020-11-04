@@ -46,6 +46,47 @@ HTTP 200 OK
 ]
 ```
 
+## Getting a Specific Crypto Action
+
+```bash
+GET /accounts/e61d516d-716b-44de-b017-2307eb76fb8d/crypto/actions/e7a3c382-899f-4cf5-bbaa-dca3324ffca6
+```
+
+Rules:
+
+- account ID must match the one in the access token
+  (you can only list your own crypto actions)
+
+Response:
+
+```bash
+HTTP 200 OK
+```
+```json
+{
+    "id": "e7a3c382-899f-4cf5-bbaa-dca3324ffca6",
+    "type": "invitation",
+    "box_id": "(uuid or null)",
+    "encryption_public_key": "(URL-safe unpadded base64)",
+    "encrypted": "(encrypted data)",
+    "created_at": "2020-09-04T09:13:34.508851Z"
+}
+```
+
+## Deleting a Specific Crypto Action
+
+```bash
+DELETE /accounts/e61d516d-716b-44de-b017-2307eb76fb8d/crypto/actions/e7a3c382-899f-4cf5-bbaa-dca3324ffca6
+```
+
+Rules:
+
+- account ID must match the one in the access token
+  (you can only delete your own crypto actions)
+- action with this ID must exist and be owned by the querier's account
+
+Response if success: `HTTP 204 No Content`
+
 ## Deleting Crypto Actions
 
 ```bash
@@ -68,3 +109,4 @@ Rules:
   (you can only delete your own crypto actions)
 - action with ID `until_action_id` must exist and be owned by the querier's account
 
+Response if success: `HTTP 204 No Content`
