@@ -295,8 +295,8 @@ Or, in order to automatically invite the identifier
 
 Where `for_server_no_store` is a mapping from each identity public key of the identifier being added
 to the encrypted crypto action to send to the corresponding identity.
-The crypto actions created will have the `invitation` type.
-
+This will create a crypto action with type `invitation`
+and a notification with type `box.auto_invite`.
 
 #### 2.5.1.3. To an entire email domain
 

@@ -440,12 +440,23 @@ _JSON Body:_
    "created_at": "2038-11-05T00:00:07.000Z",
    "acknowledged_at": null,
   }, 
+  {
+    "id": 113,
+    "type": "box.auto_invite",
+    "details": {
+      "box_id": "50d03bf1-3515-43af-a3d9-d553d5b71dbc",
+      "box_title": "Test Box",
+      "cryptoaction_id": "84cfa967-8cff-4ebc-ba0e-ce70ca700a79"
+    },
+    "created_at": "2020-11-06T15:44:25.189269Z",
+    "acknowledged_at": null
+  }
 ]
 ```
 
 with attributes for each object of the list:
 - `id`: (integer) a unique integer corresponding to the identity notification.
-- `type`: (string, one of: _member.kick_, _box.lifecycle_, _user.reset_password_, _user.create_account_) the type of notification - details and displayed text should be set considering this value.
+- `type`: (string, one of: _member.kick_, _box.lifecycle_, _user.reset_password_, _user.create_account_, _box.auto_invite_) the type of notification - details and displayed text should be set considering this value.
 - `details`: (object) (nullable) a JSON object filled or `null` depending of the type of notification (see all JSON example to get info about it)
 - `created_at`: (date) the moment the server created the notification.
 - `acknowledged_at`: (date) (nullable) the moment the end-user has acknowledged the notification.

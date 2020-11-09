@@ -147,6 +147,18 @@ with testContext('auto invitation'):
             lambda r: assert_fn(len(r.json()) == 1)
         ]
     )
+    cryptoaction = r.json()[0]
+
+    r = s2.get(f'{URL_PREFIX}/identities/{s2.identity_id}/notifications')
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(len(r.json()) == 2), # 2 notifs: account creation and auto invitation
+            lambda r: assert_fn(r.json()[0]['type'] == 'box.auto_invite'),
+            lambda r: assert_fn(r.json()[0]['details']['box_id'] == box_id),
+            lambda r:assert_fn(r.json()[0]['details']['cryptoaction_id'] == cryptoaction['id'])
+        ]
+    )
 
 with testContext('"Conflict" if an identity does not have a public key'):
     s1.post(

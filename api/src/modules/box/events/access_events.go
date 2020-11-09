@@ -13,6 +13,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
@@ -76,6 +77,9 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 
 	// the "&& forServerNoStoreJSON.Valid" is to avoid introducing a breaking change
 	// TODO remove when the frontend implements this feeature
+	// NOTE this code is going to be removed before it has ever been used
+	// because we changed our mind on how to change the invitation link
+	// (see https://gitlab.misakey.dev/misakey/user-needs/-/issues/218)
 	if c.RestrictionType == "invitation_link" && forServerNoStoreJSON.Valid {
 		err = applyInvitationLinkSideEffects(ctx, e, c, forServerNoStoreJSON, exec, redConn, identityMapper, cryptoActionRepo)
 		if err != nil {
@@ -88,7 +92,12 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 		// (auto invitation)
 		if c.AutoInvite {
 			if forServerNoStoreJSON.Valid {
-				err = cryptoActionRepo.CreateInvitationActions(ctx, e.SenderID, e.BoxID, c.Value, forServerNoStoreJSON)
+				box, err := Compute(ctx, e.BoxID, exec, identityMapper, nil)
+				if err != nil {
+					return nil, merror.Transform(err).Describe("computing the box (to get title for notif)")
+				}
+				// creates a crypto action AND the notification
+				err = cryptoActionRepo.CreateInvitationActions(ctx, e.SenderID, e.BoxID, box.Title, c.Value, forServerNoStoreJSON)
 				if err != nil {
 					return nil, merror.Transform(err).Describe("creating crypto actions")
 				}
@@ -166,7 +175,13 @@ func applyInvitationLinkSideEffects(ctx context.Context, e *Event, c accessConte
 	for identityID, accountID := range accountIDs {
 		_, processed := processedAccounts[accountID]
 		if !processed && identityID != e.SenderID {
+			actionID, err := uuid.NewString()
+			if err != nil {
+				return merror.Transform(err).Describe("generating action UUID")
+			}
+
 			action := domain.CryptoAction{
+				ID:                  actionID,
 				AccountID:           accountID,
 				Type:                "set_box_key_share",
 				SenderIdentityID:    null.StringFrom(e.SenderID),

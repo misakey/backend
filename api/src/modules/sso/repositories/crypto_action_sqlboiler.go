@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
@@ -58,12 +57,6 @@ func (repo CryptoActionSQLBoiler) Create(ctx context.Context, actions []domain.C
 	}
 
 	for _, action := range actions {
-		id, err := uuid.NewRandom()
-		if err != nil {
-			return merror.Transform(err).Describe("generating UUID")
-		}
-		action.ID = id.String()
-
 		sqlAction := repo.toSQLBoiler(action)
 
 		err = sqlAction.Insert(ctx, repo.db, boil.Infer())

@@ -2,12 +2,14 @@ package cryptoaction
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/volatiletech/null/v8"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
 type cryptoActionRepo interface {
@@ -53,7 +55,7 @@ func (service CryptoActionService) GetCryptoAction(ctx context.Context, actionID
 	return service.cryptoActions.Get(ctx, actionID, accountID)
 }
 
-func (service CryptoActionService) CreateInvitationActions(ctx context.Context, senderID string, boxID string, identifierValue string, actionsDataJSON null.JSON) error {
+func (service CryptoActionService) CreateInvitationActions(ctx context.Context, senderID string, boxID string, boxTitle string, identifierValue string, actionsDataJSON null.JSON) error {
 	var actionsData map[string]string
 	err := actionsDataJSON.Unmarshal(&actionsData)
 	if err != nil {
@@ -77,11 +79,13 @@ func (service CryptoActionService) CreateInvitationActions(ctx context.Context, 
 	}
 
 	actions := make([]domain.CryptoAction, len(identities))
+	notifDetailsByIdentityID := make(map[string][]byte, len(identities))
 
 	for i, identity := range identities {
 		if !identity.Pubkey.Valid {
 			return merror.Conflict().Describe("not all identities have a public key")
 		}
+		// cryptoaction
 
 		encryptedCryptoAction, present := actionsData[identity.Pubkey.String]
 		if !present {
@@ -91,7 +95,13 @@ func (service CryptoActionService) CreateInvitationActions(ctx context.Context, 
 			)
 		}
 
+		actionID, err := uuid.NewString()
+		if err != nil {
+			return merror.Transform(err).Describe("generating action UUID")
+		}
+
 		action := domain.CryptoAction{
+			ID:                  actionID,
 			AccountID:           identity.AccountID.String,
 			Type:                "invitation",
 			SenderIdentityID:    null.StringFrom(senderID),
@@ -101,7 +111,42 @@ func (service CryptoActionService) CreateInvitationActions(ctx context.Context, 
 			CreatedAt:           time.Now(),
 		}
 		actions[i] = action
+
+		// notification (details differ for each identity)
+		notifDetailsBytes, err := json.Marshal(struct {
+			BoxID          string `json:"box_id"`
+			BoxTitle       string `json:"box_title"`
+			CryptoActionID string `json:"cryptoaction_id"`
+		}{
+			BoxID:          boxID,
+			BoxTitle:       boxTitle,
+			CryptoActionID: action.ID,
+		})
+		if err != nil {
+			return merror.Transform(err).Describef(
+				"marshalling notif details for pubkey \"%s\"",
+				identity.Pubkey.String,
+			)
+		}
+		notifDetailsByIdentityID[identity.ID] = notifDetailsBytes
+
 	}
 
-	return service.cryptoActions.Create(ctx, actions)
+	err = service.cryptoActions.Create(ctx, actions)
+	if err != nil {
+		return err
+	}
+
+	for identityID, notifDetailsBytes := range notifDetailsByIdentityID {
+		err = service.identityService.NotificationCreate(ctx,
+			identityID,
+			"box.auto_invite",
+			null.JSONFrom(notifDetailsBytes),
+		)
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
