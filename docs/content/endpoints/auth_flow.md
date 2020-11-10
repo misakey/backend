@@ -6,7 +6,7 @@ tags = ["sso", "authflow", "api", "endpoints"]
 title = "SSO - Auth Flow"
 +++
 
-## 1. Introduction
+# 1. Introduction
 
 Performing an auth flow is the only to obtain an access token and ID token.
 This section provides all the routes the frontend SSO application might use.
@@ -28,7 +28,7 @@ The final ID Token contains information about the authentication performed by th
 
 See [the list of **Authentication Method References** and corresponding **Authentication Context Classes**](../../concepts/authorization-and-authentication/#43-methods) for more info.
 
-## 2. Overall auth flow
+## 1.1. Overall auth flow
 
 As of today:
 - `app.misakey.com`: the frontend client
@@ -69,9 +69,9 @@ sequenceDiagram
     api.misakey.com->>app.misakey.com: redirects user's agent to final url with CSRF token (and access token as cookie)
 {{</mermaid>}}
 
-## 3. Initiate an authorization code flow
+## 1.2. Initiate an authorization code flow
 
-### 3.1. request
+### 1.2.1. request
 
 ```bash
   GET https://auth.misakey.com/_/oauth2/auth
@@ -80,7 +80,7 @@ sequenceDiagram
 _Query Parameters:_
 - see [Open ID Connect RFC](https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest).
 
-### 3.2. success response
+### 1.2.2. success response
 
 _Code:_
 ```bash
@@ -97,11 +97,13 @@ _HTML Body:_
 
 The `Location` header contains the same URL than the HTML body. The user's agent should be redirected to this URL to continue the auth flow to the login flow.
 
-## 4. Get Login Information
+# 2. Login Flow
+
+## 2.1. Get Login Information
 
 This route is used to retrieve information about the current login flow using a login challenge.
 
-### 4.1. request
+### 2.1.1. request
 
 ```bash
 GET https://api.misakey.com/auth/login/info
@@ -110,7 +112,7 @@ GET https://api.misakey.com/auth/login/info
 _Query Parameters:_
 - `login_challenge` (string): the login challenge corresponding to the current auth flow.
 
-### 4.2. response
+### 2.1.2. response
 
 _Code_:
 ```bash
@@ -145,7 +147,7 @@ _JSON Body_:
 - `acr_values` (string) (nullable): list of acr values sent during the auth flow init.
 - `login_hint` (string): the login_hint sent during the auth flow init.
 
-## 5. Require an authable identity for a given identifier
+## 2.2. Require an authable identity for a given identifier
 
 This request is idempotent.
 
@@ -154,7 +156,7 @@ This route is used to retrieve information the authable identity the end-user wi
 The authable identity can be a new one created for the occasion or an existing one.
 See _Response_ below for more information.
 
-### 5.1. request
+### 2.2.1. request
 
 _Headers:_
 - The request doesn't require an authorization header.
@@ -177,7 +179,7 @@ _JSON Body:_
 - `identifier` (object): information about the used identifier to authenticate the end-user:
   - `value` (string): the identifier value the end-user entered in the dedicated input text.
 
-### 5.2. success response
+### 2.2.2. success response
 
 This route returns the authable identity the end-user will login as.
 
@@ -211,11 +213,11 @@ _JSON Body:_
   - `method_name` (string) (one of: _emailed_code_, _prehashed_password_, _account_creation): the preferred authentication method.
   - `metadata` (string) (nullable): filled considering the preferred method.
 
-### 5.3. possible formats for the `metadata` field
+### 2.2.3. possible formats for the `metadata` field
 
 Considering the preferred authentication method, the metadata can contain additional information.
 
-#### 5.3.1. method name: **emailed_code**
+#### 2.2.3.1. method name: **emailed_code**
 
 ```json
 {
@@ -226,7 +228,7 @@ Considering the preferred authentication method, the metadata can contain additi
 }
 ```
 
-#### 5.3.2. method name: **prehashed_password**
+#### 2.2.3.2. method name: **prehashed_password**
 
 On `prehashed_password`, the `metadata` field contains information about how the password is supposed to be prehashed.
 
@@ -242,7 +244,7 @@ an authentication step](./#possible-formats-for-the-metadata-field-1) using the 
 }
 ```
 
-#### 5.3.3. method name: **account_creation** :bust_in_silhouette:
+#### 2.2.3.3. method name: **account_creation** :bust_in_silhouette:
 
 ```json
 {
@@ -266,7 +268,7 @@ This method is retured when:
 :mag: The `account_creation` will then come as a second authn step as a [More Authentication Required Response](http://localhost:1313/endpoints/auth_flow/#622-the-more-authentication-required-response).
 :information_source: This step is skipped if the end-user has provided a valid login session corresponding to a previous ACR 1 authentication.
 
-## 6. Perform an authentication step in the login flow
+## 2.3. Perform an authentication step in the login flow
 
 The next step to authenticate the end-user is to let them enter some information
 assuring they own the identity. This is called an **authentication step**.
@@ -276,7 +278,7 @@ even for our most secure flows.
 
 The metadata field contained in the authentication step depends of the method name.
 
-### 6.1. request
+### 2.3.1. request
 
 ```bash
 POST https://api.misakey.com/auth/login/authn-step
@@ -304,14 +306,14 @@ _JSON Body:_
   - `metadata` (json object): metadata containing the emailed code value or the prehashed password.
 The list of possible formats is defined in the next section.
 
-#### 6.1.1. Possible formats for the `metadata` field
+#### 2.3.1.1. Possible formats for the `metadata` field
 
 This section describes the possible metadata format, as a JSON object, which is a
 field contained in the JSON body of the previous section.
 
 The context of this specification is the performing of an authentication step only.
 
-##### 6.1.1.1. method name: **emailed_code**
+##### 2.3.1.1.1. method name: **emailed_code**
 
 _JSON Body:_
 ```json
@@ -325,7 +327,7 @@ _JSON Body:_
 }
 ```
 
-###### 6.1.1.1.1. reset password extension
+###### 2.3.1.1.1.1. reset password extension
 
 Reset password is an extension that can be used during the user authentication, when an `emailed_code` authn step is performed.
 
@@ -362,7 +364,7 @@ _JSON Body:_
 
 
 
-##### 6.1.1.2. method name: **prehashed_password**
+##### 2.3.1.1.2. method name: **prehashed_password**
 
 :warning: Warning, the metadata has not the exact same shape as [the metadata returned requiring
 an authable identity](./#possible-formats-for-the-metadata-field) with the `prehashed_password` value as preferred method, which contains only the hash parameters of the password.
@@ -376,7 +378,7 @@ an authable identity](./#possible-formats-for-the-metadata-field) with the `preh
 }
 ```
 
-##### 6.1.1.3. method name: **account_creation**
+##### 2.3.1.1.3. method name: **account_creation**
 
 
 ```json
@@ -391,11 +393,11 @@ an authable identity](./#possible-formats-for-the-metadata-field) with the `preh
 }
 ```
 
-### 6.2. success response
+### 2.3.2. success response
 
 On success, the route can return two possible json body:
 
-#### 6.2.1. the "redirect" response
+#### 2.3.2.1. the "redirect" response
 
 What is returned is the next URL the user's agent should be redirected to.
 This response is given when the authentication server consider the end-user has proven its identity sufficiently.
@@ -422,7 +424,7 @@ _JSON Body:_
 - `redirect_to` (string): the URL the user's agent should be redirected to.
 - `csrf\_token` (string): The CSRF token that must be sent in a `X-CSRF-Token`
 
-#### 6.2.2. the "more authentication required" response
+#### 2.3.2.2. the "more authentication required" response
 
 What is returned is the next authentication step the end-user should perform.
 This response is given when the authentication server requires more authentication step to proove the end-user identity.
@@ -459,7 +461,7 @@ _JSON Body:_
 
 :mag: `method_name` and `metadata` possibilities are defined in [the require authable identity section](#possible-formats-for-the-metadata-field).
 
-### 6.3. notable error responses
+### 2.3.3. notable error responses
 
 On error during an authentication step, some information might be displayed to the end-user.
 
@@ -531,13 +533,13 @@ _JSON Body:_
 }
 ```
 
-## 7. Init a new authentication step
+## 2.4. Init a new authentication step
 
 This endpoint allows to init an authentication step:
 - in case the last one has expired
 - if a new step must be initialized
 
-### 7.1. request
+### 2.4.1. request
 
 ```bash
 POST https://api.misakey.com/authn-steps
@@ -563,7 +565,7 @@ _JSON Body:_
   - `identity_id` (uuid string): the identity ID for which the authentication step will be initialized.
   - `method_name` (string) (one of: _emailed_code_, _prehashed_password_): the method used by the authentication step.
 
-### 7.2. success response
+### 2.4.2. success response
 
 This route does not return any content.
 
@@ -572,7 +574,7 @@ _Code:_
 HTTP 204 NO CONTENT
 ```
 
-### 7.3. notable error responses
+### 2.4.3. notable error responses
 
 On errors, some information should be displayed to the end-user.
 
@@ -618,11 +620,13 @@ HTTP 409 Conflict
 }
 ```
 
-## 8. Get Consent Information
+# 3. Consent Flow
+
+## 3.1. Get Consent Information
 
 This route is used to retrieve information about the current consent flow using a consent challenge.
 
-### 8.1. request
+### 3.1.1. request
 
 ```bash
 GET https://api.misakey.com/auth/consent/info
@@ -631,7 +635,7 @@ GET https://api.misakey.com/auth/consent/info
 _Query Parameters:_
 - `consent_challenge` (string): the consent challenge corresponding to the current auth flow.
 
-### 8.2. success response
+### 3.1.2. success response
 
 _Code_:
 ```bash
@@ -669,13 +673,13 @@ _JSON Body_:
   - `url` (string) (nullable): web-address of the logo file.
 
 
-## 9. Accept the consent request in the consent flow
+## 3.2. Accept the consent request in the consent flow
 
 This lets the user choose the scopes they want to accept.
 
 For the moment, those scopes are limited to `tos` and `privacy_policy`
 
-### 9.1. request
+### 3.2.1. request
 
 ```bash
 POST https://api.misakey.com/auth/consent
@@ -700,7 +704,7 @@ _JSON Body:_
 - `identity_id` (uuid string): the identity id bound to the identifier of the flow.
 - `consented_scopes` (list of string) (one of: _tos_, _privacy\_policy_): the accepted scopes.
 
-### 9.2. success response
+### 3.2.2. success response
 
 On success, the route returns the next URL to redirect the user's agent.
 
@@ -718,7 +722,7 @@ _JSON Body:_
 
 - `redirect_to` (string): the URL the user's agent should be redirected to.
 
-### 9.3. notable error responses
+### 3.2.3. notable error responses
 
 **1 - A mandatory scope is missing from consent**
 
@@ -737,7 +741,44 @@ Here is the error to expect if the client didn't send these scopes:
 }
 ```
 
-## 10. Logout
+# 4. Others
+
+## 4.1 Reset the auth flow
+
+This requests allow the complete restart of the auth flow. It triggers a redirection to the initial
+auth request if found (using the `login_challenge` sent in parameter).
+If no auth request is found, it redirects the end-user to a blank connection screen on the Misakey main app (without any information about the initial flow).
+
+:warning: be aware this action invalidates the session for the whole
+account in this case.
+
+### 1.2.1. request
+
+```bash
+GET https://api.misakey.com/auth/reset?login_challenge=4f112272f2fa4cbe939b04e74dd3e49e
+```
+
+_Query Parameters:_
+- `login_challenge` (string) (optional): the login challenge corresponding to the current auth flow. On invalid or missing, the user's agent will be redirected to the home page.
+
+### 1.2.2. success response
+
+_Code:_
+```bash
+HTTP 302 FOUND
+```
+
+_Headers:_
+- `Location`: https://auth.misakey.com/_/oauth2/auth
+
+_HTML Body:_
+```html
+    <a href="https://auth.misakey.com/_/oauth2/auth/>Found</a>
+```
+
+The `Location` header contains the same URL than the HTML body. The user's agent should be redirected to this URL to continue the auth flow to the login flow.
+
+## 4.1. Logout
 
 This request logouts a user from their authentication session.
 
@@ -745,20 +786,20 @@ An authentication session is valid for an identity but it potentially links othe
 through the account relationship, be aware this action invalidates the session for the whole
 account in this case.
 
-### 10.1. request
+### 4.1.1. request
 
 ```bash
 POST https://api.misakey.com/auth/logout
 ```
 
-_Cookies:_
+
 - `accesstoken` (opaque token) (ACR >= 0): `mid` claim as the identity id sent in body.
 - `tokentype`: must be `bearer`
 
 _Headers:_
 - `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
 
-### 10.2. success response
+### 4.1.2. success response
 
 This route does not return any content.
 
@@ -767,14 +808,14 @@ _Code:_
 HTTP 204 NO CONTENT
 ```
 
-## Get Backup
+## 4.2. Get Backup
 
 This endpoint allows to get the account backup
 during the auth flow.
 
 This endpoint needs a valid process token.
 
-### Request
+### 4.2.1. Request
 
 ```bash
 GET https://api.misakey.com.local/auth/backup
@@ -785,13 +826,9 @@ _Query Parameters:_
 - `identity_id` (string) (uuid4): the id of the identity corresponding to the current auth flow.
 
 _Headers_:
-- `accesstoken` (opaque token) (ACR >= 2): the `login_challenge` token’s claim must be the login challenge sent in query.
-- `tokentype`: must be `bearer`
+- `Authorization`: should be `Bearer {opaque_token}` with opaque token being the `login_challenge` of the auth flow.
 
-_Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
-
-### Success Response
+### 4.2.2. Success Response
 
 _Code:_
 ```bash
@@ -811,22 +848,18 @@ _JSON Body:_
 - `version` (integer): the current backup version.
 - `account_id` (string) (uuid4): the id of the account owning the backup.
 
-## Creating a Backup Key Share
+## 4.3. Creating a Backup Key Share
 
 This endpoint allows to create a backup key share in the auth flow.
 
-### Request
+### 4.3.1. Request
 
 ```bash
   POST https://api.misakey.com/auth/backup-key-shares
 ```
 
-_Cookies:_
-- `accesstoken` (opaque token) (ACR >= 2): the access token is given during the auth flow. It must be generated for an identity id linked to the account id sent in the request.
-- `tokentype`: must be `bearer`
-
-_Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks, delivered at the end of the auth flow
+_Headers_:
+- `Authorization`: should be `Bearer {opaque_token}` with opaque token being the access token given during the auth flow. the backup-key-shares must be generated for an identity id linked to the account id bound to the token.
 
 _JSON Body:_
 ```json
@@ -837,7 +870,7 @@ _JSON Body:_
 - `share` (string) (base64): one of the shares.
 - `other_share_hash` (string) (unpadded url-safe base64): a hash of the other share.
 
-### Response
+### 4.3.2. Response
 
 _Code:_
 ```bash

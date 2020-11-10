@@ -128,6 +128,7 @@ func InitModule(router *echo.Echo) Process {
 	cryptoActionService := cryptoaction.NewCryptoActionService(cryptoActionRepo, identityService)
 	authFlowService := authflow.NewAuthFlowService(
 		identityService, hydraRepo,
+		viper.GetString("authflow.home_page_url"),
 		viper.GetString("authflow.login_page_url"),
 		viper.GetString("authflow.consent_page_url"),
 		viper.GetString("authflow.self_client_id"),

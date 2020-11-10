@@ -76,6 +76,19 @@ func (as *Service) InitProcess(ctx context.Context, challenge string, sessionACR
 	return as.processes.Create(ctx, &p)
 }
 
+// GetProcess using the login challenge
+func (as *Service) GetProcess(
+	ctx context.Context,
+	challenge string,
+) (Process, error) {
+	// retrieve the process
+	process, err := as.processes.Get(ctx, challenge)
+	if err != nil {
+		return process, merror.Transform(err).Describe("getting process")
+	}
+	return process, nil
+}
+
 // UpgradeProcess by adding an amr on it
 // it inits the process if required,
 // it returns the upgraded Process, telling the login flow require more authn-step to be performed if a NextStep has been set.

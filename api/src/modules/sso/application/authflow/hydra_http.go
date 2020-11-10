@@ -8,9 +8,9 @@ import (
 	"github.com/volatiletech/null/v8"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow/login"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
 )
 
@@ -82,6 +82,7 @@ func (h HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (
 	logCtx.RequestedScope = hydraLogReq.RequestedScope
 	logCtx.Client.ID = hydraLogReq.Client.ID
 	logCtx.Client.Name = hydraLogReq.Client.Name
+	logCtx.RequestURL = hydraLogReq.RequestURL
 	if hydraLogReq.Client.LogoURI != "" {
 		logCtx.Client.LogoURL = null.StringFrom(hydraLogReq.Client.LogoURI)
 	}

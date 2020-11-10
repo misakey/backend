@@ -91,7 +91,6 @@ func InitModule(router *echo.Echo) Process {
 		&boxService,
 		wsHandler,
 		request.NewHandlerFactory(authzMidlw),
-		authzMidlw,
 		authzMidlwWithoutCSRF,
 	)
 	return Process{

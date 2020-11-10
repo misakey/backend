@@ -68,7 +68,7 @@ func (sso *SSOService) LoginInit(ctx context.Context, gen request.Request) (inte
 				return redirectTo, nil
 			}
 		}
-		if authflow.NonePrompt(loginCtx.RequestURL) {
+		if authflow.HasNonePrompt(loginCtx.RequestURL) {
 			return sso.authFlowService.LoginRequiredErr(), nil
 		}
 	}

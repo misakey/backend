@@ -47,6 +47,9 @@ func (sso *SSOService) InitConsent(ctx context.Context, gen request.Request) (in
 	// 2. retrieve subject information to put it in ID tokens as claims
 	identity, err := sso.identityService.Get(ctx, consentCtx.OIDCContext.MID())
 	if err != nil {
+		if merror.HasCode(err, merror.NotFoundCode) {
+			return sso.authFlowService.BuildResetURL(consentCtx.RequestURL), nil
+		}
 		return sso.authFlowService.ConsentRedirectErr(err), nil
 	}
 
@@ -78,7 +81,7 @@ func (sso *SSOService) InitConsent(ctx context.Context, gen request.Request) (in
 		return sso.authFlowService.BuildAndAcceptConsent(ctx, consentCtx, identity.Identifier.Value), nil
 	}
 
-	if authflow.NonePrompt(consentCtx.RequestURL) {
+	if authflow.HasNonePrompt(consentCtx.RequestURL) {
 		return sso.authFlowService.ConsentRequiredErr(), nil
 	}
 

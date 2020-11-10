@@ -16,6 +16,7 @@ type AuthFlowService struct {
 
 	authFlow authFlowRepo
 
+	homePageURL    *url.URL
 	loginPageURL   *url.URL
 	consentPageURL *url.URL
 
@@ -25,10 +26,12 @@ type AuthFlowService struct {
 func NewAuthFlowService(
 	identityService identity.IdentityService,
 	authFlow authFlowRepo,
-	loginPageURI string,
-	consentPageURI string,
-	selfCliID string,
+	homePageURI, loginPageURI, consentPageURI, selfCliID string,
 ) AuthFlowService {
+	homePageURL, err := url.ParseRequestURI(homePageURI)
+	if err != nil {
+		log.Fatalf("invalid home page url: %v", err)
+	}
 	loginPageURL, err := url.ParseRequestURI(loginPageURI)
 	if err != nil {
 		log.Fatalf("invalid login url: %v", err)
@@ -41,9 +44,11 @@ func NewAuthFlowService(
 	return AuthFlowService{
 		identityService: identityService,
 		authFlow:        authFlow,
-		loginPageURL:    loginPageURL,
-		consentPageURL:  consentPageURL,
-		selfCliID:       selfCliID,
+
+		homePageURL:    homePageURL,
+		loginPageURL:   loginPageURL,
+		consentPageURL: consentPageURL,
+		selfCliID:      selfCliID,
 	}
 }
 
@@ -59,6 +64,12 @@ type authFlowRepo interface {
 	RevokeToken(ctx context.Context, token string) error
 }
 
-func NonePrompt(requestURL string) bool {
-	return strings.Contains(requestURL, "prompt=none")
+// returns true if the received string contains `promt=none` string
+func HasNonePrompt(authURL string) bool {
+	return strings.Contains(authURL, "prompt=none")
+}
+
+// returns true if the received string contains no `login_hint=` string
+func HasNoLoginHint(authURL string) bool {
+	return !strings.Contains(authURL, "login_hint=")
 }

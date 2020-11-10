@@ -11,6 +11,9 @@ import (
 func initConfig() {
 	// handle missing mandatory fields
 	mandatoryFields := []string{
+		"authflow.home_page_url",
+		"authflow.login_page_url",
+		"authflow.consent_page_url",
 		"authflow.self_client_id",
 		"authflow.hydra_token_url",
 		"authflow.self_encoded_jwk",

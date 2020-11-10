@@ -15,7 +15,6 @@ func bindRoutes(
 	app *application.BoxApplication,
 	wsh entrypoints.WebsocketHandler,
 	oidcHandlerFactory request.HandlerFactory,
-	authzMidlw echo.MiddlewareFunc,
 	authzMidlwWithoutCSRF echo.MiddlewareFunc,
 ) {
 	// ----------------------

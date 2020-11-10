@@ -255,13 +255,20 @@ func bindRoutes(
 		ss.CreateBackupKeyShare,
 		request.ResponseCreated,
 	))
-
 	// following routes allows audience of non-misakey oidc tokens
 	authPath.POST(extOIDCHandlers.NewACR1(
 		"/logout",
 		nil, // no request data required
 		ss.Logout,
 		request.ResponseNoContent,
+		ss.CleanCookie,
+	))
+	// reset the auth flow using the login_challenge
+	authPath.GET(authnProcessHandlers.NewPublic(
+		"/reset",
+		func() request.Request { return &application.FlowResetCmd{} },
+		ss.ResetFlow,
+		request.ResponseRedirectFound,
 		ss.CleanCookie,
 	))
 }
