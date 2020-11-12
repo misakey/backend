@@ -100,11 +100,24 @@ func sendRealtimeUpdate(ctx context.Context, e *Event, exec boil.ContextExecutor
 	if err != nil {
 		return merror.Transform(err).Describe("formatting event")
 	}
+	transparentFormattedEvent, err := e.Format(ctx, identities, true)
+	if err != nil {
+		return merror.Transform(err).Describe("formatting event")
+	}
+
+	boxCreatorID, err := getBoxCreatorID(ctx, exec, e.BoxID)
+	if err != nil {
+		return merror.Transform(err).Describe("getting creator")
+	}
 
 	for memberID := range uniqRecipientsIDs {
+		object := formattedEvent
+		if boxCreatorID == memberID {
+			object = transparentFormattedEvent
+		}
 		bu := realtime.Update{
 			Type:   "event.new",
-			Object: formattedEvent,
+			Object: object,
 		}
 		realtime.SendUpdate(ctx, redConn, memberID, &bu)
 	}

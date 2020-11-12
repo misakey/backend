@@ -113,3 +113,16 @@ func isCreator(ctx context.Context, exec boil.ContextExecutor, boxID, senderID s
 	// return the error if unexpected
 	return false, err
 }
+
+func getBoxCreatorID(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
+	e, err := get(ctx, exec, eventFilters{
+		eType: null.StringFrom("create"),
+		boxID: null.StringFrom(boxID),
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return e.SenderID, nil
+}
