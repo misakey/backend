@@ -4,9 +4,10 @@ from misapy.box_helpers import create_add_invitation_link_event
 from misapy.check_response import check_response, assert_fn
 from misapy.get_access_token import get_authenticated_session
 from misapy.box_members import join_box
-from misapy.test_context import testContext
+from misapy.pretty_error import prettyErrorContext
 
-with testContext('init invitation changing link test'):
+with prettyErrorContext():
+    print('- init invitation changing link test')
     s1 = get_authenticated_session(acr_values=2)
     s2 = get_authenticated_session(acr_values=2)
 
@@ -33,7 +34,7 @@ with testContext('init invitation changing link test'):
     current_invitation_link_event = r.json()[0]
     join_box(s2, box_id)
 
-with testContext('cannot reset invitation link if one is already active'):
+    print('- cannot reset invitation link if one is already active')
     new_invitation_link_event = create_add_invitation_link_event()
     s1.post(
         f'{URL_PREFIX}/boxes/{box_id}/batch-events',
@@ -46,7 +47,7 @@ with testContext('cannot reset invitation link if one is already active'):
         expected_status_code=http.STATUS_CONFLICT,
     )
 
-with testContext('changing invitation link'):
+    print('- changing invitation link')
     s1.post(
         f'{URL_PREFIX}/boxes/{box_id}/batch-events',
         json={

@@ -6,7 +6,7 @@ from misapy.get_access_token import (
     get_authenticated_session,
     get_credentials,
 )
-from misapy.test_context import testContext
+from misapy.pretty_error import prettyErrorContext
 
 def get_archived_backup(account_id):
     proc = subprocess.run(
@@ -43,7 +43,9 @@ def get_current_backup(account_id):
     current_backup = output.strip()
     return current_backup
 
-with testContext('archive creation'):
+with prettyErrorContext():
+    print('- archive creation')
+
     # We create an account, and then we reset its password
     creds = get_credentials(require_account=True)
     s = get_authenticated_session(email=creds.email, reset_password=True)
@@ -69,7 +71,8 @@ with testContext('archive creation'):
 
     archives = r.json()
 
-with testContext('archive deletion'):
+    print('- archive deletion')
+
     s.delete(
         f'''https://api.misakey.com.local/backup-archives/{archives[0]['id']}''',
         json={
@@ -103,7 +106,8 @@ with testContext('archive deletion'):
         expected_status_code=410,
     )
 
-with testContext('bad request on bad deletion reason'):
+    print('- bad request on bad deletion reason')
+
     s.delete(
         f'''https://api.misakey.com.local/backup-archives/{archives[0]['id']}''',
         json={
@@ -112,7 +116,8 @@ with testContext('bad request on bad deletion reason'):
         expected_status_code=400,
     )
 
-with testContext('cannot re-delete an archive'):
+    print('- cannot re-delete an archive')
+
     s.delete(
         f'''https://api.misakey.com.local/backup-archives/{archives[0]['id']}''',
         json={
@@ -129,7 +134,8 @@ with testContext('cannot re-delete an archive'):
         expected_status_code=410,
     )
 
-with testContext('archive not found'):
+    print('- archive not found')
+
     wrong_id = '74f650f3-b338-40d0-a8c8-37b6c3947522'
     s.get(
         f'https://api.misakey.com.local/backup-archives/{wrong_id}/data',

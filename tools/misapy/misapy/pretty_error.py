@@ -7,22 +7,16 @@ from .http import UnexpectedResponseStatus, pretty_string_of_response
 from .check_response import BadResponse
 
 # About context managers, see https://www.python.org/dev/peps/pep-0343/
-class testContext:
-    def __init__(self, test_name=None):
-        self.test_name = test_name
+class prettyErrorContext:
+    '''A context manager that intercepts exceptions and attemps to pretty-print them'''
+    def __init__(self):
+        pass
 
     def __enter__(self):
-        if self.test_name:
-            print('… ' + self.test_name, end='')
+        pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if not exc_val:
-            if self.test_name:
-                print('\r' + '✓ ' + self.test_name)
-        else:
-            if self.test_name:
-                print('\r' + '✗ ' + self.test_name)
-
+        if exc_val:
             # Pretty printing of some types of errors
             if exc_type in [requests.exceptions.HTTPError, UnexpectedResponseStatus]:
                 traceback.print_exception(exc_type, exc_val, exc_tb)
@@ -44,3 +38,4 @@ class testContext:
                 sys.exit(1)
             # In a context manager,
             # not returning anything indicates that we want the exception to propagate
+            # (thus it will be handled by Python as if this context manager did not exist)

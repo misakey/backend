@@ -9,7 +9,6 @@ from . import http, URL_PREFIX
 from .utils.base64 import b64encode, urlsafe_b64encode
 from .get_access_token import get_authenticated_session
 from .box_key_shares import create_key_share, get_key_share
-from .test_context import testContext
 from .container_access import list_encrypted_files
 from .check_response import check_response, assert_fn
 

@@ -4,9 +4,9 @@ from misapy.box_helpers import create_add_invitation_link_event
 from misapy.check_response import check_response, assert_fn
 from misapy.get_access_token import get_authenticated_session
 from misapy.box_members import join_box
-from misapy.test_context import testContext
+from misapy.pretty_error import prettyErrorContext
 
-with testContext():
+with prettyErrorContext():
     s1 = get_authenticated_session(acr_values=2)
     s2 = get_authenticated_session(acr_values=2)
     # s3 will **not** have an identity pubkey
@@ -31,7 +31,7 @@ with testContext():
 
     s2.set_identity_pubkey('s2pubkey')
 
-with testContext('"Bad Request" if "auto_invite" but no crypto actions data'):
+    print('- "Bad Request" if "auto_invite" but no crypto actions data')
     s1.post(
         f'{URL_PREFIX}/boxes/{box_id}/batch-events',
         json={
@@ -51,7 +51,7 @@ with testContext('"Bad Request" if "auto_invite" but no crypto actions data'):
         expected_status_code=http.STATUS_BAD_REQUEST,
     )
 
-with testContext('"Bad Request" if crypto actions data but no "auto_invite"'):
+    print('- "Bad Request" if crypto actions data but no "auto_invite"')
     s1.post(
         f'{URL_PREFIX}/boxes/{box_id}/batch-events',
         json={
@@ -72,7 +72,7 @@ with testContext('"Bad Request" if crypto actions data but no "auto_invite"'):
         expected_status_code=http.STATUS_BAD_REQUEST,
     )
 
-with testContext('"Bad Request" if too many keys'):
+    print('- "Bad Request" if too many keys')
     s1.post(
         f'{URL_PREFIX}/boxes/{box_id}/batch-events',
         json={
@@ -95,7 +95,7 @@ with testContext('"Bad Request" if too many keys'):
         expected_status_code=http.STATUS_BAD_REQUEST,
     )
 
-with testContext('"Bad Request" if missing keys'):
+    print('- "Bad Request" if missing keys')
     s1.post(
         f'{URL_PREFIX}/boxes/{box_id}/batch-events',
         json={
@@ -118,7 +118,7 @@ with testContext('"Bad Request" if missing keys'):
         expected_status_code=http.STATUS_BAD_REQUEST,
     )
 
-with testContext('auto invitation'):
+    print('- auto invitation')
     s1.post(
         f'{URL_PREFIX}/boxes/{box_id}/batch-events',
         json={
@@ -160,7 +160,7 @@ with testContext('auto invitation'):
         ]
     )
 
-with testContext('"Conflict" if an identity does not have a public key'):
+    print('- "Conflict" if an identity does not have a public key')
     s1.post(
         f'{URL_PREFIX}/boxes/{box_id}/batch-events',
         json={

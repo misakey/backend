@@ -2,9 +2,13 @@
 
 import argparse
 import sys
+from pathlib import Path
+
+# so that this script can run even if package "misapy" has not been installed
+sys.path.append(str(Path(__file__).parent / 'misapy'))
 
 from misapy.get_access_token import get_credentials
-from misapy.test_context import testContext
+from misapy.pretty_error import prettyErrorContext
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--email')
@@ -13,8 +17,7 @@ parser.add_argument('--require-account',
                     dest='require_account', action='store_true')
 args = parser.parse_args()
 
-# TODO extract error mgmt out of "testContext" because it's not really a test here
-with testContext():
+with prettyErrorContext():
     creds = get_credentials(
         args.email, args.require_account, args.acr)
 

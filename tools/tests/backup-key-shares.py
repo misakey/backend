@@ -3,10 +3,12 @@ import os
 from base64 import b64encode, urlsafe_b64encode
 
 from misapy.get_access_token import get_authenticated_session
-from misapy.test_context import testContext
+from misapy.pretty_error import prettyErrorContext
 from misapy.check_response import check_response, assert_fn
 
-with testContext('Normal scenario'):
+with prettyErrorContext():
+    print('- normal scenario')
+
     s = get_authenticated_session(require_account=True)
 
     backup_key_share = {
@@ -27,7 +29,6 @@ with testContext('Normal scenario'):
         ]
     )
 
-
     r = s.get(
         f'https://api.misakey.com.local/backup-key-shares/{backup_key_share["other_share_hash"]}'
     )
@@ -38,20 +39,20 @@ with testContext('Normal scenario'):
         ]
     )
 
-with testContext('Non-existing share'):
+    print('- Non-existing share')
     s.get(
         f'https://api.misakey.com.local/backup-key-shares/rOdGA-UXBfzNcHqscSfnNQQ',
         expected_status_code=404,
     )
 
-with testContext('"Not Found" if share belongs to another account'):
+    print('- "Not Found" if share belongs to another account')
     s2 = get_authenticated_session(require_account=True)
     s2.get(
         f'https://api.misakey.com.local/backup-key-shares/{backup_key_share["other_share_hash"]}',
         expected_status_code=404,
     )
 
-with testContext('Querier does not have account'):
+    print('- Querier does not have account')
     s3 = get_authenticated_session()
 
     s3.post(
@@ -66,7 +67,7 @@ with testContext('Querier does not have account'):
     )
 
 
-with testContext('Forbidden if posting share with bad account ID'):
+    print('- Forbidden if posting share with bad account ID')
     s.post(
         'https://api.misakey.com.local/backup-key-shares',
         json={
@@ -78,7 +79,7 @@ with testContext('Forbidden if posting share with bad account ID'):
         expected_status_code=403,
     )
 
-with testContext('Bad request if missing attributes'):
+    print('- Bad request if missing attributes')
     s.post(
         'https://api.misakey.com.local/backup-key-shares',
         json={

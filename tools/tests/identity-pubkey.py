@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 import os
 
-from misapy.test_context import testContext
 from misapy.get_access_token import get_authenticated_session
-from misapy.test_context import testContext
+from misapy.pretty_error import prettyErrorContext
 from misapy.check_response import check_response, assert_fn
 from misapy.utils.base64 import b64encode
 
-with testContext():
+with prettyErrorContext():
     s1 = get_authenticated_session(acr_values=2)
 
-with testContext('initial state'):
+    print('- initial state')
     r = s1.get_identity()
     check_response(
         r,
@@ -19,7 +18,7 @@ with testContext('initial state'):
         ]
     )
 
-with testContext('setting pubkey'):
+    print('- setting pubkey')
     pubkey = b64encode(os.urandom(16))
     s1.set_identity_pubkey(pubkey)
 
@@ -31,7 +30,7 @@ with testContext('setting pubkey'):
         ]
     )
 
-with testContext('retrieving pubkey via identifier'):
+    print('- retrieving pubkey via identifier')
     r = s1.get_identity_pubkeys(s1.email)
     check_response(
         r,

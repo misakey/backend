@@ -5,7 +5,6 @@ from base64 import b64encode, urlsafe_b64encode
 from . import URL_PREFIX
 from .check_response import check_response, assert_fn
 from .get_access_token import get_authenticated_session
-from .test_context import testContext
 
 def join_box(session, box_id):
     return session.post(

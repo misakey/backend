@@ -4,9 +4,9 @@ import subprocess
 from uuid import uuid4
 
 from misapy import http
-from misapy.test_context import testContext
 from misapy.get_access_token import get_authenticated_session
 from misapy.check_response import check_response, assert_fn
+from misapy.pretty_error import prettyErrorContext
 
 URL_PREFIX = 'https://api.misakey.com.local'
 
@@ -28,7 +28,7 @@ def create_crypto_action(owner, sender, box_id, fake_data):
     )
     proc.check_returncode()
 
-with testContext():
+with prettyErrorContext():
     s1 = get_authenticated_session(require_account=True)
     s2 = get_authenticated_session(require_account=True)
 
@@ -44,7 +44,7 @@ with testContext():
     for i in range(5):
         create_crypto_action(s1, s2, box_id, f'Fake Data Action {i}')
 
-with testContext('Listing one\'s actions'):
+    print('- Listing one\'s actions')
     r = s1.get(f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions')
     check_response(
         r,
@@ -54,7 +54,7 @@ with testContext('Listing one\'s actions'):
     )
     actions = r.json()
 
-with testContext('Getting one specific action'):
+    print('- Getting one specific action')
     action = actions[0]
     r = s1.get(f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions/{action["id"]}')
     check_response(
@@ -64,13 +64,13 @@ with testContext('Getting one specific action'):
         ]
     )
 
-with testContext('Deleting one specific action'):
+    print('- Deleting one specific action')
     s1.delete(
         f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions/{action["id"]}',
         expected_status_code=http.STATUS_NO_CONTENT
     )
 
-with testContext('No actions'):
+    print('- No actions')
     r = s2.get(f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions')
     check_response(
         r,
@@ -79,7 +79,7 @@ with testContext('No actions'):
         ]
     )
 
-with testContext('Deleting actions'):
+    print('- Deleting actions')
     s1.delete(
         f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions',
         json={
@@ -97,41 +97,41 @@ with testContext('Deleting actions'):
         ]
     )
 
-with testContext('Cannot list someone else\'s actions'):
+    print('- Cannot list someone else\'s actions')
     s2.get(
         f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions',
         expected_status_code=403,
     )
 
-with testContext("Cannot get someone else's action"):
+    print("- Cannot get someone else's action")
     # s2 cannot use s1's account ID
     s2.get(
         f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions/{actions[0]["id"]}',
         expected_status_code=http.STATUS_FORBIDDEN,
     )
 
-with testContext("Cannot get an action not tied to account in path"):
+    print("- Cannot get an action not tied to account in path")
     # this time s2 uses her own account ID but still tries to get s1's action
     s2.get(
         f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions/{actions[0]["id"]}',
         expected_status_code=http.STATUS_NOT_FOUND,
     )
 
-with testContext("Cannot delete someone else's action"):
+    print("- Cannot delete someone else's action")
     # s2 cannot use s1's account ID
     s2.delete(
         f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions/{actions[0]["id"]}',
         expected_status_code=http.STATUS_FORBIDDEN,
     )
 
-with testContext("Cannot delete an action not tied to account in path"):
+    print("- Cannot delete an action not tied to account in path")
     # this time s2 uses her own account ID but still tries to delete s1's action
     s2.delete(
         f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions/{actions[0]["id"]}',
         expected_status_code=http.STATUS_NOT_FOUND,
     )
 
-with testContext('Cannot deleted someone else\'s actions'):
+    print('- Cannot deleted someone else\'s actions')
     # action is owned by s1 not s2
     s2.delete(
         f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions',
@@ -142,7 +142,7 @@ with testContext('Cannot deleted someone else\'s actions'):
         expected_status_code=404,
     )
 
-with testContext('"Not found" on deleting non existing action'):
+    print('- "Not found" on deleting non existing action')
     s1.delete(
         f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions',
         json={

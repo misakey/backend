@@ -1,44 +1,63 @@
-# Misapy: a few dev tools for the Misakey stack
+# Dev Tools for the Misakey Stack
 
-Requirements: [`requests` library](https://requests.readthedocs.io/en/master/)
+`get-access-token.py` will perform an auth flow against the stack
+and print the obtained access token
+along with many other informations.
 
-Python scripts in this directory are executables
-that you can call from any location on your machine.
-Because they have a “shebang”, you don't even have to call the Python interpreter explicitely.
-For instance, to get an access token:
+## Tests
 
-    path/to/get-access-token.py [--email whatever.email@you.want]
-
-## Setup
-
-Python scripts located next to `misapy` should work out-of-the-box,
-but some are grouped in directories such as `test-boxes/`
-and as a result `import misapy` in these scripts will not work out-of-the-box
-because Python will not find `misapy` next to “the module we are executing”
-(here, the Python file).
-
-The solution is to install Misapy
-so that `import misapy` works from anywhere on your system:
-do `pip install -e ./` in the present directory
-(what matters is that you are in the same directory as `setup.py`).
-What's nice with the `-e` option is that it does not copy the current Misapy source code to your Python packages,
-it just creates a symlink, so you should not have to re-run `pip install -e ./`
-even if modifications are made to Misapy.
-
-If for some reason you don't want to install Misapy
-but you still want to run the test scripts that are in directories, there is a trick:
-`cd` into the present directory (`tools/`)
-and run `python -m test-boxes.change_invitation_link`
-(or another file system path written with dots and without  the `.py` extension).
-This will tell Python to consider `test-boxes/change_invitation_link.py`
-as a submodule of the “module” `test-box`,
-so that `import` directives will look for modules next to `test-box/`
-instead of looking next to `test-boxes/change_invitation_link.py`.
-The drawback is that you *have* to be located into `tools/` when executing that,
-and its longer to type than just `test-boxes/change_invitation_link.py`
-(with the benefit of shell auto-completion).
-
-## Features
+Directory `tests/` contains Python scripts testing various behaviors of our backend.
+They are “integration tests” rather than “unit test”
+because they require the entire stack to be up
+(they don't mock the DB or other sort of ressources)
+and they can take quite a lot of time to execute.
 
 HTTP requests are logged to a file in `/tmp`
 which path is given during at the beginning of the execution.
+
+### Setup
+
+These Python scripts make use of the `misapy` Python package located in `misapy/misapy`,
+so you will have to install this package if you want to run the tests:
+
+```
+# pip will need to be pointed at the directory that contains the "setup.py" file
+pip install -e ./misapy
+```
+
+Note the `-e` function that tells Pip to create a symlink to the package
+instead of copying its code to the installation location.
+This way you won't have to to `pip install -e ./misapy` every time Misapy is updated.
+
+### Usage
+
+All Python scripts under `tests/` should be executable
+and have the proper shebang (`#!/usr/bin/env python3`)
+so they should be executable directly from the command line
+and shell auto-completion should be able to help you chose which one you want to run:
+
+```
+cedricvr@ermit:~/backend$ tools/tests/boxes/
+accesses.py                auto-invitation.py         change-invitation-link.py  __pycache__/
+all.py                     basics.py                  messages.py
+cedricvr@ermit:~/backend$ tools/tests/boxes/auto-invitation.py
+log file: /tmp/misapy-log-2020-11-12T18-11-36 (or /tmp/misapy-log-latest)
+Tok - 61ee87eb-b354-4be8-8cea-7f48c9918de0: dIXCdnLebL4cifFreVaFkiDzGVrku4Qk6dqNZDxKNfg.nzLZ65nWNT8JTXIO2Bg3Wh9DFMNbLVB9ESN5TC4xF-g
+Tok - 8e068767-ecfa-453d-a7e7-f0708dcef70a: l6q1vTnMGUdQZbt-SQVqh5rIoHMvFDpeMbLxmsIjEXE.ZzHExbHrgWOVwhPPbul5PGyaXDK_Km4U_kOVie3Anv8
+Tok - 7523f88d-f112-4620-97c9-4b990221a350: ckO2F8TSdJsUtIe6PybvAK6TKvSfUoed6rbJG8X556o.Wj-M9ye1xk-YJAc3D7aNUhIjJy6VS_QEnfmUDbkw6yU
+- "Bad Request" if "auto_invite" but no crypto actions data
+- "Bad Request" if crypto actions data but no "auto_invite"
+- "Bad Request" if too many keys
+- "Bad Request" if missing keys
+- auto invitation
+- "Conflict" if an identity does not have a public key
+```
+
+In each directory (except the ones creates by Python like `__pycache__`)
+there should be a file `all.py`:
+it is a script that will execute all test scripts in this directory
+**as well as the ones under it**.
+
+### Contributing
+
+See `tests/README.md`
