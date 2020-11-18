@@ -73,7 +73,7 @@ HTTP 200 OK
 }
 ```
 
-## Deleting a Specific Crypto Action
+## Deleting a Crypto Action
 
 ```bash
 DELETE /accounts/e61d516d-716b-44de-b017-2307eb76fb8d/crypto/actions/e7a3c382-899f-4cf5-bbaa-dca3324ffca6
@@ -85,28 +85,9 @@ Rules:
   (you can only delete your own crypto actions)
 - action with this ID must exist and be owned by the querier's account
 
-Response if success: `HTTP 204 No Content`
+Side effects:
 
-## Deleting Crypto Actions
-
-```bash
-DELETE /accounts/e61d516d-716b-44de-b017-2307eb76fb8d/crypto/actions
-```
-
-```json
-{
-    "until_action_id": "e7a3c382-899f-4cf5-bbaa-dca3324ffca6"
-}
-```
-
-Will delete all of the actions of this account
-until action with the given ID,
-and *including this action*.
-
-Rules:
-
-- account ID must match the one in the access token
-  (you can only delete your own crypto actions)
-- action with ID `until_action_id` must exist and be owned by the querier's account
+- notifications pointing to this crypto action
+  (e.g. auto invitations) will be marked as “used”.
 
 Response if success: `HTTP 204 No Content`

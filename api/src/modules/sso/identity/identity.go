@@ -93,11 +93,11 @@ func (ids IdentityService) Create(ctx context.Context, identity *Identity) error
 	}
 
 	// convert to sql model
-	return identity.toSQLBoiler().Insert(ctx, ids.sqlDB, boil.Infer())
+	return identity.toSQLBoiler().Insert(ctx, ids.SqlDB, boil.Infer())
 }
 
 func (ids IdentityService) Get(ctx context.Context, identityID string) (ret Identity, err error) {
-	record, err := sqlboiler.FindIdentity(ctx, ids.sqlDB, identityID)
+	record, err := sqlboiler.FindIdentity(ctx, ids.SqlDB, identityID)
 	if err == sql.ErrNoRows {
 		return ret, merror.NotFound().Describe(err.Error()).Detail("id", merror.DVNotFound)
 	}
@@ -132,7 +132,7 @@ func (ids IdentityService) List(ctx context.Context, filters IdentityFilters) ([
 	// eager loading
 	mods = append(mods, qm.Load("Identifier"))
 
-	identityRecords, err := sqlboiler.Identities(mods...).All(ctx, ids.sqlDB)
+	identityRecords, err := sqlboiler.Identities(mods...).All(ctx, ids.SqlDB)
 	identities := make([]*Identity, len(identityRecords))
 	if err == sql.ErrNoRows {
 		return identities, nil
@@ -168,7 +168,7 @@ func (ids IdentityService) GetAuthableByIdentifierID(ctx context.Context, identi
 }
 
 func (ids IdentityService) Update(ctx context.Context, identity *Identity) error {
-	rowsAff, err := identity.toSQLBoiler().Update(ctx, ids.sqlDB, boil.Infer())
+	rowsAff, err := identity.toSQLBoiler().Update(ctx, ids.SqlDB, boil.Infer())
 	if err != nil {
 		return err
 	}

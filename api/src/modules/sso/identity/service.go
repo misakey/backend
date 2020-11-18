@@ -18,7 +18,7 @@ type IdentityService struct {
 
 	identifierService identifier.IdentifierService
 
-	sqlDB *sql.DB
+	SqlDB *sql.DB
 }
 
 func NewIdentityService(
@@ -34,6 +34,6 @@ func NewIdentityService(
 
 		identifierService: identifierService,
 
-		sqlDB: ssoDB,
+		SqlDB: ssoDB,
 	}
 }

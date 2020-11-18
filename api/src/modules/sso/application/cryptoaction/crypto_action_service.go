@@ -43,12 +43,31 @@ func (service CryptoActionService) CreateCryptoAction(ctx context.Context, actio
 	return service.cryptoActions.Create(ctx, actions)
 }
 
-func (service CryptoActionService) DeleteCryptoActionsUntil(ctx context.Context, accountID string, untilTime time.Time) error {
-	return service.cryptoActions.DeleteUntil(ctx, accountID, untilTime)
-}
-
 func (service CryptoActionService) DeleteCryptoAction(ctx context.Context, actionID string, accountID string) error {
-	return service.cryptoActions.Delete(ctx, actionID, accountID)
+	tx, err := service.identityService.SqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return merror.Transform(err).Describe(`creating transaction`)
+	}
+	err = service.identityService.NotificationMarkAutoInvitationUsed(ctx, tx, actionID)
+	if err != nil {
+		return merror.Transform(err).Describe(`marking related invitations as used`)
+	}
+
+	// TODO use the transaction here too
+	err = service.cryptoActions.Delete(ctx, actionID, accountID)
+	if err != nil {
+		secondErr := tx.Rollback()
+		if secondErr != nil {
+			return merror.Transform(secondErr).Describef(`while handling error "%s"`, err.Error())
+		}
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return merror.Transform(err).Describe(`commiting notif transaction (cryptoaction was deleted though!)`)
+	}
+	return nil
 }
 
 func (service CryptoActionService) GetCryptoAction(ctx context.Context, actionID string, accountID string) (domain.CryptoAction, error) {

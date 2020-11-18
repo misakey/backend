@@ -446,7 +446,8 @@ _JSON Body:_
     "details": {
       "box_id": "50d03bf1-3515-43af-a3d9-d553d5b71dbc",
       "box_title": "Test Box",
-      "cryptoaction_id": "84cfa967-8cff-4ebc-ba0e-ce70ca700a79"
+      "cryptoaction_id": "84cfa967-8cff-4ebc-ba0e-ce70ca700a79",
+      "used": true, // if not used, attribute will not be present
     },
     "created_at": "2020-11-06T15:44:25.189269Z",
     "acknowledged_at": null

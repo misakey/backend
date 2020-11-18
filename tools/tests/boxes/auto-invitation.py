@@ -181,3 +181,22 @@ with prettyErrorContext():
         },
         expected_status_code=http.STATUS_CONFLICT,
     )
+
+    print('- deletion of cryptoaction')
+    s2.delete(
+        f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions/{cryptoaction["id"]}',
+        expected_status_code=http.STATUS_NO_CONTENT,
+    )
+
+    r = s2.get(f'{URL_PREFIX}/identities/{s2.identity_id}/notifications')
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(len(r.json()) == 2),
+            lambda r: assert_fn(r.json()[0]['type'] == 'box.auto_invite'),
+            lambda r: assert_fn(r.json()[0]['details']['box_id'] == box_id),
+            lambda r: assert_fn(r.json()[0]['details']['cryptoaction_id'] == cryptoaction['id']),
+            # Must have been marked as used
+            lambda r: assert_fn(r.json()[0]['details']['used'] == True),
+        ]
+    )

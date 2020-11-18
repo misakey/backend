@@ -50,12 +50,6 @@ func bindRoutes(
 		ss.ListCryptoActions,
 		request.ResponseOK,
 	))
-	accountPath.DELETE(oidcHandlers.NewACR2(
-		"/:id/crypto/actions",
-		func() request.Request { return &application.DeleteCryptoActionsCmd{} },
-		ss.DeleteCryptoActionsUntil,
-		request.ResponseNoContent,
-	))
 	accountPath.GET(oidcHandlers.NewACR2(
 		"/:account-id/crypto/actions/:action-id",
 		func() request.Request { return &application.GetCryptoActionQuery{} },

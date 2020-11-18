@@ -2,8 +2,11 @@ package identity
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -61,7 +64,7 @@ func (ids IdentityService) NotificationCreate(ctx context.Context, identityID st
 		identityID: identityID,
 	}
 	record := notif.toSQLBoiler()
-	return record.Insert(ctx, ids.sqlDB, boil.Infer())
+	return record.Insert(ctx, ids.SqlDB, boil.Infer())
 }
 
 func (ids IdentityService) NotificationBulkCreate(ctx context.Context, identityIDs []string, nType string, details null.JSON) error {
@@ -72,7 +75,7 @@ func (ids IdentityService) NotificationBulkCreate(ctx context.Context, identityI
 			CreatedAt:  time.Now(),
 			identityID: identityID,
 		}.toSQLBoiler()
-		if err := notif.Insert(ctx, ids.sqlDB, boil.Infer()); err != nil {
+		if err := notif.Insert(ctx, ids.SqlDB, boil.Infer()); err != nil {
 			return err
 		}
 	}
@@ -119,6 +122,51 @@ func (ids IdentityService) NotificationList(
 		notifs[i] = newNotification().fromSQLBoiler(*record)
 	}
 	return notifs, nil
+}
+
+func markInvitationAsUsed(ctx context.Context, exec boil.ContextExecutor, notif *sqlboiler.IdentityNotification) error {
+	detailsMap := make(map[string]interface{})
+	err := json.Unmarshal(notif.Details.JSON, &detailsMap)
+	if err != nil {
+		return err
+	}
+
+	detailsMap["used"] = true
+
+	notif.Details.JSON, err = json.Marshal(detailsMap)
+	if err != nil {
+		return err
+	}
+	nbRowsAffected, err := notif.Update(ctx, exec, boil.Infer())
+	if err != nil {
+		return err
+	}
+	if nbRowsAffected != 1 {
+		return merror.Error{
+			Desc: fmt.Sprintf(`%d rows affected (expected 1)`, nbRowsAffected),
+		}
+	}
+
+	return nil
+}
+
+func (ids IdentityService) NotificationMarkAutoInvitationUsed(ctx context.Context, exec boil.ContextExecutor, cryptoactionID string) error {
+	searchedJSONPath := fmt.Sprintf(`{"cryptoaction_id":"%s"}`, cryptoactionID)
+	notifs, err := sqlboiler.IdentityNotifications(
+		qm.Where(`details::jsonb @> ?`, searchedJSONPath),
+	).All(ctx, exec)
+	if err != nil {
+		return err
+	}
+
+	for _, notif := range notifs {
+		notifErr := markInvitationAsUsed(ctx, exec, notif)
+		if notifErr != nil {
+			log.Error().Err(notifErr).Msg(fmt.Sprintf(`marking notif %d as used`, notif.ID))
+		}
+	}
+
+	return nil
 }
 
 // Set acknowledged_at to time.Now() for all unacknowledged notification of the received identity id
