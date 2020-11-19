@@ -406,6 +406,13 @@ _JSON Body:_
 ```json
 [
   {
+   "id": 5,
+   "type": "user.create_identity", // the user has just created an ACR1 identity !
+   "details": null,
+   "created_at": "2038-11-04T23:59:03.000Z",
+   "acknowledged_at": "2038-11-05T00:00:00.000Z",
+  },
+  {
    "id": 11,
    "type": "user.create_account", // the user has just created an account !
    "details": null,
@@ -457,7 +464,7 @@ _JSON Body:_
 
 with attributes for each object of the list:
 - `id`: (integer) a unique integer corresponding to the identity notification.
-- `type`: (string, one of: _member.kick_, _box.lifecycle_, _user.reset_password_, _user.create_account_, _box.auto_invite_) the type of notification - details and displayed text should be set considering this value.
+- `type`: (string, one of: _member.kick_, _box.lifecycle_, _user.reset_password_, _user.create_account_, _user.create_identity_, _box.auto_invite_) the type of notification - details and displayed text should be set considering this value.
 - `details`: (object) (nullable) a JSON object filled or `null` depending of the type of notification (see all JSON example to get info about it)
 - `created_at`: (date) the moment the server created the notification.
 - `acknowledged_at`: (date) (nullable) the moment the end-user has acknowledged the notification.

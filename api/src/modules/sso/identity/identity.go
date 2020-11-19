@@ -9,9 +9,11 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories/sqlboiler"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 type Identity struct {
@@ -93,7 +95,16 @@ func (ids IdentityService) Create(ctx context.Context, identity *Identity) error
 	}
 
 	// convert to sql model
-	return identity.toSQLBoiler().Insert(ctx, ids.SqlDB, boil.Infer())
+	if err := identity.toSQLBoiler().Insert(ctx, ids.SqlDB, boil.Infer()); err != nil {
+		return err
+	}
+
+	// send notification message
+	// for onboarding purpose
+	if err := ids.NotificationCreate(ctx, identity.ID, "user.create_identity", null.JSONFromPtr(nil)); err != nil {
+		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", identity.ID)
+	}
+	return nil
 }
 
 func (ids IdentityService) Get(ctx context.Context, identityID string) (ret Identity, err error) {
