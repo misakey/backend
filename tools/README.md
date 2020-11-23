@@ -58,6 +58,8 @@ there should be a file `all.py`:
 it is a script that will execute all test scripts in this directory
 **as well as the ones under it**.
 
+**Known issue with `all.py` scripts:** ([issue #219](https://gitlab.misakey.dev/misakey/backend/-/issues/219))the stack trace is not very useful in determining which instruction failed. If Python raises an exception and you want to see where it comes from, locate which test script it comes from (`all.py` turns test script names into Markdown headers) and run the script directly.
+
 ### Contributing
 
 See `tests/README.md`

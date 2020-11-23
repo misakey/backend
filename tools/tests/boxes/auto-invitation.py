@@ -150,13 +150,13 @@ with prettyErrorContext():
     cryptoaction = r.json()[0]
 
     r = s2.get(f'{URL_PREFIX}/identities/{s2.identity_id}/notifications')
+    notification = r.json()[0]
     check_response(
         r,
         [
-            lambda r: assert_fn(len(r.json()) == 2), # 2 notifs: account creation and auto invitation
-            lambda r: assert_fn(r.json()[0]['type'] == 'box.auto_invite'),
-            lambda r: assert_fn(r.json()[0]['details']['box_id'] == box_id),
-            lambda r:assert_fn(r.json()[0]['details']['cryptoaction_id'] == cryptoaction['id'])
+            lambda r: assert_fn(notification['type'] == 'box.auto_invite'),
+            lambda r: assert_fn(notification['details']['box_id'] == box_id),
+            lambda r:assert_fn(notification['details']['cryptoaction_id'] == cryptoaction['id'])
         ]
     )
 
@@ -189,14 +189,15 @@ with prettyErrorContext():
     )
 
     r = s2.get(f'{URL_PREFIX}/identities/{s2.identity_id}/notifications')
+    # finding the previous notification
+    notification = [
+        x for x in r.json()
+        if x['id'] == notification['id']
+    ][0]
     check_response(
         r,
         [
-            lambda r: assert_fn(len(r.json()) == 2),
-            lambda r: assert_fn(r.json()[0]['type'] == 'box.auto_invite'),
-            lambda r: assert_fn(r.json()[0]['details']['box_id'] == box_id),
-            lambda r: assert_fn(r.json()[0]['details']['cryptoaction_id'] == cryptoaction['id']),
             # Must have been marked as used
-            lambda r: assert_fn(r.json()[0]['details']['used'] == True),
+            lambda r: assert_fn(notification['details']['used'] == True),
         ]
     )

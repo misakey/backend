@@ -67,7 +67,6 @@ with prettyErrorContext():
         f'{URL_PREFIX}/identities/{s2.identity_id}/notifications',
         expected_status_code=200
     )
-    assert len(r.json()) == 2 # user.account_creation is already there so there is 2 notifs
     assert r.json()[0]['details']['id'] == box_id
     assert r.json()[0]['type'] == 'member.kick'
 

@@ -21,13 +21,12 @@ with prettyErrorContext():
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications',
         expected_status_code=204
     )
-    assert r.headers['X-Total-Count'] == '1'
+    count_notifs = int(r.headers['X-Total-Count'])
 
     r = s1.get(
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications?offset=0',
         expected_status_code=200
     )
-    assert len(r.json()) == 1
     notif_id = r.json()[0]['id']
     assert r.json()[0]['type'] == 'user.create_account'
     assert r.json()[0]['details'] == None
@@ -44,7 +43,7 @@ with prettyErrorContext():
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications',
         expected_status_code=204
     )
-    assert r.headers['X-Total-Count'] == '1'
+    assert int(r.headers['X-Total-Count']) == count_notifs
     # acknowledge for real the notif
     r = s1.put(
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications/acknowledgement?ids={notif_id}',
@@ -55,13 +54,12 @@ with prettyErrorContext():
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications',
         expected_status_code=204
     )
-    assert r.headers['X-Total-Count'] == '0'
+    assert int(r.headers['X-Total-Count']) == count_notifs-1
     # notif acknowledged
     r = s1.get(
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications?offset=0&limit=2',
         expected_status_code=200
     )
-    assert len(r.json()) == 1
     assert r.json()[0]['id'] == notif_id
     assert r.json()[0]['type'] == 'user.create_account'
     assert r.json()[0]['details'] == None
