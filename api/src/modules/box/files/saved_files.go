@@ -21,6 +21,14 @@ type SavedFile struct {
 	CreatedAt         time.Time `json:"created_at"`
 }
 
+type SavedFileFilters struct {
+	FileID           string
+	IdentityID       string
+	EncryptedFileIDs []string
+	Offset           *int
+	Limit            *int
+}
+
 func CreateSavedFile(ctx context.Context, exec boil.ContextExecutor, savedFile *SavedFile) error {
 	toStore := sqlboiler.SavedFile{
 		ID:                savedFile.ID,
@@ -59,19 +67,31 @@ func CountSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor,
 	return int(count), nil
 }
 
-func ListSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor, identityID string, offset *int, limit *int) ([]SavedFile, error) {
+func ListSavedFiles(ctx context.Context, exec boil.ContextExecutor, filters SavedFileFilters) ([]SavedFile, error) {
 	mods := []qm.QueryMod{
-		sqlboiler.SavedFileWhere.IdentityID.EQ(identityID),
 		qm.OrderBy(sqlboiler.SavedFileColumns.CreatedAt + " DESC"),
 	}
+
+	// set identity filter
+	if filters.IdentityID != "" {
+		mods = append(mods, sqlboiler.SavedFileWhere.IdentityID.EQ(filters.IdentityID))
+	}
+
+	// set ids filter
+	if len(filters.EncryptedFileIDs) != 0 {
+		mods = append(mods, sqlboiler.SavedFileWhere.EncryptedFileID.IN(filters.EncryptedFileIDs))
+	}
+
 	// add offset for pagination
-	if offset != nil {
-		mods = append(mods, qm.Offset(*offset))
+	if filters.Offset != nil {
+		mods = append(mods, qm.Offset(*filters.Offset))
 	}
+
 	// add limit for pagination
-	if limit != nil {
-		mods = append(mods, qm.Limit(*limit))
+	if filters.Limit != nil {
+		mods = append(mods, qm.Limit(*filters.Limit))
 	}
+
 	dbSavedFiles, err := sqlboiler.SavedFiles(mods...).All(ctx, exec)
 	if err == sql.ErrNoRows {
 		return []SavedFile{}, nil
@@ -84,22 +104,7 @@ func ListSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor, 
 	for idx, savedFile := range dbSavedFiles {
 		savedFiles[idx] = toDomain(savedFile)
 	}
-	return savedFiles, nil
-}
 
-func ListSavedFilesByFileID(ctx context.Context, exec boil.ContextExecutor, fileID string) ([]SavedFile, error) {
-	dbSavedFiles, err := sqlboiler.SavedFiles(sqlboiler.SavedFileWhere.EncryptedFileID.EQ(fileID)).All(ctx, exec)
-	if err == sql.ErrNoRows {
-		return []SavedFile{}, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	savedFiles := make([]SavedFile, len(dbSavedFiles))
-	for idx, savedFile := range dbSavedFiles {
-		savedFiles[idx] = toDomain(savedFile)
-	}
 	return savedFiles, nil
 }
 

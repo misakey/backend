@@ -43,5 +43,11 @@ func (app *BoxApplication) ListSavedFiles(ctx context.Context, genReq request.Re
 		return nil, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
 	}
 
-	return files.ListSavedFilesByIdentityID(ctx, app.DB, req.IdentityID, req.Offset, req.Limit)
+	filters := files.SavedFileFilters{
+		IdentityID: req.IdentityID,
+		Offset:     req.Offset,
+		Limit:      req.Limit,
+	}
+
+	return files.ListSavedFiles(ctx, app.DB, filters)
 }

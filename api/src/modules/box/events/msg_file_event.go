@@ -9,14 +9,17 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
 type MsgFileContent struct {
 	Encrypted       string `json:"encrypted"`
 	PublicKey       string `json:"public_key"`
 	EncryptedFileID string `json:"encrypted_file_id"`
+
+	// metadata
+	IsSaved bool `json:"is_saved"`
 }
 
 func (c *MsgFileContent) Unmarshal(json types.JSON) error {

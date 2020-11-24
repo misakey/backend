@@ -49,6 +49,17 @@ func (app *BoxApplication) ListBoxFiles(ctx context.Context, genReq request.Requ
 		return nil, err
 	}
 
+	fileEvents := make([]*events.Event, len(boxEvents))
+	for i := range boxEvents {
+		fileEvents[i] = &boxEvents[i]
+	}
+
+	if len(fileEvents) != 0 {
+		if err := events.SetSavedStatus(ctx, app.DB, acc.IdentityID, fileEvents); err != nil {
+			return nil, merror.Transform(err).Describe("setting saved status")
+		}
+	}
+
 	views := make([]events.View, len(boxEvents))
 	for i, e := range boxEvents {
 		if err := events.BuildAggregate(ctx, app.DB, &e); err != nil {

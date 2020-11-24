@@ -153,6 +153,7 @@ Messages of type `msg.file` allow the transfer of blob data.
 {
   "type": "msg.file",
   "content": {
+    "is_saved": "(bool): is the file in user My Documents",
     "encrypted": "(string) (base64): information about file encryption.",
     "encrypted_file_id": "(string) (uuid format): a unique identifier used to store and download the file",
     "deleted": { // nullable, indicates the message have been removed

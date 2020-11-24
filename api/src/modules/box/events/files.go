@@ -12,9 +12,56 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// SetSavedStatus on file events contents for identity identityID
+// the function alters events in fileEvents and only returns an error
+func SetSavedStatus(ctx context.Context, exec boil.ContextExecutor, identityID string, fileEvents []*Event) error {
+	// build ids array and indexed array
+	var ids []string
+	indexedEvents := make(map[string]*Event)
+	for _, e := range fileEvents {
+		var content MsgFileContent
+		if err := content.Unmarshal(e.JSONContent); err != nil {
+			return err
+		}
+		if content.EncryptedFileID != "" {
+			ids = append(ids, content.EncryptedFileID)
+			indexedEvents[content.EncryptedFileID] = e
+		}
+	}
+	filters := files.SavedFileFilters{
+		IdentityID:       identityID,
+		EncryptedFileIDs: ids,
+	}
+
+	savedFiles, err := files.ListSavedFiles(ctx, exec, filters)
+	if err != nil {
+		return merror.Transform(err).Describe("getting saved files")
+	}
+
+	for _, file := range savedFiles {
+		if e, ok := indexedEvents[file.EncryptedFileID]; ok {
+			// set saved status to true
+			var content MsgFileContent
+			if err := content.Unmarshal(e.JSONContent); err != nil {
+				return err
+			}
+			content.IsSaved = true
+			if err := e.JSONContent.Marshal(content); err != nil {
+				return merror.Transform(err).Describef("marshalling %s content", e.Type)
+			}
+		}
+	}
+
+	return nil
+}
+
 func IsFileOrphan(ctx context.Context, exec boil.ContextExecutor, fileID string) (bool, error) {
 	// check that there is no saved file referring this file
-	savedFiles, err := files.ListSavedFilesByFileID(ctx, exec, fileID)
+	filters := files.SavedFileFilters{
+		EncryptedFileIDs: []string{fileID},
+	}
+
+	savedFiles, err := files.ListSavedFiles(ctx, exec, filters)
 	if err != nil {
 		return false, err
 	}
@@ -73,8 +120,11 @@ func HasAccessOrHasSavedFile(
 	}
 
 	// 2. identity has access to files they have saved
-	// TODO (perf): filter directly by IdentityID = use a new function files.ListSaved(savedFileFilters{})
-	linkedSavedFiles, err := files.ListSavedFilesByFileID(ctx, exec, fileID)
+	filters := files.SavedFileFilters{
+		IdentityID:       identityID,
+		EncryptedFileIDs: []string{fileID},
+	}
+	linkedSavedFiles, err := files.ListSavedFiles(ctx, exec, filters)
 	if err != nil {
 		return false, err
 	}

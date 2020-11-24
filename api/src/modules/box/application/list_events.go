@@ -11,6 +11,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/etype"
 )
 
 type ListEventsRequest struct {
@@ -49,8 +50,24 @@ func (app *BoxApplication) ListEvents(ctx context.Context, genReq request.Reques
 		return nil, err
 	}
 
+	// add information on files
+	var fileEvents []*events.Event
+	for i, e := range boxEvents {
+		if e.Type == etype.Msgfile {
+			fileEvents = append(fileEvents, &boxEvents[i])
+		}
+	}
+
+	if len(fileEvents) != 0 {
+		if err := events.SetSavedStatus(ctx, app.DB, acc.IdentityID, fileEvents); err != nil {
+			return nil, merror.Transform(err).Describe("setting saved status")
+		}
+	}
+
+	// build the returned views
 	views := make([]events.View, len(boxEvents))
 	for i, e := range boxEvents {
+
 		if err := events.BuildAggregate(ctx, app.DB, &e); err != nil {
 			return views, merror.Transform(err).Describe("building aggregate")
 		}
