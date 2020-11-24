@@ -14,6 +14,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events/cache"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/keyshares"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/quota"
@@ -129,6 +130,19 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 	}
 	for _, memberID := range memberIDs {
 		realtime.SendUpdate(ctx, app.RedConn, memberID, &bu)
+	}
+
+	// 8. Clean up some redis keys
+	if err := cache.CleanBoxCache(ctx, app.RedConn, req.boxID); err != nil {
+		logger.FromCtx(ctx).Error().Err(err).Msgf("cleaning box %s cache", req.boxID)
+	}
+
+	// 9. Invalidate cache for members
+	//to avoid having this box in user lists
+	for _, memberID := range memberIDs {
+		if err := cache.CleanBoxesListCache(ctx, app.RedConn, memberID); err != nil {
+			logger.FromCtx(ctx).Error().Err(err).Msgf("cleaning boxes list for %s cache", memberID)
+		}
 	}
 
 	return nil, nil
