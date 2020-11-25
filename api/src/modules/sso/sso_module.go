@@ -16,7 +16,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester/http"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/notifications/email"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/authn"

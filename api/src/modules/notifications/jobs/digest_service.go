@@ -7,10 +7,10 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/notifications/email"
 )
 
 type DigestJob struct {

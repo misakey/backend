@@ -11,12 +11,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/config"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/db"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/notifications/email"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/notifications/jobs"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )

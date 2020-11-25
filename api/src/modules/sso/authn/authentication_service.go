@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/notifications/email"
 )
 
 type QuotumInterface interface {
