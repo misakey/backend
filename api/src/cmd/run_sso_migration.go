@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/db/migration"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/db/migration"
 )
 
 var ssoMigrateCmd = &cobra.Command{

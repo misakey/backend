@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/db/migration"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/db/migration"
 )
 
 var boxMigrateCmd = &cobra.Command{
