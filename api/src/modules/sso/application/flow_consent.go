@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -11,7 +12,8 @@ import (
 	"github.com/volatiletech/null/v8"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/authn"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -45,7 +47,7 @@ func (sso *SSOService) InitConsent(ctx context.Context, gen request.Request) (in
 	}
 
 	// 2. retrieve subject information to put it in ID tokens as claims
-	identity, err := sso.identityService.Get(ctx, consentCtx.OIDCContext.MID())
+	curIdentity, err := identity.Get(ctx, sso.sqlDB, consentCtx.OIDCContext.MID())
 	if err != nil {
 		if merror.HasCode(err, merror.NotFoundCode) {
 			return sso.authFlowService.BuildResetURL(consentCtx.RequestURL), nil
@@ -68,9 +70,8 @@ func (sso *SSOService) InitConsent(ctx context.Context, gen request.Request) (in
 
 	// 4. ask our consent service if the end-user manual consent can be skipped
 	skip, err := sso.authFlowService.ShouldSkipConsent(
-		ctx, consentCtx.RequestedScope,
-		consentCtx.Client.ID,
-		identity.AccountID,
+		ctx, sso.sqlDB,
+		consentCtx.RequestedScope, consentCtx.Client.ID, curIdentity.AccountID,
 	)
 	if err != nil {
 		return sso.authFlowService.ConsentRedirectErr(err), nil
@@ -78,7 +79,7 @@ func (sso *SSOService) InitConsent(ctx context.Context, gen request.Request) (in
 
 	// consider both our's and hydra's decision about skipping the manual consent
 	if skip || consentCtx.Skip {
-		return sso.authFlowService.BuildAndAcceptConsent(ctx, consentCtx, identity.Identifier.Value), nil
+		return sso.authFlowService.BuildAndAcceptConsent(ctx, consentCtx, curIdentity.Identifier.Value), nil
 	}
 
 	if authflow.HasNonePrompt(consentCtx.RequestURL) {
@@ -167,11 +168,11 @@ func (sso *SSOService) AcceptConsent(ctx context.Context, gen request.Request) (
 	}
 
 	// 2. retrieve subject information to put it in ID tokens as claims
-	identity, err := sso.identityService.Get(ctx, consentCtx.OIDCContext.MID())
+	curIdentity, err := identity.Get(ctx, sso.sqlDB, consentCtx.OIDCContext.MID())
 	if err != nil {
 		return redirect, err
 	}
-	if identity.ID != cmd.IdentityID {
+	if curIdentity.ID != cmd.IdentityID {
 		return redirect, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
 	}
 
@@ -194,6 +195,6 @@ func (sso *SSOService) AcceptConsent(ctx context.Context, gen request.Request) (
 	consentCtx.RequestedScope = append(consentScopes, cmd.ConsentedScopes...)
 
 	// 4. tell hydra the consent contract & returns the hydra url response
-	redirect.To = sso.authFlowService.BuildAndAcceptConsent(ctx, consentCtx, identity.Identifier.Value)
+	redirect.To = sso.authFlowService.BuildAndAcceptConsent(ctx, consentCtx, curIdentity.Identifier.Value)
 	return redirect, nil
 }

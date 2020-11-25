@@ -9,6 +9,8 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -38,7 +40,7 @@ func (sso *SSOService) CountIdentityNotification(ctx context.Context, gen reques
 		return -1, merror.Forbidden()
 	}
 
-	return sso.identityService.NotificationCount(ctx, sso.sqlDB, query.identityID)
+	return identity.NotificationCount(ctx, sso.sqlDB, query.identityID)
 }
 
 type IdentityNotifListQuery struct {
@@ -72,7 +74,7 @@ func (sso *SSOService) ListIdentityNotification(ctx context.Context, gen request
 	}
 
 	// list notifs
-	notifs, err := sso.identityService.NotificationList(ctx, sso.sqlDB, query.identityID, query.Offset, query.Limit)
+	notifs, err := identity.NotificationList(ctx, sso.sqlDB, query.identityID, query.Offset, query.Limit)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing identity notification")
 	}
@@ -117,5 +119,17 @@ func (sso *SSOService) AckIdentityNotification(ctx context.Context, gen request.
 	if acc == nil || acc.IdentityID != cmd.identityID {
 		return nil, merror.Forbidden()
 	}
-	return nil, sso.identityService.NotificationAck(ctx, sso.sqlDB, cmd.identityID, cmd.notifIDs)
+
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer atomic.SQLRollback(ctx, tr, err)
+
+	err = identity.NotificationAck(ctx, tr, cmd.identityID, cmd.notifIDs)
+	if err != nil {
+		return nil, err
+	}
+	return nil, tr.Commit()
 }

@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/volatiletech/null/v8"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/crypto"
 )
 
 type CryptoActionRepo interface {
-	CreateCryptoAction(ctx context.Context, actions []domain.CryptoAction) error
+	CreateCryptoActions(ctx context.Context, actions []crypto.Action) error
 	CreateInvitationActions(ctx context.Context, senderID string, boxID string, boxTitle string, identifierValue string, actionsData null.JSON) error
 }

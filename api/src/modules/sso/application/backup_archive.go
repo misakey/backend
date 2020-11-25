@@ -6,14 +6,15 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/crypto"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
 type BackupArchiveView struct {
-	domain.BackupArchive
+	crypto.BackupArchive
 }
 
 func (sso *SSOService) ListBackupArchives(ctx context.Context, _ request.Request) (interface{}, error) {
@@ -23,7 +24,7 @@ func (sso *SSOService) ListBackupArchives(ctx context.Context, _ request.Request
 		return nil, merror.Forbidden()
 	}
 
-	archives, err := sso.backupArchiveService.ListBackupArchives(ctx, acc.AccountID.String)
+	archives, err := crypto.ListBackupArchives(ctx, sso.sqlDB, acc.AccountID.String)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +57,7 @@ func (sso *SSOService) GetBackupArchiveData(ctx context.Context, gen request.Req
 		return "", merror.Forbidden()
 	}
 
-	archive, err := sso.backupArchiveService.GetBackupArchive(ctx, query.archiveID)
+	archive, err := crypto.GetBackupArchive(ctx, sso.sqlDB, query.archiveID)
 	if err != nil {
 		return "", merror.Transform(err).Describe("retrieving archive")
 	}
@@ -97,17 +98,31 @@ func (sso *SSOService) DeleteBackupArchive(ctx context.Context, gen request.Requ
 		return nil, merror.Forbidden()
 	}
 
-	archive, err := sso.backupArchiveService.GetBackupArchiveMetadata(ctx, cmd.archiveID)
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer atomic.SQLRollback(ctx, tr, err)
+
+	var archive crypto.BackupArchive
+	archive, err = crypto.GetBackupArchiveMetadata(ctx, tr, cmd.archiveID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("retrieving archive metadata")
 	}
 
 	if acc.AccountID.String != archive.AccountID {
-		return nil, merror.Forbidden()
+		err = merror.Forbidden()
+		return nil, err
 	}
 	if archive.DeletedAt.Valid || archive.RecoveredAt.Valid {
-		return nil, merror.Gone()
+		err = merror.Gone()
+		return nil, err
 	}
 
-	return nil, sso.backupArchiveService.DeleteBackupArchive(ctx, cmd.archiveID, cmd.Reason)
+	err = crypto.DeleteBackupArchive(ctx, tr, cmd.archiveID, cmd.Reason)
+	if err != nil {
+		return nil, err
+	}
+	return nil, tr.Commit()
 }

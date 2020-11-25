@@ -11,8 +11,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	_ "gitlab.misakey.dev/misakey/backend/api/src/modules/sso/gamification"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -53,7 +54,7 @@ func (sso *SSOService) GetIdentity(ctx context.Context, gen request.Request) (in
 	}
 
 	// set the view on identity retrieval
-	view.Identity, err = sso.identityService.Get(ctx, query.identityID)
+	view.Identity, err = identity.Get(ctx, sso.sqlDB, query.identityID)
 	if err != nil {
 		return view, err
 	}
@@ -104,28 +105,40 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 		return nil, merror.Forbidden()
 	}
 
-	identity, err := sso.identityService.Get(ctx, cmd.identityID)
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer atomic.SQLRollback(ctx, tr, err)
+
+	var curIdentity identity.Identity
+	curIdentity, err = identity.Get(ctx, tr, cmd.identityID)
 	if err != nil {
 		return nil, err
 	}
 
 	if cmd.DisplayName != "" {
-		identity.DisplayName = cmd.DisplayName
+		curIdentity.DisplayName = cmd.DisplayName
 	}
 
 	if cmd.Notifications != "" {
-		identity.Notifications = cmd.Notifications
+		curIdentity.Notifications = cmd.Notifications
 	}
 
 	if cmd.Color.Valid {
-		identity.Color = cmd.Color
+		curIdentity.Color = cmd.Color
 	}
 
 	if cmd.Pubkey.Valid {
-		identity.Pubkey = cmd.Pubkey
+		curIdentity.Pubkey = cmd.Pubkey
 	}
 
-	return nil, sso.identityService.Update(ctx, &identity)
+	err = identity.Update(ctx, tr, &curIdentity)
+	if err != nil {
+		return nil, err
+	}
+	return nil, tr.Commit()
 }
 
 // UploadAvatarCmd
@@ -169,8 +182,16 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 		return nil, merror.Forbidden()
 	}
 
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer atomic.SQLRollback(ctx, tr, err)
+
 	// get avatar's corresponding user
-	existingIdentity, err := sso.identityService.Get(ctx, cmd.identityID)
+	var existingIdentity identity.Identity
+	existingIdentity, err = identity.Get(ctx, tr, cmd.identityID)
 	if err != nil {
 		return nil, err
 	}
@@ -180,14 +201,16 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 		avatarToDel := &identity.AvatarFile{
 			Filename: filepath.Base(existingIdentity.AvatarURL.String),
 		}
-		if err := sso.identityService.DeleteAvatar(ctx, avatarToDel); err != nil {
+		err = sso.identityService.DeleteAvatar(ctx, avatarToDel)
+		if err != nil {
 			return nil, err
 		}
 	}
 
 	avatar := identity.AvatarFile{}
 	// generate an UUID to use as a filename
-	filename, err := uuid.NewRandom()
+	var filename uuid.UUID
+	filename, err = uuid.NewRandom()
 	if err != nil {
 		return nil, merror.Transform(err).Describe("could not generate uuid v4")
 	}
@@ -196,14 +219,19 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 	avatar.Data = cmd.Data
 
 	// upload the avatar to storage
-	url, err := sso.identityService.UploadAvatar(ctx, &avatar)
+	var url string
+	url, err = sso.identityService.UploadAvatar(ctx, &avatar)
 	if err != nil {
 		return nil, err
 	}
 
 	// then save into user account the new avatar uri
 	existingIdentity.AvatarURL = null.StringFrom(url)
-	return nil, sso.identityService.Update(ctx, &existingIdentity)
+	err = identity.Update(ctx, tr, &existingIdentity)
+	if err != nil {
+		return nil, err
+	}
+	return nil, tr.Commit()
 }
 
 // DeleteAvatarCmd
@@ -230,28 +258,40 @@ func (sso *SSOService) DeleteAvatar(ctx context.Context, gen request.Request) (i
 		return nil, merror.Forbidden()
 	}
 
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer atomic.SQLRollback(ctx, tr, err)
+
 	// get identity
-	identity, err := sso.identityService.Get(ctx, cmd.identityID)
+	var curIdentity identity.Identity
+	curIdentity, err = identity.Get(ctx, tr, cmd.identityID)
 	if err != nil {
 		return nil, err
 	}
 
 	// check that the identity has an avatar to delet
-	if identity.AvatarURL.IsZero() {
-		return nil, merror.Conflict().Describe("avatar is not set").Detail("identity_id", merror.DVConflict)
+	if curIdentity.AvatarURL.IsZero() {
+		err = merror.Conflict().Describe("avatar is not set").Detail("identity_id", merror.DVConflict)
+		return nil, err
 	}
 
 	// delete avatar
-	avatar.Filename = filepath.Base(identity.AvatarURL.String)
+	avatar.Filename = filepath.Base(curIdentity.AvatarURL.String)
 	err = sso.identityService.DeleteAvatar(ctx, &avatar)
 	if err != nil {
 		return nil, err
 	}
 
 	// update identity with empty avatar url field
-	identity.AvatarURL = null.NewString("", false)
-
-	return nil, sso.identityService.Update(ctx, &identity)
+	curIdentity.AvatarURL = null.NewString("", false)
+	err = identity.Update(ctx, tr, &curIdentity)
+	if err != nil {
+		return nil, err
+	}
+	return nil, tr.Commit()
 }
 
 // AttachCouponCmd
@@ -282,37 +322,48 @@ func (sso *SSOService) AttachCoupon(ctx context.Context, gen request.Request) (i
 		return nil, merror.Forbidden()
 	}
 
+	// start transaction since write actions will be performed across entities
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer atomic.SQLRollback(ctx, tr, err)
+
 	// get identity
-	identity, err := sso.identityService.Get(ctx, cmd.identityID)
+	var curIdentity identity.Identity
+	curIdentity, err = identity.Get(ctx, tr, cmd.identityID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Check the coupon hasn't already been applied
-	if identity.Level >= 20 {
-		return nil, merror.Conflict().Describe("coupon already applied")
+	if curIdentity.Level >= 20 {
+		err = merror.Conflict().Describe("coupon already applied")
+		return nil, err
 	}
 
 	// NOTE: there is no valid coupon nowadays
-	return nil, merror.BadRequest().Detail("value", merror.DVInvalid).Detail("invalid_value", cmd.Value).Describe("invalid coupon")
+	err = merror.BadRequest().Detail("value", merror.DVInvalid).Detail("invalid_value", cmd.Value).Describe("invalid coupon")
+	return nil, err
 
 	// // 3. Update the identity
-	// identity.Level = 20
-	// if err := sso.identityService.Update(ctx, &identity); err != nil {
+	// curIdentity.Level = 20
+	// err = identity.Update(ctx, tr, &curIdentity)
+	// if err != nil {
 	// 	return nil, merror.Transform(err).Describe("updating identity")
 	// }
 
 	// // 2. Create the used_coupon
-	// usedCoupon := domain.UsedCoupon{
-	// 	IdentityID: cmd.IdentityID,
+	// usedCoupon := gamification.UsedCoupon{
+	// 	IdentityID: cmd.identityID,
 	// 	Value:      cmd.Value,
 	// }
 
-	// if err := sso.usedCouponService.CreateUsedCoupon(ctx, usedCoupon); err != nil {
+	// err = gamification.UseCoupon(ctx, tr, usedCoupon)
+	// if err != nil {
 	// 	return nil, merror.Transform(err).Describe("creating coupon")
 	// }
-
-	// return nil
+	// return nil, tr.Commit()
 }
 
 type IdentityPubkeyByIdentifierQuery struct {
@@ -338,10 +389,10 @@ func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen re
 		return nil, merror.Forbidden()
 	}
 
-	identities, err := sso.identityService.ListByIdentifier(ctx,
-		domain.Identifier{
+	identities, err := identity.ListByIdentifier(ctx, sso.sqlDB,
+		identity.Identifier{
 			Value: query.IdentifierValue,
-			Kind:  domain.EmailIdentifier,
+			Kind:  identity.EmailIdentifier,
 		},
 	)
 	if err != nil {

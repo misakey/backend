@@ -16,13 +16,14 @@ with prettyErrorContext():
     print('- check identity notifications routes')
     s1 = get_authenticated_session(acr_values=2)
 
-    print('- count/get/ack user.account_creation')
+    print('- count notifications of a freshly created user')
     r = s1.head(
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications',
         expected_status_code=204
     )
     count_notifs = int(r.headers['X-Total-Count'])
 
+    print('- get notifications and check their content')
     r = s1.get(
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications?offset=0',
         expected_status_code=200
@@ -31,14 +32,15 @@ with prettyErrorContext():
     assert r.json()[0]['type'] == 'user.create_account'
     assert r.json()[0]['details'] == None
     assert r.json()[0]['acknowledged_at'] == None
+    assert r.json()[1]['type'] == 'user.create_identity'
 
-    # acknowldege random id which is not the existing one - 204 is returned because of idempotency
+    print('- acknowldege random id which is not one of the existing ones - 204 is returned because of idempotency')
     id = random.randrange(10000, 100000)
     r = s1.put(
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications/acknowledgement?ids={id}',
         expected_status_code=204
     )
-    # notif is still there
+    print('- all notifs are still there then')
     r = s1.head(
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications',
         expected_status_code=204
@@ -49,7 +51,7 @@ with prettyErrorContext():
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications/acknowledgement?ids={notif_id}',
         expected_status_code=204
     )
-    # notif not here anymore
+    print('- the notif is not here anymore')
     r = s1.head(
         f'{URL_PREFIX}/identities/{s1.identity_id}/notifications',
         expected_status_code=204

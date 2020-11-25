@@ -6,11 +6,12 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/argon2"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/authn/argon2"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
@@ -32,7 +33,10 @@ func (am accountMetadata) Validate() error {
 }
 
 // assertAccountCreation
-func (as *Service) assertAccountCreation(ctx context.Context, challenge string, identity *identity.Identity, step Step) error {
+func (as *Service) assertAccountCreation(
+	ctx context.Context, exec boil.ContextExecutor,
+	challenge string, curIdentity *identity.Identity, step Step,
+) error {
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil ||
 		acc.ACR.LessThan(oidc.ACR1) {
@@ -45,7 +49,7 @@ func (as *Service) assertAccountCreation(ctx context.Context, challenge string, 
 			Detail("Authorization", merror.DVConflict).Detail("login_challenge", merror.DVConflict)
 	}
 
-	if acc.IdentityID != identity.ID {
+	if acc.IdentityID != curIdentity.ID {
 		return merror.Forbidden().Describe("wrong identity id")
 	}
 
@@ -60,12 +64,12 @@ func (as *Service) assertAccountCreation(ctx context.Context, challenge string, 
 		return merror.Transform(err).Describe("validating account metadata")
 	}
 
-	if identity.AccountID.Valid {
+	if curIdentity.AccountID.Valid {
 		return merror.Forbidden().Describe("identity has already an account")
 	}
 
 	// prepare the account to be created
-	account := domain.Account{
+	account := identity.Account{
 		BackupData:    accountMetadata.BackupData,
 		BackupVersion: 1,
 	}
@@ -75,25 +79,28 @@ func (as *Service) assertAccountCreation(ctx context.Context, challenge string, 
 	if err != nil {
 		return merror.Transform(err).Describe("could not hash the password")
 	}
-	if err := as.accountService.Create(ctx, &account); err != nil {
+	if err := identity.CreateAccount(ctx, exec, &account); err != nil {
 		return err
 	}
 
 	// update the identity's account id column
-	identity.AccountID = null.StringFrom(account.ID)
-	if err := as.identityService.Update(ctx, identity); err != nil {
+	curIdentity.AccountID = null.StringFrom(account.ID)
+	if err := identity.Update(ctx, exec, curIdentity); err != nil {
 		return err
 	}
 
 	// set initial quotas
-	_, err = as.quotaService.CreateBase(ctx, identity.ID)
+	_, err = as.quotaService.CreateBase(ctx, curIdentity.ID)
 	if err != nil {
-		logger.FromCtx(ctx).Error().Err(err).Msgf("setting base quota for %s", identity.ID)
+		logger.FromCtx(ctx).Error().Err(err).Msgf("setting base quota for %s", curIdentity.ID)
 	}
 
 	// create identity notification about account creation
-	if err := as.identityService.NotificationCreate(ctx, identity.ID, "user.create_account", null.JSONFromPtr(nil)); err != nil {
-		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", identity.ID)
+	if err := identity.NotificationCreate(
+		ctx, exec,
+		curIdentity.ID, "user.create_account", null.JSONFromPtr(nil),
+	); err != nil {
+		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", curIdentity.ID)
 	}
 	return nil
 }

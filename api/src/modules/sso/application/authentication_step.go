@@ -6,10 +6,13 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )
 
 // AuthenticationStepCmd orders:
@@ -40,12 +43,20 @@ func (cmd *AuthenticationStepCmd) BindAndValidate(eCtx echo.Context) error {
 func (sso *SSOService) InitAuthnStep(ctx context.Context, genReq request.Request) (interface{}, error) {
 	cmd := genReq.(*AuthenticationStepCmd)
 
-	// 0. check if the identity exists and authable
-	identity, err := sso.identityService.Get(ctx, cmd.Step.IdentityID)
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	if !identity.IsAuthable {
+	defer atomic.SQLRollback(ctx, tr, err)
+
+	// 0. check if the identity exists and authable
+	var curIdentity identity.Identity
+	curIdentity, err = identity.Get(ctx, tr, cmd.Step.IdentityID)
+	if err != nil {
+		return nil, err
+	}
+	if !curIdentity.IsAuthable {
 		return nil, merror.Forbidden().Describe("identity not authable")
 	}
 
@@ -56,5 +67,9 @@ func (sso *SSOService) InitAuthnStep(ctx context.Context, genReq request.Request
 	}
 
 	// 2. we try to init the authentication step
-	return nil, sso.AuthenticationService.InitStep(ctx, identity, cmd.Step.MethodName)
+	err = sso.AuthenticationService.InitStep(ctx, tr, curIdentity, cmd.Step.MethodName)
+	if err != nil {
+		return nil, err
+	}
+	return nil, tr.Commit()
 }

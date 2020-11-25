@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
@@ -54,10 +55,8 @@ func (afs AuthFlowService) BuildAndAcceptConsent(
 // the ssoClientID (currently involved client) is used to check if
 // the implicit consent is allowed (the other identities' consent linked to the account make the consent automatic)
 func (afs AuthFlowService) ShouldSkipConsent(
-	ctx context.Context,
-	requestedScopes []string,
-	ssoClientID string,
-	accountID null.String,
+	ctx context.Context, exec boil.ContextExecutor,
+	requestedScopes []string, ssoClientID string, accountID null.String,
 ) (bool, error) {
 	// no legal scope requested = no scope mandatory to consent for the end-user
 	reqLegalScopes := getLegalScopes(requestedScopes)
@@ -79,7 +78,7 @@ func (afs AuthFlowService) ShouldSkipConsent(
 	filters := identity.IdentityFilters{
 		AccountID: accountID,
 	}
-	identities, err := afs.identityService.List(ctx, filters)
+	identities, err := identity.List(ctx, exec, filters)
 	if err != nil {
 		return false, err
 	}

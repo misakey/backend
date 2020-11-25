@@ -13,19 +13,19 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
-type profileSharingConsentSQLRepo struct {
-	db *sql.DB
-}
-
-func NewProfileSharingConsentSQLRepo(db *sql.DB) *profileSharingConsentSQLRepo {
-	return &profileSharingConsentSQLRepo{
-		db: db,
-	}
+type profileSharingConsent struct {
+	id              int
+	identityID      string
+	informationType string
+	createdAt       time.Time
+	revokedAt       null.Time
 }
 
 //
 // sqlboiler model helpers
 //
+
+func newProfileSharingConsent() *profileSharingConsent { return &profileSharingConsent{} }
 
 func (ifc profileSharingConsent) toSQLBoiler() sqlboiler.IdentityProfileSharingConsent {
 	result := sqlboiler.IdentityProfileSharingConsent{
@@ -48,24 +48,24 @@ func (ifc *profileSharingConsent) fromSQLBoiler(src sqlboiler.IdentityProfileSha
 }
 
 //
-// repo methods
+// methods
 //
 
-func (repo *profileSharingConsentSQLRepo) Create(ctx context.Context, sharingConsent *profileSharingConsent) error {
+func createProfileSharingConsent(ctx context.Context, exec boil.ContextExecutor, sharingConsent *profileSharingConsent) error {
 	sharingConsent.createdAt = time.Now()
 
 	// convert to sql model
 	sqlSharingConsent := sharingConsent.toSQLBoiler()
-	return sqlSharingConsent.Insert(ctx, repo.db, boil.Infer())
+	return sqlSharingConsent.Insert(ctx, exec, boil.Infer())
 }
 
-func (repo *profileSharingConsentSQLRepo) revokeByIdentityType(ctx context.Context, identityID, infoType string) error {
+func revokeConsentByIdentityType(ctx context.Context, exec boil.ContextExecutor, identityID, infoType string) error {
 	revocation := sqlboiler.M{sqlboiler.IdentityProfileSharingConsentColumns.RevokedAt: null.TimeFrom(time.Now())}
 	mods := []qm.QueryMod{
 		sqlboiler.IdentityProfileSharingConsentWhere.IdentityID.EQ(identityID),
 		sqlboiler.IdentityProfileSharingConsentWhere.InformationType.EQ(infoType),
 	}
-	rowsAff, err := sqlboiler.IdentityProfileSharingConsents(mods...).UpdateAll(ctx, repo.db, revocation)
+	rowsAff, err := sqlboiler.IdentityProfileSharingConsents(mods...).UpdateAll(ctx, exec, revocation)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ type profileSharingConsentFilters struct {
 	revoked    null.Bool
 }
 
-func (repo *profileSharingConsentSQLRepo) List(ctx context.Context, filters profileSharingConsentFilters) ([]*profileSharingConsent, error) {
+func listProfileSharingConsents(ctx context.Context, exec boil.ContextExecutor, filters profileSharingConsentFilters) ([]*profileSharingConsent, error) {
 	mods := []qm.QueryMod{}
 	if filters.identityID.Valid {
 		mods = append(mods, sqlboiler.IdentityProfileSharingConsentWhere.IdentityID.EQ(filters.identityID.String))
@@ -93,7 +93,7 @@ func (repo *profileSharingConsentSQLRepo) List(ctx context.Context, filters prof
 		}
 	}
 
-	consentRecords, err := sqlboiler.IdentityProfileSharingConsents(mods...).All(ctx, repo.db)
+	consentRecords, err := sqlboiler.IdentityProfileSharingConsents(mods...).All(ctx, exec)
 	consents := make([]*profileSharingConsent, len(consentRecords))
 	if err == sql.ErrNoRows {
 		return consents, nil

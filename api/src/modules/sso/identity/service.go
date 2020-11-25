@@ -3,8 +3,6 @@ package identity
 import (
 	"context"
 	"database/sql"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 )
 
 type AvatarRepo interface {
@@ -13,26 +11,18 @@ type AvatarRepo interface {
 }
 
 type IdentityService struct {
-	profileSharingConsents *profileSharingConsentSQLRepo
-	avatars                AvatarRepo
-
-	identifierService identifier.IdentifierService
+	avatars AvatarRepo
 
 	SqlDB *sql.DB
 }
 
 func NewIdentityService(
-	profileSharingConsentRepo *profileSharingConsentSQLRepo,
 	avatarRepo AvatarRepo,
-	identifierService identifier.IdentifierService,
 
 	ssoDB *sql.DB,
 ) IdentityService {
 	return IdentityService{
-		profileSharingConsents: profileSharingConsentRepo,
-		avatars:                avatarRepo,
-
-		identifierService: identifierService,
+		avatars: avatarRepo,
 
 		SqlDB: ssoDB,
 	}

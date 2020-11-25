@@ -6,7 +6,10 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/crypto"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -25,7 +28,7 @@ func (query *ListCryptoActionsQuery) BindAndValidate(eCtx echo.Context) error {
 }
 
 type CryptoActionView struct {
-	domain.CryptoAction
+	crypto.Action
 }
 
 func (sso *SSOService) ListCryptoActions(ctx context.Context, gen request.Request) (interface{}, error) {
@@ -41,14 +44,14 @@ func (sso *SSOService) ListCryptoActions(ctx context.Context, gen request.Reques
 		return nil, merror.Forbidden().Describe("can only list one's own crypto actions")
 	}
 
-	actions, err := sso.cryptoActionService.ListCryptoActions(ctx, query.accountID)
+	actions, err := crypto.ListActions(ctx, sso.sqlDB, query.accountID)
 	if err != nil {
 		return nil, err
 	}
 
 	views := make([]CryptoActionView, len(actions))
 	for i, action := range actions {
-		views[i].CryptoAction = action
+		views[i].Action = action
 	}
 
 	return views, nil
@@ -82,13 +85,13 @@ func (sso *SSOService) GetCryptoAction(ctx context.Context, gen request.Request)
 		return nil, merror.Forbidden().Describe("can only get one's own crypto actions")
 	}
 
-	action, err := sso.cryptoActionService.GetCryptoAction(ctx, query.actionID, query.accountID)
+	action, err := crypto.GetAction(ctx, sso.sqlDB, query.actionID, query.accountID)
 	if err != nil {
 		return nil, err
 	}
 
 	view := CryptoActionView{
-		CryptoAction: action,
+		Action: action,
 	}
 
 	return view, nil
@@ -122,10 +125,16 @@ func (sso *SSOService) DeleteCryptoAction(ctx context.Context, gen request.Reque
 		return nil, merror.Forbidden().Describe("can only delete one's own crypto actions")
 	}
 
-	err := sso.cryptoActionService.DeleteCryptoAction(ctx, query.actionID, query.accountID)
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
+	defer atomic.SQLRollback(ctx, tr, err)
 
-	return nil, nil
+	err = crypto.DeleteAction(ctx, tr, query.actionID, query.accountID)
+	if err != nil {
+		return nil, err
+	}
+	return nil, tr.Commit()
 }

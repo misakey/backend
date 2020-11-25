@@ -8,13 +8,17 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/argon2"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/authn/argon2"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/crypto"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )
 
 type PwdParamsQuery struct {
@@ -37,7 +41,7 @@ func (sso *SSOService) GetAccountPwdParams(ctx context.Context, gen request.Requ
 
 	view := PwdParamsView{}
 
-	account, err := sso.accountService.Get(ctx, query.accountID)
+	account, err := identity.GetAccount(ctx, sso.sqlDB, query.accountID)
 	if err != nil {
 		return view, err
 	}
@@ -90,19 +94,29 @@ func (sso *SSOService) ChangePassword(ctx context.Context, gen request.Request) 
 		return nil, merror.Forbidden().Detail("account_id", merror.DVForbidden)
 	}
 
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer atomic.SQLRollback(ctx, tr, err)
+
 	// get account
-	account, err := sso.accountService.Get(ctx, cmd.accountID)
+	var account identity.Account
+	account, err = identity.GetAccount(ctx, tr, cmd.accountID)
 	if err != nil {
 		return nil, err
 	}
 
 	// check old password
-	oldPasswordValid, err := cmd.OldPassword.Matches(account.Password)
+	var oldPasswordValid bool
+	oldPasswordValid, err = cmd.OldPassword.Matches(account.Password)
 	if err != nil {
 		return nil, err
 	}
 	if !oldPasswordValid {
-		return nil, merror.Forbidden().Describe("invalid old password").Detail("old_password", merror.DVInvalid)
+		err = merror.Forbidden().Describe("invalid old password").Detail("old_password", merror.DVInvalid)
+		return nil, err
 	}
 
 	// update password
@@ -113,18 +127,22 @@ func (sso *SSOService) ChangePassword(ctx context.Context, gen request.Request) 
 
 	// check and update backup data
 	if cmd.BackupVersion != account.BackupVersion+1 {
-		return nil, merror.
-			Conflict().
+		err = merror.Conflict().
 			Describe("bad backup version number").
 			Detail("version", "invalid").
 			Detail("expected_version", fmt.Sprintf("%d", account.BackupVersion+1))
+		return nil, err
 	}
 
 	account.BackupData = cmd.BackupData
 	account.BackupVersion = cmd.BackupVersion
 
 	// save account
-	return nil, sso.accountService.Update(ctx, &account)
+	err = identity.UpdateAccount(ctx, tr, &account)
+	if err != nil {
+		return nil, err
+	}
+	return nil, tr.Commit()
 }
 
 type PasswordResetCmd struct {
@@ -142,14 +160,17 @@ func (cmd PasswordResetCmd) Validate() error {
 	return nil
 }
 
-func (sso *SSOService) resetPassword(ctx context.Context, cmd PasswordResetCmd, identityID string) error {
+func (sso *SSOService) resetPassword(
+	ctx context.Context, exec boil.ContextExecutor,
+	cmd PasswordResetCmd, identityID string,
+) error {
 	// verify authenticated identity id is linked to the given account id
-	identity, err := sso.identityService.Get(ctx, identityID)
+	curIdentity, err := identity.Get(ctx, exec, identityID)
 	if err != nil {
 		return merror.Forbidden().Describe("invalid token subject")
 	}
 
-	if identity.AccountID.String == "" {
+	if curIdentity.AccountID.String == "" {
 		return merror.Conflict().
 			Describe("identity is not linked to any account").
 			Detail("identity_id", merror.DVConflict).
@@ -157,16 +178,16 @@ func (sso *SSOService) resetPassword(ctx context.Context, cmd PasswordResetCmd, 
 	}
 
 	// get account
-	account, err := sso.accountService.Get(ctx, identity.AccountID.String)
+	account, err := identity.GetAccount(ctx, exec, curIdentity.AccountID.String)
 	if err != nil {
 		return err
 	}
 
-	backupArchive := domain.BackupArchive{
+	backupArchive := crypto.BackupArchive{
 		AccountID: account.ID,
 		Data:      null.StringFrom(account.BackupData),
 	}
-	err = sso.backupArchiveService.CreateBackupArchive(ctx, backupArchive)
+	err = crypto.CreateBackupArchive(ctx, exec, backupArchive)
 	if err != nil {
 		return err
 	}
@@ -181,13 +202,13 @@ func (sso *SSOService) resetPassword(ctx context.Context, cmd PasswordResetCmd, 
 	account.BackupVersion += 1
 
 	// save account
-	if err := sso.accountService.Update(ctx, &account); err != nil {
+	if err := identity.UpdateAccount(ctx, exec, &account); err != nil {
 		return err
 	}
 
 	// create identity notification about password reset
-	if err := sso.identityService.NotificationCreate(ctx, identity.ID, "user.reset_password", null.JSONFromPtr(nil)); err != nil {
-		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", identity.ID)
+	if err := identity.NotificationCreate(ctx, exec, curIdentity.ID, "user.reset_password", null.JSONFromPtr(nil)); err != nil {
+		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", curIdentity.ID)
 	}
 	return nil
 

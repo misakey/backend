@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/labstack/echo/v4"
 
@@ -12,6 +11,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow/login"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )
 
 type FlowResetCmd struct {
@@ -39,7 +39,6 @@ func (sso *SSOService) ResetFlow(ctx context.Context, gen request.Request) (inte
 		oriAuthURL = loginCtx.RequestURL
 	}
 
-	fmt.Println("has no login hint ?")
 	// if the auth url has no login_hint, try to find it in current login context
 	// NOTE: the system consider impossible its retrieval if not any loginCtx has been retrieved
 	if authflow.HasNoLoginHint(oriAuthURL) && contextErr == nil {
@@ -53,7 +52,7 @@ func (sso *SSOService) ResetFlow(ctx context.Context, gen request.Request) (inte
 		session, err := sso.AuthenticationService.GetSession(ctx, loginCtx.SessionID)
 		if err == nil && session.IdentityID != "" {
 			// retrieve the identity/identifier couple using the
-			identity, err := sso.identityService.Get(ctx, session.IdentityID)
+			identity, err := identity.Get(ctx, sso.sqlDB, session.IdentityID)
 			if err == nil {
 				oriAuthURL, _ = format.AddQueryParam(oriAuthURL, "login_hint", identity.Identifier.Value)
 				return sso.authFlowService.BuildResetURL(oriAuthURL), nil
@@ -64,9 +63,9 @@ func (sso *SSOService) ResetFlow(ctx context.Context, gen request.Request) (inte
 		process, err := sso.AuthenticationService.GetProcess(ctx, loginCtx.Challenge)
 		if err == nil && process.IdentityID != "" {
 			// retrieve the identity/identifier couple using the
-			identity, err := sso.identityService.Get(ctx, process.IdentityID)
+			curIdentity, err := identity.Get(ctx, sso.sqlDB, process.IdentityID)
 			if err == nil {
-				oriAuthURL, _ = format.AddQueryParam(oriAuthURL, "login_hint", identity.Identifier.Value)
+				oriAuthURL, _ = format.AddQueryParam(oriAuthURL, "login_hint", curIdentity.Identifier.Value)
 				return sso.authFlowService.BuildResetURL(oriAuthURL), nil
 			}
 		}

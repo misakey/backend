@@ -10,13 +10,15 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/types"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow/login"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )
 
 type LoginInitCmd struct {
@@ -138,29 +140,37 @@ type nextStepView struct {
 // This method will exceptionnaly both proof the identity and confirm the login flow within the auth flow.
 func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.Request) (interface{}, error) {
 	cmd := gen.(*IdentityAuthableCmd)
-	view := IdentityAuthableView{}
+
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer atomic.SQLRollback(ctx, tr, err)
 
 	// 0. check the login challenge exists
-	logCtx, err := sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
+	var logCtx login.Context
+	logCtx, err = sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
 	if err != nil {
-		return view, err
+		return nil, err
 	}
 
 	// 1. ensure create the Identifier does exist
-	identifier := domain.Identifier{
-		Kind:  domain.EmailIdentifier,
+	identifier := identity.Identifier{
+		Kind:  identity.EmailIdentifier,
 		Value: cmd.Identifier.Value,
 	}
-	if err := sso.identifierService.RequireIdentifier(ctx, &identifier); err != nil {
-		return view, err
+	err = identity.RequireIdentifier(ctx, tr, &identifier)
+	if err != nil {
+		return nil, err
 	}
 
 	// 2. check if an identity exist for the identifier
 	identityNotFound := func(err error) bool { return err != nil && merror.HasCode(err, merror.NotFoundCode) }
 	var authable identity.Identity
-	authable, err = sso.identityService.GetAuthableByIdentifierID(ctx, identifier.ID)
+	authable, err = identity.GetAuthableByIdentifierID(ctx, tr, identifier.ID)
 	if err != nil && !identityNotFound(err) {
-		return view, err
+		return nil, err
 	}
 
 	// 3. create an identity if nothing was found
@@ -173,23 +183,27 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 			// fill the identifier manually for later use
 			Identifier: identifier,
 		}
-		if err := sso.identityService.Create(ctx, &authable); err != nil {
-			return view, err
+		err = identity.Create(ctx, tr, &authable)
+		if err != nil {
+			return nil, err
 		}
+	}
+	// get the appropriate authn step
+	// NOTE: not handled - authnsession ACR
+	var step authn.Step
+	step, err = sso.AuthenticationService.NextStep(ctx, tr, authable, oidc.ACR0, logCtx.OIDCContext.ACRValues())
+	if err != nil {
+		return nil, merror.Transform(err).Describe("getting next authn step")
+	}
+	if cErr := tr.Commit(); cErr != nil {
+		return nil, cErr
 	}
 
 	// bind identity information on view
+	view := IdentityAuthableView{}
 	view.Identity.DisplayName = authable.DisplayName
 	view.Identity.AvatarURL = authable.AvatarURL
 	view.AuthnStep.IdentityID = authable.ID
-
-	// get the appropriate authn step
-	// NOTE: not handled - authnsession ACR
-	step, err := sso.AuthenticationService.NextStep(ctx, authable, oidc.ACR0, logCtx.OIDCContext.ACRValues())
-	if err != nil {
-		return view, merror.Transform(err).Describe("getting next authn step")
-	}
-
 	view.AuthnStep.MethodName = step.MethodName
 	if step.RawJSONMetadata != nil {
 		view.AuthnStep.Metadata = &step.RawJSONMetadata
@@ -293,37 +307,54 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 	cmd := gen.(*LoginAuthnStepCmd)
 	view := LoginAuthnStepView{}
 
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer atomic.SQLRollback(ctx, tr, err)
+
 	// ensure the login challenge is correct and the identity is authable
-	logCtx, err := sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
+	var logCtx login.Context
+	logCtx, err = sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
 	if err != nil {
 		return view, err
 	}
-	identity, err := sso.identityService.Get(ctx, cmd.Step.IdentityID)
+	var curIdentity identity.Identity
+	curIdentity, err = identity.Get(ctx, tr, cmd.Step.IdentityID)
 	if err != nil {
 		return view, err
 	}
-	if !identity.IsAuthable {
-		return view, merror.Forbidden().Describe("identity not authable")
+	if !curIdentity.IsAuthable {
+		err = merror.Forbidden().Describe("identity not authable")
+		return view, err
 	}
 
 	// try to assert the authentication step
-	if err := sso.AuthenticationService.AssertStep(ctx, logCtx.Challenge, &identity, cmd.Step); err != nil {
+	err = sso.AuthenticationService.AssertStep(ctx, tr, logCtx.Challenge, &curIdentity, cmd.Step)
+	if err != nil {
 		return view, err
 	}
 
 	// emailed_code has potentially a reset password extension
 	if cmd.Step.MethodName == oidc.AMREmailedCode && cmd.PasswordResetExt != nil {
-		if err := sso.resetPassword(ctx, *cmd.PasswordResetExt, cmd.Step.IdentityID); err != nil {
+		err = sso.resetPassword(ctx, tr, *cmd.PasswordResetExt, cmd.Step.IdentityID)
+		if err != nil {
 			return view, err
 		}
 		cmd.Step.MethodName = oidc.AMRResetPassword
 	}
 
 	// upgrade the authentication process
-	process, err := sso.AuthenticationService.UpgradeProcess(ctx, logCtx.Challenge, identity, cmd.Step.MethodName)
+	var process authn.Process
+	process, err = sso.AuthenticationService.UpgradeProcess(ctx, tr, logCtx.Challenge, curIdentity, cmd.Step.MethodName)
 	if err != nil {
 		return view, merror.Transform(err).Describe("upgrading authn process")
 	}
+	if cErr := tr.Commit(); cErr != nil {
+		return nil, cErr
+	}
+
 	view.AccessToken = process.AccessToken
 
 	// if an new authn step was returned - the login flow requires more authn steps
@@ -342,14 +373,15 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 	// finally accept the login!
 
 	// set subject to the identifier id
-	logCtx.Subject = identity.IdentifierID
+	logCtx.Subject = curIdentity.IdentifierID
 	logCtx.OIDCContext.SetACRValue(process.CompleteAMRs.ToACR())
 	logCtx.OIDCContext.SetAMRs(process.CompleteAMRs)
-	logCtx.OIDCContext.SetMID(identity.ID)
-	logCtx.OIDCContext.SetAID(identity.AccountID)
+	logCtx.OIDCContext.SetMID(curIdentity.ID)
+	logCtx.OIDCContext.SetAID(curIdentity.AccountID)
 
 	view.Next = "redirect"
-	redirectTo, err := sso.authFlowService.BuildAndAcceptLogin(ctx, logCtx)
+	var redirectTo string
+	redirectTo, err = sso.authFlowService.BuildAndAcceptLogin(ctx, logCtx)
 	view.RedirectTo = &redirectTo
 	return view, err
 }

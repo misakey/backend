@@ -7,6 +7,8 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -41,7 +43,7 @@ func (sso *SSOService) GetBackup(ctx context.Context, gen request.Request) (inte
 		return view, merror.Forbidden()
 	}
 
-	account, err := sso.accountService.Get(ctx, query.accountID)
+	account, err := identity.GetAccount(ctx, sso.sqlDB, query.accountID)
 	if err != nil {
 		return view, err
 	}
@@ -86,21 +88,34 @@ func (sso *SSOService) UpdateBackup(ctx context.Context, gen request.Request) (i
 		return nil, merror.Forbidden()
 	}
 
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer atomic.SQLRollback(ctx, tr, err)
+
 	// retrieve the current state of the account
-	currentAccount, err := sso.accountService.Get(ctx, cmd.accountID)
+	var account identity.Account
+	account, err = identity.GetAccount(ctx, tr, cmd.accountID)
 	if err != nil {
 		return nil, err
 	}
 
-	expectedVersion := currentAccount.BackupVersion + 1
+	expectedVersion := account.BackupVersion + 1
 	if cmd.NewVersion != expectedVersion {
-		return nil, merror.Conflict().
+		err = merror.Conflict().
 			Describe("wrong new version value").
 			Detail("version", merror.DVInvalid).
 			Detail("expected_version", strconv.Itoa(expectedVersion))
+		return nil, err
 	}
 
-	currentAccount.BackupData = cmd.Data
-	currentAccount.BackupVersion = cmd.NewVersion
-	return nil, sso.accountService.Update(ctx, &currentAccount)
+	account.BackupData = cmd.Data
+	account.BackupVersion = cmd.NewVersion
+	err = identity.UpdateAccount(ctx, tr, &account)
+	if err != nil {
+		return nil, err
+	}
+	return nil, tr.Commit()
 }

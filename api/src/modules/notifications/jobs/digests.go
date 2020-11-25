@@ -43,7 +43,7 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 	filters := identity.IdentityFilters{
 		IDs: identityIDs,
 	}
-	users, err := dj.identities.List(ctx, filters)
+	users, err := identity.List(ctx, dj.sqlDB, filters)
 	if err != nil {
 		return err
 	}

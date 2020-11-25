@@ -18,7 +18,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/files"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/keyshares"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/crypto"
 )
 
 type accessContent struct {
@@ -167,7 +167,7 @@ func applyInvitationLinkSideEffects(ctx context.Context, e *Event, c accessConte
 	// but if there is a single one that is left empty
 	// it's going to mess everything up,
 	// and we don't really know how many crypto actions will be needed
-	var cryptoActions []domain.CryptoAction
+	var cryptoActions []crypto.Action
 
 	// set for uniqueness
 	processedAccounts := make(map[string]bool, len(accountIDs)-1)
@@ -180,7 +180,7 @@ func applyInvitationLinkSideEffects(ctx context.Context, e *Event, c accessConte
 				return merror.Transform(err).Describe("generating action UUID")
 			}
 
-			action := domain.CryptoAction{
+			action := crypto.Action{
 				ID:                  actionID,
 				AccountID:           accountID,
 				Type:                "set_box_key_share",
@@ -195,7 +195,7 @@ func applyInvitationLinkSideEffects(ctx context.Context, e *Event, c accessConte
 		}
 	}
 
-	err = cryptoActionRepo.CreateCryptoAction(ctx, cryptoActions)
+	err = cryptoActionRepo.CreateCryptoActions(ctx, cryptoActions)
 	if err != nil {
 		return merror.Transform(err).Describe("creating crypto actions")
 	}

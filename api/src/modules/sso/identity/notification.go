@@ -53,10 +53,10 @@ func (n *Notification) fromSQLBoiler(src sqlboiler.IdentityNotification) *Notifi
 }
 
 //
-// service methods
+// notification methods
 //
 
-func (ids IdentityService) NotificationCreate(ctx context.Context, identityID string, nType string, details null.JSON) error {
+func NotificationCreate(ctx context.Context, exec boil.ContextExecutor, identityID string, nType string, details null.JSON) error {
 	notif := Notification{
 		Type:       nType,
 		Details:    details,
@@ -64,10 +64,10 @@ func (ids IdentityService) NotificationCreate(ctx context.Context, identityID st
 		identityID: identityID,
 	}
 	record := notif.toSQLBoiler()
-	return record.Insert(ctx, ids.SqlDB, boil.Infer())
+	return record.Insert(ctx, exec, boil.Infer())
 }
 
-func (ids IdentityService) NotificationBulkCreate(ctx context.Context, identityIDs []string, nType string, details null.JSON) error {
+func NotificationBulkCreate(ctx context.Context, exec boil.ContextExecutor, identityIDs []string, nType string, details null.JSON) error {
 	for _, identityID := range identityIDs {
 		notif := Notification{
 			Type:       nType,
@@ -75,7 +75,7 @@ func (ids IdentityService) NotificationBulkCreate(ctx context.Context, identityI
 			CreatedAt:  time.Now(),
 			identityID: identityID,
 		}.toSQLBoiler()
-		if err := notif.Insert(ctx, ids.SqlDB, boil.Infer()); err != nil {
+		if err := notif.Insert(ctx, exec, boil.Infer()); err != nil {
 			return err
 		}
 	}
@@ -83,7 +83,7 @@ func (ids IdentityService) NotificationBulkCreate(ctx context.Context, identityI
 }
 
 // Count unacknowledged notifications for received identity id
-func (ids IdentityService) NotificationCount(ctx context.Context, exec boil.ContextExecutor, identityID string) (n int, err error) {
+func NotificationCount(ctx context.Context, exec boil.ContextExecutor, identityID string) (n int, err error) {
 	mods := []qm.QueryMod{
 		sqlboiler.IdentityNotificationWhere.IdentityID.EQ(identityID),
 		sqlboiler.IdentityNotificationWhere.AcknowledgedAt.IsNull(),
@@ -98,7 +98,7 @@ func (ids IdentityService) NotificationCount(ctx context.Context, exec boil.Cont
 
 // Returns list of notifications linked to the received identity id
 // - handles pagination.
-func (ids IdentityService) NotificationList(
+func NotificationList(
 	ctx context.Context, exec boil.ContextExecutor,
 	identityID string, offset, limit null.Int,
 ) ([]*Notification, error) {
@@ -150,7 +150,7 @@ func markInvitationAsUsed(ctx context.Context, exec boil.ContextExecutor, notif 
 	return nil
 }
 
-func (ids IdentityService) NotificationMarkAutoInvitationUsed(ctx context.Context, exec boil.ContextExecutor, cryptoactionID string) error {
+func NotificationMarkAutoInvitationUsed(ctx context.Context, exec boil.ContextExecutor, cryptoactionID string) error {
 	searchedJSONPath := fmt.Sprintf(`{"cryptoaction_id":"%s"}`, cryptoactionID)
 	notifs, err := sqlboiler.IdentityNotifications(
 		qm.Where(`details::jsonb @> ?`, searchedJSONPath),
@@ -171,7 +171,7 @@ func (ids IdentityService) NotificationMarkAutoInvitationUsed(ctx context.Contex
 
 // Set acknowledged_at to time.Now() for all unacknowledged notification of the received identity id
 // // if notifIds don't belong to the identity id, it will be ignored
-func (ids IdentityService) NotificationAck(ctx context.Context, exec boil.ContextExecutor, identityID string, notifIDs []int) error {
+func NotificationAck(ctx context.Context, exec boil.ContextExecutor, identityID string, notifIDs []int) error {
 	acknowledgedAt := sqlboiler.M{sqlboiler.IdentityNotificationColumns.AcknowledgedAt: null.TimeFrom(time.Now())}
 	mods := []qm.QueryMod{
 		sqlboiler.IdentityNotificationWhere.IdentityID.EQ(identityID),

@@ -18,9 +18,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/notifications/jobs"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
 )
 
 var frequency string
@@ -98,12 +96,14 @@ func initDigestsJob() {
 		log.Fatal().Msg("could not instantiate email renderer")
 	}
 
-	identifierRepo := repositories.NewIdentifierSQLBoiler(ssoDBConn)
-	identifierService := identifier.NewIdentifierService(identifierRepo)
-	identityService := identity.NewIdentityService(nil, nil, identifierService, ssoDBConn)
-	identityMapper := events.NewIdentityMapper(identityService)
+	// nil for avatar repo since digest job doesn't care about identity's avatars.
+	identityMapper := events.NewIdentityMapper(identity.NewIntraprocessHelper(ssoDBConn))
 
-	digestService, err := jobs.NewDigestJob(frequency, viper.GetString("digests.domain"), boxDBConn, redConn, identityMapper, identityService, emailRepo, emailRenderer)
+	digestService, err := jobs.NewDigestJob(
+		frequency, viper.GetString("digests.domain"),
+		boxDBConn, redConn, identityMapper,
+		emailRepo, emailRenderer,
+	)
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not instantiate digest job")
 	}

@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"time"
 
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
@@ -42,8 +43,11 @@ type processRepo interface {
 	GetClaims(ctx context.Context, token string) (oidc.AccessClaims, error)
 }
 
-func (as *Service) computeNextStep(ctx context.Context, identity identity.Identity, p Process) (Process, error) {
-	s, err := as.NextStep(ctx, identity, p.CompleteAMRs.ToACR(), oidc.NewClassRefs(p.ExpectedACR))
+func (as *Service) computeNextStep(
+	ctx context.Context, exec boil.ContextExecutor,
+	identity identity.Identity, p Process,
+) (Process, error) {
+	s, err := as.NextStep(ctx, exec, identity, p.CompleteAMRs.ToACR(), oidc.NewClassRefs(p.ExpectedACR))
 	if err != nil {
 		return p, merror.Transform(err).Describe("getting next step")
 	}
@@ -56,7 +60,10 @@ func (as *Service) computeNextStep(ctx context.Context, identity identity.Identi
 // NOTE: the identityID is not set by the init of a process today
 // in a near future it should be done using the authn session
 // today there is no case where the authn session in used in a multi auth step process so there is no need
-func (as *Service) InitProcess(ctx context.Context, challenge string, sessionACR, expectedACR oidc.ClassRef) error {
+func (as *Service) InitProcess(
+	ctx context.Context,
+	challenge string, sessionACR, expectedACR oidc.ClassRef,
+) error {
 	tok, err := genTok()
 	if err != nil {
 		return merror.Transform(err).Describe("generating access token")
@@ -93,10 +100,8 @@ func (as *Service) GetProcess(
 // it inits the process if required,
 // it returns the upgraded Process, telling the login flow require more authn-step to be performed if a NextStep has been set.
 func (as *Service) UpgradeProcess(
-	ctx context.Context,
-	challenge string,
-	identity identity.Identity,
-	amr oidc.MethodRef,
+	ctx context.Context, exec boil.ContextExecutor,
+	challenge string, identity identity.Identity, amr oidc.MethodRef,
 ) (Process, error) {
 	process := Process{}
 	// retrieve the process
@@ -123,7 +128,7 @@ func (as *Service) UpgradeProcess(
 	}
 
 	// ACR KO -  compute then return the next authn step
-	process, err = as.computeNextStep(ctx, identity, process)
+	process, err = as.computeNextStep(ctx, exec, identity, process)
 	if err != nil {
 		return process, merror.Transform(err).Describe("computing next step")
 	}

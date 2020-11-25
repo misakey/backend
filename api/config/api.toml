@@ -8,6 +8,7 @@
   encrypted_files = "/etc/encrypted-files"
 
 [authflow]
+  # frontend location to redirect user if big issues occurs
   home_page_url = "https://app.misakey.com.local"
   # frontend location to ask for user to authenticate
   login_page_url = "https://app.misakey.com.local/auth/login"

@@ -3,8 +3,11 @@ package authn
 import (
 	"context"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/argon2"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/authn/argon2"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
@@ -20,9 +23,9 @@ func (as *Service) AssertPasswordExistence(ctx context.Context, identity identit
 }
 
 // prepare password step by setting password hash information
-func (as *Service) preparePassword(ctx context.Context, identity identity.Identity, step *Step) error {
+func (as *Service) preparePassword(ctx context.Context, exec boil.ContextExecutor, curIdentity identity.Identity, step *Step) error {
 	step.MethodName = oidc.AMRPrehashedPassword
-	account, err := as.accountService.Get(ctx, identity.AccountID.String)
+	account, err := identity.GetAccount(ctx, exec, curIdentity.AccountID.String)
 	if err != nil {
 		return err
 	}
@@ -36,7 +39,10 @@ func (as *Service) preparePassword(ctx context.Context, identity identity.Identi
 	return nil
 }
 
-func (as *Service) assertPassword(ctx context.Context, identity identity.Identity, assertion Step) error {
+func (as *Service) assertPassword(
+	ctx context.Context, exec boil.ContextExecutor,
+	curIdentity identity.Identity, assertion Step,
+) error {
 	// transform metadata into argon2 password metadata structure
 	pwdMetadata, err := argon2.ToMetadata(assertion.RawJSONMetadata)
 	if err != nil {
@@ -44,13 +50,13 @@ func (as *Service) assertPassword(ctx context.Context, identity identity.Identit
 			Describe(err.Error()).Detail("metadata", merror.DVMalformed)
 	}
 
-	if identity.AccountID.String == "" {
+	if curIdentity.AccountID.String == "" {
 		return merror.Forbidden().Describe("identity has no linked account").
 			Detail("account_id", merror.DVRequired)
 	}
 
 	// retrieve the account
-	account, err := as.accountService.Get(ctx, identity.AccountID.String)
+	account, err := identity.GetAccount(ctx, exec, curIdentity.AccountID.String)
 	if err != nil {
 		return err
 	}

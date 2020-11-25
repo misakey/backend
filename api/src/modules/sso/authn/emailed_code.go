@@ -6,17 +6,19 @@ import (
 	"time"
 
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain/authn/code"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/authn/code"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 // CreateEmailedCode authentication step
-func (as *Service) CreateEmailedCode(ctx context.Context, identity identity.Identity) error {
+func (as *Service) CreateEmailedCode(ctx context.Context, exec boil.ContextExecutor, identity identity.Identity) error {
 	// try to retrieve an existing code for this identity
-	existing, err := as.steps.Last(ctx, identity.ID, oidc.AMREmailedCode)
+	existing, err := getLastStep(ctx, exec, identity.ID, oidc.AMREmailedCode)
 	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
 		return err
 	}
@@ -45,7 +47,7 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identity identity.Iden
 		Complete:   false,
 		CompleteAt: null.Time{},
 	}
-	if err := as.steps.Create(ctx, &flow); err != nil {
+	if err := createStep(ctx, exec, &flow); err != nil {
 		return err
 	}
 
@@ -65,17 +67,18 @@ func (as *Service) CreateEmailedCode(ctx context.Context, identity identity.Iden
 	}
 
 	if err := as.emails.Send(ctx, content); err != nil {
-		// delete the create authentication step - ignore on failure
-		_ = as.steps.Delete(ctx, flow.ID)
 		return err
 	}
 	return nil
 }
 
-func (as *Service) prepareEmailedCode(ctx context.Context, identity identity.Identity, step *Step) error {
+func (as *Service) prepareEmailedCode(
+	ctx context.Context, exec boil.ContextExecutor,
+	identity identity.Identity, step *Step,
+) error {
 	step.MethodName = oidc.AMREmailedCode
 	// we ignore the conflict error code - if a code already exist, we still want to return authable identity information
-	err := as.CreateEmailedCode(ctx, identity)
+	err := as.CreateEmailedCode(ctx, exec, identity)
 	// set the error to nil on conflict because we want to fail silently
 	// if an emailed code was already generated
 	if err != nil && merror.HasCode(err, merror.ConflictCode) {
@@ -85,11 +88,11 @@ func (as *Service) prepareEmailedCode(ctx context.Context, identity identity.Ide
 }
 
 func (as *Service) assertEmailedCode(
-	ctx context.Context,
+	ctx context.Context, exec boil.ContextExecutor,
 	assertion Step,
 ) error {
 	// always take the most recent step as the current one - ignore others
-	currentStep, err := as.steps.Last(ctx, assertion.IdentityID, assertion.MethodName)
+	currentStep, err := getLastStep(ctx, exec, assertion.IdentityID, assertion.MethodName)
 	if err != nil {
 		return err
 	}
@@ -123,5 +126,5 @@ func (as *Service) assertEmailedCode(
 	}
 
 	// complete the authentication step
-	return as.steps.CompleteAt(ctx, currentStep.ID, time.Now())
+	return completeAtStep(ctx, exec, currentStep.ID, time.Now())
 }

@@ -4,30 +4,24 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
-
 	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/account"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authn"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/backuparchive"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/backupkeyshare"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/coupon"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/cryptoaction"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/identifier"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/db"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oauth"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester/http"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/adaptor/email"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/application/authflow"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/crypto"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )
 
 func InitModule(router *echo.Echo) Process {
@@ -81,14 +75,6 @@ func InitModule(router *echo.Echo) Process {
 	)
 
 	// init repositories
-	accountRepo := repositories.NewAccountSQLBoiler(dbConn)
-	identifierRepo := repositories.NewIdentifierSQLBoiler(dbConn)
-	profileSharingConsentRepo := identity.NewProfileSharingConsentSQLRepo(dbConn)
-	authnStepRepo := authn.NewAuthnStepSQLBoiler(dbConn)
-	backupArchiveRepo := repositories.NewBackupArchiveSQLBoiler(dbConn)
-	usedCouponRepo := repositories.NewUsedCouponSQLBoiler(dbConn)
-	cryptoActionRepo := repositories.NewCryptoActionSQLBoiler(dbConn)
-	backupKeyRepo := backupkeyshare.NewRedisRepo(redConn, viper.GetDuration("backup_key_share.expiration"))
 	authnSessionRepo := authn.NewAuthnSessionRedis(redConn)
 	authnProcessRepo := authn.NewAuthnProcessRedis(viper.GetString("authflow.self_client_id"), redConn)
 	hydraRepo := authflow.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
@@ -120,12 +106,7 @@ func InitModule(router *echo.Echo) Process {
 	}
 
 	// init services
-	accountService := account.NewAccountService(accountRepo)
-	identifierService := identifier.NewIdentifierService(identifierRepo)
-	identityService := identity.NewIdentityService(profileSharingConsentRepo, avatarRepo, identifierService, dbConn)
-	backupArchiveService := backuparchive.NewBackupArchiveService(backupArchiveRepo)
-	usedCouponService := coupon.NewUsedCouponService(usedCouponRepo)
-	cryptoActionService := cryptoaction.NewCryptoActionService(cryptoActionRepo, identityService)
+	identityService := identity.NewIdentityService(avatarRepo, dbConn)
 	authFlowService := authflow.NewAuthFlowService(
 		identityService, hydraRepo,
 		viper.GetString("authflow.home_page_url"),
@@ -134,23 +115,15 @@ func InitModule(router *echo.Echo) Process {
 		viper.GetString("authflow.self_client_id"),
 	)
 	authenticationService := authn.NewService(
-		authnStepRepo, authnSessionRepo, authnProcessRepo,
-		identifierService,
-		identityService,
-		accountService,
+		authnSessionRepo, authnProcessRepo,
 		emailRenderer, emailRepo,
 	)
-	backupKeyShareService := backupkeyshare.NewBackupKeyShareService(backupKeyRepo)
+	backupKeyShareService := crypto.NewBackupKeyShareService(redConn, viper.GetDuration("backup_key_share.expiration"))
 	ssoService := application.NewSSOService(
-		accountService,
 		identityService,
-		identifierService,
 		authFlowService,
 		authenticationService,
 		backupKeyShareService,
-		backupArchiveService,
-		usedCouponService,
-		cryptoActionService,
 
 		dbConn,
 	)
@@ -205,14 +178,14 @@ func InitModule(router *echo.Echo) Process {
 		router.Static("/avatars", avatarLocation)
 	}
 	return Process{
-		IdentityIntraProcess:     &identityService,
-		CryptoActionIntraProcess: &cryptoActionService,
+		IdentityIntraProcess:     identity.NewIntraprocessHelper(dbConn),
+		CryptoActionIntraProcess: crypto.NewIntraprocessHelper(dbConn),
 		SSOService:               &ssoService,
 	}
 }
 
 type Process struct {
 	SSOService               *application.SSOService
-	IdentityIntraProcess     *identity.IdentityService
-	CryptoActionIntraProcess *cryptoaction.CryptoActionService
+	IdentityIntraProcess     *identity.IntraprocessHelper
+	CryptoActionIntraProcess *crypto.IntraprocessHelper
 }

@@ -6,6 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -55,16 +56,16 @@ func (sso *SSOService) GetBackupDuringAuth(ctx context.Context, gen request.Requ
 	}
 
 	// get identity
-	identity, err := sso.identityService.Get(ctx, query.IdentityID)
+	curIdentity, err := identity.Get(ctx, sso.sqlDB, query.IdentityID)
 	if err != nil {
 		return view, err
 	}
 
-	if identity.AccountID.IsZero() {
+	if curIdentity.AccountID.IsZero() {
 		return view, merror.Conflict().Describe("identity has no account")
 	}
 
-	account, err := sso.accountService.Get(ctx, identity.AccountID.String)
+	account, err := identity.GetAccount(ctx, sso.sqlDB, curIdentity.AccountID.String)
 	if err != nil {
 		return view, err
 	}

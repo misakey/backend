@@ -2,11 +2,9 @@ package identity
 
 import (
 	"context"
-	"time"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
@@ -28,31 +26,23 @@ type ConfigProfileView struct {
 	Email bool `json:"email"`
 }
 
-type profileSharingConsent struct {
-	id              int
-	identityID      string
-	informationType string
-	createdAt       time.Time
-	revokedAt       null.Time
-}
-
-func newProfileSharingConsent() *profileSharingConsent { return &profileSharingConsent{} }
-
 //
 // Service profile related methods
 //
 
-func (ids IdentityService) ProfileGet(ctx context.Context, identityID string) (p ProfileView, err error) {
+func ProfileGet(ctx context.Context, exec boil.ContextExecutor, identityID string) (p ProfileView, err error) {
 	// first retrieve the identity
-	identity, err := ids.Get(ctx, identityID)
+	identity, err := Get(ctx, exec, identityID)
 	if err != nil {
 		return p, merror.Transform(err).Describe("getting identity")
 	}
 	// fill information considering profile configuration
-	consents, err := ids.profileSharingConsents.List(ctx, profileSharingConsentFilters{
-		revoked:    null.BoolFrom(false), // get active consents only
-		identityID: null.StringFrom(identityID),
-	})
+	consents, err := listProfileSharingConsents(ctx, exec,
+		profileSharingConsentFilters{
+			revoked:    null.BoolFrom(false), // get active consents only
+			identityID: null.StringFrom(identityID),
+		},
+	)
 	if err != nil {
 		return p, merror.Transform(err).Describe("getting profile sharing consent")
 	}
@@ -71,21 +61,27 @@ func (ids IdentityService) ProfileGet(ctx context.Context, identityID string) (p
 	return p, nil
 }
 
-func (ids IdentityService) ProfileConfigShare(ctx context.Context, identityID, informationType string) error {
+func ProfileConfigShare(
+	ctx context.Context, exec boil.ContextExecutor,
+	identityID, informationType string,
+) error {
 	consent := profileSharingConsent{
 		identityID:      identityID,
 		informationType: informationType,
 	}
-	return ids.profileSharingConsents.Create(ctx, &consent)
+	return createProfileSharingConsent(ctx, exec, &consent)
 }
 
-func (ids IdentityService) ProfileConfigUnshare(ctx context.Context, identityID, informationType string) error {
-	return ids.profileSharingConsents.revokeByIdentityType(ctx, identityID, informationType)
+func ProfileConfigUnshare(
+	ctx context.Context, exec boil.ContextExecutor,
+	identityID, informationType string,
+) error {
+	return revokeConsentByIdentityType(ctx, exec, identityID, informationType)
 }
 
-func (ids IdentityService) ProfileConfigGet(ctx context.Context, identityID string) (c ConfigProfileView, err error) {
+func ProfileConfigGet(ctx context.Context, exec boil.ContextExecutor, identityID string) (c ConfigProfileView, err error) {
 	// fill information considering profile configuration
-	consents, err := ids.profileSharingConsents.List(ctx, profileSharingConsentFilters{
+	consents, err := listProfileSharingConsents(ctx, exec, profileSharingConsentFilters{
 		revoked:    null.BoolFrom(false), // get active consents only
 		identityID: null.StringFrom(identityID),
 	})
@@ -96,7 +92,7 @@ func (ids IdentityService) ProfileConfigGet(ctx context.Context, identityID stri
 	// NOTE: the shape/logic of the profile might change later with more information to hide/share
 	for _, consent := range consents {
 		switch consent.informationType {
-		case string(domain.EmailIdentifier):
+		case string(EmailIdentifier):
 			c.Email = true
 		}
 	}

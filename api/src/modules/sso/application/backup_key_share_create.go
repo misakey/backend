@@ -6,12 +6,14 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/crypto"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )
 
 type BackupKeyShareCreateCmd struct {
@@ -46,28 +48,26 @@ func (sso *SSOService) CreateBackupKeyShare(ctx context.Context, gen request.Req
 	}
 
 	// the request must bear authorization for an account
-	identity, err := sso.identityService.Get(ctx, acc.IdentityID)
+	identity, err := identity.Get(ctx, sso.sqlDB, acc.IdentityID)
 	if err != nil {
 		return nil, err
 	}
 	if identity.AccountID.IsZero() {
-		return nil, merror.Conflict().
-			Describe("no account id in authorization").
-			Detail("account_id", merror.DVConflict)
+		return nil, merror.Conflict().Describe("no account id in authorization").Detail("account_id", merror.DVConflict)
 	}
 	// the account id must be the same than the identity linked account
 	if identity.AccountID.String != cmd.AccountID {
 		return nil, merror.Forbidden().Describe("account_id does not match the querier account").Detail("account_id", merror.DVForbidden)
 	}
 
-	backupKeyShare := domain.BackupKeyShare{
+	backupKeyShare := crypto.BackupKeyShare{
 		AccountID:      cmd.AccountID,
 		SaltBase64:     cmd.SaltBase64,
 		Share:          cmd.Share,
 		OtherShareHash: cmd.OtherShareHash,
 	}
-
-	if err := sso.backupKeyShareService.CreateBackupKeyShare(ctx, backupKeyShare); err != nil {
+	err = sso.backupKeyShareService.CreateBackupKeyShare(ctx, backupKeyShare)
+	if err != nil {
 		return nil, merror.Transform(err).Describe("creating")
 	}
 	return backupKeyShare, nil

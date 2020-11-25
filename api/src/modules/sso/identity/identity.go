@@ -12,7 +12,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/repositories/sqlboiler"
 )
 
@@ -29,7 +28,7 @@ type Identity struct {
 	Pubkey        null.String `json:"pubkey"`
 
 	// Identifier is always returned within the identity entity as a nested JSON object
-	Identifier domain.Identifier `json:"identifier"`
+	Identifier Identifier `json:"identifier"`
 }
 
 type IdentityFilters struct {
@@ -71,7 +70,7 @@ func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 	if src.R != nil {
 		identifier := src.R.Identifier
 		i.Identifier.ID = identifier.ID
-		i.Identifier.Kind = domain.IdentifierKind(identifier.Kind)
+		i.Identifier.Kind = IdentifierKind(identifier.Kind)
 		i.Identifier.Value = identifier.Value
 	}
 	return i
@@ -81,7 +80,7 @@ func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 // Service identity related methods
 //
 
-func (ids IdentityService) Create(ctx context.Context, identity *Identity) error {
+func Create(ctx context.Context, exec boil.ContextExecutor, identity *Identity) error {
 	// generate new UUID
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -95,22 +94,22 @@ func (ids IdentityService) Create(ctx context.Context, identity *Identity) error
 	}
 
 	// convert to sql model
-	if err := identity.toSQLBoiler().Insert(ctx, ids.SqlDB, boil.Infer()); err != nil {
+	if err := identity.toSQLBoiler().Insert(ctx, exec, boil.Infer()); err != nil {
 		return err
 	}
 
 	// send notification message
 	// for onboarding purpose
-	if err := ids.NotificationCreate(ctx, identity.ID, "user.create_identity", null.JSONFromPtr(nil)); err != nil {
+	if err := NotificationCreate(ctx, exec, identity.ID, "user.create_identity", null.JSONFromPtr(nil)); err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", identity.ID)
 	}
 	return nil
 }
 
-func (ids IdentityService) Get(ctx context.Context, identityID string) (ret Identity, err error) {
-	record, err := sqlboiler.FindIdentity(ctx, ids.SqlDB, identityID)
+func Get(ctx context.Context, exec boil.ContextExecutor, identityID string) (ret Identity, err error) {
+	record, err := sqlboiler.FindIdentity(ctx, exec, identityID)
 	if err == sql.ErrNoRows {
-		return ret, merror.NotFound().Describe(err.Error()).Detail("id", merror.DVNotFound)
+		return ret, merror.NotFound().Describe(err.Error()).Detail(" id", merror.DVNotFound)
 	}
 	if err != nil {
 		return ret, err
@@ -118,14 +117,14 @@ func (ids IdentityService) Get(ctx context.Context, identityID string) (ret Iden
 	ret.fromSQLBoiler(*record)
 
 	// retrieve the related identifier
-	ret.Identifier, err = ids.identifierService.Get(ctx, ret.IdentifierID)
+	ret.Identifier, err = GetIdentifier(ctx, exec, ret.IdentifierID)
 	if err != nil {
 		return ret, merror.Transform(err).Describe("getting identifier")
 	}
 	return ret, nil
 }
 
-func (ids IdentityService) List(ctx context.Context, filters IdentityFilters) ([]*Identity, error) {
+func List(ctx context.Context, exec boil.ContextExecutor, filters IdentityFilters) ([]*Identity, error) {
 	mods := []qm.QueryMod{}
 	if filters.IdentifierID.Valid {
 		mods = append(mods, sqlboiler.IdentityWhere.IdentifierID.EQ(filters.IdentifierID.String))
@@ -143,7 +142,7 @@ func (ids IdentityService) List(ctx context.Context, filters IdentityFilters) ([
 	// eager loading
 	mods = append(mods, qm.Load("Identifier"))
 
-	identityRecords, err := sqlboiler.Identities(mods...).All(ctx, ids.SqlDB)
+	identityRecords, err := sqlboiler.Identities(mods...).All(ctx, exec)
 	identities := make([]*Identity, len(identityRecords))
 	if err == sql.ErrNoRows {
 		return identities, nil
@@ -158,12 +157,12 @@ func (ids IdentityService) List(ctx context.Context, filters IdentityFilters) ([
 	return identities, nil
 }
 
-func (ids IdentityService) GetAuthableByIdentifierID(ctx context.Context, identifierID string) (Identity, error) {
+func GetAuthableByIdentifierID(ctx context.Context, exec boil.ContextExecutor, identifierID string) (Identity, error) {
 	filters := IdentityFilters{
 		IdentifierID: null.StringFrom(identifierID),
 		IsAuthable:   null.BoolFrom(true),
 	}
-	identities, err := ids.List(ctx, filters)
+	identities, err := List(ctx, exec, filters)
 	if err != nil {
 		return Identity{}, err
 	}
@@ -178,8 +177,8 @@ func (ids IdentityService) GetAuthableByIdentifierID(ctx context.Context, identi
 	return *identities[0], nil
 }
 
-func (ids IdentityService) Update(ctx context.Context, identity *Identity) error {
-	rowsAff, err := identity.toSQLBoiler().Update(ctx, ids.SqlDB, boil.Infer())
+func Update(ctx context.Context, exec boil.ContextExecutor, identity *Identity) error {
+	rowsAff, err := identity.toSQLBoiler().Update(ctx, exec, boil.Infer())
 	if err != nil {
 		return err
 	}
@@ -189,14 +188,10 @@ func (ids IdentityService) Update(ctx context.Context, identity *Identity) error
 	return nil
 }
 
-func (ids IdentityService) ListByIdentifier(ctx context.Context, identifier domain.Identifier) ([]*Identity, error) {
-	identifier, err := ids.identifierService.GetByKindValue(ctx, identifier)
+func ListByIdentifier(ctx context.Context, exec boil.ContextExecutor, identifier Identifier) ([]*Identity, error) {
+	identifier, err := GetIdentifierByKindValue(ctx, exec, identifier)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("retrieving identifier")
 	}
-
-	return ids.List(ctx,
-		IdentityFilters{
-			IdentifierID: null.StringFrom(identifier.ID),
-		})
+	return List(ctx, exec, IdentityFilters{IdentifierID: null.StringFrom(identifier.ID)})
 }

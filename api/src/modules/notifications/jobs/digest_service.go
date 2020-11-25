@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -10,7 +11,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/modules/box/events"
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
 )
 
 type DigestJob struct {
@@ -20,9 +20,10 @@ type DigestJob struct {
 	boxExec        boil.ContextExecutor
 	redConn        *redis.Client
 	identityMapper *events.IdentityMapper
-	identities     identity.IdentityService
 	emails         email.Sender
 	templates      email.Renderer
+
+	sqlDB *sql.DB
 }
 
 func NewDigestJob(
@@ -31,7 +32,6 @@ func NewDigestJob(
 	boxExec boil.ContextExecutor,
 	redConn *redis.Client,
 	identityMapper *events.IdentityMapper,
-	identities identity.IdentityService,
 	emails email.Sender,
 	templates email.Renderer,
 ) (*DigestJob, error) {
@@ -46,7 +46,6 @@ func NewDigestJob(
 		boxExec:        boxExec,
 		redConn:        redConn,
 		identityMapper: identityMapper,
-		identities:     identities,
 		emails:         emails,
 		templates:      templates,
 	}, nil

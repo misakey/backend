@@ -7,7 +7,9 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/domain"
+	"gitlab.misakey.dev/misakey/backend/api/src/modules/sso/identity"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -46,11 +48,22 @@ func (sso *SSOService) SetProfileConfig(ctx context.Context, gen request.Request
 		return nil, merror.Forbidden()
 	}
 
-	if *query.ShareEmail {
-		return nil, sso.identityService.ProfileConfigShare(ctx, query.identityID, string(domain.EmailIdentifier))
-	} else {
-		return nil, sso.identityService.ProfileConfigUnshare(ctx, query.identityID, string(domain.EmailIdentifier))
+	// start transaction since write actions will be performed
+	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
+	defer atomic.SQLRollback(ctx, tr, err)
+
+	if *query.ShareEmail {
+		err = identity.ProfileConfigShare(ctx, tr, query.identityID, string(identity.EmailIdentifier))
+	} else {
+		err = identity.ProfileConfigUnshare(ctx, tr, query.identityID, string(identity.EmailIdentifier))
+	}
+	if err != nil {
+		return nil, err
+	}
+	return nil, tr.Commit()
 }
 
 //
@@ -78,7 +91,7 @@ func (sso *SSOService) GetProfileConfig(ctx context.Context, gen request.Request
 		return nil, merror.Forbidden()
 	}
 
-	return sso.identityService.ProfileConfigGet(ctx, query.identityID)
+	return identity.ProfileConfigGet(ctx, sso.sqlDB, query.identityID)
 }
 
 //
@@ -97,5 +110,5 @@ func (query *ProfileQuery) BindAndValidate(eCtx echo.Context) error {
 
 func (sso *SSOService) GetProfile(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*ProfileQuery)
-	return sso.identityService.ProfileGet(ctx, query.identityID)
+	return identity.ProfileGet(ctx, sso.sqlDB, query.identityID)
 }
