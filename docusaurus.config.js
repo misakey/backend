@@ -1,8 +1,9 @@
 module.exports = {
   title: 'Misakey documentation',
-  tagline: 'Users deserve better privacy',
+  tagline: 'Users deserve better privacy (docs under construction)',
   url: 'https://your-docusaurus-test-site.com',
   baseUrl: '/',
+  noIndex: true,
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
@@ -38,10 +39,6 @@ module.exports = {
             {
               label: 'Style Guide',
               to: 'docs/',
-            },
-            {
-              label: 'Second Doc',
-              to: 'docs/doc2/',
             },
           ],
         },

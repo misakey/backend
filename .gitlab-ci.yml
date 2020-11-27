@@ -1,0 +1,16 @@
+stages:
+  - deploy
+
+pages:
+  only:
+    - master
+  stage: deploy
+  tags:
+    - misakey_js
+  script:
+    - npm install
+    - npm run build
+    - cp -r build public
+  artifacts:
+    paths:
+      - public
