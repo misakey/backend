@@ -97,7 +97,7 @@ func initDigestsJob() {
 	}
 
 	// nil for avatar repo since digest job doesn't care about identity's avatars.
-	identityMapper := events.NewIdentityMapper(identity.NewIntraprocessHelper(ssoDBConn))
+	identityMapper := events.NewIdentityMapper(identity.NewIntraprocessHelper(ssoDBConn, redConn))
 
 	digestService, err := jobs.NewDigestJob(
 		frequency, viper.GetString("digests.domain"),

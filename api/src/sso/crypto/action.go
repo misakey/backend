@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -99,7 +100,7 @@ func CreateActions(
 }
 
 func CreateInvitationActions(
-	ctx context.Context, exec boil.ContextExecutor,
+	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	senderID, boxID, boxTitle, identifierValue string, actionsDataJSON null.JSON,
 ) error {
 	var actionsData map[string]string
@@ -183,7 +184,7 @@ func CreateInvitationActions(
 	}
 
 	for identityID, notifDetailsBytes := range notifDetailsByIdentityID {
-		err = identity.NotificationCreate(ctx, exec,
+		err = identity.NotificationCreate(ctx, exec, redConn,
 			identityID,
 			"box.auto_invite",
 			null.JSONFrom(notifDetailsBytes),

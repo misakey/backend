@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
@@ -34,7 +35,7 @@ func (am accountMetadata) Validate() error {
 
 // assertAccountCreation
 func (as *Service) assertAccountCreation(
-	ctx context.Context, exec boil.ContextExecutor,
+	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	challenge string, curIdentity *identity.Identity, step Step,
 ) error {
 	acc := oidc.GetAccesses(ctx)
@@ -97,7 +98,7 @@ func (as *Service) assertAccountCreation(
 
 	// create identity notification about account creation
 	if err := identity.NotificationCreate(
-		ctx, exec,
+		ctx, exec, redConn,
 		curIdentity.ID, "user.create_account", null.JSONFromPtr(nil),
 	); err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", curIdentity.ID)

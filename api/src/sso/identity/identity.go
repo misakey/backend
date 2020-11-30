@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/google/uuid"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -80,7 +81,7 @@ func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 // Service identity related methods
 //
 
-func Create(ctx context.Context, exec boil.ContextExecutor, identity *Identity) error {
+func Create(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identity *Identity) error {
 	// generate new UUID
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -100,7 +101,7 @@ func Create(ctx context.Context, exec boil.ContextExecutor, identity *Identity) 
 
 	// send notification message
 	// for onboarding purpose
-	if err := NotificationCreate(ctx, exec, identity.ID, "user.create_identity", null.JSONFromPtr(nil)); err != nil {
+	if err := NotificationCreate(ctx, exec, redConn, identity.ID, "user.create_identity", null.JSONFromPtr(nil)); err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", identity.ID)
 	}
 	return nil

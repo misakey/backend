@@ -4,16 +4,19 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 )
 
 type IntraprocessHelper struct {
-	sqlDB *sql.DB
+	sqlDB   *sql.DB
+	redConn *redis.Client
 }
 
-func NewIntraprocessHelper(sqlDB *sql.DB) *IntraprocessHelper {
-	return &IntraprocessHelper{sqlDB: sqlDB}
+func NewIntraprocessHelper(sqlDB *sql.DB, redConn *redis.Client) *IntraprocessHelper {
+	return &IntraprocessHelper{sqlDB: sqlDB, redConn: redConn}
 }
 
 func (ih IntraprocessHelper) CreateCryptoActions(ctx context.Context, actions []Action) error {
@@ -26,7 +29,7 @@ func (ih IntraprocessHelper) CreateInvitationActions(ctx context.Context, sender
 		return err
 	}
 	defer atomic.SQLRollback(ctx, tr, err)
-	err = CreateInvitationActions(ctx, tr, senderID, boxID, boxTitle, identifierValue, actionsData)
+	err = CreateInvitationActions(ctx, tr, ih.redConn, senderID, boxID, boxTitle, identifierValue, actionsData)
 	if err != nil {
 		return err
 	}

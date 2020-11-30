@@ -3,6 +3,8 @@ package application
 import (
 	"database/sql"
 
+	"github.com/go-redis/redis/v7"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
@@ -16,7 +18,8 @@ type SSOService struct {
 	backupKeyShareService crypto.BackupKeyShareService
 
 	// NOTE: start to remove repositories components by having storer here (cf box modules)
-	sqlDB *sql.DB
+	sqlDB   *sql.DB
+	redConn *redis.Client
 }
 
 func NewSSOService(
@@ -26,6 +29,7 @@ func NewSSOService(
 	bks crypto.BackupKeyShareService,
 
 	ssoDB *sql.DB,
+	redConn *redis.Client,
 ) SSOService {
 	return SSOService{
 		identityService:       ids,
@@ -33,6 +37,7 @@ func NewSSOService(
 		AuthenticationService: authns,
 		backupKeyShareService: bks,
 
-		sqlDB: ssoDB,
+		sqlDB:   ssoDB,
+		redConn: redConn,
 	}
 }

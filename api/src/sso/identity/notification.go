@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/rs/zerolog/log"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/box/realtime"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
 //
@@ -56,7 +59,7 @@ func (n *Notification) fromSQLBoiler(src sqlboiler.IdentityNotification) *Notifi
 // notification methods
 //
 
-func NotificationCreate(ctx context.Context, exec boil.ContextExecutor, identityID string, nType string, details null.JSON) error {
+func NotificationCreate(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityID string, nType string, details null.JSON) error {
 	notif := Notification{
 		Type:       nType,
 		Details:    details,
@@ -64,20 +67,44 @@ func NotificationCreate(ctx context.Context, exec boil.ContextExecutor, identity
 		identityID: identityID,
 	}
 	record := notif.toSQLBoiler()
-	return record.Insert(ctx, exec, boil.Infer())
+	if err := record.Insert(ctx, exec, boil.Infer()); err != nil {
+		return err
+	}
+
+	// send notification in websocket
+	notif.fromSQLBoiler(record)
+	notifWS := realtime.Update{
+		Type:   "notification",
+		Object: notif,
+	}
+
+	realtime.SendUpdate(ctx, redConn, identityID, &notifWS)
+
+	return nil
+
 }
 
-func NotificationBulkCreate(ctx context.Context, exec boil.ContextExecutor, identityIDs []string, nType string, details null.JSON) error {
+func NotificationBulkCreate(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityIDs []string, nType string, details null.JSON) error {
 	for _, identityID := range identityIDs {
 		notif := Notification{
 			Type:       nType,
 			Details:    details,
 			CreatedAt:  time.Now(),
 			identityID: identityID,
-		}.toSQLBoiler()
-		if err := notif.Insert(ctx, exec, boil.Infer()); err != nil {
+		}
+		record := notif.toSQLBoiler()
+		if err := record.Insert(ctx, exec, boil.Infer()); err != nil {
 			return err
 		}
+		// send notification in websocket
+		notif.fromSQLBoiler(record)
+		notifWS := realtime.Update{
+			Type:   "notification",
+			Object: notif,
+		}
+
+		realtime.SendUpdate(ctx, redConn, identityID, &notifWS)
+
 	}
 	return nil
 }

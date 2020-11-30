@@ -6,6 +6,7 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -161,7 +162,7 @@ func (cmd PasswordResetCmd) Validate() error {
 }
 
 func (sso *SSOService) resetPassword(
-	ctx context.Context, exec boil.ContextExecutor,
+	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	cmd PasswordResetCmd, identityID string,
 ) error {
 	// verify authenticated identity id is linked to the given account id
@@ -207,7 +208,7 @@ func (sso *SSOService) resetPassword(
 	}
 
 	// create identity notification about password reset
-	if err := identity.NotificationCreate(ctx, exec, curIdentity.ID, "user.reset_password", null.JSONFromPtr(nil)); err != nil {
+	if err := identity.NotificationCreate(ctx, exec, redConn, curIdentity.ID, "user.reset_password", null.JSONFromPtr(nil)); err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", curIdentity.ID)
 	}
 	return nil

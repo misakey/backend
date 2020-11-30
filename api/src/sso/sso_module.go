@@ -126,6 +126,7 @@ func InitModule(router *echo.Echo) Process {
 		backupKeyShareService,
 
 		dbConn,
+		redConn,
 	)
 	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(
 		viper.GetString("authflow.self_client_id"),
@@ -178,8 +179,8 @@ func InitModule(router *echo.Echo) Process {
 		router.Static("/avatars", avatarLocation)
 	}
 	return Process{
-		IdentityIntraProcess:     identity.NewIntraprocessHelper(dbConn),
-		CryptoActionIntraProcess: crypto.NewIntraprocessHelper(dbConn),
+		IdentityIntraProcess:     identity.NewIntraprocessHelper(dbConn, redConn),
+		CryptoActionIntraProcess: crypto.NewIntraprocessHelper(dbConn, redConn),
 		SSOService:               &ssoService,
 	}
 }

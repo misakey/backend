@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
@@ -44,7 +45,7 @@ func (as *Service) InitStep(
 // It takes a pointer on the identity since the identity might be atlered by the authn step
 // Return a nil error in case of success
 func (as *Service) AssertStep(
-	ctx context.Context, exec boil.ContextExecutor,
+	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	challenge string, identity *identity.Identity, assertion Step,
 ) error {
 	// check the metadata
@@ -55,7 +56,7 @@ func (as *Service) AssertStep(
 	case oidc.AMRPrehashedPassword:
 		metadataErr = as.assertPassword(ctx, exec, *identity, assertion)
 	case oidc.AMRAccountCreation:
-		metadataErr = as.assertAccountCreation(ctx, exec, challenge, identity, assertion)
+		metadataErr = as.assertAccountCreation(ctx, exec, redConn, challenge, identity, assertion)
 	default:
 		metadataErr = merror.BadRequest().Detail("method_name", merror.DVMalformed)
 	}

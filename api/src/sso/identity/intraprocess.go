@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 )
 
@@ -12,11 +13,12 @@ import (
 // the storage connection behind it.
 // NOTE: no transaction logic can be then used.
 type IntraprocessHelper struct {
-	sqlDB *sql.DB
+	sqlDB   *sql.DB
+	redConn *redis.Client
 }
 
-func NewIntraprocessHelper(ssoDB *sql.DB) *IntraprocessHelper {
-	return &IntraprocessHelper{sqlDB: ssoDB}
+func NewIntraprocessHelper(ssoDB *sql.DB, redConn *redis.Client) *IntraprocessHelper {
+	return &IntraprocessHelper{sqlDB: ssoDB, redConn: redConn}
 }
 
 func (ih IntraprocessHelper) Get(ctx context.Context, identityID string) (Identity, error) {
@@ -28,5 +30,5 @@ func (ih IntraprocessHelper) List(ctx context.Context, filters IdentityFilters) 
 }
 
 func (ih IntraprocessHelper) NotificationBulkCreate(ctx context.Context, identityIDs []string, nType string, details null.JSON) error {
-	return NotificationBulkCreate(ctx, ih.sqlDB, identityIDs, nType, details)
+	return NotificationBulkCreate(ctx, ih.sqlDB, ih.redConn, identityIDs, nType, details)
 }

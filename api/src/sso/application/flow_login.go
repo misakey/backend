@@ -183,7 +183,7 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 			// fill the identifier manually for later use
 			Identifier: identifier,
 		}
-		err = identity.Create(ctx, tr, &authable)
+		err = identity.Create(ctx, tr, sso.redConn, &authable)
 		if err != nil {
 			return nil, err
 		}
@@ -331,14 +331,14 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 	}
 
 	// try to assert the authentication step
-	err = sso.AuthenticationService.AssertStep(ctx, tr, logCtx.Challenge, &curIdentity, cmd.Step)
+	err = sso.AuthenticationService.AssertStep(ctx, tr, sso.redConn, logCtx.Challenge, &curIdentity, cmd.Step)
 	if err != nil {
 		return view, err
 	}
 
 	// emailed_code has potentially a reset password extension
 	if cmd.Step.MethodName == oidc.AMREmailedCode && cmd.PasswordResetExt != nil {
-		err = sso.resetPassword(ctx, tr, *cmd.PasswordResetExt, cmd.Step.IdentityID)
+		err = sso.resetPassword(ctx, tr, sso.redConn, *cmd.PasswordResetExt, cmd.Step.IdentityID)
 		if err != nil {
 			return view, err
 		}
