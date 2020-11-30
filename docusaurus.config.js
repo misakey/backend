@@ -35,7 +35,7 @@ module.exports = {
         },
         {
           href: 'https://github.com/misakey/backend',
-          label: 'GitHub',
+          label: 'Source code',
           position: 'right',
         },
       ],
