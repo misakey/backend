@@ -5,15 +5,25 @@ module.exports = {
   baseUrl: '/',
   noIndex: true,
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenMarkdownLinks: 'throw',
+  onDuplicateRoutes: 'throw',
   favicon: 'img/favicon.ico',
   organizationName: 'misakey',
   projectName: 'docs', // Usually your repo name.
   themeConfig: {
+    respectPrefersColorScheme: true,
+    announcementBar: {
+      id: 'support_us', // Any value that will identify this message.
+      content: 'This documentation is a complete work in progress. It\'s not usable, and only accessible for internal users.',
+      backgroundColor: '#F9D2E1', // Defaults to `#fff`.
+      textColor: '#091E42', // Defaults to `#000`.
+      isCloseable: true, // Defaults to `true`.
+    },
     navbar: {
       title: '',
+      hideOnScroll: true,
       logo: {
-        alt: 'Misakey Logo',
+        alt: 'Misakey',
         src: 'https://static.misakey.com/img/MisakeyLogoTypo.svg',
       },
       items: [

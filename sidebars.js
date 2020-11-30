@@ -3,13 +3,18 @@ module.exports = {
     {
       type: 'category',
       label: 'Overview',
-      items: ['introduction', 'design-principles', 'contributing'],
+      items: ['overview/introduction', 'overview/components', 'overview/contributing'],
+      collapsed: false,
     },
     {
       type: 'category',
       label: 'Getting Started',
-      collapsed: false,
-      items: ['install-server', 'using-sdk', 'using-api'],
+      items: ['getting-started/auth-quickstart', 'getting-started/running-locally'],
+    },
+    {
+      type: 'category',
+      label: 'Guides',
+      items: ['guides/installation', 'guides/sdk-integration', 'guides/cms-integration', 'guides/create-auth-clients'],
     },
   ],
 };
