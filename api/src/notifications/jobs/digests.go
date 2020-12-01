@@ -138,7 +138,7 @@ func (dj *DigestJob) buildDigestCountInfo(ctx context.Context) (map[string]*Dige
 	for _, key := range keys {
 		elts := strings.Split(key, ":")
 		userID := strings.Split(elts[1], "_")[1]
-		boxID := elts[2]
+		boxID := strings.Split(elts[2], "_")[1]
 		if _, ok := digestInfos[userID]; !ok {
 			digestInfos[userID] = &DigestInfo{}
 			identityIDs = append(identityIDs, userID)
