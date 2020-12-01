@@ -5,7 +5,7 @@ from base64 import b64encode
 
 from misapy import http, URL_PREFIX
 from misapy.box_helpers import create_box_and_post_some_events_to_it
-from misapy.box_key_shares import get_key_share
+from misapy.boxes.key_shares import new_key_share_event
 from misapy.box_members import join_box
 from misapy.check_response import check_response, assert_fn
 from misapy.get_access_token import get_authenticated_session
@@ -18,7 +18,7 @@ with prettyErrorContext():
     box1_id, box1_share_hash = create_box_and_post_some_events_to_it(session=s1, close=False)    
 
     print("- box key share retrieval")
-    r = get_key_share(s1, box1_share_hash)
+    r = s1.get(f'{URL_PREFIX}/box-key-shares/{box1_share_hash}')
     check_response(r,[lambda r: assert_fn(r.json()["other_share_hash"] == box1_share_hash)])
 
     print("- get box public information")
@@ -124,7 +124,12 @@ with prettyErrorContext():
 
     print('- identity 1 (creator) can list all events on open box 2')
     r = s1.get(f'{URL_PREFIX}/boxes/{box2_id}/events')
-    assert len(r.json()) == 3
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(len(r.json()) == 4)
+        ]
+    )
 
     print('- identity 1 (non-creator) posts to box 2 a legit event')
     r = s1.post(

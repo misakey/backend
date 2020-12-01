@@ -117,7 +117,7 @@ func (mapper *IdentityMapper) CreateNotifs(ctx context.Context, identityIDs []st
 	}
 }
 
-func (mapper *IdentityMapper) mapToAccountID(ctx context.Context, identityIDs []string) (map[string]string, error) {
+func (mapper *IdentityMapper) MapToAccountID(ctx context.Context, identityIDs []string) (map[string]string, error) {
 	identities, err := mapper.querier.List(ctx, identity.IdentityFilters{IDs: identityIDs})
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing identities")

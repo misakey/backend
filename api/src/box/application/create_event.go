@@ -36,6 +36,7 @@ func (req *CreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
 		v.Field(&req.Type, v.Required, v.In(
 			etype.Statelifecycle,
+			etype.StateKeyShare,
 			etype.Msgtext,
 			etype.Msgfile,
 			etype.Msgedit,

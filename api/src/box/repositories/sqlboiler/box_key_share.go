@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -23,28 +24,31 @@ import (
 
 // BoxKeyShare is an object representing the database table.
 type BoxKeyShare struct {
-	OtherShareHash string    `boil:"other_share_hash" json:"other_share_hash" toml:"other_share_hash" yaml:"other_share_hash"`
-	Share          string    `boil:"share" json:"share" toml:"share" yaml:"share"`
-	CreatedAt      time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	BoxID          string    `boil:"box_id" json:"box_id" toml:"box_id" yaml:"box_id"`
-	CreatorID      string    `boil:"creator_id" json:"creator_id" toml:"creator_id" yaml:"creator_id"`
+	OtherShareHash              string      `boil:"other_share_hash" json:"other_share_hash" toml:"other_share_hash" yaml:"other_share_hash"`
+	Share                       string      `boil:"share" json:"share" toml:"share" yaml:"share"`
+	CreatedAt                   time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	BoxID                       string      `boil:"box_id" json:"box_id" toml:"box_id" yaml:"box_id"`
+	CreatorID                   string      `boil:"creator_id" json:"creator_id" toml:"creator_id" yaml:"creator_id"`
+	EncryptedInvitationKeyShare null.String `boil:"encrypted_invitation_key_share" json:"encrypted_invitation_key_share,omitempty" toml:"encrypted_invitation_key_share" yaml:"encrypted_invitation_key_share,omitempty"`
 
 	R *boxKeyShareR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L boxKeyShareL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var BoxKeyShareColumns = struct {
-	OtherShareHash string
-	Share          string
-	CreatedAt      string
-	BoxID          string
-	CreatorID      string
+	OtherShareHash              string
+	Share                       string
+	CreatedAt                   string
+	BoxID                       string
+	CreatorID                   string
+	EncryptedInvitationKeyShare string
 }{
-	OtherShareHash: "other_share_hash",
-	Share:          "share",
-	CreatedAt:      "created_at",
-	BoxID:          "box_id",
-	CreatorID:      "creator_id",
+	OtherShareHash:              "other_share_hash",
+	Share:                       "share",
+	CreatedAt:                   "created_at",
+	BoxID:                       "box_id",
+	CreatorID:                   "creator_id",
+	EncryptedInvitationKeyShare: "encrypted_invitation_key_share",
 }
 
 // Generated where
@@ -93,18 +97,43 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelpernull_String struct{ field string }
+
+func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var BoxKeyShareWhere = struct {
-	OtherShareHash whereHelperstring
-	Share          whereHelperstring
-	CreatedAt      whereHelpertime_Time
-	BoxID          whereHelperstring
-	CreatorID      whereHelperstring
+	OtherShareHash              whereHelperstring
+	Share                       whereHelperstring
+	CreatedAt                   whereHelpertime_Time
+	BoxID                       whereHelperstring
+	CreatorID                   whereHelperstring
+	EncryptedInvitationKeyShare whereHelpernull_String
 }{
-	OtherShareHash: whereHelperstring{field: "\"box_key_share\".\"other_share_hash\""},
-	Share:          whereHelperstring{field: "\"box_key_share\".\"share\""},
-	CreatedAt:      whereHelpertime_Time{field: "\"box_key_share\".\"created_at\""},
-	BoxID:          whereHelperstring{field: "\"box_key_share\".\"box_id\""},
-	CreatorID:      whereHelperstring{field: "\"box_key_share\".\"creator_id\""},
+	OtherShareHash:              whereHelperstring{field: "\"box_key_share\".\"other_share_hash\""},
+	Share:                       whereHelperstring{field: "\"box_key_share\".\"share\""},
+	CreatedAt:                   whereHelpertime_Time{field: "\"box_key_share\".\"created_at\""},
+	BoxID:                       whereHelperstring{field: "\"box_key_share\".\"box_id\""},
+	CreatorID:                   whereHelperstring{field: "\"box_key_share\".\"creator_id\""},
+	EncryptedInvitationKeyShare: whereHelpernull_String{field: "\"box_key_share\".\"encrypted_invitation_key_share\""},
 }
 
 // BoxKeyShareRels is where relationship names are stored.
@@ -124,8 +153,8 @@ func (*boxKeyShareR) NewStruct() *boxKeyShareR {
 type boxKeyShareL struct{}
 
 var (
-	boxKeyShareAllColumns            = []string{"other_share_hash", "share", "created_at", "box_id", "creator_id"}
-	boxKeyShareColumnsWithoutDefault = []string{"other_share_hash", "share", "created_at", "box_id", "creator_id"}
+	boxKeyShareAllColumns            = []string{"other_share_hash", "share", "created_at", "box_id", "creator_id", "encrypted_invitation_key_share"}
+	boxKeyShareColumnsWithoutDefault = []string{"other_share_hash", "share", "created_at", "box_id", "creator_id", "encrypted_invitation_key_share"}
 	boxKeyShareColumnsWithDefault    = []string{}
 	boxKeySharePrimaryKeyColumns     = []string{"other_share_hash"}
 )

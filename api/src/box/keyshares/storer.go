@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
@@ -14,9 +15,9 @@ import (
 
 func Create(
 	ctx context.Context, exec boil.ContextExecutor,
-	invitHash, share, boxID, creatorID string,
+	invitHash, share, encShare, boxID, creatorID string,
 ) error {
-	ks := BoxKeyShare{invitHash, share, boxID, creatorID}
+	ks := BoxKeyShare{invitHash, share, boxID, null.StringFrom(encShare), creatorID}
 	return ks.toSQLBoiler().Insert(ctx, exec, boil.Infer())
 }
 

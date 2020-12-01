@@ -224,6 +224,33 @@ The `state.lifecycle` event changes the lifecycle of a box.
 }
 ```
 
+### 2.4.2 Key Share
+
+`state.key_share` events change the key share of a box.
+
+```json
+{
+    "type": "state.key_share",
+    "for_server_no_store": {
+        "misakey_share": "BBVZBhrLtb0DsdYtul7s1g==",
+        "other_share_hash": "h1vUkzYPYwaRgH03-4L7-g",
+        "encrypted_invitation_key_share": "cp3nvY+OtRtetFGN0Yuxw3Cra6OjbWzO1ptOWP9hcWo="
+    }
+}
+```
+
+Remarks:
+- `other_share_hash` is encoded in *unpadded URL-safe base64*.
+- this event does not have a `content` field
+
+Side effects:
+- the key share of the box will be changed (and all previous ones for this box are deleted)
+- every ACR2 member of the box will receive a cryptoaction
+  with type `set_box_key_share`
+  and encrypted content the value of `for_server_no_store.encrypted_invitation_key_share`.
+
+For more information on box key shares, see [here](/endpoints/box_key_shares).
+
 ## 2.5. `Access` type events
 
 Access events are specific rules defined by the admins and allowing considering their logic who can access the box.
@@ -257,11 +284,12 @@ If another kind of access restriction exists, both the invitation link and the o
     "type": "access.add",
     "content": {
         "restriction_type": "(string) (must be: invitation_link)",
-        "value": "(string): the other_share_hash of the corresponding key share"
     },
     "referrer_id": null
 }
 ```
+
+Note that there is no `content.value` field (it has been deprecated).
 
 #### 2.5.1.2. To a specific identifier
 

@@ -166,6 +166,12 @@ func bindRoutes(
 		app.CreateKeyShare,
 		request.ResponseCreated,
 	))
+	keySharePath.GET(oidcHandlerFactory.NewACR2(
+		"/encrypted-invitation-key-share",
+		func() request.Request { return &application.GetEncryptedKeyShareRequest{} },
+		app.GetEncryptedKeyShare,
+		request.ResponseOK,
+	))
 	keySharePath.GET(oidcHandlerFactory.NewACR1(
 		"/:other-share-hash",
 		func() request.Request { return &application.GetKeyShareRequest{} },

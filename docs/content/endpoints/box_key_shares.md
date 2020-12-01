@@ -99,6 +99,32 @@ _JSON Body:_
 {{% include "include/box-key-share.json" %}}
 ```
 
-- `share` (string) (base64): one of the shares.
-- `other-share-hash` (string) (unpadded url-safe base64): a hash of the other share.
+- `share` (string) (base64): the misakey share.
+- `other-share-hash` (string) (unpadded url-safe base64): a hash of the other share (invitation share).
 - `box_id` (string) (uuid): the box id linked to the key shares.
+
+Note that box key shares now also have an *encrypted invitation key share*
+(see next section)
+that does not appear in this endpoint.
+
+## Getting an Encrypted Box Key Share
+
+Actually, this endpoint gives you the *encrypted invitation key share* part
+of the *box key share* object.
+
+Request:
+```bash
+GET https://api.misakey.com/box-key-shares/encrypted-invitation-key-share?box_id=74ee16b5-89be-44f7-bcdd-117f496a90a7
+```
+
+Access control:
+- querier must be authenticated with ACR ≥ 2
+
+Response:
+```json
+"cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
+```
+
+Not that the result is not a JSON literal object but it is still valid JSON
+(a JSON string is a valid JSON object).
+The encoding is standard base64.

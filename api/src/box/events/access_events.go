@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -13,12 +12,9 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
-	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 )
 
 type accessContent struct {
@@ -36,11 +32,11 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 	// check content format
 	var c accessContent
 	if err := e.JSONContent.Unmarshal(&c); err != nil {
-		return nil, merror.Transform(err).Describe("marshalling access content")
+		return nil, merror.Transform(err).Describe("unmarshalling access content")
 	}
 	if err := v.ValidateStruct(&c,
 		v.Field(&c.RestrictionType, v.Required, v.In("invitation_link", "identifier", "email_domain")),
-		v.Field(&c.Value, v.Required),
+		v.Field(&c.Value, v.Required.When(c.RestrictionType != "invitation_link")),
 	); err != nil {
 		return nil, merror.Transform(err).Describe("validating access content")
 	}
@@ -75,18 +71,6 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 		return nil, err
 	}
 
-	// the "&& forServerNoStoreJSON.Valid" is to avoid introducing a breaking change
-	// TODO remove when the frontend implements this feeature
-	// NOTE this code is going to be removed before it has ever been used
-	// because we changed our mind on how to change the invitation link
-	// (see https://gitlab.misakey.dev/misakey/user-needs/-/issues/218)
-	if c.RestrictionType == "invitation_link" && forServerNoStoreJSON.Valid {
-		err = applyInvitationLinkSideEffects(ctx, e, c, forServerNoStoreJSON, exec, redConn, identityMapper, cryptoActionRepo)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if c.RestrictionType == "identifier" {
 		// potential side effects of an "identifier" access
 		// (auto invitation)
@@ -110,97 +94,6 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 	}
 
 	return nil, nil
-}
-
-func applyInvitationLinkSideEffects(ctx context.Context, e *Event, c accessContent, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionRepo external.CryptoActionRepo) error {
-	forServerNoStore := struct {
-		EncryptedCryptoAction string `json:"encrypted_crypto_action"`
-		MisakeyShare          string `json:"misakey_share"`
-	}{}
-
-	if err := forServerNoStoreJSON.Unmarshal(&forServerNoStore); err != nil {
-		return merror.Transform(err).Describe("marshalling \"for server no store\"")
-	}
-
-	if err := v.ValidateStruct(&forServerNoStore,
-		v.Field(&forServerNoStore.MisakeyShare, v.Required),
-		// strictly speaking we don't need a crypto action if there is no members,
-		// but since the frontend is always able to create one
-		// it is simpler to always require it
-		v.Field(&forServerNoStore.EncryptedCryptoAction, v.Required),
-	); err != nil {
-		return merror.Transform(err).Describe("validating \"for server no store\"")
-	}
-
-	err := keyshares.EmptyAll(ctx, exec, e.BoxID)
-	if err != nil {
-		return merror.Transform(err).Describe("deleting previous key shares")
-	}
-
-	if err = keyshares.Create(
-		ctx, exec,
-		c.Value, forServerNoStore.MisakeyShare, e.BoxID, e.SenderID,
-	); err != nil {
-		return merror.Transform(err).Describe("creating key share")
-	}
-
-	// Creation of crypto actions
-
-	// TODO (perf): find a way to avoid this extra SQL request
-	// since we already had to fetch the creation event for `MustBeAdmin`
-	boxPublicKey, err := GetBoxPublicKey(ctx, exec, e.BoxID)
-	if err != nil {
-		return merror.Transform(err).Describe("getting box public key")
-	}
-
-	membersIdentityID, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
-	if err != nil {
-		return merror.Transform(err).Describe("listing box members IDs")
-	}
-
-	accountIDs, err := identityMapper.mapToAccountID(ctx, membersIdentityID)
-	if err != nil {
-		return merror.Transform(err).Describe("getting members identities")
-	}
-
-	// it would be tempting to set an initial size for the crypto action slice,
-	// but if there is a single one that is left empty
-	// it's going to mess everything up,
-	// and we don't really know how many crypto actions will be needed
-	var cryptoActions []crypto.Action
-
-	// set for uniqueness
-	processedAccounts := make(map[string]bool, len(accountIDs)-1)
-
-	for identityID, accountID := range accountIDs {
-		_, processed := processedAccounts[accountID]
-		if !processed && identityID != e.SenderID {
-			actionID, err := uuid.NewString()
-			if err != nil {
-				return merror.Transform(err).Describe("generating action UUID")
-			}
-
-			action := crypto.Action{
-				ID:                  actionID,
-				AccountID:           accountID,
-				Type:                "set_box_key_share",
-				SenderIdentityID:    null.StringFrom(e.SenderID),
-				BoxID:               null.StringFrom(e.BoxID),
-				Encrypted:           forServerNoStore.EncryptedCryptoAction,
-				EncryptionPublicKey: boxPublicKey,
-				CreatedAt:           time.Now(),
-			}
-			cryptoActions = append(cryptoActions, action)
-			processedAccounts[accountID] = true
-		}
-	}
-
-	err = cryptoActionRepo.CreateCryptoActions(ctx, cryptoActions)
-	if err != nil {
-		return merror.Transform(err).Describe("creating crypto actions")
-	}
-
-	return nil
 }
 
 func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {

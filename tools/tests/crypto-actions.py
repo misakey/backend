@@ -79,24 +79,6 @@ with prettyErrorContext():
         ]
     )
 
-    print('- Deleting actions')
-    s1.delete(
-        f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions',
-        json={
-            'until_action_id': actions[3]['id'],
-        },
-        expected_status_code=204,
-    )
-
-    r = s1.get(f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions')
-    check_response(
-        r,
-        [
-            lambda r: assert_fn(len(r.json()) == 1),
-            lambda r: assert_fn(r.json()[0]['id'] == actions[-1]['id']),
-        ]
-    )
-
     print('- Cannot list someone else\'s actions')
     s2.get(
         f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions',
@@ -129,25 +111,4 @@ with prettyErrorContext():
     s2.delete(
         f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions/{actions[0]["id"]}',
         expected_status_code=http.STATUS_NOT_FOUND,
-    )
-
-    print('- Cannot deleted someone else\'s actions')
-    # action is owned by s1 not s2
-    s2.delete(
-        f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions',
-        json={
-            'until_action_id': actions[-1]['id'],
-        },
-        # We get a "not found" error as if the action does not exist
-        expected_status_code=404,
-    )
-
-    print('- "Not found" on deleting non existing action')
-    s1.delete(
-        f'{URL_PREFIX}/accounts/{s1.account_id}/crypto/actions',
-        json={
-            # shouldn't exist anymore
-            'until_action_id': actions[1]['id'],
-        },
-        expected_status_code=404,
     )

@@ -84,11 +84,22 @@ func (a Action) toSQLBoiler() *sqlboiler.CryptoAction {
 // action functions
 //
 
+// CreateActions inserts the cryptoaction in DB.
+// if the cryptoaction has not ID it will create one
 func CreateActions(
 	ctx context.Context, exec boil.ContextExecutor,
 	actions []Action,
 ) error {
 	for _, action := range actions {
+		if action.ID == "" {
+			actionID, err := uuid.NewString()
+			if err != nil {
+				return merror.Transform(err).Describe("generating action UUID")
+			}
+
+			action.ID = actionID
+		}
+
 		err := action.toSQLBoiler().Insert(ctx, exec, boil.Infer())
 		if err != nil {
 			return merror.Transform(err).Describe("inserting action")

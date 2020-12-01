@@ -8,20 +8,15 @@ from time import sleep
 from . import http, URL_PREFIX
 from .utils.base64 import b64encode, urlsafe_b64encode
 from .get_access_token import get_authenticated_session
-from .box_key_shares import create_key_share, get_key_share
 from .container_access import list_encrypted_files
 from .check_response import check_response, assert_fn
+from .boxes.key_shares import new_key_share_event
 
 def create_add_invitation_link_event():
     return {
         'type': 'access.add',
         'content': {
             'restriction_type': 'invitation_link',
-            'value': urlsafe_b64encode(os.urandom(16)),
-        },
-        'for_server_no_store': {
-            'encrypted_crypto_action': b64encode(os.urandom(16)),
-            'misakey_share': b64encode(os.urandom(16)),
         },
     }
 
@@ -39,6 +34,15 @@ def create_box_and_post_some_events_to_it(session, close=True):
     assert creator['identifier']['value'] == s.email
 
     box_id = r.json()['id']
+
+    print('- set box key share')
+    key_share_event = new_key_share_event()
+    s.post(
+        f'{URL_PREFIX}/boxes/{box_id}/events',
+        json=key_share_event,
+        expected_status_code=http.STATUS_CREATED,
+    )
+    other_share_hash = key_share_event['for_server_no_store']['other_share_hash']
 
     print(f'- create msg.text event on box {box_id}')
     r = s.post(
@@ -63,7 +67,6 @@ def create_box_and_post_some_events_to_it(session, close=True):
         },
         expected_status_code=201,
     )
-    other_share_hash = event['content']['value']
 
     if close:
         print(f'- close box {box_id}')
@@ -80,9 +83,13 @@ def create_box_and_post_some_events_to_it(session, close=True):
 
     print(f'- listing for created box {box_id}')
     r = s.get(f'{URL_PREFIX}/boxes/{box_id}/events')
-    event_list = r.json()
-    assert (len(event_list) == 3 if close else 2)
-    for event in event_list:
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(len(r.json()) == 4 if close else 3),
+        ]
+    )
+    for event in r.json():
         assert 'id' in event
         assert 'server_event_created_at' in event
         assert 'type' in event

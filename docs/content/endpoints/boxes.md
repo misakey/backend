@@ -33,13 +33,20 @@ _JSON Body:_
 ```json
     {
       "title": "Requête RGPD FNAC",
-      "public_key": "SXvalkvhuhcj2UiaS4d0Q3OeuHOhMVeQT7ZGfCH2YCw"
+      "public_key": "SXvalkvhuhcj2UiaS4d0Q3OeuHOhMVeQT7ZGfCH2YCw",
+      "key_share": {
+        "misakey_share": "lBHT1vfwFAIBig5Nj+sD+w==",
+        "other_share_hash": "Nz4nJMj5DOd4UGXXOlH8Ww",
+        "encrypted_invitation_key_share": "cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
+      }
     }
 ```
 
-Where `public_key` must be in **unpadded url-safe base64**.
+Where `key_share` is *optional* (but will soon become mandatory).
 
-Note that when a box is created, it already contains a first event
+Note that `public_key` and `other_share_hash` must be in **unpadded url-safe base64**.
+
+When a box is created, it already contains a first event
 of type `create` that contains all the information about the creation of the box.
 
 ### 2.1.2. response

@@ -20,6 +20,7 @@ func Launch() {
 	initCreateStorageQuotumTable()
 	initCreateBoxUsedSpaceTable()
 	initCreateBoxSettingsTable()
+	initAddEncryptedInvitationKeyShare()
 
 	db.StartMigration(os.Getenv("DSN_BOX"), os.Getenv("MIGRATION_DIR_BOX"))
 }

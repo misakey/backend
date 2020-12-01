@@ -8,6 +8,7 @@ def run_all_tests(from_parent_of, level=1):
 
     for x in Path(from_parent_of).parent.iterdir():
         if x.is_dir():
+            print('#'*level, x.name.replace('-', ' '))
             dir_runner = x/'all.py'
             if dir_runner.exists():
                 run_all_tests(from_parent_of=dir_runner, level=level+1)

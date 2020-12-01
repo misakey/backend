@@ -3,6 +3,7 @@ package etype
 const (
 	Create         = "create"
 	Statelifecycle = "state.lifecycle"
+	StateKeyShare  = "state.key_share"
 	Memberjoin     = "member.join"
 	Memberleave    = "member.leave"
 	Memberkick     = "member.kick"
@@ -19,6 +20,7 @@ func MembersCanSee() []string {
 	return []string{
 		Create,
 		Statelifecycle,
+		StateKeyShare,
 
 		Msgtext,
 		Msgfile,
@@ -33,6 +35,7 @@ func RequireToBuild() []string {
 	return []string{
 		Create,
 		Statelifecycle,
+		StateKeyShare,
 	}
 }
 
