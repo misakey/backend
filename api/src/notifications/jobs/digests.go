@@ -11,6 +11,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/cache"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
@@ -39,48 +40,49 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 		return nil
 	}
 
-	// get identities
-	filters := identity.IdentityFilters{
-		IDs: identityIDs,
-	}
-	users, err := identity.List(ctx, dj.sqlDB, filters)
+	// check eligibility
+	// get first identities for the notification configuration linked to it
+	identities, err := identity.List(ctx, dj.ssoDB, identity.IdentityFilters{IDs: identityIDs})
 	if err != nil {
 		return err
 	}
-
-	// only keep identities for which configuration matches the current job
-	// and not used by an active user recently
-	for _, user := range users {
-		dj.checkEligibility(ctx, *user, digestInfos)
+	for _, identity := range identities {
+		// remove non-eligible identity from digestInfos map
+		if ok := dj.isEligible(ctx, *identity); !ok {
+			logger.FromCtx(ctx).Debug().Msgf("won’t send digest to %s", identity.ID)
+			delete(digestInfos, identity.ID)
+		} else { // otherwise bind it to the digest info
+			digestInfos[identity.ID].identity = *identity
+		}
 	}
 
-	// we keep box info in a cache to avoid too many calls to the db
-	boxCache := make(map[string]events.Box)
+	// we keep box title in a cache to avoid too many calls to the db
+	boxTitleCache := make(map[string]string)
 	for id, digestInfo := range digestInfos {
 		//get the boxes info (try to make profit of the already fetched information): title and silenced
 		// get box settings
 		var totalNewMessages int
 		for _, boxInfo := range digestInfo.boxesInfo {
 			boxID := boxInfo.ID
-			_, ok := boxCache[boxID]
+			_, ok := boxTitleCache[boxID]
 			if !ok {
-				boxCache[boxID], err = events.Compute(ctx, boxID, dj.boxExec, dj.identityMapper, nil)
+				boxTitleCache[boxID], err = events.GetBoxTitle(ctx, dj.boxDB, boxID)
 				if err != nil {
-					logger.FromCtx(ctx).Error().Err(err).Msgf("could not get box %s", boxID)
+					logger.FromCtx(ctx).Error().Err(err).Msgf("could not get box %s title", boxID)
 					continue
 				}
 			}
-			newMessages, err := dj.redConn.Get(cache.GetDigestCountKey(id, boxID)).Int()
+			newMsgCount, err := dj.redConn.Get(cache.GetDigestCountKey(id, boxID)).Int()
 			if err != nil {
-				logger.FromCtx(ctx).Error().Err(err).Msgf("could not get new messages for box %s", boxID)
+				logger.FromCtx(ctx).Error().Err(err).Msgf("could not get new messages count for box %s", boxID)
 				continue
 			}
-			totalNewMessages += newMessages
-			boxInfo.NewMessages = newMessages
-			boxInfo.Title = boxCache[boxID].Title
+			totalNewMessages += newMsgCount
+			boxInfo.NewMessages = newMsgCount
+			boxInfo.Title = boxTitleCache[boxID]
 		}
 
-		//build and send the notification
+		// build and send the notification
 		displayName := digestInfo.identity.DisplayName
 		if len(displayName) > 24 {
 			displayName = displayName[:20] + "..."
@@ -127,7 +129,6 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 // It returns a map of digest info per user
 // and a list of user ids to notify
 func (dj *DigestJob) buildDigestCountInfo(ctx context.Context) (map[string]*DigestInfo, []string, error) {
-
 	keys, err := events.GetAllDigestCountKeys(ctx, dj.redConn)
 	if err != nil {
 		return nil, nil, err
@@ -150,16 +151,12 @@ func (dj *DigestJob) buildDigestCountInfo(ctx context.Context) (map[string]*Dige
 
 }
 
-// checkEligibility of identity for digests
+// isEligible returns true if the received identity is eligible for current digest frequency
 // and remove identity from digestInfo if not eligible
-// (warning: alters digestInfo)
-func (dj *DigestJob) checkEligibility(ctx context.Context, identity identity.Identity, digestInfo map[string]*DigestInfo) {
-	if _, ok := digestInfo[identity.ID]; !ok {
-		// if the identity is not in the list, we don’t need to check its eligibility
-		return
-	}
-	digestInfo[identity.ID].identity = identity
-
+// Eligibility conditions:
+// the identity for has a notification configuration which matches the current job
+// the identity have not been used by an active user recently
+func (dj *DigestJob) isEligible(ctx context.Context, identity identity.Identity) bool {
 	// get identity last interaction with the app
 	lastInteraction, err := dj.redConn.Get(fmt.Sprintf("lastInteraction:user_%s", identity.ID)).Int()
 	if err != nil && err != redis.Nil {
@@ -171,7 +168,7 @@ func (dj *DigestJob) checkEligibility(ctx context.Context, identity identity.Ide
 	// or the identity configuration does not match with the current job frequency
 	// then do not send digest to the identity
 	if fromLastInteraction < dj.period || identity.Notifications != dj.frequency {
-		logger.FromCtx(ctx).Debug().Msgf("won’t send digest to %s", identity.ID)
-		delete(digestInfo, identity.ID)
+		return false
 	}
+	return true
 }

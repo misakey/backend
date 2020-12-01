@@ -20,7 +20,6 @@ COPY ./src/templates /etc/templates
 # add configuration file as configuration dev file to be integrated directly in our images
 # in production, the file must be served via a mounted volume
 COPY ./config/api.toml /etc/api-config.dev.toml
-COPY ./config/digests.toml /etc/digests.dev.toml
 
 # get binary from build image
 COPY --from=builder /bin/api /bin/api

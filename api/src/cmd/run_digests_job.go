@@ -15,10 +15,8 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/db"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/notifications/email"
 	"gitlab.misakey.dev/misakey/backend/api/src/notifications/jobs"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
 var frequency string
@@ -96,12 +94,9 @@ func initDigestsJob() {
 		log.Fatal().Msg("could not instantiate email renderer")
 	}
 
-	// nil for avatar repo since digest job doesn't care about identity's avatars.
-	identityMapper := events.NewIdentityMapper(identity.NewIntraprocessHelper(ssoDBConn, redConn))
-
 	digestService, err := jobs.NewDigestJob(
 		frequency, viper.GetString("digests.domain"),
-		boxDBConn, redConn, identityMapper,
+		ssoDBConn, boxDBConn, redConn,
 		emailRepo, emailRenderer,
 	)
 	if err != nil {
@@ -118,9 +113,9 @@ func initDefaultDigestsConfig() {
 	// always look for the configuration file in the /etc folder
 	env := os.Getenv("ENV")
 	if env == "development" {
-		viper.SetConfigName("digests.dev")
+		viper.SetConfigName("api-config.dev")
 	} else {
-		viper.SetConfigName("digests")
+		viper.SetConfigName("api-config")
 	}
 	viper.AddConfigPath("/etc/")
 

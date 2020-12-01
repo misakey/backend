@@ -1,0 +1,11 @@
+FROM registry.misakey.dev/misakey/docker/golang-dev:latest
+
+WORKDIR /go/src/app
+COPY . .
+COPY ./config/api.toml /etc/api-config.dev.toml
+
+# set the version env variable used in the /version endpoint
+ARG VERSION=local-build
+ENV VERSION $VERSION
+
+ENTRYPOINT CompileDaemon -log-prefix=false -build="go build -mod=vendor -installsuffix 'static' -o /bin/api ." -command="/bin/api digests-job --frequency=frequent"

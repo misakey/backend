@@ -52,7 +52,7 @@ spec:
                       name: {{ $fullName }}
                       key: dsn_box
               volumeMounts:
-                - mountPath: /etc/digests.toml
+                - mountPath: /etc/api-config.toml
                   subPath: api-config.toml
                   name: config
           imagePullSecrets:

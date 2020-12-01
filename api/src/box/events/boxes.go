@@ -135,13 +135,13 @@ func (c *computer) handleLast(ctx context.Context) error {
 
 func (c *computer) playCreate(ctx context.Context, e Event) error {
 	c.box.CreatedAt = e.CreatedAt
-	CreationContent := CreationContent{}
-	if err := CreationContent.Unmarshal(e.JSONContent); err != nil {
+	creationContent := CreationContent{}
+	if err := creationContent.Unmarshal(e.JSONContent); err != nil {
 		return err
 	}
 	c.box.Lifecycle = "open"
-	c.box.PublicKey = CreationContent.PublicKey
-	c.box.Title = CreationContent.Title
+	c.box.PublicKey = creationContent.PublicKey
+	c.box.Title = creationContent.Title
 
 	// save the creator id for future logic - data obfuscation
 	c.creatorID = e.SenderID

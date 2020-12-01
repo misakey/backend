@@ -50,7 +50,11 @@
   allowed_origins = ["https://app.misakey.com.local"]
 
 [log]
-  level = "info"
+  level = "debug"
+
+[digests]
+  # domain origin set on email notifications
+  domain = "app.misakey.com.local"
 
 # only used if ENV=production
 # [aws]

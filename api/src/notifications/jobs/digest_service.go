@@ -5,33 +5,31 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v7"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/notifications/email"
 )
 
 type DigestJob struct {
-	period         time.Duration
-	frequency      string
-	domain         string
-	boxExec        boil.ContextExecutor
-	redConn        *redis.Client
-	identityMapper *events.IdentityMapper
-	emails         email.Sender
-	templates      email.Renderer
+	period    time.Duration
+	frequency string
+	domain    string
+	emails    email.Sender
+	templates email.Renderer
 
-	sqlDB *sql.DB
+	redConn *redis.Client
+	boxDB   *sql.DB
+	ssoDB   *sql.DB
 }
 
 func NewDigestJob(
-	frequency,
-	domain string,
-	boxExec boil.ContextExecutor,
+	frequency, domain string,
+
+	ssoDB *sql.DB,
+	boxDB *sql.DB,
 	redConn *redis.Client,
-	identityMapper *events.IdentityMapper,
+
 	emails email.Sender,
 	templates email.Renderer,
 ) (*DigestJob, error) {
@@ -40,14 +38,16 @@ func NewDigestJob(
 		return nil, err
 	}
 	return &DigestJob{
-		period:         period,
-		frequency:      frequency,
-		domain:         domain,
-		boxExec:        boxExec,
-		redConn:        redConn,
-		identityMapper: identityMapper,
-		emails:         emails,
-		templates:      templates,
+		period:    period,
+		frequency: frequency,
+		domain:    domain,
+
+		ssoDB:   ssoDB,
+		boxDB:   boxDB,
+		redConn: redConn,
+
+		emails:    emails,
+		templates: templates,
 	}, nil
 }
 
