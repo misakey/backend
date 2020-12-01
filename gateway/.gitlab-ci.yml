@@ -21,7 +21,7 @@ deploy_gateway_branch:
   tags:
     - misakey_docker
   before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD registry.misakey.dev
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
     - docker build -t $CI_REGISTRY_IMAGE/gateway:`if echo "$CI_COMMIT_REF_NAME" | grep -q "/"; then echo $CI_COMMIT_REF_NAME | sed -n "s/^.*\/\(.*\)$/\1/p"; else echo $CI_COMMIT_REF_NAME; fi` ./gateway
     - docker push $CI_REGISTRY_IMAGE/gateway:`if echo "$CI_COMMIT_REF_NAME" | grep -q "/"; then echo $CI_COMMIT_REF_NAME | sed -n "s/^.*\/\(.*\)$/\1/p"; else echo $CI_COMMIT_REF_NAME; fi`
@@ -39,7 +39,7 @@ deploy_gateway_preprod:
   tags:
     - misakey_docker
   before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD registry.misakey.dev
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
     - docker build -f gateway/Dockerfile.preprod -t $CI_REGISTRY_IMAGE/gateway:preprod ./gateway
     - docker push $CI_REGISTRY_IMAGE/gateway:preprod
@@ -53,7 +53,7 @@ deploy_gateway_production:
   tags:
     - misakey_docker
   before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD registry.misakey.dev
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
     - docker build -f gateway/Dockerfile.production -t $CI_REGISTRY_IMAGE/gateway:`if echo "$CI_COMMIT_TAG" | grep -q "+gateway"; then echo $CI_COMMIT_TAG | sed "s/+gateway//g"; else echo $CI_COMMIT_TAG; fi` ./gateway
     - docker push $CI_REGISTRY_IMAGE/gateway:`if echo "$CI_COMMIT_TAG" | grep -q "+gateway"; then echo $CI_COMMIT_TAG | sed "s/+gateway//g"; else echo $CI_COMMIT_TAG; fi`

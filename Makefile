@@ -2,7 +2,9 @@
 #       CONFIGURATION
 # ----------------------------
 
-DOCKER_REGISTRY := registry.misakey.dev
+ifndef CI_REGISTRY
+	CI_REGISTRY := registry.misakey.dev
+endif
 
 
 ifndef CI_COMMIT_REF_NAME
@@ -26,4 +28,4 @@ help:
 
 .PHONY: docker-login
 docker-login: ## Log in to the default registry
-	@docker login -u $(CI_REGISTRY_USER) -p $(CI_REGISTRY_PASSWORD) $(DOCKER_REGISTRY)
+	@docker login -u $(CI_REGISTRY_USER) -p $(CI_REGISTRY_PASSWORD) $(CI_REGISTRY)

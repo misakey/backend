@@ -9,7 +9,7 @@ export $(shell sed 's/=.*//' $(dpl))
 
 # Set gitlab-ci variables if not in a CI context
 ifndef CI_REGISTRY_IMAGE
-	CI_REGISTRY_IMAGE := $(DOCKER_REGISTRY)/misakey/backend
+	CI_REGISTRY_IMAGE := $(CI_REGISTRY)/misakey/backend
 endif
 DOCKER_IMAGE := $(CI_REGISTRY_IMAGE)/$(APP_NAME)
 ifndef CI_COMMIT_REF_NAME
