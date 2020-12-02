@@ -25,10 +25,10 @@ type BatchCreateEventRequest struct {
 }
 
 type BatchEvent struct {
-	Type             string     `json:"type"`
-	Content          types.JSON `json:"content"`
-	ReferrerID       *string    `json:"referrer_id"`
-	ForServerNoStore null.JSON  `json:"for_server_no_store"`
+	Type       string     `json:"type"`
+	Content    types.JSON `json:"content"`
+	ReferrerID *string    `json:"referrer_id"`
+	Extra      null.JSON  `json:"extra"`
 }
 
 func (req *BatchCreateEventRequest) BindAndValidate(eCtx echo.Context) error {
@@ -90,7 +90,7 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 		// call the proper event handlers
 		handler := events.Handler(event.Type)
 
-		metadatas[event.ID], err = handler.Do(ctx, &event, batchE.ForServerNoStore, tr, app.RedConn, identityMapper, app.cryptoActionsRepo, app.filesRepo)
+		metadatas[event.ID], err = handler.Do(ctx, &event, batchE.Extra, tr, app.RedConn, identityMapper, app.cryptoActionsRepo, app.filesRepo)
 		if err != nil {
 			return nil, merror.Transform(err).Describef("doing %s event", event.Type)
 		}

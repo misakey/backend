@@ -33,7 +33,7 @@ class Session(http.Session):
             f'{URL_PREFIX}/boxes/{box_id}/events',
             json={
                 'type': 'member.join',
-                'for_server_no_store': {
+                'extra': {
                     # will be mandatory soon
                     # TODO take value as input argument
                     'other_share_hash': urlsafe_b64encode(os.urandom(16))

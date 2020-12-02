@@ -9,7 +9,7 @@ def new_key_share_event():
 
     return {
         'type': 'state.key_share',
-        'for_server_no_store': {
+        'extra': {
             'misakey_share': misakey_share,
             'other_share_hash': other_share_hash,
             'encrypted_invitation_key_share': encrypted_invitation_key_share,

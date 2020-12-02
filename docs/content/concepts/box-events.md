@@ -231,7 +231,7 @@ The `state.lifecycle` event changes the lifecycle of a box.
 ```json
 {
     "type": "state.key_share",
-    "for_server_no_store": {
+    "extra": {
         "misakey_share": "BBVZBhrLtb0DsdYtul7s1g==",
         "other_share_hash": "h1vUkzYPYwaRgH03-4L7-g",
         "encrypted_invitation_key_share": "cp3nvY+OtRtetFGN0Yuxw3Cra6OjbWzO1ptOWP9hcWo="
@@ -247,7 +247,7 @@ Side effects:
 - the key share of the box will be changed (and all previous ones for this box are deleted)
 - every ACR2 member of the box will receive a cryptoaction
   with type `set_box_key_share`
-  and encrypted content the value of `for_server_no_store.encrypted_invitation_key_share`.
+  and encrypted content the value of `extra.encrypted_invitation_key_share`.
 
 For more information on box key shares, see [here](/endpoints/box_key_shares).
 
@@ -315,14 +315,14 @@ Or, in order to automatically invite the identifier
         "value": "(string): the identifier value",
         "auto_invite": true
     },
-    "for_server_no_store": {
+    "extra": {
       "a6cBxJMq8": "(encrypted)",
       "b7x94c1wG": "(encrypted)"
     }
 }
 ```
 
-Where `for_server_no_store` is a mapping from each identity public key of the identifier being added
+Where `extra` is a mapping from each identity public key of the identifier being added
 to the encrypted crypto action to send to the corresponding identity.
 This will create a crypto action with type `invitation`
 and a notification with type `box.auto_invite`.

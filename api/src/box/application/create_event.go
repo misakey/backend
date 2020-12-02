@@ -23,7 +23,7 @@ type CreateEventRequest struct {
 	Type                string     `json:"type"`
 	Content             types.JSON `json:"content"`
 	ReferrerID          *string    `json:"referrer_id"`
-	ForServerNoStore    null.JSON  `json:"for_server_no_store"`
+	Extra               null.JSON  `json:"extra"`
 	MetadataForHandlers events.MetadataForUsedSpaceHandler
 }
 
@@ -82,7 +82,7 @@ func (app *BoxApplication) CreateEvent(ctx context.Context, genReq request.Reque
 	}
 
 	handler := events.Handler(event.Type)
-	metadata, err := handler.Do(ctx, &event, req.ForServerNoStore, tx, app.RedConn, identityMapper, app.cryptoActionsRepo, app.filesRepo)
+	metadata, err := handler.Do(ctx, &event, req.Extra, tx, app.RedConn, identityMapper, app.cryptoActionsRepo, app.filesRepo)
 	if err != nil {
 		atomic.SQLRollback(ctx, tx, err)
 		return nil, merror.Transform(err).Describef("during %s event", event.Type)

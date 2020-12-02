@@ -44,7 +44,7 @@ with prettyErrorContext():
                         'value': s2.email,
                         'auto_invite': True,
                     },
-                    'for_server_no_store': None,
+                    'extra': None,
                 }
             ]
         },
@@ -63,7 +63,7 @@ with prettyErrorContext():
                         'restriction_type': 'identifier',
                         'value': s2.email,
                     },
-                    'for_server_no_store': {
+                    'extra': {
                         's2pubkey': 'FakeEncryptedCryptoAction',
                     }
                 }
@@ -85,7 +85,7 @@ with prettyErrorContext():
                         'value': s2.email,
                         'auto_invite': True,
                     },
-                    'for_server_no_store': {
+                    'extra': {
                         's2pubkey': 'FakeEncryptedCryptoAction',
                         'badKey': 'FakeEncryptedCryptoAction',
                     }
@@ -108,7 +108,7 @@ with prettyErrorContext():
                         'value': s2.email,
                         'auto_invite': True,
                     },
-                    'for_server_no_store': {
+                    'extra': {
                         # Note that there is the proper number of keys (1)
                         'badKey': 'FakeEncryptedCryptoAction',
                     }
@@ -131,7 +131,7 @@ with prettyErrorContext():
                         'value': s2.email,
                         'auto_invite': True,
                     },
-                    'for_server_no_store': {
+                    'extra': {
                         's2pubkey': 'FakeEncryptedCryptoAction',
                     }
                 }
@@ -173,7 +173,7 @@ with prettyErrorContext():
                         'value': s3.email,
                         'auto_invite': True,
                     },
-                    'for_server_no_store': {
+                    'extra': {
                         'whateverKey': 'becauseS3doesnothaveone',
                     }
                 }

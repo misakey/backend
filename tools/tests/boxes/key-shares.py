@@ -14,7 +14,7 @@ with prettyErrorContext():
     s3 = get_authenticated_session(acr_values=1)
 
     print('- providing key share during box creation')
-    initial_key_share_data = new_key_share_event()['for_server_no_store']
+    initial_key_share_data = new_key_share_event()['extra']
     r = s1.post(
         f'{URL_PREFIX}/boxes',
         json={
@@ -69,13 +69,13 @@ with prettyErrorContext():
         expected_status_code=http.STATUS_CREATED,
     )
 
-    other_share_hash = key_share_event['for_server_no_store']['other_share_hash']
+    other_share_hash = key_share_event['extra']['other_share_hash']
     r = s1.get(f'{URL_PREFIX}/box-key-shares/{other_share_hash}')
     check_response(
         r,
         [
-            lambda r: r.json()['share'] == key_share_event['for_server_no_store']['misakey_share'],
-            lambda r: r.json()['other_share_hash'] == key_share_event['for_server_no_store']['other_share_hash'],
+            lambda r: r.json()['share'] == key_share_event['extra']['misakey_share'],
+            lambda r: r.json()['other_share_hash'] == key_share_event['extra']['other_share_hash'],
             lambda r: r.json()['box_id'] == box_id,
         ]
     )
@@ -100,7 +100,7 @@ with prettyErrorContext():
         [
             lambda r: assert_fn(len(r.json()) == 1),
             lambda r: assert_fn(r.json()[0]['type'] == 'set_box_key_share'),
-            lambda r: assert_fn(r.json()[0]['encrypted'] == key_share_event['for_server_no_store']['encrypted_invitation_key_share'])
+            lambda r: assert_fn(r.json()[0]['encrypted'] == key_share_event['extra']['encrypted_invitation_key_share'])
         ]
     )
 

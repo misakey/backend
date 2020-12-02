@@ -15,28 +15,28 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 )
 
-func doKeyShare(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionService external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
+func doKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionService external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// check accesses
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")
 	}
 
 	// there is no "content" for this kind of event,
-	// only "for_server_no_store"
+	// only "extra"
 
-	forServerNoStore := struct {
+	extra := struct {
 		MisakeyShare                string `json:"misakey_share"`
 		OtherShareHash              string `json:"other_share_hash"`
 		EncryptedInvitationKeyShare string `json:"encrypted_invitation_key_share"`
 	}{}
 
-	if err := forServerNoStoreJSON.Unmarshal(&forServerNoStore); err != nil {
+	if err := extraJSON.Unmarshal(&extra); err != nil {
 		return nil, merror.Transform(err).Describe("unmarshalling \"for server no store\"")
 	}
-	if err := v.ValidateStruct(&forServerNoStore,
-		v.Field(&forServerNoStore.MisakeyShare, v.Required),
-		v.Field(&forServerNoStore.OtherShareHash, v.Required),
-		v.Field(&forServerNoStore.EncryptedInvitationKeyShare, v.Required),
+	if err := v.ValidateStruct(&extra,
+		v.Field(&extra.MisakeyShare, v.Required),
+		v.Field(&extra.OtherShareHash, v.Required),
+		v.Field(&extra.EncryptedInvitationKeyShare, v.Required),
 	); err != nil {
 		return nil, merror.Transform(err).Describe("validating \"for server no store\"")
 	}
@@ -48,7 +48,7 @@ func doKeyShare(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, e
 
 	if err = keyshares.Create(
 		ctx, exec,
-		forServerNoStore.OtherShareHash, forServerNoStore.MisakeyShare, forServerNoStore.EncryptedInvitationKeyShare,
+		extra.OtherShareHash, extra.MisakeyShare, extra.EncryptedInvitationKeyShare,
 		e.BoxID, e.SenderID,
 	); err != nil {
 		return nil, merror.Transform(err).Describe("creating key share")
@@ -96,7 +96,7 @@ func doKeyShare(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, e
 				Type:                "set_box_key_share",
 				SenderIdentityID:    null.StringFrom(e.SenderID),
 				BoxID:               null.StringFrom(e.BoxID),
-				Encrypted:           forServerNoStore.EncryptedInvitationKeyShare,
+				Encrypted:           extra.EncryptedInvitationKeyShare,
 				EncryptionPublicKey: boxPublicKey,
 				CreatedAt:           time.Now(),
 			}

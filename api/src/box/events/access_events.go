@@ -23,7 +23,7 @@ type accessContent struct {
 	AutoInvite      bool   `json:"auto_invite"`
 }
 
-func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionRepo external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
+func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionRepo external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")
@@ -75,20 +75,20 @@ func doAddAccess(ctx context.Context, e *Event, forServerNoStoreJSON null.JSON, 
 		// potential side effects of an "identifier" access
 		// (auto invitation)
 		if c.AutoInvite {
-			if forServerNoStoreJSON.Valid {
+			if extraJSON.Valid {
 				box, err := Compute(ctx, e.BoxID, exec, identityMapper, nil)
 				if err != nil {
 					return nil, merror.Transform(err).Describe("computing the box (to get title for notif)")
 				}
 				// creates a crypto action AND the notification
-				err = cryptoActionRepo.CreateInvitationActions(ctx, e.SenderID, e.BoxID, box.Title, c.Value, forServerNoStoreJSON)
+				err = cryptoActionRepo.CreateInvitationActions(ctx, e.SenderID, e.BoxID, box.Title, c.Value, extraJSON)
 				if err != nil {
 					return nil, merror.Transform(err).Describe("creating crypto actions")
 				}
 			} else {
-				return nil, merror.BadRequest().Detail("for_server_no_store", merror.DVRequired)
+				return nil, merror.BadRequest().Detail("extra", merror.DVRequired)
 			}
-		} else if forServerNoStoreJSON.Valid {
+		} else if extraJSON.Valid {
 			return nil, merror.BadRequest().Detail("auto_invite", merror.DVInvalid)
 		}
 	}

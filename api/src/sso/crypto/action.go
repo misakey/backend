@@ -132,7 +132,7 @@ func CreateInvitationActions(
 
 	if len(actionsData) != len(identities) {
 		return merror.BadRequest().Describe(
-			"required one entry per identity public key in for_server_no_store",
+			"required one entry per identity public key in extra",
 		)
 	}
 

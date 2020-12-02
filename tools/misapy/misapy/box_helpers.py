@@ -42,7 +42,7 @@ def create_box_and_post_some_events_to_it(session, close=True):
         json=key_share_event,
         expected_status_code=http.STATUS_CREATED,
     )
-    other_share_hash = key_share_event['for_server_no_store']['other_share_hash']
+    other_share_hash = key_share_event['extra']['other_share_hash']
 
     print(f'- create msg.text event on box {box_id}')
     r = s.post(

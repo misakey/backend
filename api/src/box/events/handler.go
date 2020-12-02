@@ -18,7 +18,7 @@ type Metadata interface{}
 type doHandler func(
 	ctx context.Context,
 	event *Event,
-	forServerNoStoreJSON null.JSON,
+	extraJSON null.JSON,
 	exec boil.ContextExecutor, // transaction
 	redConn *redis.Client,
 	identityMapper *IdentityMapper,
