@@ -6,12 +6,13 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/realtime"
 )
 
 type DeleteSavedFileRequest struct {
@@ -56,6 +57,19 @@ func (app *BoxApplication) DeleteSavedFile(ctx context.Context, genReq request.R
 			return nil, merror.Transform(err).Describe("deleting stored file")
 		}
 	}
+
+	// send websocket
+	su := realtime.Update{
+		Type: "file.saved",
+		Object: struct {
+			EncryptedFileID string `json:"encrypted_file_id"`
+			IsSaved         bool   `json:"is_saved"`
+		}{
+			EncryptedFileID: savedFile.EncryptedFileID,
+			IsSaved:         false,
+		},
+	}
+	realtime.SendUpdate(ctx, app.RedConn, savedFile.IdentityID, &su)
 
 	return nil, nil
 }

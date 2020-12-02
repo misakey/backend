@@ -175,6 +175,18 @@ This message notify a box deletion.
 }
 ```
 
+### `file.saved` type
+
+
+This message notify a change in the *saved* status of a file for a given user.
+
+```json
+{
+    "encrypted_file_id": "<uuid>",
+    "is_saved": "<bool>"
+}
+```
+
 ## Client to server
 
 Server accepts only events of the type `ack`:

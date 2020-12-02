@@ -13,6 +13,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/realtime"
 )
 
 type CreateSavedFileRequest struct {
@@ -77,6 +78,19 @@ func (app *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.R
 	if err := files.CreateSavedFile(ctx, app.DB, &savedFile); err != nil {
 		return nil, merror.Transform(err).Describe("creating saved file")
 	}
+
+	// send websocket
+	su := realtime.Update{
+		Type: "file.saved",
+		Object: struct {
+			EncryptedFileID string `json:"encrypted_file_id"`
+			IsSaved         bool   `json:"is_saved"`
+		}{
+			EncryptedFileID: savedFile.EncryptedFileID,
+			IsSaved:         true,
+		},
+	}
+	realtime.SendUpdate(ctx, app.RedConn, savedFile.IdentityID, &su)
 
 	return savedFile, nil
 }
