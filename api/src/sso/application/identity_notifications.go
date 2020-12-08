@@ -9,11 +9,11 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
 type IdentityNotifCountQuery struct {
@@ -125,7 +125,7 @@ func (sso *SSOService) AckIdentityNotification(ctx context.Context, gen request.
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	err = identity.NotificationAck(ctx, tr, cmd.identityID, cmd.notifIDs)
 	if err != nil {

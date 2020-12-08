@@ -111,10 +111,9 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
-	var curIdentity identity.Identity
-	curIdentity, err = identity.Get(ctx, tr, cmd.identityID)
+	curIdentity, err := identity.Get(ctx, tr, cmd.identityID)
 	if err != nil {
 		return nil, err
 	}
@@ -193,11 +192,10 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	// get avatar's corresponding user
-	var existingIdentity identity.Identity
-	existingIdentity, err = identity.Get(ctx, tr, cmd.identityID)
+	existingIdentity, err := identity.Get(ctx, tr, cmd.identityID)
 	if err != nil {
 		return nil, err
 	}
@@ -215,8 +213,7 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 
 	avatar := identity.AvatarFile{}
 	// generate an UUID to use as a filename
-	var filename uuid.UUID
-	filename, err = uuid.NewRandom()
+	filename, err := uuid.NewRandom()
 	if err != nil {
 		return nil, merror.Transform(err).Describe("could not generate uuid v4")
 	}
@@ -225,8 +222,7 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 	avatar.Data = cmd.Data
 
 	// upload the avatar to storage
-	var url string
-	url, err = sso.identityService.UploadAvatar(ctx, &avatar)
+	url, err := sso.identityService.UploadAvatar(ctx, &avatar)
 	if err != nil {
 		return nil, err
 	}
@@ -269,11 +265,10 @@ func (sso *SSOService) DeleteAvatar(ctx context.Context, gen request.Request) (i
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	// get identity
-	var curIdentity identity.Identity
-	curIdentity, err = identity.Get(ctx, tr, cmd.identityID)
+	curIdentity, err := identity.Get(ctx, tr, cmd.identityID)
 	if err != nil {
 		return nil, err
 	}
@@ -333,11 +328,10 @@ func (sso *SSOService) AttachCoupon(ctx context.Context, gen request.Request) (i
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	// get identity
-	var curIdentity identity.Identity
-	curIdentity, err = identity.Get(ctx, tr, cmd.identityID)
+	curIdentity, err := identity.Get(ctx, tr, cmd.identityID)
 	if err != nil {
 		return nil, err
 	}

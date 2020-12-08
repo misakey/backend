@@ -130,7 +130,7 @@ func (sso *SSOService) DeleteCryptoAction(ctx context.Context, gen request.Reque
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	err = crypto.DeleteAction(ctx, tr, query.actionID, query.accountID)
 	if err != nil {

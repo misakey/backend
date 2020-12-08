@@ -69,10 +69,11 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 	if err != nil {
 		return nil, merror.Transform(err).Describe("initing transaction")
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	// 2. Delete all the events
-	if err := events.DeleteAllForBox(ctx, tr, req.boxID); err != nil {
+	err = events.DeleteAllForBox(ctx, tr, req.boxID)
+	if err != nil {
 		return nil, merror.Transform(err).Describe("deleting events")
 	}
 
@@ -83,18 +84,20 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 	}
 
 	// 4. Delete the key shares
-	if err := keyshares.EmptyAll(ctx, tr, req.boxID); err != nil {
+	err = keyshares.EmptyAll(ctx, tr, req.boxID)
+	if err != nil {
 		return nil, merror.Transform(err).Describe("emptying keyshares")
 	}
 
 	// 5. Delete the box used space
-	if err := quota.DeleteBoxUsedSpace(ctx, tr, req.boxID); err != nil {
+	err = quota.DeleteBoxUsedSpace(ctx, tr, req.boxID)
+	if err != nil {
 		return nil, merror.Transform(err).Describe("emptying box used space")
 	}
 
 	// run db operations
-	if err := tr.Commit(); err != nil {
-		return nil, err
+	if cErr := tr.Commit(); cErr != nil {
+		return nil, merror.Transform(cErr).Describe("committing transaction")
 	}
 
 	// 6. Delete orphan files

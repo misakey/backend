@@ -7,11 +7,14 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 )
 
-func SQLRollback(ctx context.Context, tr *sql.Tx, err error) {
-	if err == nil {
+func SQLRollback(ctx context.Context, tr *sql.Tx, ptrErr *error) {
+	if ptrErr == nil {
+		return
+	}
+	if *ptrErr == nil {
 		return
 	}
 	if rErr := tr.Rollback(); rErr != nil {
-		logger.FromCtx(ctx).Warn().Msgf("rolling back: %v", err)
+		logger.FromCtx(ctx).Warn().Msgf("rolling back: %v", rErr)
 	}
 }

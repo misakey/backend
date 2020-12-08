@@ -6,11 +6,11 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 )
 
 type BackupArchiveView struct {
@@ -103,10 +103,9 @@ func (sso *SSOService) DeleteBackupArchive(ctx context.Context, gen request.Requ
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
-	var archive crypto.BackupArchive
-	archive, err = crypto.GetBackupArchiveMetadata(ctx, tr, cmd.archiveID)
+	archive, err := crypto.GetBackupArchiveMetadata(ctx, tr, cmd.archiveID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("retrieving archive metadata")
 	}

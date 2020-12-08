@@ -48,11 +48,10 @@ func (sso *SSOService) InitAuthnStep(ctx context.Context, genReq request.Request
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	// 0. check if the identity exists and authable
-	var curIdentity identity.Identity
-	curIdentity, err = identity.Get(ctx, tr, cmd.Step.IdentityID)
+	curIdentity, err := identity.Get(ctx, tr, cmd.Step.IdentityID)
 	if err != nil {
 		return nil, err
 	}

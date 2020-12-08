@@ -53,7 +53,7 @@ func (sso *SSOService) SetProfileConfig(ctx context.Context, gen request.Request
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	if *query.ShareEmail {
 		err = identity.ProfileConfigShare(ctx, tr, query.identityID, string(identity.EmailIdentifier))

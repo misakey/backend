@@ -73,7 +73,7 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 	if err != nil {
 		return nil, merror.Transform(err).Describe("initing transaction")
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	// init an identity mapper for the operation
 	identityMapper := app.NewIM()
@@ -107,9 +107,8 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 		createdList = append(createdList, kicks...)
 	}
 
-	err = tr.Commit()
-	if err != nil {
-		return nil, merror.Transform(err).Describe("committing transaction")
+	if cErr := tr.Commit(); cErr != nil {
+		return nil, merror.Transform(cErr).Describe("committing transaction")
 	}
 
 	// not important to wait for after handlers to return
@@ -128,11 +127,12 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 
 	// build views
 	views := make([]events.View, len(createdList))
+	var fErr error
 	for i, e := range createdList {
 		// non-transparent mode
-		views[i], err = e.Format(ctx, identityMapper, false)
+		views[i], fErr = e.Format(ctx, identityMapper, false)
 		if err != nil {
-			return nil, merror.Transform(err).Describe("computing event view")
+			return nil, merror.Transform(fErr).Describe("computing event view")
 		}
 	}
 

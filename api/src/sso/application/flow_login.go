@@ -16,7 +16,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/login"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
@@ -146,11 +145,10 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	// 0. check the login challenge exists
-	var logCtx login.Context
-	logCtx, err = sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
+	logCtx, err := sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
 	if err != nil {
 		return nil, err
 	}
@@ -167,8 +165,7 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 
 	// 2. check if an identity exist for the identifier
 	identityNotFound := func(err error) bool { return err != nil && merror.HasCode(err, merror.NotFoundCode) }
-	var authable identity.Identity
-	authable, err = identity.GetAuthableByIdentifierID(ctx, tr, identifier.ID)
+	authable, err := identity.GetAuthableByIdentifierID(ctx, tr, identifier.ID)
 	if err != nil && !identityNotFound(err) {
 		return nil, err
 	}
@@ -190,13 +187,12 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 	}
 	// get the appropriate authn step
 	// NOTE: not handled - authnsession ACR
-	var step authn.Step
-	step, err = sso.AuthenticationService.NextStep(ctx, tr, authable, oidc.ACR0, logCtx.OIDCContext.ACRValues())
+	step, err := sso.AuthenticationService.NextStep(ctx, tr, authable, oidc.ACR0, logCtx.OIDCContext.ACRValues())
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting next authn step")
 	}
 	if cErr := tr.Commit(); cErr != nil {
-		return nil, cErr
+		return nil, merror.Transform(cErr).Describe("committing transaction")
 	}
 
 	// bind identity information on view
@@ -312,16 +308,14 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	// ensure the login challenge is correct and the identity is authable
-	var logCtx login.Context
-	logCtx, err = sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
+	logCtx, err := sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
 	if err != nil {
 		return view, err
 	}
-	var curIdentity identity.Identity
-	curIdentity, err = identity.Get(ctx, tr, cmd.Step.IdentityID)
+	curIdentity, err := identity.Get(ctx, tr, cmd.Step.IdentityID)
 	if err != nil {
 		return view, err
 	}
@@ -346,13 +340,12 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 	}
 
 	// upgrade the authentication process
-	var process authn.Process
-	process, err = sso.AuthenticationService.UpgradeProcess(ctx, tr, logCtx.Challenge, curIdentity, cmd.Step.MethodName)
+	process, err := sso.AuthenticationService.UpgradeProcess(ctx, tr, logCtx.Challenge, curIdentity, cmd.Step.MethodName)
 	if err != nil {
 		return view, merror.Transform(err).Describe("upgrading authn process")
 	}
 	if cErr := tr.Commit(); cErr != nil {
-		return nil, cErr
+		return nil, merror.Transform(cErr).Describe("committing transaction")
 	}
 
 	view.AccessToken = process.AccessToken

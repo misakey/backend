@@ -28,7 +28,7 @@ func (ih IntraprocessHelper) CreateInvitationActionsForIdentity(ctx context.Cont
 	if err != nil {
 		return err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 	err = CreateInvitationActionsForIdentity(ctx, tr, ih.redConn, senderID, boxID, boxTitle, identityValue, actionsData)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (ih IntraprocessHelper) CreateInvitationActionsForIdentifier(ctx context.Co
 	if err != nil {
 		return err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 	err = CreateInvitationActionsForIdentifier(ctx, tr, ih.redConn, senderID, boxID, boxTitle, identifierValue, actionsData)
 	if err != nil {
 		return err

@@ -6,7 +6,8 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"

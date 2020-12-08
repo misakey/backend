@@ -7,11 +7,11 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
 type BackupQuery struct {
@@ -93,11 +93,10 @@ func (sso *SSOService) UpdateBackup(ctx context.Context, gen request.Request) (i
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	// retrieve the current state of the account
-	var account identity.Account
-	account, err = identity.GetAccount(ctx, tr, cmd.accountID)
+	account, err := identity.GetAccount(ctx, tr, cmd.accountID)
 	if err != nil {
 		return nil, err
 	}

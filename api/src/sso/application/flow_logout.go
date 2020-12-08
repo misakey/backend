@@ -25,7 +25,7 @@ func (sso *SSOService) Logout(ctx context.Context, _ request.Request) (interface
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	err = sso.authFlowService.Logout(ctx, acc.Subject, acc.Token)
 	if err != nil {

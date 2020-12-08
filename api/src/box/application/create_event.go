@@ -84,13 +84,12 @@ func (app *BoxApplication) CreateEvent(ctx context.Context, genReq request.Reque
 	handler := events.Handler(event.Type)
 	metadata, err := handler.Do(ctx, &event, req.Extra, tx, app.RedConn, identityMapper, app.cryptoActionsRepo, app.filesRepo)
 	if err != nil {
-		atomic.SQLRollback(ctx, tx, err)
+		atomic.SQLRollback(ctx, tx, &err)
 		return nil, merror.Transform(err).Describef("during %s event", event.Type)
 	}
 
 	// commit transaction
-	err = tx.Commit()
-	if err != nil {
+	if err := tx.Commit(); err != nil {
 		return nil, merror.Transform(err).Describe("committing transaction")
 	}
 

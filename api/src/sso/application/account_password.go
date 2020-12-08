@@ -100,18 +100,16 @@ func (sso *SSOService) ChangePassword(ctx context.Context, gen request.Request) 
 	if err != nil {
 		return nil, err
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	// get account
-	var account identity.Account
-	account, err = identity.GetAccount(ctx, tr, cmd.accountID)
+	account, err := identity.GetAccount(ctx, tr, cmd.accountID)
 	if err != nil {
 		return nil, err
 	}
 
 	// check old password
-	var oldPasswordValid bool
-	oldPasswordValid, err = cmd.OldPassword.Matches(account.Password)
+	oldPasswordValid, err := cmd.OldPassword.Matches(account.Password)
 	if err != nil {
 		return nil, err
 	}

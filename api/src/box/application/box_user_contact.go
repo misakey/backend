@@ -94,15 +94,15 @@ func (app *BoxApplication) BoxUserContact(ctx context.Context, genReq request.Re
 	if err != nil {
 		return nil, merror.Transform(err).Describe("initiating transaction")
 	}
-	defer atomic.SQLRollback(ctx, tr, err)
+	defer atomic.SQLRollback(ctx, tr, &err)
 
 	box, err := events.CreateContactBox(ctx, tr, app.RedConn, identityMapper, app.filesRepo, app.cryptoActionsRepo, contact)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating contact box")
 	}
 
-	if err := tr.Commit(); err != nil {
-		return nil, merror.Transform(err).Describe("committing transaction")
+	if cErr := tr.Commit(); cErr != nil {
+		return nil, merror.Transform(cErr).Describe("committing transaction")
 	}
 
 	return box, err
