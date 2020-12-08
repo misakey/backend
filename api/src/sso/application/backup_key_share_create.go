@@ -16,6 +16,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
+// BackupKeyShareCreateCmd ...
 type BackupKeyShareCreateCmd struct {
 	AccountID      string `json:"account_id"`
 	SaltBase64     string `json:"salt_base64"`
@@ -23,6 +24,7 @@ type BackupKeyShareCreateCmd struct {
 	OtherShareHash string `json:"other_share_hash"`
 }
 
+// BindAndValidate ...
 func (cmd *BackupKeyShareCreateCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
@@ -39,6 +41,7 @@ func (cmd *BackupKeyShareCreateCmd) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
+// CreateBackupKeyShare ...
 func (sso *SSOService) CreateBackupKeyShare(ctx context.Context, gen request.Request) (interface{}, error) {
 	cmd := gen.(*BackupKeyShareCreateCmd)
 

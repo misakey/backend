@@ -8,15 +8,17 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 
 	"github.com/go-redis/redis/v7"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories"
 )
 
+// ProcessRedisRepo ...
 type ProcessRedisRepo struct {
 	cliID string
 	repositories.SimpleKeyRedis
 }
 
+// NewAuthnProcessRedis ...
 func NewAuthnProcessRedis(cliID string, redConn *redis.Client) ProcessRedisRepo {
 	return ProcessRedisRepo{cliID, repositories.NewSimpleKeyRedis(redConn)}
 }
@@ -25,6 +27,7 @@ func (prr ProcessRedisRepo) key(loginChallenge string, tok string) string {
 	return "authn_process:" + loginChallenge + ":" + tok
 }
 
+// Create ...
 func (prr ProcessRedisRepo) Create(ctx context.Context, process *Process) error {
 	value, err := json.Marshal(process)
 	if err != nil {
@@ -35,6 +38,7 @@ func (prr ProcessRedisRepo) Create(ctx context.Context, process *Process) error 
 	return prr.SimpleKeyRedis.Set(ctx, key, value, time.Hour)
 }
 
+// Update ...
 func (prr ProcessRedisRepo) Update(ctx context.Context, process Process) error {
 	value, err := json.Marshal(process)
 	if err != nil {
@@ -48,6 +52,7 @@ func (prr ProcessRedisRepo) Update(ctx context.Context, process Process) error {
 	return nil
 }
 
+// Get ...
 func (prr ProcessRedisRepo) Get(ctx context.Context, loginChallenge string) (Process, error) {
 	process := Process{}
 	challengeKey := prr.key(loginChallenge, "*")
@@ -62,6 +67,7 @@ func (prr ProcessRedisRepo) Get(ctx context.Context, loginChallenge string) (Pro
 	return process, nil
 }
 
+// GetClaims ...
 func (prr ProcessRedisRepo) GetClaims(ctx context.Context, tok string) (oidc.AccessClaims, error) {
 	ac := oidc.AccessClaims{}
 

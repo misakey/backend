@@ -15,6 +15,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
+// UploadEncryptedFileRequest ...
 type UploadEncryptedFileRequest struct {
 	boxID string
 	size  int64
@@ -25,6 +26,7 @@ type UploadEncryptedFileRequest struct {
 	MsgPubKey     string `form:"msg_public_key"`
 }
 
+// BindAndValidate ...
 func (req *UploadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -45,6 +47,7 @@ func (req *UploadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) error 
 	)
 }
 
+// UploadEncryptedFile ...
 func (app *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*UploadEncryptedFileRequest)
 	// init an identity mapper for the operation

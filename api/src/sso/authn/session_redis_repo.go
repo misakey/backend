@@ -7,14 +7,16 @@ import (
 
 	"github.com/go-redis/redis/v7"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories"
 )
 
+// SessionRedisRepo ...
 type SessionRedisRepo struct {
 	repositories.SimpleKeyRedis
 }
 
+// NewAuthnSessionRedis ...
 func NewAuthnSessionRedis(redConn *redis.Client) SessionRedisRepo {
 	return SessionRedisRepo{repositories.NewSimpleKeyRedis(redConn)}
 }
@@ -23,6 +25,7 @@ func (srr SessionRedisRepo) key(sessionID string) string {
 	return "authn_session:" + sessionID
 }
 
+// Upsert ...
 func (srr SessionRedisRepo) Upsert(ctx context.Context, session Session, lifetime time.Duration) error {
 	value, err := json.Marshal(session)
 	if err != nil {
@@ -31,6 +34,7 @@ func (srr SessionRedisRepo) Upsert(ctx context.Context, session Session, lifetim
 	return srr.SimpleKeyRedis.Set(ctx, srr.key(session.ID), value, lifetime)
 }
 
+// Get ...
 func (srr SessionRedisRepo) Get(ctx context.Context, sessionID string) (Session, error) {
 	session := Session{}
 

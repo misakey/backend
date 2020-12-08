@@ -4,6 +4,7 @@ package merror
 // Once set, the Origin of an error should not be spoiled.
 type Origin string
 
+// origin constants
 const (
 	OriACR      Origin = "acr"      // the error comes from the authorization token acr
 	OriBody     Origin = "body"     // the error comes from body parameter

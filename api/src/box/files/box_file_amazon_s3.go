@@ -13,6 +13,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// FileAmazonS3 ...
 type FileAmazonS3 struct {
 	bucket string
 

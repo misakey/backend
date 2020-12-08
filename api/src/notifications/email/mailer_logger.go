@@ -10,13 +10,13 @@ import (
 type MailerLogger struct {
 }
 
-// NewMailerLogger creates a mailer that doesn't deliver emails but simply logs them.
+// NewLogMailer creates a mailer that doesn't deliver emails but simply logs them.
 func NewLogMailer() *MailerLogger {
 	return &MailerLogger{}
 }
 
 // Send an email (log only text)
-func (l MailerLogger) Send(ctx context.Context, email *EmailNotification) error {
+func (l MailerLogger) Send(ctx context.Context, email *Notification) error {
 	logger.
 		FromCtx(ctx).
 		Info().

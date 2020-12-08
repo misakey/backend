@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // import pprof for memory usage monitoring
 	"os"
 
 	"github.com/rs/zerolog/log"
@@ -27,6 +27,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&goose, "goose", "up", "goose command")
 }
 
+// RootCmd ...
 var RootCmd = &cobra.Command{
 	Use:   "api",
 	Short: "Run the API",

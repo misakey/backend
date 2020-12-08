@@ -15,18 +15,17 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/cache"
-	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
-	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
-	"gitlab.misakey.dev/misakey/backend/api/src/box/quota"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/realtime"
 )
 
+// DeleteBoxRequest ...
 type DeleteBoxRequest struct {
 	boxID string
 
 	UserConfirmation string `json:"user_confirmation"`
 }
 
+// BindAndValidate ...
 func (req *DeleteBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -39,6 +38,7 @@ func (req *DeleteBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// DeleteBox ...
 func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*DeleteBoxRequest)
 
@@ -47,7 +47,7 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 		return nil, merror.Unauthorized()
 	}
 
-	// 1. verify the deletion sender is an admin of the box
+	// verify the deletion sender is an admin of the box
 	if err := events.MustBeAdmin(ctx, app.DB, req.boxID, acc.IdentityID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")
 	}
@@ -56,6 +56,12 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 	boxFileIDs, err := events.ListFilesID(ctx, app.DB, req.boxID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("getting files")
+	}
+
+	// get public key before deleting events
+	boxPublicKey, err := events.GetBoxPublicKey(ctx, app.DB, req.boxID)
+	if err != nil {
+		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not get publicKey for %s", req.boxID)
 	}
 
 	// get box members (to notify them)
@@ -71,28 +77,12 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 	}
 	defer atomic.SQLRollback(ctx, tr, &err)
 
-	// 2. Delete all the events
-	err = events.DeleteAllForBox(ctx, tr, req.boxID)
-	if err != nil {
-		return nil, merror.Transform(err).Describe("deleting events")
+	if err := events.CleanBox(ctx, tr, req.boxID); err != nil {
+		return nil, err
 	}
 
-	// 3. Get public key
-	boxPublicKey, err := events.GetBoxPublicKey(ctx, app.DB, req.boxID)
-	if err != nil {
-		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not get publicKey for %s", req.boxID)
-	}
-
-	// 4. Delete the key shares
-	err = keyshares.EmptyAll(ctx, tr, req.boxID)
-	if err != nil {
-		return nil, merror.Transform(err).Describe("emptying keyshares")
-	}
-
-	// 5. Delete the box used space
-	err = quota.DeleteBoxUsedSpace(ctx, tr, req.boxID)
-	if err != nil {
-		return nil, merror.Transform(err).Describe("emptying box used space")
+	if err := events.DeleteOrphanFiles(ctx, tr, app.filesRepo, boxFileIDs); err != nil {
+		return nil, err
 	}
 
 	// run db operations
@@ -100,25 +90,7 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 		return nil, merror.Transform(cErr).Describe("committing transaction")
 	}
 
-	// 6. Delete orphan files
-	for _, fileID := range boxFileIDs {
-		// we need to check the existency of fileID
-		// since it is set to "" when msg.delete is called on the msg.file
-		// TODO: clean this up
-		if fileID != "" {
-			isOrphan, err := events.IsFileOrphan(ctx, app.DB, fileID)
-			if err != nil {
-				return nil, merror.Transform(err).Describe("checking file is orphan")
-			}
-			if isOrphan {
-				if err := files.Delete(ctx, app.DB, app.filesRepo, fileID); err != nil {
-					return nil, merror.Transform(err).Describe("deleting stored file")
-				}
-			}
-		}
-	}
-
-	// 7. Send delete events to websockets
+	// send delete events to websockets
 	bu := realtime.Update{
 		Type: "box.delete",
 		Object: struct {
@@ -135,13 +107,13 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 		realtime.SendUpdate(ctx, app.RedConn, memberID, &bu)
 	}
 
-	// 8. Clean up some redis keys
+	// clean up some redis keys
 	if err := cache.CleanBoxCache(ctx, app.RedConn, req.boxID); err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("cleaning box %s cache", req.boxID)
 	}
 
-	// 9. Invalidate cache for members
-	//to avoid having this box in user lists
+	// invalidate cache for members
+	// to avoid having this box in user lists
 	for _, memberID := range memberIDs {
 		if err := cache.CleanBoxesListCache(ctx, app.RedConn, memberID); err != nil {
 			logger.FromCtx(ctx).Error().Err(err).Msgf("cleaning boxes list for %s cache", memberID)

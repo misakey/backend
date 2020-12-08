@@ -9,26 +9,27 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
-// avatarFileSystem
-type avatarFileSystem struct {
+// AvatarFileSystem ...
+type AvatarFileSystem struct {
 	location  string
 	avatarURL string
 }
 
-// NewAvatarFileSystem's constructor - /!\ not safe to use in production
-func NewAvatarFileSystem(avatarLocation, avatarURL string) *avatarFileSystem {
+// NewAvatarFileSystem constructor
+// /!\ NOT SAFE TO USE IN PRODUCTION
+func NewAvatarFileSystem(avatarLocation, avatarURL string) *AvatarFileSystem {
 	// create avatars directory
 	if _, err := os.Stat(avatarLocation); os.IsNotExist(err) {
 		_ = os.Mkdir(avatarLocation, os.ModePerm)
 	}
-	return &avatarFileSystem{
+	return &AvatarFileSystem{
 		location:  avatarLocation,
 		avatarURL: avatarURL,
 	}
 }
 
 // Upload an avatar in file system directory and return its path
-func (fs *avatarFileSystem) Upload(ctx context.Context, avatar *AvatarFile) (string, error) {
+func (fs *AvatarFileSystem) Upload(ctx context.Context, avatar *AvatarFile) (string, error) {
 	body, err := ioutil.ReadAll(avatar.Data)
 	if err != nil {
 		return "", err
@@ -53,7 +54,7 @@ func (fs *avatarFileSystem) Upload(ctx context.Context, avatar *AvatarFile) (str
 }
 
 // Delete an avatar from the file system
-func (fs *avatarFileSystem) Delete(ctx context.Context, avatar *AvatarFile) error {
+func (fs *AvatarFileSystem) Delete(ctx context.Context, avatar *AvatarFile) error {
 	path := path.Join(fs.location, avatar.Filename)
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {

@@ -10,6 +10,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// MustBeAdmin ...
 func MustBeAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) error {
 	isCreator, err := isCreator(ctx, exec, boxID, senderID)
 	if err != nil {
@@ -21,15 +22,17 @@ func MustBeAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID
 	return nil
 }
 
+// IsAdmin ...
 func IsAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (bool, error) {
 	err := MustBeAdmin(ctx, exec, boxID, senderID)
 	if err != nil && merror.HasCode(err, merror.ForbiddenCode) {
 		return false, nil
 	}
-	// return false admin if an error has occured
+	// return false admin if an error has occurred
 	return (err == nil), err
 }
 
+// GetAdminID ...
 func GetAdminID(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
 	createEvent, err := get(ctx, exec, eventFilters{
 		eType: null.StringFrom(etype.Create),
@@ -42,6 +45,7 @@ func GetAdminID(ctx context.Context, exec boil.ContextExecutor, boxID string) (s
 	return createEvent.SenderID, nil
 }
 
+// GetBoxTitle ...
 func GetBoxTitle(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
 	createEvent, err := get(ctx, exec, eventFilters{
 		eType: null.StringFrom(etype.Create),

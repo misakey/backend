@@ -12,11 +12,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mwebsockets"
 )
 
+// WebsocketHandler ...
 type WebsocketHandler struct {
 	boxService     *application.BoxApplication
 	allowedOrigins []string
 }
 
+// NewWebsocketHandler ...
 func NewWebsocketHandler(allowedOrigins []string, boxService *application.BoxApplication) WebsocketHandler {
 	return WebsocketHandler{
 		allowedOrigins: allowedOrigins,
@@ -24,6 +26,7 @@ func NewWebsocketHandler(allowedOrigins []string, boxService *application.BoxApp
 	}
 }
 
+// RedisListener ...
 func (wh *WebsocketHandler) RedisListener(
 	c echo.Context,
 	wsName string,

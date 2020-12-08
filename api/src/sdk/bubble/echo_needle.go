@@ -8,9 +8,11 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// EchoNeedle ...
 type EchoNeedle struct {
 }
 
+// Explode ...
 func (n EchoNeedle) Explode(err error) error {
 	echoErr, ok := merror.Cause(err).(*echo.HTTPError)
 	if !ok {

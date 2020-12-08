@@ -12,6 +12,7 @@ type TemplateFileSystem struct {
 	templates map[string]*template.Template
 }
 
+// NewTemplateFileSystem ...
 func NewTemplateFileSystem(location string) *TemplateFileSystem {
 	return &TemplateFileSystem{
 		templates: make(map[string]*template.Template),

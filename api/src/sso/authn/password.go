@@ -12,7 +12,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
-// AssertPasswordExistence
+// AssertPasswordExistence ...
 func (as *Service) AssertPasswordExistence(ctx context.Context, identity identity.Identity) error {
 	if identity.AccountID.String == "" {
 		return merror.Conflict().Describe("identity has no linked account").
@@ -22,7 +22,7 @@ func (as *Service) AssertPasswordExistence(ctx context.Context, identity identit
 	return nil
 }
 
-// prepare password step by setting password hash information
+// preparePassword step by setting password hash information
 func (as *Service) preparePassword(ctx context.Context, exec boil.ContextExecutor, curIdentity identity.Identity, step *Step) error {
 	step.MethodName = oidc.AMRPrehashedPassword
 	account, err := identity.GetAccount(ctx, exec, curIdentity.AccountID.String)

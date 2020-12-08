@@ -44,7 +44,7 @@ func handleJSON(resp *http.Response, output interface{}, limit int64) error {
 		return merror.Transform(err).Describe("could not read response body")
 	}
 
-	// we consider an error occured below code 200 and above code 400
+	// we consider an error occurred below code 200 and above code 400
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
 		return merror.TransformHTTPCode(resp.StatusCode).Describe(string(data))
 	}

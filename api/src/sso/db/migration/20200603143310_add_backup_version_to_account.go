@@ -19,7 +19,7 @@ func upAddBackupVersionToAccount(tx *sql.Tx) error {
 
 func downAddBackupVersionToAccount(tx *sql.Tx) error {
 	_, err := tx.Exec(`ALTER TABLE account
-		DROP COLUMN backup_verison;
+		DROP COLUMN backup_version;
 	`)
 	return err
 }

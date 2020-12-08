@@ -9,26 +9,32 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
+// Request ...
 type Request interface {
 	BindAndValidate(echo.Context) error
 }
 
+// ResponseNoContent ...
 func ResponseNoContent(eCtx echo.Context, _ interface{}) error {
 	return eCtx.NoContent(http.StatusNoContent)
 }
 
+// ResponseOK ...
 func ResponseOK(eCtx echo.Context, data interface{}) error {
 	return eCtx.JSON(http.StatusOK, data)
 }
 
+// ResponseCreated ...
 func ResponseCreated(eCtx echo.Context, data interface{}) error {
 	return eCtx.JSON(http.StatusCreated, data)
 }
 
+// ResponseBlob ...
 func ResponseBlob(eCtx echo.Context, data interface{}) error {
 	return eCtx.Blob(http.StatusOK, "application/octet-stream", data.([]byte))
 }
 
+// NewPublicHTTP ...
 func NewPublicHTTP(
 	initReq func() Request,
 	appFunc func(context.Context, Request) (interface{}, error),
@@ -38,6 +44,7 @@ func NewPublicHTTP(
 	return newHTTPEntrypoint(initReq, false, appFunc, responseFunc, afterOpts...)
 }
 
+// NewProtectedHTTP ...
 func NewProtectedHTTP(
 	initReq func() Request,
 	appFunc func(context.Context, Request) (interface{}, error),

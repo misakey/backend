@@ -11,8 +11,9 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
-type AuthFlowService struct {
-	identityService identity.IdentityService
+// Service ...
+type Service struct {
+	identityService identity.Service
 
 	authFlow authFlowRepo
 
@@ -23,11 +24,12 @@ type AuthFlowService struct {
 	selfCliID string
 }
 
-func NewAuthFlowService(
-	identityService identity.IdentityService,
+// NewService ...
+func NewService(
+	identityService identity.Service,
 	authFlow authFlowRepo,
 	homePageURI, loginPageURI, consentPageURI, selfCliID string,
-) AuthFlowService {
+) Service {
 	homePageURL, err := url.ParseRequestURI(homePageURI)
 	if err != nil {
 		log.Fatalf("invalid home page url: %v", err)
@@ -41,7 +43,7 @@ func NewAuthFlowService(
 		log.Fatalf("invalid consent url: %v", err)
 	}
 
-	return AuthFlowService{
+	return Service{
 		identityService: identityService,
 		authFlow:        authFlow,
 
@@ -64,12 +66,12 @@ type authFlowRepo interface {
 	RevokeToken(ctx context.Context, token string) error
 }
 
-// returns true if the received string contains `promt=none` string
+// HasNonePrompt returns true if the received string contains `promt=none` string
 func HasNonePrompt(authURL string) bool {
 	return strings.Contains(authURL, "prompt=none")
 }
 
-// returns true if the received string contains no `login_hint=` string
+// HasNoLoginHint returns true if the received string contains no `login_hint=` string
 func HasNoLoginHint(authURL string) bool {
 	return !strings.Contains(authURL, "login_hint=")
 }

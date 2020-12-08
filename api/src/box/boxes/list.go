@@ -18,10 +18,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
 )
 
+// Get ...
 func Get(ctx context.Context, exec boil.ContextExecutor, identities *events.IdentityMapper, boxID string) (events.Box, error) {
 	return events.Compute(ctx, boxID, exec, identities, nil)
 }
 
+// GetWithSenderInfo ...
 func GetWithSenderInfo(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identities *events.IdentityMapper, boxID, identityID string) (*events.Box, error) {
 	box, err := events.Compute(ctx, boxID, exec, identities, nil)
 	if err != nil {
@@ -44,11 +46,13 @@ func GetWithSenderInfo(ctx context.Context, exec boil.ContextExecutor, redConn *
 	return &box, nil
 }
 
+// CountForSender ...
 func CountForSender(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, senderID string) (int, error) {
 	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID, []string{})
 	return len(list), err
 }
 
+// ListSenderBoxes ...
 func ListSenderBoxes(
 	ctx context.Context,
 	exec boil.ContextExecutor,
@@ -121,6 +125,7 @@ func ListSenderBoxes(
 	return boxes, nil
 }
 
+// LastSenderBoxIDs ...
 func LastSenderBoxIDs(
 	ctx context.Context,
 	exec boil.ContextExecutor,
@@ -148,7 +153,7 @@ func LastSenderBoxIDs(
 	idx := 0
 	for _, event := range append(joins, creates...) {
 		boxIDs[idx] = event.BoxID
-		idx += 1
+		idx++
 	}
 
 	// 3. update cache
@@ -161,6 +166,7 @@ func LastSenderBoxIDs(
 	return boxIDs, nil
 }
 
+// LastSenderBoxEvents ...
 func LastSenderBoxEvents(
 	ctx context.Context,
 	exec boil.ContextExecutor,
@@ -194,7 +200,7 @@ func LastSenderBoxEvents(
 	idx := 0
 	for _, event := range lastEventsDB {
 		lastEvents[idx] = events.FromSQLBoiler(event)
-		idx += 1
+		idx++
 	}
 
 	sort.Slice(lastEvents, func(i, j int) bool { return lastEvents[i].CreatedAt.Unix() > lastEvents[j].CreatedAt.Unix() })

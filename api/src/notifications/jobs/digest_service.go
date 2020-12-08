@@ -11,6 +11,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/notifications/email"
 )
 
+// DigestJob contains connectors and configuration for the digest job
 type DigestJob struct {
 	period    time.Duration
 	frequency string
@@ -23,6 +24,7 @@ type DigestJob struct {
 	ssoDB   *sql.DB
 }
 
+// NewDigestJob constructor
 func NewDigestJob(
 	frequency, domain string,
 
@@ -51,6 +53,7 @@ func NewDigestJob(
 	}, nil
 }
 
+// GetNotifPeriod translates a string to a time.Duration
 func GetNotifPeriod(frequency string) (time.Duration, error) {
 	switch frequency {
 	case "minimal":

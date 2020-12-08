@@ -9,8 +9,8 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
 type profileSharingConsent struct {

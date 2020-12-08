@@ -10,6 +10,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
+// UsedSpace model
 type UsedSpace struct {
 	BoxID string `json:"box_id"`
 	Value int64  `json:"value"`
@@ -23,6 +24,7 @@ func usedSpaceToDomain(dbBoxUsedSpace sqlboiler.BoxUsedSpace) UsedSpace {
 	}
 }
 
+// ListBoxUsedSpaces for an array of boxes ids
 func ListBoxUsedSpaces(ctx context.Context, exec boil.ContextExecutor, boxIds []string) ([]UsedSpace, error) {
 	dbBoxUsedSpace, err := sqlboiler.BoxUsedSpaces(sqlboiler.BoxUsedSpaceWhere.BoxID.IN(boxIds)).All(ctx, exec)
 	if err != nil {
@@ -39,6 +41,7 @@ func ListBoxUsedSpaces(ctx context.Context, exec boil.ContextExecutor, boxIds []
 	return boxUsedSpace, nil
 }
 
+// DeleteBoxUsedSpace ...
 func DeleteBoxUsedSpace(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
 	// rowAff is ignored because this is called on delete box and it should not fail if no used space
 	// was existing for the box
@@ -46,6 +49,7 @@ func DeleteBoxUsedSpace(ctx context.Context, exec boil.ContextExecutor, boxID st
 	return err
 }
 
+// UpdateBoxUsedSpace ...
 func UpdateBoxUsedSpace(ctx context.Context, exec boil.ContextExecutor, BoxID string, incrementValue int64, decrementValue int64) error {
 	// retrieve the current boxUsedSpace
 	currentBoxUsedSpace, err := sqlboiler.BoxUsedSpaces(sqlboiler.BoxUsedSpaceWhere.BoxID.EQ(BoxID)).One(ctx, exec)

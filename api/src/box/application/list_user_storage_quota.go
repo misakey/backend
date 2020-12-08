@@ -13,10 +13,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/quota"
 )
 
+// ListUserStorageQuotaRequest ...
 type ListUserStorageQuotaRequest struct {
 	IdentityID string
 }
 
+// BindAndValidate ...
 func (req *ListUserStorageQuotaRequest) BindAndValidate(eCtx echo.Context) error {
 	req.IdentityID = eCtx.Param("id")
 	return v.ValidateStruct(req,
@@ -24,6 +26,7 @@ func (req *ListUserStorageQuotaRequest) BindAndValidate(eCtx echo.Context) error
 	)
 }
 
+// ListUserStorageQuota ...
 func (app *BoxApplication) ListUserStorageQuota(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListUserStorageQuotaRequest)
 

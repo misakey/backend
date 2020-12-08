@@ -14,10 +14,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 )
 
+// ReadBoxRequest ...
 type ReadBoxRequest struct {
 	boxID string
 }
 
+// BindAndValidate ...
 func (req *ReadBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 
@@ -26,6 +28,7 @@ func (req *ReadBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// ReadBox ...
 func (app *BoxApplication) ReadBox(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ReadBoxRequest)
 	// init an identity mapper for the operation

@@ -13,12 +13,14 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
+// AckNewEventsCountRequest ...
 type AckNewEventsCountRequest struct {
 	boxID string
 
 	IdentityID string `json:"identity_id"`
 }
 
+// BindAndValidate ...
 func (req *AckNewEventsCountRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -30,6 +32,7 @@ func (req *AckNewEventsCountRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// AckNewEventsCount ...
 func (app *BoxApplication) AckNewEventsCount(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*AckNewEventsCountRequest)
 

@@ -7,20 +7,24 @@ import (
 // Context format used to forward information to Open ID server
 type Context map[string]interface{}
 
+// NewContext ...
 func NewContext() Context {
 	return make(map[string]interface{})
 }
 
+// SetACRValues ...
 func (ctx Context) SetACRValues(acrs ClassRefs) Context {
 	ctx["acr_values"] = acrs
 	return ctx
 }
 
+// SetACRValue ...
 func (ctx Context) SetACRValue(acr ClassRef) Context {
 	ctx["acr_values"] = NewClassRefs(acr)
 	return ctx
 }
 
+// ACRValues ...
 func (ctx Context) ACRValues() ClassRefs {
 	acrs, ok := ctx["acr_values"]
 	if !ok {
@@ -41,11 +45,13 @@ func (ctx Context) ACRValues() ClassRefs {
 	return ret
 }
 
+// SetAMRs ...
 func (ctx Context) SetAMRs(amrs MethodRefs) Context {
 	ctx["amrs"] = amrs
 	return ctx
 }
 
+// AddAMR ...
 func (ctx Context) AddAMR(amr MethodRef) Context {
 	stored, ok := ctx["amrs"]
 	if !ok {
@@ -56,6 +62,7 @@ func (ctx Context) AddAMR(amr MethodRef) Context {
 	return ctx.SetAMRs(amrs)
 }
 
+// AMRs ...
 func (ctx Context) AMRs() MethodRefs {
 	amrs, ok := ctx["amrs"]
 	if !ok {
@@ -75,6 +82,7 @@ func (ctx Context) AMRs() MethodRefs {
 	return ret
 }
 
+// SetAID ...
 func (ctx Context) SetAID(accountID null.String) Context {
 	// ignore account id set if acr < 2
 	if ctx.ACRValues().Get().LessThan(ACR2) {
@@ -84,6 +92,7 @@ func (ctx Context) SetAID(accountID null.String) Context {
 	return ctx
 }
 
+// AID ...
 func (ctx Context) AID() null.String {
 	aid, ok := ctx["aid"]
 	if !ok {
@@ -92,11 +101,13 @@ func (ctx Context) AID() null.String {
 	return null.StringFrom(aid.(string))
 }
 
+// SetMID ...
 func (ctx Context) SetMID(identityID string) Context {
 	ctx["mid"] = identityID
 	return ctx
 }
 
+// MID ...
 func (ctx Context) MID() string {
 	mid, ok := ctx["mid"]
 	if !ok {
@@ -105,11 +116,13 @@ func (ctx Context) MID() string {
 	return mid.(string)
 }
 
+// SetLoginHint ...
 func (ctx Context) SetLoginHint(loginHint string) Context {
 	ctx["login_hint"] = loginHint
 	return ctx
 }
 
+// LoginHint ...
 func (ctx Context) LoginHint() string {
 	lh, ok := ctx["login_hint"]
 	if !ok {

@@ -16,6 +16,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
+// Identity ...
 type Identity struct {
 	ID                  string      `json:"id"`
 	AccountID           null.String `json:"account_id"`
@@ -33,7 +34,8 @@ type Identity struct {
 	Identifier Identifier `json:"identifier"`
 }
 
-type IdentityFilters struct {
+// Filters ...
+type Filters struct {
 	IdentifierID null.String
 	IsAuthable   null.Bool
 	IDs          []string
@@ -80,10 +82,7 @@ func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 	return i
 }
 
-//
-// Service identity related methods
-//
-
+// Create ...
 func Create(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identity *Identity) error {
 	// generate new UUID
 	id, err := uuid.NewRandom()
@@ -110,6 +109,7 @@ func Create(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Clien
 	return nil
 }
 
+// Get ...
 func Get(ctx context.Context, exec boil.ContextExecutor, identityID string) (ret Identity, err error) {
 	record, err := sqlboiler.FindIdentity(ctx, exec, identityID)
 	if err == sql.ErrNoRows {
@@ -128,7 +128,8 @@ func Get(ctx context.Context, exec boil.ContextExecutor, identityID string) (ret
 	return ret, nil
 }
 
-func List(ctx context.Context, exec boil.ContextExecutor, filters IdentityFilters) ([]*Identity, error) {
+// List ...
+func List(ctx context.Context, exec boil.ContextExecutor, filters Filters) ([]*Identity, error) {
 	mods := []qm.QueryMod{}
 	if filters.IdentifierID.Valid {
 		mods = append(mods, sqlboiler.IdentityWhere.IdentifierID.EQ(filters.IdentifierID.String))
@@ -161,8 +162,9 @@ func List(ctx context.Context, exec boil.ContextExecutor, filters IdentityFilter
 	return identities, nil
 }
 
+// GetAuthableByIdentifierID ...
 func GetAuthableByIdentifierID(ctx context.Context, exec boil.ContextExecutor, identifierID string) (Identity, error) {
-	filters := IdentityFilters{
+	filters := Filters{
 		IdentifierID: null.StringFrom(identifierID),
 		IsAuthable:   null.BoolFrom(true),
 	}
@@ -181,6 +183,7 @@ func GetAuthableByIdentifierID(ctx context.Context, exec boil.ContextExecutor, i
 	return *identities[0], nil
 }
 
+// Update ...
 func Update(ctx context.Context, exec boil.ContextExecutor, identity *Identity) error {
 	rowsAff, err := identity.toSQLBoiler().Update(ctx, exec, boil.Infer())
 	if err != nil {
@@ -192,10 +195,11 @@ func Update(ctx context.Context, exec boil.ContextExecutor, identity *Identity) 
 	return nil
 }
 
+// ListByIdentifier ...
 func ListByIdentifier(ctx context.Context, exec boil.ContextExecutor, identifier Identifier) ([]*Identity, error) {
 	identifier, err := GetIdentifierByKindValue(ctx, exec, identifier)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("retrieving identifier")
 	}
-	return List(ctx, exec, IdentityFilters{IdentifierID: null.StringFrom(identifier.ID)})
+	return List(ctx, exec, Filters{IdentifierID: null.StringFrom(identifier.ID)})
 }

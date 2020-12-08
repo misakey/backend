@@ -16,7 +16,8 @@ var (
 	table    = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 )
 
-type codeMetadata struct {
+// Metadata ...
+type Metadata struct {
 	Code string `json:"code"`
 }
 
@@ -33,7 +34,7 @@ func GenerateAsRawJSON() (ret types.JSON, err error) {
 	for i := 0; i < len(b); i++ {
 		b[i] = table[int(b[i])%len(table)]
 	}
-	data, err := json.Marshal(codeMetadata{Code: string(b)})
+	data, err := json.Marshal(Metadata{Code: string(b)})
 	if err != nil {
 		return ret, err
 	}
@@ -41,7 +42,7 @@ func GenerateAsRawJSON() (ret types.JSON, err error) {
 }
 
 // ToMetadata code conversion from a RawJSON message
-func ToMetadata(msg json.Marshaler) (ret codeMetadata, err error) {
+func ToMetadata(msg json.Marshaler) (ret Metadata, err error) {
 	msgJSON, err := msg.MarshalJSON()
 	if err != nil {
 		return ret, merror.Transform(err).Describe("code metadata")
@@ -51,6 +52,6 @@ func ToMetadata(msg json.Marshaler) (ret codeMetadata, err error) {
 }
 
 // Matches checks whether an input code the current code matches
-func (c codeMetadata) Matches(input codeMetadata) bool {
+func (c Metadata) Matches(input Metadata) bool {
 	return subtle.ConstantTimeCompare([]byte(input.Code), []byte(c.Code)) == 1
 }

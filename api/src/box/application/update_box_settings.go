@@ -16,6 +16,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/realtime"
 )
 
+// UpdateBoxSettingsRequest ...
 type UpdateBoxSettingsRequest struct {
 	identityID string
 	boxID      string
@@ -23,6 +24,7 @@ type UpdateBoxSettingsRequest struct {
 	Muted bool `json:"muted"`
 }
 
+// BindAndValidate ...
 func (req *UpdateBoxSettingsRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -35,6 +37,7 @@ func (req *UpdateBoxSettingsRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// UpdateBoxSettings ...
 func (app *BoxApplication) UpdateBoxSettings(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*UpdateBoxSettingsRequest)
 

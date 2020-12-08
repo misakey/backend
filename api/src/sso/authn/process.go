@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
 // Process allows to have multi Step in a login flow

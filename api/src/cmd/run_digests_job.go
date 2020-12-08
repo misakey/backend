@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // import pprof for memory usage monitoring
 	"os"
 
 	"github.com/go-redis/redis/v7"
@@ -21,6 +21,7 @@ import (
 
 var frequency string
 
+// DigestsJobCmd ...
 var DigestsJobCmd = &cobra.Command{
 	Use:   "digests-job",
 	Short: "Run the digests job",

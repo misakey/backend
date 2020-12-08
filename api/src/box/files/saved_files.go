@@ -12,6 +12,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
 )
 
+// SavedFile ...
 type SavedFile struct {
 	ID                string    `json:"id"`
 	IdentityID        string    `json:"identity_id"`
@@ -21,6 +22,7 @@ type SavedFile struct {
 	CreatedAt         time.Time `json:"created_at"`
 }
 
+// SavedFileFilters ...
 type SavedFileFilters struct {
 	FileID           string
 	IdentityID       string
@@ -29,6 +31,7 @@ type SavedFileFilters struct {
 	Limit            *int
 }
 
+// CreateSavedFile ...
 func CreateSavedFile(ctx context.Context, exec boil.ContextExecutor, savedFile *SavedFile) error {
 	toStore := sqlboiler.SavedFile{
 		ID:                savedFile.ID,
@@ -44,6 +47,7 @@ func CreateSavedFile(ctx context.Context, exec boil.ContextExecutor, savedFile *
 	return nil
 }
 
+// DeleteSavedFile ...
 func DeleteSavedFile(ctx context.Context, exec boil.ContextExecutor, id string) error {
 	rowAff, err := sqlboiler.SavedFiles(sqlboiler.SavedFileWhere.ID.EQ(id)).DeleteAll(ctx, exec)
 	if err != nil {
@@ -55,6 +59,7 @@ func DeleteSavedFile(ctx context.Context, exec boil.ContextExecutor, id string) 
 	return nil
 }
 
+// CountSavedFilesByIdentityID ...
 func CountSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor, identityID string) (int, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.SavedFileWhere.IdentityID.EQ(identityID),
@@ -67,6 +72,7 @@ func CountSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor,
 	return int(count), nil
 }
 
+// ListSavedFiles ...
 func ListSavedFiles(ctx context.Context, exec boil.ContextExecutor, filters SavedFileFilters) ([]SavedFile, error) {
 	mods := []qm.QueryMod{
 		qm.OrderBy(sqlboiler.SavedFileColumns.CreatedAt + " DESC"),
@@ -108,6 +114,7 @@ func ListSavedFiles(ctx context.Context, exec boil.ContextExecutor, filters Save
 	return savedFiles, nil
 }
 
+// GetSavedFile ...
 func GetSavedFile(ctx context.Context, exec boil.ContextExecutor, id string) (*SavedFile, error) {
 	dbSavedFile, err := sqlboiler.SavedFiles(sqlboiler.SavedFileWhere.ID.EQ(id)).One(ctx, exec)
 	if err == sql.ErrNoRows {

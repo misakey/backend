@@ -15,10 +15,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/realtime"
 )
 
+// DeleteSavedFileRequest ...
 type DeleteSavedFileRequest struct {
 	ID string
 }
 
+// BindAndValidate ...
 func (req *DeleteSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	req.ID = eCtx.Param("id")
 	return v.ValidateStruct(req,
@@ -26,6 +28,7 @@ func (req *DeleteSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// DeleteSavedFile ...
 func (app *BoxApplication) DeleteSavedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*DeleteSavedFileRequest)
 

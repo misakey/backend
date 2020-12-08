@@ -20,10 +20,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
+// LoginInitCmd ...
 type LoginInitCmd struct {
 	Challenge string `query:"login_challenge"`
 }
 
+// BindAndValidate ...
 func (cmd *LoginInitCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriQuery)
@@ -34,7 +36,7 @@ func (cmd *LoginInitCmd) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
-// Init a user authentication stage (a.k.a. login flow)
+// LoginInit a user authentication stage (a.k.a. login flow)
 // It interacts with hydra and login sessions to know either user is already authenticated or not
 // It returns a URL user's agent should be redirected to
 func (sso *SSOService) LoginInit(ctx context.Context, gen request.Request) (interface{}, error) {
@@ -95,7 +97,7 @@ type IdentityAuthableCmd struct {
 	} `json:"identifier"`
 }
 
-// Validate the IdentityAuthableCmd
+// BindAndValidate the IdentityAuthableCmd
 func (cmd *IdentityAuthableCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
@@ -116,6 +118,7 @@ func (cmd *IdentityAuthableCmd) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
+// IdentityAuthableView ...
 type IdentityAuthableView struct {
 	Identity struct {
 		DisplayName string      `json:"display_name"`
@@ -207,10 +210,12 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 	return view, nil
 }
 
+// LoginInfoQuery ...
 type LoginInfoQuery struct {
 	Challenge string `query:"login_challenge"`
 }
 
+// BindAndValidate ...
 func (cmd *LoginInfoQuery) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriQuery)
@@ -235,6 +240,7 @@ type LoginInfoView struct {
 	LoginHint      string         `json:"login_hint"`
 }
 
+// LoginInfo ...
 func (sso *SSOService) LoginInfo(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*LoginInfoQuery)
 	view := LoginInfoView{}
@@ -256,12 +262,14 @@ func (sso *SSOService) LoginInfo(ctx context.Context, gen request.Request) (inte
 	return view, nil
 }
 
+// LoginAuthnStepCmd ...
 type LoginAuthnStepCmd struct {
 	LoginChallenge   string            `json:"login_challenge"`
 	Step             authn.Step        `json:"authn_step"`
 	PasswordResetExt *PasswordResetCmd `json:"password_reset"`
 }
 
+// BindAndValidate ...
 func (cmd *LoginAuthnStepCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
@@ -288,6 +296,7 @@ func (cmd *LoginAuthnStepCmd) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
+// LoginAuthnStepView ...
 type LoginAuthnStepView struct {
 	Next        string        `json:"next"`
 	AccessToken string        `json:"access_token"`
@@ -295,7 +304,7 @@ type LoginAuthnStepView struct {
 	RedirectTo  *string       `json:"redirect_to,omitempty"`
 }
 
-// Assert an authentication step in a multi-factor authentication process
+// AssertAuthnStep in a multi-factor authentication process
 // the authentication process is stored and considering the final expected ACR:
 // - a new authn-step is returned to the client
 // - the login flow is accepted and a redirect url is returned

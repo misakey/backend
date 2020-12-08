@@ -10,6 +10,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// BuildAggregate ...
 func BuildAggregate(ctx context.Context, exec boil.ContextExecutor, e *Event) error {
 	// only msg.text and msg.file events can be aggregates
 	if e.Type == "msg.text" || e.Type == "msg.file" {

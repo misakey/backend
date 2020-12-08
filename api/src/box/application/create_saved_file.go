@@ -16,6 +16,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/realtime"
 )
 
+// CreateSavedFileRequest ...
 type CreateSavedFileRequest struct {
 	EncryptedFileID   string `json:"encrypted_file_id"`
 	IdentityID        string `json:"identity_id"`
@@ -23,6 +24,7 @@ type CreateSavedFileRequest struct {
 	KeyFingerprint    string `json:"key_fingerprint"`
 }
 
+// BindAndValidate ...
 func (req *CreateSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -35,6 +37,7 @@ func (req *CreateSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// CreateSavedFile ...
 func (app *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateSavedFileRequest)
 

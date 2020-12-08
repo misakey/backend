@@ -13,6 +13,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
+// Metadata ...
 type Metadata interface{}
 
 type doHandler func(
@@ -52,6 +53,7 @@ func checkReferrer(e Event) error {
 	return nil
 }
 
+// EventHandler ...
 type EventHandler struct {
 	Do    doHandler
 	After []afterHandler
@@ -81,6 +83,7 @@ func gh(handlers ...afterHandler) []afterHandler {
 	return handlers
 }
 
+// Handler ...
 func Handler(eType string) EventHandler {
 	return eventTypeHandlerMapping[eType]
 }

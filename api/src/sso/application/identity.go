@@ -15,14 +15,15 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
-	_ "gitlab.misakey.dev/misakey/backend/api/src/sso/gamification"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
+// IdentityQuery ...
 type IdentityQuery struct {
 	identityID string
 }
 
+// BindAndValidate ...
 func (query *IdentityQuery) BindAndValidate(eCtx echo.Context) error {
 	query.identityID = eCtx.Param("id")
 	if err := v.ValidateStruct(query,
@@ -33,11 +34,13 @@ func (query *IdentityQuery) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
+// IdentityView ...
 type IdentityView struct {
 	identity.Identity
 	HasAccount bool `json:"has_account"`
 }
 
+// GetIdentity ...
 func (sso *SSOService) GetIdentity(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*IdentityQuery)
 	view := IdentityView{}
@@ -68,7 +71,7 @@ func (sso *SSOService) GetIdentity(ctx context.Context, gen request.Request) (in
 	return view, err
 }
 
-// PartialUpdateIdentityCmd
+// PartialUpdateIdentityCmd ...
 type PartialUpdateIdentityCmd struct {
 	identityID          string
 	DisplayName         string      `json:"display_name"`
@@ -78,7 +81,7 @@ type PartialUpdateIdentityCmd struct {
 	NonIdentifiedPubkey null.String `json:"non_identified_pubkey"`
 }
 
-// Validate the IdentityAuthableCmd
+// BindAndValidate the IdentityAuthableCmd
 func (cmd *PartialUpdateIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
@@ -146,13 +149,14 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 	return nil, tr.Commit()
 }
 
-// UploadAvatarCmd
+// UploadAvatarCmd ...
 type UploadAvatarCmd struct {
 	identityID string
 	Data       io.Reader
 	Extension  string
 }
 
+// BindAndValidate ...
 func (cmd *UploadAvatarCmd) BindAndValidate(eCtx echo.Context) error {
 	cmd.identityID = eCtx.Param("id")
 
@@ -178,6 +182,7 @@ func (cmd *UploadAvatarCmd) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// UploadAvatar ...
 func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (interface{}, error) {
 	cmd := gen.(*UploadAvatarCmd)
 	acc := oidc.GetAccesses(ctx)
@@ -236,11 +241,12 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 	return nil, tr.Commit()
 }
 
-// DeleteAvatarCmd
+// DeleteAvatarCmd ...
 type DeleteAvatarCmd struct {
 	identityID string
 }
 
+// BindAndValidate ...
 func (cmd *DeleteAvatarCmd) BindAndValidate(eCtx echo.Context) error {
 	cmd.identityID = eCtx.Param("id")
 	return v.ValidateStruct(cmd,
@@ -295,12 +301,13 @@ func (sso *SSOService) DeleteAvatar(ctx context.Context, gen request.Request) (i
 	return nil, tr.Commit()
 }
 
-// AttachCouponCmd
+// AttachCouponCmd ...
 type AttachCouponCmd struct {
 	identityID string
 	Value      string `json:"value"`
 }
 
+// BindAndValidate ...
 func (cmd *AttachCouponCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
@@ -345,31 +352,14 @@ func (sso *SSOService) AttachCoupon(ctx context.Context, gen request.Request) (i
 	// NOTE: there is no valid coupon nowadays
 	err = merror.BadRequest().Detail("value", merror.DVInvalid).Detail("invalid_value", cmd.Value).Describe("invalid coupon")
 	return nil, err
-
-	// // 3. Update the identity
-	// curIdentity.Level = 20
-	// err = identity.Update(ctx, tr, &curIdentity)
-	// if err != nil {
-	// 	return nil, merror.Transform(err).Describe("updating identity")
-	// }
-
-	// // 2. Create the used_coupon
-	// usedCoupon := gamification.UsedCoupon{
-	// 	IdentityID: cmd.identityID,
-	// 	Value:      cmd.Value,
-	// }
-
-	// err = gamification.UseCoupon(ctx, tr, usedCoupon)
-	// if err != nil {
-	// 	return nil, merror.Transform(err).Describe("creating coupon")
-	// }
-	// return nil, tr.Commit()
 }
 
+// IdentityPubkeyByIdentifierQuery ...
 type IdentityPubkeyByIdentifierQuery struct {
 	IdentifierValue string `query:"identifier_value"`
 }
 
+// BindAndValidate ...
 func (query *IdentityPubkeyByIdentifierQuery) BindAndValidate(eCtx echo.Context) error {
 	err := eCtx.Bind(query)
 	if err != nil {
@@ -380,6 +370,7 @@ func (query *IdentityPubkeyByIdentifierQuery) BindAndValidate(eCtx echo.Context)
 	)
 }
 
+// GetIdentityPubkeyByIdentifier ...
 func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*IdentityPubkeyByIdentifierQuery)
 
@@ -406,9 +397,8 @@ func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen re
 			// then invitation should be made through an invitation link
 			// so let's just not expose the public keys
 			return make([]string, 0), nil
-		} else {
-			result = append(result, identity.Pubkey.String)
 		}
+		result = append(result, identity.Pubkey.String)
 	}
 
 	return result, nil

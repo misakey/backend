@@ -17,18 +17,22 @@ type IntraprocessHelper struct {
 	redConn *redis.Client
 }
 
+// NewIntraprocessHelper ...
 func NewIntraprocessHelper(ssoDB *sql.DB, redConn *redis.Client) *IntraprocessHelper {
 	return &IntraprocessHelper{sqlDB: ssoDB, redConn: redConn}
 }
 
+// Get ...
 func (ih IntraprocessHelper) Get(ctx context.Context, identityID string) (Identity, error) {
 	return Get(ctx, ih.sqlDB, identityID)
 }
 
-func (ih IntraprocessHelper) List(ctx context.Context, filters IdentityFilters) ([]*Identity, error) {
+// List ...
+func (ih IntraprocessHelper) List(ctx context.Context, filters Filters) ([]*Identity, error) {
 	return List(ctx, ih.sqlDB, filters)
 }
 
+// NotificationBulkCreate ...
 func (ih IntraprocessHelper) NotificationBulkCreate(ctx context.Context, identityIDs []string, nType string, details null.JSON) error {
 	return NotificationBulkCreate(ctx, ih.sqlDB, ih.redConn, identityIDs, nType, details)
 }

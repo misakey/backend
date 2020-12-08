@@ -13,10 +13,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 )
 
+// ListBoxMembersRequest ...
 type ListBoxMembersRequest struct {
 	boxID string
 }
 
+// BindAndValidate ...
 func (req *ListBoxMembersRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 	return v.ValidateStruct(req,
@@ -24,6 +26,7 @@ func (req *ListBoxMembersRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// ListBoxMembers ...
 func (app *BoxApplication) ListBoxMembers(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListBoxMembersRequest)
 	// init an identity mapper for the operation

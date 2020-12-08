@@ -1,5 +1,6 @@
 package etype
 
+// Event types constants
 const (
 	Create         = "create"
 	Statelifecycle = "state.lifecycle"
@@ -15,7 +16,7 @@ const (
 	Accessrm       = "access.rm"
 )
 
-// Return all event types that can be seen by members
+// MembersCanSee returns all event types that can be seen by members
 func MembersCanSee() []string {
 	return []string{
 		Create,
@@ -31,6 +32,7 @@ func MembersCanSee() []string {
 	}
 }
 
+// RequireToBuild returns all events required to build the box
 func RequireToBuild() []string {
 	return []string{
 		Create,
@@ -39,6 +41,7 @@ func RequireToBuild() []string {
 	}
 }
 
+// RequiresContent returns all events needing a content
 func RequiresContent(eType string) bool {
 	switch eType {
 	case

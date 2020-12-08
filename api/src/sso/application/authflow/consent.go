@@ -8,21 +8,21 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/domain/consent"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/domain/consent"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
-// GetConsentContext
-func (afs AuthFlowService) GetConsentContext(ctx context.Context, consentChallenge string) (consent.Context, error) {
+// GetConsentContext ...
+func (afs Service) GetConsentContext(ctx context.Context, consentChallenge string) (consent.Context, error) {
 	// get info about current consent flow
 	return afs.authFlow.GetConsentContext(ctx, consentChallenge)
 }
 
 // BuildAndAcceptConsent takes the RequestedScope as consented.
 // It builds the acceptance object and sends it as accepted to the authorization server
-func (afs AuthFlowService) BuildAndAcceptConsent(
+func (afs Service) BuildAndAcceptConsent(
 	ctx context.Context,
 	consentCtx consent.Context,
 	identifierValue string,
@@ -51,10 +51,9 @@ func (afs AuthFlowService) BuildAndAcceptConsent(
 
 // ShouldSkipConsent returns a boolean corresponding to Skipable and
 // a potential error that may occur during the computation of the boolean.
-
 // the ssoClientID (currently involved client) is used to check if
 // the implicit consent is allowed (the other identities' consent linked to the account make the consent automatic)
-func (afs AuthFlowService) ShouldSkipConsent(
+func (afs Service) ShouldSkipConsent(
 	ctx context.Context, exec boil.ContextExecutor,
 	requestedScopes []string, ssoClientID string, accountID null.String,
 ) (bool, error) {
@@ -75,7 +74,7 @@ func (afs AuthFlowService) ShouldSkipConsent(
 	}
 	// on misakey client only, we auto-consent legal scopes considering linked identities
 	// get consents for all identity linked to the account
-	filters := identity.IdentityFilters{
+	filters := identity.Filters{
 		AccountID: accountID,
 	}
 	identities, err := identity.List(ctx, exec, filters)
@@ -105,17 +104,17 @@ func (afs AuthFlowService) ShouldSkipConsent(
 }
 
 // ConsentRequiredErr helper
-func (afs AuthFlowService) ConsentRequiredErr() string {
+func (afs Service) ConsentRequiredErr() string {
 	return buildRedirectErr(merror.ConsentRequiredCode, "forbidden prompt=none", afs.consentPageURL)
 }
 
 // ConsentRedirectErr helper
-func (afs AuthFlowService) ConsentRedirectErr(err error) string {
+func (afs Service) ConsentRedirectErr(err error) string {
 	return buildRedirectErr(merror.InvalidFlowCode, err.Error(), afs.consentPageURL)
 }
 
-// buildConsentURL
-func (afs AuthFlowService) BuildConsentURL(consentChallenge string) string {
+// BuildConsentURL helper
+func (afs Service) BuildConsentURL(consentChallenge string) string {
 	// build the consent URL
 	finalURL := *afs.consentPageURL
 

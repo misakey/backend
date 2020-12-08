@@ -6,8 +6,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/application"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oauth"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/application"
 )
 
 func bindRoutes(

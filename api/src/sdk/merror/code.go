@@ -9,25 +9,26 @@ import (
 // We use this link as general specifications for errors and not just for http request errors.
 type Code string
 
+// code constants
 const (
 	// classic codes
-	BadRequestCode            Code = "bad_request"              // 400 general bad request
-	UnauthorizedCode          Code = "unauthorized"             // 401 a required valid token is missing/malformed/expired
-	ForbiddenCode             Code = "forbidden"                // 403 accesses checks failed
-	NotFoundCode              Code = "not_found"                // 404 the resource/route has been not found
-	MethodNotAllowedCode      Code = "method_not_allowed"       // 405 the method is not supported at a resource
-	ConflictCode              Code = "conflict"                 // 409 the action cannot be perform of the resource
-	GoneCode                  Code = "gone"                     // 410 ressource does not exist any more
-	RequestEntityTooLargeCode Code = "request_entity_too_large" // 413 the requested entity is too large
-	UnprocessableEntityCode   Code = "unprocessable_entity"     // 422 the received entity is unprocessable
-	ClientClosedRequestCode   Code = "client_closed_requiest"   // 499 client closed the request so context has been canceled
-	InternalCode              Code = "internal"                 // 500 something internal to the service has failed
-	BadGatewayCode            Code = "bad_gateway"              // 502 invalid response from the server
-	ServiceUnavailableCode    Code = "service_unavailable"      // 503 there service unavailable to handle at this oment
+	BadRequestCode            Code = "bad_request"
+	UnauthorizedCode          Code = "unauthorized"
+	ForbiddenCode             Code = "forbidden"
+	NotFoundCode              Code = "not_found"
+	MethodNotAllowedCode      Code = "method_not_allowed"
+	ConflictCode              Code = "conflict"
+	GoneCode                  Code = "gone"
+	RequestEntityTooLargeCode Code = "request_entity_too_large"
+	UnprocessableEntityCode   Code = "unprocessable_entity"
+	ClientClosedRequestCode   Code = "client_closed_requiest"
+	InternalCode              Code = "internal"
+	BadGatewayCode            Code = "bad_gateway"
+	ServiceUnavailableCode    Code = "service_unavailable"
 
 	// no_code codes
-	UnknownCode Code = "unknown_code" // 500 something internal to the service has failed
-	NoCodeCode  Code = "no_code"      // xxx no specific code defined
+	UnknownCode Code = "unknown_code"
+	NoCodeCode  Code = "no_code"
 
 	// redirect codes
 	AuthProcessRequiredCode Code = "auth_process_required"
@@ -37,6 +38,7 @@ const (
 	MissingParameter        Code = "missing_parameter"
 )
 
+// String ...
 func (c Code) String() string {
 	return string(c)
 }

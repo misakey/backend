@@ -10,12 +10,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
-// FileSystem
+// FileSystem contains the files storage location
 type FileSystem struct {
 	location string
 }
 
-// NewFileSystem's constructor - /!\ not safe to use in production
+// NewFileSystem constructor
+// /!\ NOT SAFE TO USE IN PRODUCTION
 func NewFileSystem(location string) *FileSystem {
 	// create files directory
 	if _, err := os.Stat(location); os.IsNotExist(err) {

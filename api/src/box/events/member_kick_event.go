@@ -16,6 +16,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
+// MemberKickContent ...
 type MemberKickContent struct {
 	// Stored but not in json
 	KickerID string `json:"kicker_id,omitempty"`
@@ -23,10 +24,12 @@ type MemberKickContent struct {
 	Kicker *SenderView `json:"kicker,omitempty"`
 }
 
+// Unmarshal ...
 func (c *MemberKickContent) Unmarshal(content types.JSON) error {
 	return content.Unmarshal(c)
 }
 
+// Validate ...
 func (c MemberKickContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.KickerID, v.Required, is.UUIDv4),
@@ -34,6 +37,7 @@ func (c MemberKickContent) Validate() error {
 	)
 }
 
+// KickDeprecatedMembers ...
 func KickDeprecatedMembers(
 	ctx context.Context,
 	exec boil.ContextExecutor, identities *IdentityMapper,
@@ -71,7 +75,7 @@ func KickDeprecatedMembers(
 }
 
 func notifyKick(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ files.FileStorageRepo, _ Metadata) error {
-	// TODO (perf): use metadahandlers to bear already retrieved data accross handlers ?
+	// TODO (perf): use metadahandlers to bear already retrieved data across handlers ?
 	box, err := Compute(ctx, e.BoxID, exec, identities, e)
 	if err != nil {
 		return merror.Transform(err).Describe("computing box")

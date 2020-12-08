@@ -13,6 +13,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
+// MsgFileContent ...
 type MsgFileContent struct {
 	Encrypted       string `json:"encrypted"`
 	PublicKey       string `json:"public_key"`
@@ -22,10 +23,12 @@ type MsgFileContent struct {
 	IsSaved bool `json:"is_saved"`
 }
 
+// Unmarshal ...
 func (c *MsgFileContent) Unmarshal(json types.JSON) error {
 	return json.Unmarshal(c)
 }
 
+// Validate ...
 func (c MsgFileContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.Encrypted, v.Required, is.Base64),
@@ -34,6 +37,7 @@ func (c MsgFileContent) Validate() error {
 	)
 }
 
+// NewMsgFile ...
 func NewMsgFile(
 	ctx context.Context,
 	boxID string, senderID string,
@@ -61,6 +65,7 @@ func NewMsgFile(
 	return e, fileID, nil
 }
 
+// GetMsgFile ...
 func GetMsgFile(
 	ctx context.Context,
 	exec boil.ContextExecutor,

@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// DeletedContent ...
 type DeletedContent struct {
 	Deleted struct {
 		AtTime time.Time `json:"at_time"`

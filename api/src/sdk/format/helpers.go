@@ -5,6 +5,7 @@ import (
 	"regexp"
 )
 
+// UnpaddedURLSafeBase64 ...
 var UnpaddedURLSafeBase64 = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
 
 // AddQueryParam to the originalURL using the net/url

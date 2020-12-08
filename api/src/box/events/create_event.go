@@ -17,15 +17,18 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
+// CreationContent ...
 type CreationContent struct {
 	PublicKey string `json:"public_key"`
 	Title     string `json:"title"`
 }
 
+// Unmarshal ...
 func (c *CreationContent) Unmarshal(json types.JSON) error {
 	return json.Unmarshal(c)
 }
 
+// Validate ...
 func (c CreationContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.PublicKey, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
@@ -33,6 +36,7 @@ func (c CreationContent) Validate() error {
 	)
 }
 
+// NewCreate ...
 func NewCreate(title, publicKey, senderID string) (e Event, err error) {
 	// generate an id for the created box
 	boxID, err := uuid.NewString()
@@ -48,6 +52,7 @@ func NewCreate(title, publicKey, senderID string) (e Event, err error) {
 	return newWithAnyContent("create", &c, boxID, senderID, nil)
 }
 
+// GetCreateEvent ...
 func GetCreateEvent(
 	ctx context.Context,
 	exec boil.ContextExecutor,
@@ -59,6 +64,7 @@ func GetCreateEvent(
 	})
 }
 
+// CreateCreateEvent ...
 func CreateCreateEvent(
 	ctx context.Context,
 	title, publicKey, senderID string,
@@ -87,6 +93,7 @@ func CreateCreateEvent(
 	return event, nil
 }
 
+// ListCreatorIDEvents ...
 func ListCreatorIDEvents(ctx context.Context, exec boil.ContextExecutor, creatorID string) ([]Event, error) {
 	createEvents, err := list(ctx, exec, eventFilters{
 		eType:    null.StringFrom("create"),

@@ -13,10 +13,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 )
 
+// BackupArchiveView ...
 type BackupArchiveView struct {
 	crypto.BackupArchive
 }
 
+// ListBackupArchives ...
 func (sso *SSOService) ListBackupArchives(ctx context.Context, _ request.Request) (interface{}, error) {
 	acc := oidc.GetAccesses(ctx)
 	// querier must have an account
@@ -37,10 +39,12 @@ func (sso *SSOService) ListBackupArchives(ctx context.Context, _ request.Request
 	return views, nil
 }
 
+// BackupArchiveDataQuery ...
 type BackupArchiveDataQuery struct {
 	archiveID string
 }
 
+// BindAndValidate ...
 func (query *BackupArchiveDataQuery) BindAndValidate(eCtx echo.Context) error {
 	query.archiveID = eCtx.Param("id")
 
@@ -49,6 +53,7 @@ func (query *BackupArchiveDataQuery) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// GetBackupArchiveData ...
 func (sso *SSOService) GetBackupArchiveData(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*BackupArchiveDataQuery)
 	acc := oidc.GetAccesses(ctx)
@@ -73,11 +78,13 @@ func (sso *SSOService) GetBackupArchiveData(ctx context.Context, gen request.Req
 	return archive.Data.String, nil
 }
 
+// BackupArchiveDeleteCmd ...
 type BackupArchiveDeleteCmd struct {
 	archiveID string
 	Reason    string `json:"reason"`
 }
 
+// BindAndValidate ...
 func (cmd *BackupArchiveDeleteCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriQuery)
@@ -90,6 +97,7 @@ func (cmd *BackupArchiveDeleteCmd) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// DeleteBackupArchive ...
 func (sso *SSOService) DeleteBackupArchive(ctx context.Context, gen request.Request) (interface{}, error) {
 	cmd := gen.(*BackupArchiveDeleteCmd)
 	acc := oidc.GetAccesses(ctx)

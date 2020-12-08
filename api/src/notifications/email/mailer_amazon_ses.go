@@ -12,16 +12,17 @@ import (
 	"github.com/aws/aws-sdk-go/service/ses"
 )
 
+// MailerAmazonSES contains configuration for the amazon mail service
 type MailerAmazonSES struct {
-	encoding string
-	config   *aws.Config
+	encoding         string
+	config           *aws.Config
 	configurationSet string
 }
 
 // NewMailerAmazonSES is MailerAmazonSES's constructor
 func NewMailerAmazonSES(region string, configurationSet string) *MailerAmazonSES {
 	m := &MailerAmazonSES{
-		encoding: "UTF-8",
+		encoding:         "UTF-8",
 		configurationSet: configurationSet,
 	}
 	// defaults config get AWS region from AWS_REGION
@@ -33,7 +34,7 @@ func NewMailerAmazonSES(region string, configurationSet string) *MailerAmazonSES
 }
 
 // Send uses amazon ses sdk to send an email
-func (m *MailerAmazonSES) Send(ctx context.Context, email *EmailNotification) error {
+func (m *MailerAmazonSES) Send(ctx context.Context, email *Notification) error {
 	recipient := email.To
 
 	// Create a new AWS session in the region.

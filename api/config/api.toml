@@ -63,6 +63,6 @@
 #   s3_region = "eu-west-3"
 #   user_content_bucket = "usercontent.preprod.misakey.dev"
 #   encrypted_files_bucket = "preprod-encrypted-files"
-#   # name of the SES configurationset (to retreive emails bounces and complaints in logwatch)
+#   # name of the SES configurationset (to retrieve emails bounces and complaints in logwatch)
 #   # (values: misakey_prod_default_email_cs, misakey_preprod_default_mail_cs)
 #   ses_configuration_set = "misakey_preprod_default_mail_cs"

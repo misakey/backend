@@ -14,10 +14,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
+// BackupQuery ...
 type BackupQuery struct {
 	accountID string
 }
 
+// BindAndValidate ...
 func (query *BackupQuery) BindAndValidate(eCtx echo.Context) error {
 	query.accountID = eCtx.Param("id")
 	return v.ValidateStruct(query,
@@ -25,12 +27,14 @@ func (query *BackupQuery) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// BackupView ...
 type BackupView struct {
 	Data    string `json:"data"`
 	Version int    `json:"version"`
 }
 
-// Handles GET /accounts/:id/backup - get the account backup information
+// GetBackup handles GET /accounts/:id/backup
+// Get the account backup information
 func (sso *SSOService) GetBackup(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*BackupQuery)
 	view := BackupView{}
@@ -53,12 +57,14 @@ func (sso *SSOService) GetBackup(ctx context.Context, gen request.Request) (inte
 	return view, nil
 }
 
+// BackupUpdateCmd ...
 type BackupUpdateCmd struct {
 	accountID  string
 	Data       string `json:"data"`
 	NewVersion int    `json:"version"`
 }
 
+// BindAndValidate ...
 func (cmd *BackupUpdateCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
@@ -76,7 +82,8 @@ func (cmd *BackupUpdateCmd) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
-// Handles PUT /accounts/:id/backup - update the account backup information
+// UpdateBackup handles PUT /accounts/:id/backup
+// Update the account backup information
 func (sso *SSOService) UpdateBackup(ctx context.Context, gen request.Request) (interface{}, error) {
 	cmd := gen.(*BackupUpdateCmd)
 

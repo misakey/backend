@@ -13,12 +13,14 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
+// ListSavedFilesRequest ...
 type ListSavedFilesRequest struct {
 	Offset     *int   `query:"offset" json:"-"`
 	Limit      *int   `query:"limit" json:"-"`
 	IdentityID string `query:"identity_id" json:"-"`
 }
 
+// BindAndValidate ...
 func (req *ListSavedFilesRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -30,6 +32,7 @@ func (req *ListSavedFilesRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// ListSavedFiles ...
 func (app *BoxApplication) ListSavedFiles(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListSavedFilesRequest)
 

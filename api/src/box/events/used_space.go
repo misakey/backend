@@ -10,6 +10,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/quota"
 )
 
+// MetadataForUsedSpaceHandler ...
 type MetadataForUsedSpaceHandler struct {
 	OldEventSize int64
 	NewEventSize int64

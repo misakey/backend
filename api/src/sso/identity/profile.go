@@ -8,10 +8,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
-//
-// models
-//
-
+// ProfileView ...
 type ProfileView struct {
 	ID           string      `json:"id"`
 	DisplayName  string      `json:"display_name"`
@@ -24,14 +21,13 @@ type ProfileView struct {
 	Contactable bool `json:"contactable"`
 	NonIdentifiedPubkey null.String `json:"non_identified_pubkey"`
 }
+
+// ConfigProfileView ...
 type ConfigProfileView struct {
 	Email bool `json:"email"`
 }
 
-//
-// Service profile related methods
-//
-
+// ProfileGet ...
 func ProfileGet(ctx context.Context, exec boil.ContextExecutor, identityID string) (p ProfileView, err error) {
 	// first retrieve the identity
 	identity, err := Get(ctx, exec, identityID)
@@ -69,6 +65,7 @@ func ProfileGet(ctx context.Context, exec boil.ContextExecutor, identityID strin
 	return p, nil
 }
 
+// ProfileConfigShare ...
 func ProfileConfigShare(
 	ctx context.Context, exec boil.ContextExecutor,
 	identityID, informationType string,
@@ -80,6 +77,7 @@ func ProfileConfigShare(
 	return createProfileSharingConsent(ctx, exec, &consent)
 }
 
+// ProfileConfigUnshare ...
 func ProfileConfigUnshare(
 	ctx context.Context, exec boil.ContextExecutor,
 	identityID, informationType string,
@@ -87,6 +85,7 @@ func ProfileConfigUnshare(
 	return revokeConsentByIdentityType(ctx, exec, identityID, informationType)
 }
 
+// ProfileConfigGet ...
 func ProfileConfigGet(ctx context.Context, exec boil.ContextExecutor, identityID string) (c ConfigProfileView, err error) {
 	// fill information considering profile configuration
 	consents, err := listProfileSharingConsents(ctx, exec, profileSharingConsentFilters{

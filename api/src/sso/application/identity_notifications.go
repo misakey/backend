@@ -16,10 +16,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
+// IdentityNotifCountQuery ...
 type IdentityNotifCountQuery struct {
 	identityID string
 }
 
+// BindAndValidate ...
 func (query *IdentityNotifCountQuery) BindAndValidate(eCtx echo.Context) error {
 	query.identityID = eCtx.Param("id")
 
@@ -31,6 +33,7 @@ func (query *IdentityNotifCountQuery) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
+// CountIdentityNotification ...
 func (sso *SSOService) CountIdentityNotification(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*IdentityNotifCountQuery)
 
@@ -43,6 +46,7 @@ func (sso *SSOService) CountIdentityNotification(ctx context.Context, gen reques
 	return identity.NotificationCount(ctx, sso.sqlDB, query.identityID)
 }
 
+// IdentityNotifListQuery ...
 type IdentityNotifListQuery struct {
 	identityID string
 
@@ -50,6 +54,7 @@ type IdentityNotifListQuery struct {
 	Limit  null.Int `query:"limit"`
 }
 
+// BindAndValidate ...
 func (query *IdentityNotifListQuery) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(query); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -64,6 +69,7 @@ func (query *IdentityNotifListQuery) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
+// ListIdentityNotification ...
 func (sso *SSOService) ListIdentityNotification(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*IdentityNotifListQuery)
 
@@ -81,6 +87,7 @@ func (sso *SSOService) ListIdentityNotification(ctx context.Context, gen request
 	return notifs, nil
 }
 
+// IdentityNotifAckCmd ...
 type IdentityNotifAckCmd struct {
 	identityID string
 	notifIDs   []int
@@ -88,6 +95,7 @@ type IdentityNotifAckCmd struct {
 	StrNotifIDs string `query:"ids"`
 }
 
+// BindAndValidate ...
 func (cmd *IdentityNotifAckCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.Transform(err).From(merror.OriQuery)
@@ -111,6 +119,7 @@ func (cmd *IdentityNotifAckCmd) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
+// AckIdentityNotification ...
 func (sso *SSOService) AckIdentityNotification(ctx context.Context, gen request.Request) (interface{}, error) {
 	cmd := gen.(*IdentityNotifAckCmd)
 

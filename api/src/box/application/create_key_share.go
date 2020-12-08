@@ -15,10 +15,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
 )
 
+// CreateKeyShareRequest ...
 type CreateKeyShareRequest struct {
 	keyshares.BoxKeyShare
 }
 
+// BindAndValidate ...
 func (req *CreateKeyShareRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -30,6 +32,7 @@ func (req *CreateKeyShareRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// CreateKeyShare ...
 func (app *BoxApplication) CreateKeyShare(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateKeyShareRequest)
 

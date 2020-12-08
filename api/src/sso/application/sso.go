@@ -11,9 +11,10 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
+// SSOService ...
 type SSOService struct {
-	identityService       identity.IdentityService
-	authFlowService       authflow.AuthFlowService
+	identityService       identity.Service
+	authFlowService       authflow.Service
 	AuthenticationService authn.Service
 	backupKeyShareService crypto.BackupKeyShareService
 
@@ -22,9 +23,10 @@ type SSOService struct {
 	redConn *redis.Client
 }
 
+// NewSSOService ...
 func NewSSOService(
-	ids identity.IdentityService,
-	afs authflow.AuthFlowService,
+	ids identity.Service,
+	afs authflow.Service,
 	authns authn.Service,
 	bks crypto.BackupKeyShareService,
 

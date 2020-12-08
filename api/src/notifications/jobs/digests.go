@@ -15,17 +15,21 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
+// BoxInfo model
 type BoxInfo struct {
 	ID          string
 	Title       string
 	NewMessages int
 }
 
+// DigestInfo model
 type DigestInfo struct {
 	identity  identity.Identity
 	boxesInfo []*BoxInfo
 }
 
+// SendDigests checks users to notify
+// and send them their digests
 func (dj *DigestJob) SendDigests(ctx context.Context) error {
 
 	logger.FromCtx(ctx).Info().Msgf("starting digests job with frequency %s", dj.frequency)
@@ -42,7 +46,7 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 
 	// check eligibility
 	// get first identities for the notification configuration linked to it
-	identities, err := identity.List(ctx, dj.ssoDB, identity.IdentityFilters{IDs: identityIDs})
+	identities, err := identity.List(ctx, dj.ssoDB, identity.Filters{IDs: identityIDs})
 	if err != nil {
 		return err
 	}

@@ -13,10 +13,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 )
 
+// CountBoxFilesRequest ...
 type CountBoxFilesRequest struct {
 	boxID string
 }
 
+// BindAndValidate ...
 func (req *CountBoxFilesRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 	return v.ValidateStruct(req,
@@ -24,6 +26,7 @@ func (req *CountBoxFilesRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// CountBoxFiles ...
 func (app *BoxApplication) CountBoxFiles(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CountBoxFilesRequest)
 	acc := oidc.GetAccesses(ctx)

@@ -26,6 +26,7 @@ type Step struct {
 	CompleteAt      null.Time
 }
 
+// InitStep ...
 func (as *Service) InitStep(
 	ctx context.Context, exec boil.ContextExecutor,
 	identity identity.Identity, methodName oidc.MethodRef,
@@ -127,6 +128,7 @@ func (as *Service) preferredStep(
 	return as.preparePassword(ctx, exec, identity, step)
 }
 
+// ExpireAll ...
 func (as *Service) ExpireAll(ctx context.Context, exec boil.ContextExecutor, identityID string) error {
 	return deleteIncompleteSteps(ctx, exec, identityID)
 }

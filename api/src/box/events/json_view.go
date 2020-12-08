@@ -40,11 +40,12 @@ type View struct {
 	Sender     SenderView  `json:"sender"`
 }
 
+// ToJSON ...
 func (v *View) ToJSON() ([]byte, error) {
 	return json.Marshal(v)
 }
 
-// FormatEvent transforms an event into its JSON view.
+// Format event into its JSON view.
 func (e Event) Format(ctx context.Context, identities *IdentityMapper, transparent bool) (View, error) {
 	view := View{
 		Type:       e.Type,

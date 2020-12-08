@@ -7,9 +7,11 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// PSQLNeedle ...
 type PSQLNeedle struct {
 }
 
+// Explode ...
 func (n PSQLNeedle) Explode(err error) error {
 	// try to consider error cause as pq error to understand deeper the error
 	pqErr, ok := merror.Cause(err).(*pq.Error)

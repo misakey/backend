@@ -14,6 +14,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 )
 
+// BoxUsersWS ...
 func (wh WebsocketHandler) BoxUsersWS(c echo.Context) error {
 
 	// bind and validate
@@ -37,11 +38,13 @@ func (wh WebsocketHandler) BoxUsersWS(c echo.Context) error {
 	)
 }
 
+// WSMessage ...
 type WSMessage struct {
 	Type   string          `json:"type"`
 	Object json.RawMessage `json:"object"`
 }
 
+// AckObject ...
 type AckObject struct {
 	SenderID string `json:"sender_id"`
 	BoxID    string `json:"box_id"`

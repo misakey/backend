@@ -9,13 +9,11 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
-//
-// models
-//
+// BackupArchive ...
 type BackupArchive struct {
 	ID          string      `json:"id"`
 	AccountID   string      `json:"account_id"`
@@ -48,10 +46,7 @@ func (b BackupArchive) toSQLBoiler() *sqlboiler.BackupArchive {
 	}
 }
 
-//
-// entity functions
-//
-
+// CreateBackupArchive ...
 func CreateBackupArchive(ctx context.Context, exec boil.ContextExecutor, archive BackupArchive) error {
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -61,6 +56,7 @@ func CreateBackupArchive(ctx context.Context, exec boil.ContextExecutor, archive
 	return archive.toSQLBoiler().Insert(ctx, exec, boil.Infer())
 }
 
+// GetBackupArchive ...
 func GetBackupArchive(ctx context.Context, exec boil.ContextExecutor, archiveID string) (BackupArchive, error) {
 	record, err := sqlboiler.FindBackupArchive(ctx, exec, archiveID)
 	if err == sql.ErrNoRows {
@@ -69,6 +65,7 @@ func GetBackupArchive(ctx context.Context, exec boil.ContextExecutor, archiveID 
 	return *newBackupArchive().fromSQLBoiler(*record), err
 }
 
+// ListBackupArchives ...
 func ListBackupArchives(ctx context.Context, exec boil.ContextExecutor, accountID string) ([]BackupArchive, error) {
 	records, err := sqlboiler.BackupArchives(
 		// TODO: use blacklisting instead
@@ -98,6 +95,7 @@ func ListBackupArchives(ctx context.Context, exec boil.ContextExecutor, accountI
 	return domainBackupArchives, nil
 }
 
+// GetBackupArchiveMetadata ...
 func GetBackupArchiveMetadata(ctx context.Context, exec boil.ContextExecutor, archiveID string) (BackupArchive, error) {
 	record, err := sqlboiler.FindBackupArchive(ctx, exec, archiveID,
 		sqlboiler.BackupArchiveColumns.AccountID,
@@ -115,6 +113,7 @@ func GetBackupArchiveMetadata(ctx context.Context, exec boil.ContextExecutor, ar
 	return *newBackupArchive().fromSQLBoiler(*record), nil
 }
 
+// DeleteBackupArchive ...
 func DeleteBackupArchive(
 	ctx context.Context, exec boil.ContextExecutor,
 	archiveID, reason string,

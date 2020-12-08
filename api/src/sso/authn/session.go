@@ -22,6 +22,7 @@ type Session struct {
 	RememberFor int
 }
 
+// UpsertSession ...
 func (as *Service) UpsertSession(ctx context.Context, new Session) error {
 	// if session musn't be kept, return directly
 	if new.RememberFor <= 0 {
@@ -43,6 +44,7 @@ func (as *Service) UpsertSession(ctx context.Context, new Session) error {
 	return as.sessions.Upsert(ctx, new, lifetime)
 }
 
+// GetSession ...
 func (as *Service) GetSession(ctx context.Context, sessionID string) (Session, error) {
 	return as.sessions.Get(ctx, sessionID)
 }

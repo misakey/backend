@@ -1,5 +1,4 @@
-// TO COPY - TO ADAPT
-// merror is Misakey Error package, it help us to meet contracted error format defined in our convention
+// Package merror is Misakey Error package, it help us to meet contracted error format defined in our convention
 // it also allow us to define error code linked to our domain that would never change and will be used by consumers
 package merror
 
@@ -52,7 +51,7 @@ func (e *Error) Clear() bool {
 	return !e.noUpdate
 }
 
-// Freeze possible updates if the Error has not same cause as sent error.
+// If freezes possible updates if the Error has not same cause as sent error.
 // Unfreeze is possible using End or this same method.
 func (e Error) If(match error) Error {
 	if Cause(e) != Cause(match) {
@@ -69,7 +68,7 @@ func (e Error) End() Error {
 	return e
 }
 
-// From set Origin attributes
+// Code set code attribute
 func (e Error) Code(c Code) Error {
 	if e.noUpdate {
 		return e
@@ -87,7 +86,7 @@ func (e Error) From(ori Origin) Error {
 	return e
 }
 
-// Add desc to the Error (concat with existing one)
+// Describe the Error (concat with existing one)
 func (e Error) Describe(desc string) Error {
 	if e.noUpdate {
 		return e
@@ -99,7 +98,7 @@ func (e Error) Describe(desc string) Error {
 	return e
 }
 
-// Set desc to the Error using Sprintf (concat with existing one)
+// Describef the Error using Sprintf (concat with existing one)
 func (e Error) Describef(desc string, a ...interface{}) Error {
 	return e.Describe(fmt.Sprintf(desc, a...))
 }
@@ -118,7 +117,7 @@ func (e Error) Flush() Error {
 	return e
 }
 
-// Add a key/value detail to the error Details map
+// Detail adds a key/value detail to the error Details map
 func (e Error) Detail(k string, v string) Error {
 	if e.noUpdate {
 		return e
@@ -127,7 +126,7 @@ func (e Error) Detail(k string, v string) Error {
 	return e
 }
 
-// Reset Detail values
+// ResetDetails values
 func (e Error) ResetDetails() Error {
 	if e.noUpdate {
 		return e

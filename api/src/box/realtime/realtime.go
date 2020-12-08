@@ -10,11 +10,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 )
 
+// Update model
 type Update struct {
 	Type   string      `json:"type"`
 	Object interface{} `json:"object"`
 }
 
+// SendUpdate to member
 func SendUpdate(ctx context.Context, redConn *redis.Client, memberID string, update *Update) {
 	msg, err := json.Marshal(update)
 	if err != nil {

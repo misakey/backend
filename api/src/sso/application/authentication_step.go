@@ -22,6 +22,7 @@ type AuthenticationStepCmd struct {
 	Step           authn.Step `json:"authn_step"`
 }
 
+// BindAndValidate ...
 func (cmd *AuthenticationStepCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
@@ -39,7 +40,7 @@ func (cmd *AuthenticationStepCmd) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-// This method is used to try to init an authentication step
+// InitAuthnStep is used to try to init an authentication step
 func (sso *SSOService) InitAuthnStep(ctx context.Context, genReq request.Request) (interface{}, error) {
 	cmd := genReq.(*AuthenticationStepCmd)
 

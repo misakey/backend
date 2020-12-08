@@ -16,11 +16,13 @@ import (
 )
 
 // HTTP formats
-const MimeTypeBlank = ""
-const MimeTypeHead = "head"
-const MimeTypeJSON = "application/json"
-const MimeTypeMultipartForm = "multipart/form-data"
-const MimeTypeURLEncodedForm = "application/x-www-form-urlencoded"
+const (
+	MimeTypeBlank          = ""
+	MimeTypeHead           = "head"
+	MimeTypeJSON           = "application/json"
+	MimeTypeMultipartForm  = "multipart/form-data"
+	MimeTypeURLEncodedForm = "application/x-www-form-urlencoded"
+)
 
 // Client represents a HTTP REST API client requesting a configured endpoint.
 type Client struct {
@@ -105,6 +107,7 @@ func IgnoreInsecureHTTPS() func(*Client) {
 	}
 }
 
+// Head ...
 // Fixed HTTP method
 // Head entity using route as base url then params as query parameters
 // A head request is agnostic from the format since no body input/output format is considered
@@ -113,6 +116,7 @@ func (r *Client) Head(ctx context.Context, route string, params url.Values, outp
 	return r.Perform(ctx, "HEAD", route, params, nil, output, MimeTypeHead)
 }
 
+// Delete ...
 // Fixed HTTP method
 // Delete an entity using route as base url then params as query parameters
 // A delete request is agnostic from the format since no body input/output is considered
@@ -120,30 +124,35 @@ func (r *Client) Delete(ctx context.Context, route string, params url.Values) er
 	return r.Perform(ctx, "DELETE", route, params, nil, nil, MimeTypeBlank)
 }
 
+// Post ...
 // Overridable HTTP method
 // post an entity using route as base url then params as query parameters
 func (r *Client) Post(ctx context.Context, route string, params url.Values, input interface{}, output interface{}) error {
 	return r.post(ctx, route, params, input, output)
 }
 
+// Get ...
 // Overridable HTTP method
 // Get an entity using route as base url then params as query parameters
 func (r *Client) Get(ctx context.Context, route string, params url.Values, output interface{}) error {
 	return r.get(ctx, route, params, output)
 }
 
+// Put ...
 // Overridable HTTP method
 // put an entity using route as base url then params as query parameters
 func (r *Client) Put(ctx context.Context, route string, params url.Values, input interface{}, output interface{}) error {
 	return r.put(ctx, route, params, input, output)
 }
 
+// Patch ...
 // Overridable HTTP method
 // patch an entity using route as base url
 func (r *Client) Patch(ctx context.Context, route string, input interface{}) error {
 	return r.patch(ctx, route, input)
 }
 
+// Perform ...
 func (r *Client) Perform(
 	ctx context.Context,
 	verb string,

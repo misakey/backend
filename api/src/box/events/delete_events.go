@@ -11,6 +11,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// DeleteAllForBox ...
 func DeleteAllForBox(
 	ctx context.Context,
 	exec boil.ContextExecutor,

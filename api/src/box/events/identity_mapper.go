@@ -13,6 +13,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
+// IdentityMapper ...
 type IdentityMapper struct {
 	sync.Mutex
 
@@ -21,6 +22,7 @@ type IdentityMapper struct {
 	mem map[string]SenderView
 }
 
+// NewIdentityMapper ...
 func NewIdentityMapper(querier external.IdentityRepo) *IdentityMapper {
 	return &IdentityMapper{
 		querier: querier,
@@ -77,7 +79,7 @@ func (mapper *IdentityMapper) List(ctx context.Context, identityIDs []string, tr
 
 	if len(unknownIDs) > 0 {
 		// get all unknowns and save them
-		identities, err := mapper.querier.List(ctx, identity.IdentityFilters{IDs: unknownIDs})
+		identities, err := mapper.querier.List(ctx, identity.Filters{IDs: unknownIDs})
 		if err != nil {
 			return nil, merror.Transform(err).Describe("listing identities")
 		}
@@ -110,15 +112,16 @@ func (mapper *IdentityMapper) List(ctx context.Context, identityIDs []string, tr
 	return views, nil
 }
 
-// Create Identity Notification
+// CreateNotifs for identity
 func (mapper *IdentityMapper) CreateNotifs(ctx context.Context, identityIDs []string, nType string, details null.JSON) {
 	if err := mapper.querier.NotificationBulkCreate(ctx, identityIDs, nType, details); err != nil {
 		logger.FromCtx(ctx).Err(err).Msgf("creating %v notifs", identityIDs)
 	}
 }
 
+// MapToAccountID ...
 func (mapper *IdentityMapper) MapToAccountID(ctx context.Context, identityIDs []string) (map[string]string, error) {
-	identities, err := mapper.querier.List(ctx, identity.IdentityFilters{IDs: identityIDs})
+	identities, err := mapper.querier.List(ctx, identity.Filters{IDs: identityIDs})
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing identities")
 	}

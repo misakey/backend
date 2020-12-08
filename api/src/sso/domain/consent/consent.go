@@ -5,6 +5,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
+// Session ...
 type Session struct {
 	GrantScope     []string `json:"grant_scope"`
 	ConsentRequest struct {

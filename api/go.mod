@@ -9,6 +9,7 @@ require (
 	github.com/ericlagergren/decimal v0.0.0-20191206042408-88212e6cfca9 // indirect
 	github.com/friendsofgo/errors v0.9.2
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/fzipp/gocyclo v0.3.1 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-playground/validator/v10 v10.2.0 // indirect

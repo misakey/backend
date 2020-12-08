@@ -18,12 +18,14 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 )
 
+// BatchCreateEventRequest ...
 type BatchCreateEventRequest struct {
 	boxID     string
 	BatchType string        `json:"batch_type"`
 	Events    []*BatchEvent `json:"events"`
 }
 
+// BatchEvent ...
 type BatchEvent struct {
 	Type       string     `json:"type"`
 	Content    types.JSON `json:"content"`
@@ -31,6 +33,7 @@ type BatchEvent struct {
 	Extra      null.JSON  `json:"extra"`
 }
 
+// BindAndValidate ...
 func (req *BatchCreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -56,6 +59,7 @@ func (req BatchEvent) Validate() error {
 	)
 }
 
+// BatchCreateEvent ...
 func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*BatchCreateEventRequest)
 	acc := oidc.GetAccesses(ctx)

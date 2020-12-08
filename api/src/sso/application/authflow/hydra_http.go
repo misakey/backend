@@ -7,14 +7,14 @@ import (
 
 	"github.com/volatiletech/null/v8"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/login"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/domain/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/login"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/domain/consent"
 )
 
-// HTTP implements Hydra repository interface using HTTP REST
+// HydraHTTP implements Hydra repository interface using HTTP REST
 type HydraHTTP struct {
 	publicJSONRester rester.Client
 	publicFormRester rester.Client
@@ -150,7 +150,7 @@ func (h *HydraHTTP) DeleteSession(ctx context.Context, subject string) error {
 	return h.adminFormRester.Delete(ctx, route, nil)
 }
 
-// RevokeToken
+// RevokeToken ...
 func (h *HydraHTTP) RevokeToken(ctx context.Context, accessToken string) error {
 	params := url.Values{}
 	params.Add("token", accessToken)

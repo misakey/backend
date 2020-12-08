@@ -7,9 +7,10 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
 // SetSavedStatus on file events contents for identity identityID
@@ -55,6 +56,7 @@ func SetSavedStatus(ctx context.Context, exec boil.ContextExecutor, identityID s
 	return nil
 }
 
+// IsFileOrphan ...
 func IsFileOrphan(ctx context.Context, exec boil.ContextExecutor, fileID string) (bool, error) {
 	// check that there is no saved file referring this file
 	filters := files.SavedFileFilters{
@@ -105,6 +107,7 @@ func IsFileOrphan(ctx context.Context, exec boil.ContextExecutor, fileID string)
 	return true, nil
 }
 
+// HasAccessOrHasSavedFile ...
 func HasAccessOrHasSavedFile(
 	ctx context.Context,
 	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
@@ -136,13 +139,13 @@ func HasAccessOrHasSavedFile(
 	return false, nil
 }
 
-// identity has access to files contained in boxes they have access to
+// HasAccessToFile if the file is in a box the identity have access to
 func HasAccessToFile(
 	ctx context.Context,
 	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
 	identityID string, fileID string,
 ) (bool, error) {
-	// get all msg events mentionning the file
+	// get all msg events mentioning the file
 	filePartialEvents, err := list(ctx, exec, eventFilters{
 		boxIDOnly: true,
 		eType:     null.StringFrom(etype.Msgfile),
@@ -165,4 +168,25 @@ func HasAccessToFile(
 		}
 	}
 	return false, nil
+}
+
+// DeleteOrphanFiles ...
+func DeleteOrphanFiles(ctx context.Context, exec boil.ContextExecutor, filesRepo files.FileStorageRepo, fileIDs []string) error {
+	for _, fileID := range fileIDs {
+		// we need to check the existency of fileID
+		// since it is set to "" when msg.delete is called on the msg.file
+		if fileID != "" {
+			isOrphan, err := IsFileOrphan(ctx, exec, fileID)
+			if err != nil {
+				return merror.Transform(err).Describe("checking file is orphan")
+			}
+			if isOrphan {
+				if err := files.Delete(ctx, exec, filesRepo, fileID); err != nil {
+					return merror.Transform(err).Describe("deleting stored file")
+				}
+			}
+		}
+	}
+
+	return nil
 }

@@ -10,17 +10,20 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// CtxKey ...
 type CtxKey struct{}
 
-// SetLogger returns ctx with Logger set inside it using CtxKey
+// SetLogger returns ctx with Logger set inside it using ctxKey
 func SetLogger(ctx context.Context, logger *zerolog.Logger) context.Context {
 	return context.WithValue(ctx, CtxKey{}, logger)
 }
 
+// FromCtx returns the context logger
 func FromCtx(ctx context.Context) *zerolog.Logger {
 	return ctx.Value(CtxKey{}).(*zerolog.Logger)
 }
 
+// ZerologLogger instantiates and returns a new configured logger
 func ZerologLogger(level string) zerolog.Logger {
 	serviceName := filepath.Base(os.Args[0])
 	serviceVersion := os.Getenv("VERSION")
@@ -44,6 +47,8 @@ func ZerologLogger(level string) zerolog.Logger {
 	return l
 }
 
+// GetLogLevel returns the zerolog Level
+// corresponding to the string level
 func GetLogLevel(level string) zerolog.Level {
 	switch level {
 	case "debug":

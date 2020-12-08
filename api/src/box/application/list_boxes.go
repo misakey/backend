@@ -12,11 +12,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/boxes"
 )
 
+// ListBoxesRequest ...
 type ListBoxesRequest struct {
 	Offset int `query:"offset" json:"-"`
 	Limit  int `query:"limit" json:"-"`
 }
 
+// BindAndValidate ...
 func (req *ListBoxesRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriQuery)
@@ -27,6 +29,7 @@ func (req *ListBoxesRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// ListBoxes ...
 func (app *BoxApplication) ListBoxes(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListBoxesRequest)
 	// init an identity mapper for the operation

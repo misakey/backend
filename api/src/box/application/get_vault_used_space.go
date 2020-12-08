@@ -6,17 +6,19 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/quota"
 )
 
+// GetVaultUsedSpaceRequest ...
 type GetVaultUsedSpaceRequest struct {
 	IdentityID string
 }
 
+// BindAndValidate ...
 func (req *GetVaultUsedSpaceRequest) BindAndValidate(eCtx echo.Context) error {
 	req.IdentityID = eCtx.Param("id")
 	return v.ValidateStruct(req,
@@ -24,6 +26,7 @@ func (req *GetVaultUsedSpaceRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// GetVaultUsedSpace ...
 func (app *BoxApplication) GetVaultUsedSpace(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*GetVaultUsedSpaceRequest)
 

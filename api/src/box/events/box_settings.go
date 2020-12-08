@@ -10,17 +10,20 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
 )
 
+// BoxSetting ...
 type BoxSetting struct {
 	IdentityID string `json:"identity_id"`
 	BoxID      string `json:"box_id"`
 	Muted      bool   `json:"muted"`
 }
 
+// BoxSettingFilters ...
 type BoxSettingFilters struct {
 	BoxIDs     []string
 	IdentityID string
 }
 
+// UpdateBoxSetting ...
 func UpdateBoxSetting(ctx context.Context, exec boil.ContextExecutor, boxSetting BoxSetting) error {
 	toUpsert := sqlboiler.BoxSetting{
 		IdentityID: boxSetting.IdentityID,
@@ -30,6 +33,7 @@ func UpdateBoxSetting(ctx context.Context, exec boil.ContextExecutor, boxSetting
 	return toUpsert.Upsert(ctx, exec, true, []string{sqlboiler.BoxSettingColumns.BoxID, sqlboiler.BoxSettingColumns.IdentityID}, boil.Infer(), boil.Infer())
 }
 
+// GetBoxSetting ...
 func GetBoxSetting(ctx context.Context, exec boil.ContextExecutor, identityID, boxID string) (*BoxSetting, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.BoxSettingWhere.BoxID.EQ(boxID),
@@ -52,6 +56,7 @@ func GetBoxSetting(ctx context.Context, exec boil.ContextExecutor, identityID, b
 	}, nil
 }
 
+// GetDefaultBoxSetting ...
 func GetDefaultBoxSetting(identityID, boxID string) *BoxSetting {
 	return &BoxSetting{
 		IdentityID: identityID,
@@ -60,6 +65,7 @@ func GetDefaultBoxSetting(identityID, boxID string) *BoxSetting {
 	}
 }
 
+// ListBoxSettings ...
 func ListBoxSettings(ctx context.Context, exec boil.ContextExecutor, filters BoxSettingFilters) ([]*BoxSetting, error) {
 	mods := []qm.QueryMod{}
 

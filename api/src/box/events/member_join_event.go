@@ -35,7 +35,7 @@ func doJoin(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecuto
 // list active joins for a given box
 func listBoxActiveJoinEvents(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {
 	// get all the join linked to the box and unreferred
-	// refered join event means a leave or kick event has occured. it invalidates them
+	// referred join event means a leave or kick event has occurred. it invalidates them
 	activeJoinEvents, err := list(ctx, exec, eventFilters{
 		eType:      null.StringFrom(etype.Memberjoin),
 		unreferred: true,
@@ -47,6 +47,7 @@ func listBoxActiveJoinEvents(ctx context.Context, exec boil.ContextExecutor, box
 	return activeJoinEvents, nil
 }
 
+// ListMemberBoxLatestEvents ...
 func ListMemberBoxLatestEvents(ctx context.Context, exec boil.ContextExecutor, senderID string) ([]Event, error) {
 	joins, err := list(ctx, exec, eventFilters{
 		eType:      null.StringFrom(etype.Memberjoin),

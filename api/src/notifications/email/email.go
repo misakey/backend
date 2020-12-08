@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NewEmail constructor
 func NewEmail(emailRenderer EmailRenderer, mailer Sender) Email {
 	return Email{
 		emailRenderer: emailRenderer,
@@ -16,6 +17,7 @@ func NewEmail(emailRenderer EmailRenderer, mailer Sender) Email {
 	}
 }
 
+// Email contains the email renderer and the email sender
 type Email struct {
 	emailRenderer EmailRenderer
 	mailer        Sender
@@ -26,8 +28,8 @@ type templater interface {
 	Get(name string) (*template.Template, error)
 }
 
-// EmailNotication's content and configuration
-type EmailNotification struct {
+// Notification content and configuration
+type Notification struct {
 	To   string
 	From string
 
@@ -37,14 +39,17 @@ type EmailNotification struct {
 	TextBody string
 }
 
+// Renderer is a set of functions to create a new email from a template
 type Renderer interface {
-	NewEmail(ctx context.Context, to string, subject string, templateName string, data map[string]interface{}) (*EmailNotification, error)
+	NewEmail(ctx context.Context, to string, subject string, templateName string, data map[string]interface{}) (*Notification, error)
 }
 
+// Sender is a set of functions to manage the email sending
 type Sender interface {
-	Send(ctx context.Context, email *EmailNotification) error
+	Send(ctx context.Context, email *Notification) error
 }
 
+// EmailRenderer implements the Renderer interface
 type EmailRenderer struct {
 	templateRepo templater
 
@@ -93,8 +98,8 @@ func (m *EmailRenderer) NewEmail(
 	subject string,
 	templateName string,
 	data map[string]interface{},
-) (*EmailNotification, error) {
-	email := &EmailNotification{
+) (*Notification, error) {
+	email := &Notification{
 		To:      to,
 		From:    m.mailFrom,
 		Subject: subject,

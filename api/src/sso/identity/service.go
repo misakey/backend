@@ -5,25 +5,28 @@ import (
 	"database/sql"
 )
 
+// AvatarRepo ...
 type AvatarRepo interface {
 	Upload(context.Context, *AvatarFile) (string, error)
 	Delete(context.Context, *AvatarFile) error
 }
 
-type IdentityService struct {
+// Service ...
+type Service struct {
 	avatars AvatarRepo
 
-	SqlDB *sql.DB
+	SQLDB *sql.DB
 }
 
-func NewIdentityService(
+// NewService ...
+func NewService(
 	avatarRepo AvatarRepo,
 
 	ssoDB *sql.DB,
-) IdentityService {
-	return IdentityService{
+) Service {
+	return Service{
 		avatars: avatarRepo,
 
-		SqlDB: ssoDB,
+		SQLDB: ssoDB,
 	}
 }

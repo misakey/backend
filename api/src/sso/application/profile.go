@@ -15,15 +15,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
-//
-// Configure profile
-//
-
+// ConfigProfileCmd ...
 type ConfigProfileCmd struct {
 	identityID string
 	ShareEmail *bool `json:"email"`
 }
 
+// BindAndValidate ...
 func (cmd *ConfigProfileCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -36,6 +34,7 @@ func (cmd *ConfigProfileCmd) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// SetProfileConfig ...
 func (sso *SSOService) SetProfileConfig(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*ConfigProfileCmd)
 
@@ -66,19 +65,18 @@ func (sso *SSOService) SetProfileConfig(ctx context.Context, gen request.Request
 	return nil, tr.Commit()
 }
 
-//
-// Get current profile configuration
-//
-
+// ConfigProfileQuery ...
 type ConfigProfileQuery struct {
 	identityID string
 }
 
+// BindAndValidate ...
 func (query *ConfigProfileQuery) BindAndValidate(eCtx echo.Context) error {
 	query.identityID = eCtx.Param("id")
 	return v.ValidateStruct(query, v.Field(&query.identityID, v.Required, is.UUIDv4))
 }
 
+// GetProfileConfig ...
 func (sso *SSOService) GetProfileConfig(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*ConfigProfileQuery)
 
@@ -94,20 +92,19 @@ func (sso *SSOService) GetProfileConfig(ctx context.Context, gen request.Request
 	return identity.ProfileConfigGet(ctx, sso.sqlDB, query.identityID)
 }
 
-//
-// Get profile
-//
-
+// ProfileQuery ...
 type ProfileQuery struct {
 	identityID string
 }
 
+// BindAndValidate ...
 func (query *ProfileQuery) BindAndValidate(eCtx echo.Context) error {
 	query.identityID = eCtx.Param("id")
 
 	return v.ValidateStruct(query, v.Field(&query.identityID, v.Required, is.UUIDv4))
 }
 
+// GetProfile ...
 func (sso *SSOService) GetProfile(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*ProfileQuery)
 	return identity.ProfileGet(ctx, sso.sqlDB, query.identityID)

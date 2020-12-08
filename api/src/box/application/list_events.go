@@ -14,12 +14,14 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 )
 
+// ListEventsRequest ...
 type ListEventsRequest struct {
 	boxID  string
 	Offset *int `query:"offset" json:"-"`
 	Limit  *int `query:"limit" json:"-"`
 }
 
+// BindAndValidate ...
 func (req *ListEventsRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriPath)
@@ -32,6 +34,7 @@ func (req *ListEventsRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// ListEvents ...
 func (app *BoxApplication) ListEvents(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListEventsRequest)
 	// init an identity mapper for the operation

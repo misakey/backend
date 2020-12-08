@@ -14,7 +14,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 )
 
-// List identities ID that are members of the given box
+// ListBoxMemberIDs and return their identities ID
 func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, boxID string) ([]string, error) {
 	// 1. try to retrieve cache if it exists
 	members, err := redConn.SMembers(cache.GetBoxMembersKey(boxID)).Result()
@@ -60,6 +60,7 @@ func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, redConn *r
 	return memberIDs, nil
 }
 
+// MustBeMember ...
 func MustBeMember(
 	ctx context.Context,
 	exec boil.ContextExecutor,
@@ -80,7 +81,7 @@ func MustBeMember(
 		}
 	}
 
-	// if the creator, returns immediatly
+	// if the creator, returns immediately
 	isCreator, err := isCreator(ctx, exec, boxID, senderID)
 	if err != nil {
 		return err
@@ -115,6 +116,6 @@ func isMember(
 	if err != nil && merror.HasCode(err, merror.ForbiddenCode) {
 		return false, nil
 	}
-	// return false admin if an error has occured
+	// return false admin if an error has occurred
 	return (err == nil), err
 }

@@ -15,6 +15,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
+// UploadSavedFileRequest ...
 type UploadSavedFileRequest struct {
 	identityID string
 	size       int64
@@ -25,6 +26,7 @@ type UploadSavedFileRequest struct {
 	KeyFingerprint    string `form:"key_fingerprint"`
 }
 
+// BindAndValidate ...
 func (req *UploadSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -45,6 +47,7 @@ func (req *UploadSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// UploadSavedFile ...
 func (app *BoxApplication) UploadSavedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*UploadSavedFileRequest)
 

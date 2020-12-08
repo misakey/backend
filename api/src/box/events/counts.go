@@ -73,6 +73,7 @@ func IncrBoxCounts(ctx context.Context, redConn *redis.Client, identityIDs []str
 	return nil
 }
 
+// ComputeCount ...
 func ComputeCount(ctx context.Context, redConn *redis.Client, senderID, boxID string) int {
 	eventsCount, err := GetCountsForIdentity(ctx, redConn, senderID)
 	if err != nil {

@@ -22,6 +22,7 @@ var (
 	sendQueueSize    = 8
 )
 
+// Websocket ...
 type Websocket struct {
 	Websocket *websocket.Conn
 	Send      chan WebsocketMessage
@@ -33,15 +34,18 @@ type Websocket struct {
 	ID string
 }
 
+// WebsocketMessage ...
 type WebsocketMessage struct {
 	Msg string
 }
 
+// ReceivedMessage ...
 type ReceivedMessage struct {
 	msg []byte
 	err error
 }
 
+// NewWebsocket ...
 func NewWebsocket(
 	eCtx echo.Context,
 	allowedOrigins []string,
@@ -81,6 +85,7 @@ func NewWebsocket(
 	return ws, nil
 }
 
+// Pump ...
 func (ws *Websocket) Pump(eCtx echo.Context) {
 	logger.FromCtx(eCtx.Request().Context()).Debug().Msgf("%s: init pump", ws.ID)
 	// writePump routine
@@ -168,15 +173,18 @@ func (ws *Websocket) readPump(eCtx echo.Context) {
 	}
 }
 
+// SendCloseMessage ...
 func (ws *Websocket) SendCloseMessage() error {
 	return ws.SendMessage(websocket.CloseNormalClosure, []byte{})
 }
 
+// SendMessage ...
 func (ws *Websocket) SendMessage(kind int, msg []byte) error {
 	_ = ws.Websocket.SetWriteDeadline(time.Now().Add(writeWaitTime))
 	return ws.Websocket.WriteMessage(kind, msg)
 }
 
+// Close ...
 func (ws *Websocket) Close() error {
 	return ws.Websocket.Close()
 }

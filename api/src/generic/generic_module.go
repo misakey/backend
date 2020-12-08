@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// InitModule ...
 func InitModule(e *echo.Echo) {
 	genericPresenter := newGenericEcho()
 

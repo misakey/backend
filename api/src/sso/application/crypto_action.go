@@ -15,10 +15,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
+// ListCryptoActionsQuery ...
 type ListCryptoActionsQuery struct {
 	accountID string
 }
 
+// BindAndValidate ...
 func (query *ListCryptoActionsQuery) BindAndValidate(eCtx echo.Context) error {
 	query.accountID = eCtx.Param("id")
 
@@ -27,10 +29,12 @@ func (query *ListCryptoActionsQuery) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// CryptoActionView ...
 type CryptoActionView struct {
 	crypto.Action
 }
 
+// ListCryptoActions ...
 func (sso *SSOService) ListCryptoActions(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*ListCryptoActionsQuery)
 
@@ -57,11 +61,13 @@ func (sso *SSOService) ListCryptoActions(ctx context.Context, gen request.Reques
 	return views, nil
 }
 
+// GetCryptoActionQuery ...
 type GetCryptoActionQuery struct {
 	accountID string
 	actionID  string
 }
 
+// BindAndValidate ...
 func (query *GetCryptoActionQuery) BindAndValidate(eCtx echo.Context) error {
 	query.accountID = eCtx.Param("account-id")
 	query.actionID = eCtx.Param("action-id")
@@ -72,6 +78,7 @@ func (query *GetCryptoActionQuery) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// GetCryptoAction ...
 func (sso *SSOService) GetCryptoAction(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*GetCryptoActionQuery)
 
@@ -97,11 +104,13 @@ func (sso *SSOService) GetCryptoAction(ctx context.Context, gen request.Request)
 	return view, nil
 }
 
+// DeleteCryptoActionQuery ...
 type DeleteCryptoActionQuery struct {
 	accountID string
 	actionID  string
 }
 
+// BindAndValidate ...
 func (query *DeleteCryptoActionQuery) BindAndValidate(eCtx echo.Context) error {
 	query.accountID = eCtx.Param("account-id")
 	query.actionID = eCtx.Param("action-id")
@@ -112,6 +121,7 @@ func (query *DeleteCryptoActionQuery) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// DeleteCryptoAction ...
 func (sso *SSOService) DeleteCryptoAction(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*DeleteCryptoActionQuery)
 

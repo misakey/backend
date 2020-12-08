@@ -24,10 +24,12 @@ type MsgEditContent struct {
 	NewPublicKey string `json:"new_public_key"`
 }
 
+// Unmarshal ...
 func (c *MsgEditContent) Unmarshal(content types.JSON) error {
 	return content.Unmarshal(c)
 }
 
+// Validate ...
 func (c MsgEditContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.NewEncrypted, v.Required, is.Base64),

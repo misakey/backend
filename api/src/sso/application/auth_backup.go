@@ -6,24 +6,27 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 	//	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
+// AuthBackupView ...
 type AuthBackupView struct {
 	BackupView
 
 	AccountID string `json:"account_id"`
 }
 
+// GetBackupQuery ...
 type GetBackupQuery struct {
 	LoginChallenge string `query:"login_challenge"`
 	IdentityID     string `query:"identity_id"`
 }
 
+// BindAndValidate ...
 func (query *GetBackupQuery) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(query); err != nil {
 		return merror.BadRequest().From(merror.OriQuery).Describe(err.Error())
@@ -35,6 +38,7 @@ func (query *GetBackupQuery) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// GetBackupDuringAuth ...
 func (sso *SSOService) GetBackupDuringAuth(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*GetBackupQuery)
 	view := AuthBackupView{}

@@ -12,6 +12,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
+// Message ...
 type Message struct {
 	Encrypted       string
 	PublicKey       string

@@ -26,10 +26,12 @@ type cryptoActionRepo interface {
 	Delete(ctx context.Context, actionID string, accountID string) error
 }
 
+// CryptoActionService ...
 type CryptoActionService struct {
 	cryptoActions cryptoActionRepo
 }
 
+// NewActionService ...
 func NewActionService(
 	cryptoActionRepo cryptoActionRepo,
 ) CryptoActionService {
@@ -38,10 +40,7 @@ func NewActionService(
 	}
 }
 
-//
-// action models
-//
-
+// Action ...
 type Action struct {
 	ID                  string      `json:"id"`
 	AccountID           string      `json:"-"`
@@ -80,10 +79,6 @@ func (a Action) toSQLBoiler() *sqlboiler.CryptoAction {
 	}
 }
 
-//
-// action functions
-//
-
 // CreateActions inserts the cryptoaction in DB.
 // if the cryptoaction has not ID it will create one
 func CreateActions(
@@ -110,6 +105,7 @@ func CreateActions(
 
 }
 
+// CreateInvitationActionsForIdentity ...
 func CreateInvitationActionsForIdentity(
 	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	senderID, boxID, boxTitle, identityValue string, actionsDataJSON null.JSON,
@@ -123,6 +119,7 @@ func CreateInvitationActionsForIdentity(
 	return CreateInvitationActions(ctx, exec, redConn, identities, actionsDataJSON, senderID, boxID, boxTitle, true)
 }
 
+// CreateInvitationActionsForIdentifier ...
 func CreateInvitationActionsForIdentifier(
 	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	senderID, boxID, boxTitle, identifierValue string, actionsDataJSON null.JSON,
@@ -236,6 +233,7 @@ func CreateInvitationActions(ctx context.Context, exec boil.ContextExecutor, red
 	return nil
 }
 
+// GetAction ...
 func GetAction(
 	ctx context.Context, exec boil.ContextExecutor,
 	actionID, accountID string,
@@ -253,6 +251,7 @@ func GetAction(
 	return *newAction().fromSQLBoiler(*record), nil
 }
 
+// ListActions ...
 func ListActions(ctx context.Context, exec boil.ContextExecutor, accountID string) ([]Action, error) {
 	records, err := sqlboiler.CryptoActions(
 		sqlboiler.CryptoActionWhere.AccountID.EQ(accountID),
@@ -272,6 +271,7 @@ func ListActions(ctx context.Context, exec boil.ContextExecutor, accountID strin
 	return result, nil
 }
 
+// DeleteAction ...
 func DeleteAction(
 	ctx context.Context, exec boil.ContextExecutor,
 	actionID, accountID string,

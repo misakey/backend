@@ -6,12 +6,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
-type pwdMetadata struct {
+// PwdMetadata ...
+type PwdMetadata struct {
 	HashedPassword
 }
 
 // ToMetadata password conversion from a RawJSON message
-func ToMetadata(msg json.Marshaler) (ret pwdMetadata, err error) {
+func ToMetadata(msg json.Marshaler) (ret PwdMetadata, err error) {
 	msgJSON, err := msg.MarshalJSON()
 	if err != nil {
 		return ret, merror.Transform(err).Describe("password metadata")

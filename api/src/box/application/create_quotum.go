@@ -13,12 +13,14 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/quota"
 )
 
+// CreateQuotumRequest ...
 type CreateQuotumRequest struct {
 	IdentityID string `json:"identity_id"`
 	Value      int64  `json:"value"`
 	Origin     string `json:"origin"`
 }
 
+// BindAndValidate ...
 func (req *CreateQuotumRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -30,7 +32,8 @@ func (req *CreateQuotumRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-// only call be intraprocess entrypoints so no check required
+// CreateQuotum for a given identity
+// It is only called by intraprocess entrypoints so no check required
 func (app *BoxApplication) CreateQuotum(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateQuotumRequest)
 

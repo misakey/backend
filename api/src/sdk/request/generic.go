@@ -12,14 +12,17 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
+// Request ...
 type Request interface {
 	BindAndValidate(echo.Context) error
 }
 
+// ResponseNoContent ...
 func ResponseNoContent(eCtx echo.Context, _ interface{}) error {
 	return eCtx.NoContent(http.StatusNoContent)
 }
 
+// ResponseStream ...
 func ResponseStream(eCtx echo.Context, data interface{}) error {
 	readCloser := data.(io.ReadCloser)
 	defer func(ctx context.Context) {
@@ -31,30 +34,37 @@ func ResponseStream(eCtx echo.Context, data interface{}) error {
 	return eCtx.Stream(http.StatusOK, echo.MIMEOctetStream, readCloser)
 }
 
+// ResponseOK ...
 func ResponseOK(eCtx echo.Context, data interface{}) error {
 	return eCtx.JSON(http.StatusOK, data)
 }
 
+// ResponseCreated ...
 func ResponseCreated(eCtx echo.Context, data interface{}) error {
 	return eCtx.JSON(http.StatusCreated, data)
 }
 
+// ResponseBlob ...
 func ResponseBlob(eCtx echo.Context, data interface{}) error {
 	return eCtx.Blob(http.StatusOK, echo.MIMEOctetStream, data.([]byte))
 }
 
+// ResponseRedirectFound ...
 func ResponseRedirectFound(eCtx echo.Context, data interface{}) error {
 	return eCtx.Redirect(http.StatusFound, data.(string))
 }
 
+// HandlerFactory ...
 type HandlerFactory struct {
 	authzMdlw echo.MiddlewareFunc
 }
 
+// NewHandlerFactory ...
 func NewHandlerFactory(authzMdlw echo.MiddlewareFunc) HandlerFactory {
 	return HandlerFactory{authzMdlw: authzMdlw}
 }
 
+// NewPublic ...
 func (f *HandlerFactory) NewPublic(
 	subPath string,
 	initReq func() Request,
@@ -69,6 +79,7 @@ func (f *HandlerFactory) NewPublic(
 	return subPath, handler
 }
 
+// NewOptional ...
 func (f *HandlerFactory) NewOptional(
 	subPath string,
 	initReq func() Request,
@@ -83,6 +94,7 @@ func (f *HandlerFactory) NewOptional(
 	return subPath, handler, f.authzMdlw
 }
 
+// NewACR2 ...
 func (f *HandlerFactory) NewACR2(
 	subPath string,
 	initReq func() Request,
@@ -99,6 +111,7 @@ func (f *HandlerFactory) NewACR2(
 	return subPath, handler, f.authzMdlw
 }
 
+// NewACR1 ...
 func (f *HandlerFactory) NewACR1(
 	subPath string,
 	initReq func() Request,

@@ -9,6 +9,7 @@ import (
 
 var env = os.Getenv("ENV")
 
+// New ...
 func New(logLevel string) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true

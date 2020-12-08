@@ -14,10 +14,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
+// FlowResetCmd ...
 type FlowResetCmd struct {
 	Challenge string `query:"login_challenge"`
 }
 
+// BindAndValidate ...
 func (cmd *FlowResetCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriQuery)
@@ -25,7 +27,7 @@ func (cmd *FlowResetCmd) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
-// Reset the authorization code flow by redirecting to the initial request url
+// ResetFlow by redirecting to the initial request url
 // if the request url is not found, redirect the main page of the app
 func (sso *SSOService) ResetFlow(ctx context.Context, gen request.Request) (interface{}, error) {
 	req := gen.(*FlowResetCmd)

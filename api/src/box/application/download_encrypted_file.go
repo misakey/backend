@@ -14,10 +14,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
+// DownloadEncryptedFileRequest ...
 type DownloadEncryptedFileRequest struct {
 	fileID string
 }
 
+// BindAndValidate ...
 func (req *DownloadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	req.fileID = eCtx.Param("id")
 	return v.ValidateStruct(req,
@@ -25,6 +27,7 @@ func (req *DownloadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) erro
 	)
 }
 
+// DownloadEncryptedFile ...
 func (app *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*DownloadEncryptedFileRequest)
 

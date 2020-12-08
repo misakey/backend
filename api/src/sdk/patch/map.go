@@ -91,7 +91,7 @@ func (p Map) ToModel(model interface{}) Map {
 	return p
 }
 
-// Info converts a patch.Map into a patch.Info
+// GetInfo converts a patch.Map into a patch.Info
 func (p Map) GetInfo(model interface{}) Info {
 	inputKeys, outputKeys := p.getKeys()
 	return Info{

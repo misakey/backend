@@ -6,8 +6,10 @@ import (
 	"net/url"
 )
 
+// HeadersContextKey ...
 const HeadersContextKey = "headers"
 
+// Client ...
 type Client interface {
 	Get(ctx context.Context, route string, params url.Values, output interface{}) error
 	Head(ctx context.Context, route string, params url.Values, output map[string][]string) error
@@ -17,6 +19,7 @@ type Client interface {
 	Delete(ctx context.Context, route string, params url.Values) error
 }
 
+// GetBasicAuthHeader ...
 func GetBasicAuthHeader(username, password string) string {
 	auth := username + ":" + password
 	return base64.StdEncoding.EncodeToString([]byte(auth))

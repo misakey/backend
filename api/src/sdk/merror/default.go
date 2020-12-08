@@ -6,21 +6,35 @@ import (
 
 // Declares some classic errors as variables to use it as a base for our error system
 var (
-	ErrBadRequest            = errors.New("bad request")
-	ErrUnauthorized          = errors.New("not authorized")
-	ErrForbidden             = errors.New("forbidden")
-	ErrNotFound              = errors.New("not found")
-	ErrMethodNotAllowed      = errors.New("method not allowed")
-	ErrConflict              = errors.New("conflict")
-	ErrGone                  = errors.New("gone")
+	// ErrBadRequest ...
+	ErrBadRequest = errors.New("bad request")
+	// ErrUnauthorized ...
+	ErrUnauthorized = errors.New("not authorized")
+	// ErrForbidden ...
+	ErrForbidden = errors.New("forbidden")
+	// ErrNotFound ...
+	ErrNotFound = errors.New("not found")
+	// ErrMethodNotAllowed ...
+	ErrMethodNotAllowed = errors.New("method not allowed")
+	// ErrConflict ...
+	ErrConflict = errors.New("conflict")
+	// ErrGone ...
+	ErrGone = errors.New("gone")
+	// ErrRequestEntityTooLarge ...
 	ErrRequestEntityTooLarge = errors.New("request entity too large")
-	ErrUnprocessableEntity   = errors.New("unprocessable entity")
-	ErrClientClosedRequest   = errors.New("client closed request")
-	ErrBadGateway            = errors.New("bad gateway")
-	ErrServiceUnavailable    = errors.New("service unavailable")
-	ErrInternal              = errors.New("internal server")
+	// ErrUnprocessableEntity ...
+	ErrUnprocessableEntity = errors.New("unprocessable entity")
+	// ErrClientClosedRequest ...
+	ErrClientClosedRequest = errors.New("client closed request")
+	// ErrBadGateway ...
+	ErrBadGateway = errors.New("bad gateway")
+	// ErrServiceUnavailable ...
+	ErrServiceUnavailable = errors.New("service unavailable")
+	// ErrInternal ...
+	ErrInternal = errors.New("internal server")
 )
 
+// BadRequest ...
 func BadRequest() Error {
 	return Error{
 		error:   ErrBadRequest,
@@ -30,6 +44,7 @@ func BadRequest() Error {
 	}
 }
 
+// Unauthorized ...
 func Unauthorized() Error {
 	return Error{
 		error:   ErrUnauthorized,
@@ -39,6 +54,7 @@ func Unauthorized() Error {
 	}
 }
 
+// Forbidden ...
 func Forbidden() Error {
 	return Error{
 		error:   ErrForbidden,
@@ -48,6 +64,7 @@ func Forbidden() Error {
 	}
 }
 
+// NotFound ...
 func NotFound() Error {
 	return Error{
 		error:   ErrNotFound,
@@ -57,6 +74,7 @@ func NotFound() Error {
 	}
 }
 
+// MethodNotAllowed ...
 func MethodNotAllowed() Error {
 	return Error{
 		error:   ErrMethodNotAllowed,
@@ -66,6 +84,7 @@ func MethodNotAllowed() Error {
 	}
 }
 
+// Conflict ...
 func Conflict() Error {
 	return Error{
 		error:   ErrConflict,
@@ -75,6 +94,7 @@ func Conflict() Error {
 	}
 }
 
+// RequestEntityTooLarge ...
 func RequestEntityTooLarge() Error {
 	return Error{
 		error:   ErrRequestEntityTooLarge,
@@ -84,6 +104,7 @@ func RequestEntityTooLarge() Error {
 	}
 }
 
+// UnprocessableEntity ...
 func UnprocessableEntity() Error {
 	return Error{
 		error:   ErrUnprocessableEntity,
@@ -93,6 +114,7 @@ func UnprocessableEntity() Error {
 	}
 }
 
+// ClientClosedRequest ...
 func ClientClosedRequest() Error {
 	return Error{
 		error:   ErrClientClosedRequest,
@@ -102,6 +124,7 @@ func ClientClosedRequest() Error {
 	}
 }
 
+// BadGateway ...
 func BadGateway() Error {
 	return Error{
 		error:   ErrBadGateway,
@@ -111,6 +134,7 @@ func BadGateway() Error {
 	}
 }
 
+// ServiceUnavailable ...
 func ServiceUnavailable() Error {
 	return Error{
 		error:   ErrServiceUnavailable,
@@ -120,6 +144,7 @@ func ServiceUnavailable() Error {
 	}
 }
 
+// Internal ...
 func Internal() Error {
 	return Error{
 		error:   ErrInternal,
@@ -129,6 +154,7 @@ func Internal() Error {
 	}
 }
 
+// Gone ...
 func Gone() Error {
 	return Error{
 		error:   ErrGone,

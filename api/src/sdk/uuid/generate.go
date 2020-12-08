@@ -5,6 +5,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// NewString ...
 func NewString() (string, error) {
 	u, err := uuid.NewRandom()
 	if err != nil {

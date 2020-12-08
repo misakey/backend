@@ -11,8 +11,8 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
 func createStep(ctx context.Context, exec boil.ContextExecutor, step *Step) error {

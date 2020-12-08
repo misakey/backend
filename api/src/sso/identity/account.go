@@ -6,10 +6,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
+// Account ...
 type Account struct {
 	ID            string
 	Password      string
@@ -36,6 +37,7 @@ func (a *Account) fromSQLBoiler(boilModel *sqlboiler.Account) *Account {
 	return a
 }
 
+// CreateAccount ...
 func CreateAccount(ctx context.Context, exec boil.ContextExecutor, account *Account) error {
 	// generate new UUID
 	id, err := uuid.NewRandom()
@@ -49,6 +51,7 @@ func CreateAccount(ctx context.Context, exec boil.ContextExecutor, account *Acco
 	return account.toSQLBoiler().Insert(ctx, exec, boil.Infer())
 }
 
+// GetAccount ...
 func GetAccount(ctx context.Context, exec boil.ContextExecutor, accountID string) (ret Account, err error) {
 	sqlAccount, err := sqlboiler.FindAccount(ctx, exec, accountID)
 	if err == sql.ErrNoRows {
@@ -61,6 +64,7 @@ func GetAccount(ctx context.Context, exec boil.ContextExecutor, accountID string
 	return *newAccount().fromSQLBoiler(sqlAccount), nil
 }
 
+// UpdateAccount ...
 func UpdateAccount(ctx context.Context, exec boil.ContextExecutor, account *Account) error {
 	rowsAff, err := account.toSQLBoiler().Update(ctx, exec, boil.Infer())
 	if err != nil {

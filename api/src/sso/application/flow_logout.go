@@ -13,7 +13,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
-// Try to logout the user by invalidating the authentication session
+// Logout the user by invalidating the authentication session
 func (sso *SSOService) Logout(ctx context.Context, _ request.Request) (interface{}, error) {
 	// verify accesses
 	acc := oidc.GetAccesses(ctx)

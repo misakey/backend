@@ -13,6 +13,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
+// Create a new keyshare
 func Create(
 	ctx context.Context, exec boil.ContextExecutor,
 	invitHash, share, encShare, boxID, creatorID string,
@@ -21,6 +22,7 @@ func Create(
 	return ks.toSQLBoiler().Insert(ctx, exec, boil.Infer())
 }
 
+// Get a keyshare from its invitHash
 func Get(
 	ctx context.Context, exec boil.ContextExecutor,
 	invitHash string,
@@ -35,6 +37,7 @@ func Get(
 	return fromSQLBoiler(record), nil
 }
 
+// GetLastForBoxID returns the last keyShare of a given box
 func GetLastForBoxID(
 	ctx context.Context, exec boil.ContextExecutor,
 	boxID string,
@@ -53,6 +56,7 @@ func GetLastForBoxID(
 	return &keyShare, nil
 }
 
+// EmptyAll keyshares for a given box
 func EmptyAll(
 	ctx context.Context, exec boil.ContextExecutor,
 	boxID string,

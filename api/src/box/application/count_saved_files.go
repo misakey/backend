@@ -13,10 +13,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
+// CountSavedFilesRequest ...
 type CountSavedFilesRequest struct {
 	IdentityID string `query:"identity_id" json:"-"`
 }
 
+// BindAndValidate ...
 func (req *CountSavedFilesRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -26,9 +28,10 @@ func (req *CountSavedFilesRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// CountSavedFiles ...
 func (app *BoxApplication) CountSavedFiles(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CountSavedFilesRequest)
-	
+
 	access := oidc.GetAccesses(ctx)
 	if access == nil {
 		return nil, merror.Unauthorized()
@@ -38,7 +41,6 @@ func (app *BoxApplication) CountSavedFiles(ctx context.Context, genReq request.R
 	if req.IdentityID != access.IdentityID {
 		return nil, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
 	}
-
 
 	count, err := files.CountSavedFilesByIdentityID(ctx, app.DB, req.IdentityID)
 	if err != nil {

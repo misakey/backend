@@ -8,10 +8,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
 )
 
+// VaultUsedSpace model
 type VaultUsedSpace struct {
-	Value      int64 `json:"value" boil:"total"`
+	Value int64 `json:"value" boil:"total"`
 }
 
+// GetVault used space
 func GetVault(ctx context.Context, exec boil.ContextExecutor, id string) (*VaultUsedSpace, error) {
 	mods := []qm.QueryMod{
 		qm.Select("COALESCE(SUM(encrypted_file.size), 0) as total"),

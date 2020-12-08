@@ -17,6 +17,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 )
 
+// BoxUserContactRequest ...
 type BoxUserContactRequest struct {
 	identityID          string
 	ContactedIdentityID string `json:"identity_id"`
@@ -32,6 +33,7 @@ type BoxUserContactRequest struct {
 	InvitationData types.JSON `json:"invitation_data"`
 }
 
+// BindAndValidate ...
 func (req *BoxUserContactRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -63,6 +65,7 @@ func (req *BoxUserContactRequest) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
+// BoxUserContact creates a new box and invite the contacted user
 func (app *BoxApplication) BoxUserContact(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*BoxUserContactRequest)
 	acc := oidc.GetAccesses(ctx)

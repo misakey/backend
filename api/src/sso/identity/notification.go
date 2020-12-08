@@ -17,10 +17,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
-//
-// models
-//
-
+// Notification ...
 type Notification struct {
 	ID             int       `json:"id"`
 	Type           string    `json:"type"`
@@ -55,10 +52,7 @@ func (n *Notification) fromSQLBoiler(src sqlboiler.IdentityNotification) *Notifi
 	return n
 }
 
-//
-// notification methods
-//
-
+// NotificationCreate ...
 func NotificationCreate(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityID string, nType string, details null.JSON) error {
 	notif := Notification{
 		Type:       nType,
@@ -84,6 +78,7 @@ func NotificationCreate(ctx context.Context, exec boil.ContextExecutor, redConn 
 
 }
 
+// NotificationBulkCreate ...
 func NotificationBulkCreate(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityIDs []string, nType string, details null.JSON) error {
 	for _, identityID := range identityIDs {
 		notif := Notification{
@@ -109,7 +104,7 @@ func NotificationBulkCreate(ctx context.Context, exec boil.ContextExecutor, redC
 	return nil
 }
 
-// Count unacknowledged notifications for received identity id
+// NotificationCount unacknowledged notifications for received identity id
 func NotificationCount(ctx context.Context, exec boil.ContextExecutor, identityID string) (n int, err error) {
 	mods := []qm.QueryMod{
 		sqlboiler.IdentityNotificationWhere.IdentityID.EQ(identityID),
@@ -123,7 +118,7 @@ func NotificationCount(ctx context.Context, exec boil.ContextExecutor, identityI
 	return int(count), nil
 }
 
-// Returns list of notifications linked to the received identity id
+// NotificationList returns list of notifications linked to the received identity id
 // - handles pagination.
 func NotificationList(
 	ctx context.Context, exec boil.ContextExecutor,
@@ -177,6 +172,7 @@ func markInvitationAsUsed(ctx context.Context, exec boil.ContextExecutor, notif 
 	return nil
 }
 
+// NotificationMarkAutoInvitationUsed ...
 func NotificationMarkAutoInvitationUsed(ctx context.Context, exec boil.ContextExecutor, cryptoactionID string) error {
 	searchedJSONPath := fmt.Sprintf(`{"cryptoaction_id":"%s"}`, cryptoactionID)
 	notifs, err := sqlboiler.IdentityNotifications(
@@ -196,8 +192,8 @@ func NotificationMarkAutoInvitationUsed(ctx context.Context, exec boil.ContextEx
 	return nil
 }
 
-// Set acknowledged_at to time.Now() for all unacknowledged notification of the received identity id
-// // if notifIds don't belong to the identity id, it will be ignored
+// NotificationAck acknowledged_at to time.Now() for all unacknowledged notification of the received identity id
+// if notifIds don't belong to the identity id, it will be ignored
 func NotificationAck(ctx context.Context, exec boil.ContextExecutor, identityID string, notifIDs []int) error {
 	acknowledgedAt := sqlboiler.M{sqlboiler.IdentityNotificationColumns.AcknowledgedAt: null.TimeFrom(time.Now())}
 	mods := []qm.QueryMod{

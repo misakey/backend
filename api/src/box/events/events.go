@@ -18,6 +18,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
+// Event ...
 type Event struct {
 	ID          string
 	CreatedAt   time.Time
@@ -31,6 +32,7 @@ type Event struct {
 	MetadataForHandlers MetadataForUsedSpaceHandler
 }
 
+// New ...
 func New(eType string, jsonContent types.JSON, boxID, senderID string, referrerID *string) (Event, error) {
 	event := Event{
 		CreatedAt:   time.Now(),
@@ -62,6 +64,7 @@ func (e *Event) persist(ctx context.Context, exec boil.ContextExecutor) error {
 	return nil
 }
 
+// GetLast ...
 func GetLast(ctx context.Context, exec boil.ContextExecutor, boxID string) (Event, error) {
 	return get(ctx, exec, eventFilters{
 		boxID:  null.StringFrom(boxID),
@@ -69,6 +72,7 @@ func GetLast(ctx context.Context, exec boil.ContextExecutor, boxID string) (Even
 	})
 }
 
+// ListForMembersByBoxID ...
 func ListForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string, offset, limit *int) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
 		boxID:  null.StringFrom(boxID),
@@ -78,6 +82,7 @@ func ListForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID
 	})
 }
 
+// ListFilesForMembersByBoxID ...
 func ListFilesForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string, offset, limit *int) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
 		boxID:      null.StringFrom(boxID),
@@ -88,6 +93,7 @@ func ListFilesForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, 
 	})
 }
 
+// ListForBuild ...
 func ListForBuild(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
 		boxID:  null.StringFrom(boxID),
@@ -95,6 +101,7 @@ func ListForBuild(ctx context.Context, exec boil.ContextExecutor, boxID string) 
 	})
 }
 
+// ListByTypeAndBoxIDAndSenderID ...
 func ListByTypeAndBoxIDAndSenderID(ctx context.Context, exec boil.ContextExecutor, eventType, boxID, senderID string) ([]Event, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.EventWhere.BoxID.EQ(boxID),
@@ -148,7 +155,7 @@ type eventFilters struct {
 	referrerID  null.String
 	referrerIDs []string
 
-	// filters triggerring in jsonb research
+	// filters triggering in jsonb research
 	content  *string
 	unkicked bool
 	fileID   null.String
@@ -301,7 +308,7 @@ func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFi
 	subMods := []qm.QueryMod{
 		qm.Select(sqlboiler.EventColumns.ReferrerID),
 	}
-	// either it selects event refering another specific event
+	// either it selects event referring another specific event
 	if filters.id.Valid {
 		subMods = append(subMods, sqlboiler.EventWhere.ReferrerID.EQ(filters.id))
 	} else {
@@ -330,7 +337,7 @@ func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFi
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing referents")
 	}
-	// compute the list of event that are refered according to retrieved referents
+	// compute the list of event that are referred according to retrieved referents
 	notInIDs := make([]string, len(referents))
 	for i, referent := range referents {
 		notInIDs[i] = referent.ReferrerID.String
@@ -338,6 +345,7 @@ func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFi
 	return notInIDs, nil
 }
 
+// ListFilesID ...
 func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]string, error) {
 	events, err := list(ctx, exec, eventFilters{
 		boxID: null.StringFrom(boxID),
@@ -360,6 +368,7 @@ func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 	return ids, nil
 }
 
+// CountByBoxID ...
 func CountByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (int, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.EventWhere.BoxID.EQ(boxID),
@@ -373,6 +382,7 @@ func CountByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) 
 	return int(count), nil
 }
 
+// CountFilesByBoxID ...
 func CountFilesByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (int, error) {
 	// by default, count only the events a member can see
 	mods := []qm.QueryMod{

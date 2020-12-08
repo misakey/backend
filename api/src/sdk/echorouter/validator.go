@@ -7,7 +7,7 @@ type WrappedValidator struct {
 	validator *validator.Enhanced
 }
 
-// NewWrappedValidator's constructor.
+// NewWrappedValidator constructor.
 func NewWrappedValidator(validator *validator.Enhanced) *WrappedValidator {
 	return &WrappedValidator{validator: validator}
 }

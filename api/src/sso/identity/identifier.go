@@ -8,22 +8,26 @@ import (
 	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
+// Identifier ...
 type Identifier struct {
 	ID    string         `json:"id"`
 	Value string         `json:"value"`
 	Kind  IdentifierKind `json:"kind"`
 }
 
+// IdentifierKind ...
 type IdentifierKind string
 
 const (
+	// EmailIdentifier ...
 	EmailIdentifier IdentifierKind = "email"
 )
 
+// GetIdentifier ...
 func GetIdentifier(ctx context.Context, exec boil.ContextExecutor, id string) (Identifier, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.IdentifierWhere.ID.EQ(id),
@@ -44,6 +48,7 @@ func GetIdentifier(ctx context.Context, exec boil.ContextExecutor, id string) (I
 	}, nil
 }
 
+// RequireIdentifier ...
 func RequireIdentifier(ctx context.Context, exec boil.ContextExecutor, identifier *Identifier) error {
 	mods := []qm.QueryMod{
 		sqlboiler.IdentifierWhere.Kind.EQ(string(identifier.Kind)),
@@ -67,6 +72,7 @@ func RequireIdentifier(ctx context.Context, exec boil.ContextExecutor, identifie
 	return createIdentifier(ctx, exec, identifier)
 }
 
+// GetIdentifierByKindValue ...
 func GetIdentifierByKindValue(ctx context.Context, exec boil.ContextExecutor, identifier Identifier) (Identifier, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.IdentifierWhere.Kind.EQ(string(identifier.Kind)),

@@ -1,21 +1,28 @@
 package oidc
 
-// Official Authentication Context Class Reference (https://openid.net/specs/openid-connect-core-1_0.html#IDToken) enum
+// ClassRef Official Authentication Context Class Reference (https://openid.net/specs/openid-connect-core-1_0.html#IDToken) enum
 // used to store in the ID & Access Tokens the context class the authentication satisfied
 // higher is the more secure
 type ClassRef string
+
+// ClassRefs ...
 type ClassRefs []ClassRef
 
 const (
-	ACR0 ClassRef = "0" // long-lived browser cookie
-	ACR1 ClassRef = "1" // mca
-	ACR2 ClassRef = "2" // pwd
+	// ACR0 ...
+	ACR0 ClassRef = "0"
+	// ACR1 ...
+	ACR1 ClassRef = "1"
+	// ACR2 ...
+	ACR2 ClassRef = "2"
 )
 
+// String ...
 func (acr ClassRef) String() string {
 	return string(acr)
 }
 
+// LessThan ...
 func (acr ClassRef) LessThan(minimum ClassRef) bool {
 	// empty acr is always lesser
 	if acr == "" {
@@ -36,10 +43,12 @@ func (acr ClassRef) LessThan(minimum ClassRef) bool {
 	return false
 }
 
+// NewClassRefs ...
 func NewClassRefs(acr ClassRef) ClassRefs {
 	return []ClassRef{acr}
 }
 
+// Get ...
 // Multiple ACRValues capability is ignored so it always takes the first one
 func (acrs ClassRefs) Get() ClassRef {
 	acr := ACR0
@@ -52,6 +61,7 @@ func (acrs ClassRefs) Get() ClassRef {
 	return acr
 }
 
+// Set ...
 // Multiple ACRValues capability is ignored
 // the full slice is replaced
 func (acrs *ClassRefs) Set(acr ClassRef) {

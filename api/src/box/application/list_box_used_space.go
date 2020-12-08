@@ -6,19 +6,21 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/quota"
 )
 
+// ListBoxUsedSpaceRequest ...
 type ListBoxUsedSpaceRequest struct {
 	// json tag is needed as without it BindAndValidate does not return the right Detail
 	IdentityID string `query:"identity_id" json:"identity_id"`
 }
 
+// BindAndValidate ...
 func (req *ListBoxUsedSpaceRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriQuery)
@@ -28,6 +30,7 @@ func (req *ListBoxUsedSpaceRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// ListBoxUsedSpace ...
 func (app *BoxApplication) ListBoxUsedSpace(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListBoxUsedSpaceRequest)
 

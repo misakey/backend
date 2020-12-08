@@ -7,6 +7,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// GetBearerTokFromCookie ...
 func GetBearerTokFromCookie(ctx echo.Context) (string, error) {
 	// get authorization cookie
 	bearerTok, err := ctx.Request().Cookie("accesstoken")
@@ -29,6 +30,7 @@ func GetBearerTokFromCookie(ctx echo.Context) (string, error) {
 	return bearerTok.Value, nil
 }
 
+// GetBearerTokFromHeader ...
 func GetBearerTokFromHeader(ctx echo.Context) (string, error) {
 	// get authorization header
 	bearerTok := ctx.Request().Header.Get("Authorization")

@@ -22,10 +22,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
+// PwdParamsQuery ...
 type PwdParamsQuery struct {
 	accountID string
 }
 
+// BindAndValidate ...
 func (query *PwdParamsQuery) BindAndValidate(eCtx echo.Context) error {
 	query.accountID = eCtx.Param("id")
 	return v.ValidateStruct(query,
@@ -33,10 +35,12 @@ func (query *PwdParamsQuery) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// PwdParamsView ...
 type PwdParamsView struct {
 	argon2.Params
 }
 
+// GetAccountPwdParams ...
 func (sso *SSOService) GetAccountPwdParams(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*PwdParamsQuery)
 
@@ -54,6 +58,7 @@ func (sso *SSOService) GetAccountPwdParams(ctx context.Context, gen request.Requ
 	return view, nil
 }
 
+// ChangePasswordCmd ...
 type ChangePasswordCmd struct {
 	accountID string
 
@@ -63,6 +68,7 @@ type ChangePasswordCmd struct {
 	BackupVersion int                   `json:"backup_version"`
 }
 
+// BindAndValidate ...
 func (cmd *ChangePasswordCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
@@ -81,6 +87,7 @@ func (cmd *ChangePasswordCmd) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
+// ChangePassword ...
 func (sso *SSOService) ChangePassword(ctx context.Context, gen request.Request) (interface{}, error) {
 	cmd := gen.(*ChangePasswordCmd)
 
@@ -144,11 +151,13 @@ func (sso *SSOService) ChangePassword(ctx context.Context, gen request.Request) 
 	return nil, tr.Commit()
 }
 
+// PasswordResetCmd ...
 type PasswordResetCmd struct {
 	Password   argon2.HashedPassword `json:"prehashed_password"`
 	BackupData string                `json:"backup_data"`
 }
 
+// Validate ...
 func (cmd PasswordResetCmd) Validate() error {
 	if err := v.ValidateStruct(&cmd,
 		v.Field(&cmd.Password),
@@ -198,7 +207,7 @@ func (sso *SSOService) resetPassword(
 	}
 
 	account.BackupData = cmd.BackupData
-	account.BackupVersion += 1
+	account.BackupVersion++
 
 	// save account
 	if err := identity.UpdateAccount(ctx, exec, &account); err != nil {

@@ -23,7 +23,7 @@ type Params struct {
 	SaltBase64  string `json:"salt_base64"`
 }
 
-// Argon2Prehashed represents a password hashed with Argon2.
+// HashedPassword represents a password hashed with Argon2.
 // This is the object the client sends instead of a password
 // when we use "server relief".
 //

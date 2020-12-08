@@ -20,6 +20,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester/http"
 )
 
+// InitModule ...
 func InitModule(router *echo.Echo) Process {
 	// init the box module configuration
 	initConfig()
@@ -99,6 +100,7 @@ func InitModule(router *echo.Echo) Process {
 	}
 }
 
+// Process ...
 type Process struct {
 	BoxService         *application.BoxApplication
 	QuotumIntraprocess bentrypoints.QuotaIntraprocessInterface

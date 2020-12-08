@@ -9,6 +9,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// MultipartRequest ...
 type MultipartRequest struct {
 	Body        *bytes.Buffer
 	ContentType string

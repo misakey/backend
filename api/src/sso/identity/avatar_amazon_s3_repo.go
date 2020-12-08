@@ -15,7 +15,8 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
-type avatarAmazonS3 struct {
+// AvatarAmazonS3 ...
+type AvatarAmazonS3 struct {
 	session  *s3.S3
 	uploader *s3manager.Uploader
 
@@ -23,7 +24,7 @@ type avatarAmazonS3 struct {
 }
 
 // NewAvatarAmazonS3 init an S3 session
-func NewAvatarAmazonS3(region, bucket string) (*avatarAmazonS3, error) {
+func NewAvatarAmazonS3(region, bucket string) (*AvatarAmazonS3, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(region)},
 	)
@@ -33,7 +34,7 @@ func NewAvatarAmazonS3(region, bucket string) (*avatarAmazonS3, error) {
 
 	// create all required actors to interact with s3
 	s3Cli := s3.New(sess)
-	s := &avatarAmazonS3{
+	s := &AvatarAmazonS3{
 		session:  s3Cli,
 		uploader: s3manager.NewUploaderWithClient(s3Cli),
 		bucket:   bucket,
@@ -42,11 +43,12 @@ func NewAvatarAmazonS3(region, bucket string) (*avatarAmazonS3, error) {
 }
 
 // getKey by concatenating some info
-func (s *avatarAmazonS3) getKey(avatar *AvatarFile) string {
+func (s *AvatarAmazonS3) getKey(avatar *AvatarFile) string {
 	return filepath.Join("identity-avatars", avatar.Filename)
 }
 
-func (s *avatarAmazonS3) Upload(ctx context.Context, avatar *AvatarFile) (string, error) {
+// Upload ...
+func (s *AvatarAmazonS3) Upload(ctx context.Context, avatar *AvatarFile) (string, error) {
 	uo, err := s.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(s.getKey(avatar)),
@@ -63,7 +65,8 @@ func (s *avatarAmazonS3) Upload(ctx context.Context, avatar *AvatarFile) (string
 	return avatarURL.String(), nil
 }
 
-func (s *avatarAmazonS3) Delete(ctx context.Context, avatar *AvatarFile) error {
+// Delete ...
+func (s *AvatarAmazonS3) Delete(ctx context.Context, avatar *AvatarFile) error {
 	delObj := &s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(s.getKey(avatar)),

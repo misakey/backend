@@ -22,7 +22,7 @@ func IncrDigestCount(ctx context.Context, redConn *redis.Client, identityIDs []s
 	return nil
 }
 
-// GetAllDigestCountKeys
+// GetAllDigestCountKeys ...
 func GetAllDigestCountKeys(ctx context.Context, redConn *redis.Client) ([]string, error) {
 	keys, err := redConn.Keys(cache.GetAllDigestCountKeys()).Result()
 	if err != nil {
@@ -39,7 +39,7 @@ func DelDigestCount(ctx context.Context, redConn *redis.Client, identityID, boxI
 	return nil
 }
 
-// DelAllDigestCountForIdentity
+// DelAllDigestCountForIdentity identityID
 func DelAllDigestCountForIdentity(ctx context.Context, redConn *redis.Client, identityID string) error {
 	keys, err := redConn.Keys(cache.GetAllDigestCountKeysForIdentity(identityID)).Result()
 	if err != nil {

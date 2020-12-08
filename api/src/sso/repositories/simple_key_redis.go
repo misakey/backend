@@ -21,6 +21,7 @@ func NewSimpleKeyRedis(redConn *redis.Client) SimpleKeyRedis {
 	}
 }
 
+// Set a key expiring in keyExpiration
 func (skr *SimpleKeyRedis) Set(ctx context.Context, key string, value []byte, keyExpiration time.Duration) error {
 	if _, err := skr.redConn.Set(key, value, keyExpiration).Result(); err != nil {
 		return err
@@ -28,6 +29,7 @@ func (skr *SimpleKeyRedis) Set(ctx context.Context, key string, value []byte, ke
 	return nil
 }
 
+// Get a key value
 func (skr *SimpleKeyRedis) Get(ctx context.Context, key string) ([]byte, error) {
 	value, err := skr.redConn.Get(key).Result()
 	if err != nil {
@@ -39,6 +41,7 @@ func (skr *SimpleKeyRedis) Get(ctx context.Context, key string) ([]byte, error) 
 	return []byte(value), nil
 }
 
+// MustFind at least one key value matching matchKey
 func (skr *SimpleKeyRedis) MustFind(ctx context.Context, matchKey string) ([][]byte, error) {
 	keys, err := skr.redConn.Keys(matchKey).Result()
 	if err != nil {

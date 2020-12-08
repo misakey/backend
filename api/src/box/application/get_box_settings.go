@@ -14,11 +14,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 )
 
+// GetBoxSettingsRequest ...
 type GetBoxSettingsRequest struct {
 	identityID string
 	boxID      string
 }
 
+// BindAndValidate ...
 func (req *GetBoxSettingsRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -31,6 +33,7 @@ func (req *GetBoxSettingsRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// GetBoxSettings ...
 func (app *BoxApplication) GetBoxSettings(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*GetBoxSettingsRequest)
 

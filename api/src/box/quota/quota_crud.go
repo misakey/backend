@@ -9,6 +9,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
 )
 
+// Quotum model
 type Quotum struct {
 	ID         string    `json:"id"`
 	CreatedAt  time.Time `json:"created_at"`
@@ -17,7 +18,8 @@ type Quotum struct {
 	Origin     string    `json:"origin"`
 }
 
-func QuotaToDomain(dbQuotum sqlboiler.StorageQuotum) Quotum {
+// ToDomain ...
+func ToDomain(dbQuotum sqlboiler.StorageQuotum) Quotum {
 	return Quotum{
 		ID:         dbQuotum.ID,
 		CreatedAt:  dbQuotum.CreatedAt,
@@ -27,6 +29,7 @@ func QuotaToDomain(dbQuotum sqlboiler.StorageQuotum) Quotum {
 	}
 }
 
+// ToSQLBoiler ...
 func (q Quotum) ToSQLBoiler() *sqlboiler.StorageQuotum {
 	return &sqlboiler.StorageQuotum{
 		ID:         q.ID,
@@ -37,8 +40,9 @@ func (q Quotum) ToSQLBoiler() *sqlboiler.StorageQuotum {
 	}
 }
 
-func List(ctx context.Context, exec boil.ContextExecutor, id string) ([]Quotum, error) {
-	dbQuota, err := sqlboiler.StorageQuota(sqlboiler.StorageQuotumWhere.IdentityID.EQ(id)).All(ctx, exec)
+// List quota for a given identityID
+func List(ctx context.Context, exec boil.ContextExecutor, identityID string) ([]Quotum, error) {
+	dbQuota, err := sqlboiler.StorageQuota(sqlboiler.StorageQuotumWhere.IdentityID.EQ(identityID)).All(ctx, exec)
 	if err != nil {
 		return nil, err
 	}
@@ -48,11 +52,12 @@ func List(ctx context.Context, exec boil.ContextExecutor, id string) ([]Quotum, 
 
 	quota := make([]Quotum, len(dbQuota))
 	for idx, quotum := range dbQuota {
-		quota[idx] = QuotaToDomain(*quotum)
+		quota[idx] = ToDomain(*quotum)
 	}
 	return quota, nil
 }
 
+// Create quotum
 func Create(ctx context.Context, exec boil.ContextExecutor, quotum *Quotum) error {
 	return quotum.ToSQLBoiler().Insert(ctx, exec, boil.Infer())
 }

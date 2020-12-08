@@ -7,14 +7,17 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/notifications/email"
 )
 
+// QuotumInterface ...
 type QuotumInterface interface {
 	CreateBase(ctx context.Context, identityID string) (interface{}, error)
 }
 
+// SetQuotaService ...
 func (as *Service) SetQuotaService(quota QuotumInterface) {
 	as.quotaService = quota
 }
 
+// Service ...
 type Service struct {
 	sessions  sessionRepo
 	processes processRepo
@@ -32,6 +35,7 @@ type sessionRepo interface {
 	Get(context.Context, string) (Session, error)
 }
 
+// NewService ...
 func NewService(
 	sessions sessionRepo, processes processRepo,
 	templates email.Renderer, emails email.Sender,

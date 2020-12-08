@@ -23,6 +23,7 @@ type accountMetadata struct {
 	BackupData string                `json:"backup_data"`
 }
 
+// Validate ...
 func (am accountMetadata) Validate() error {
 	if err := v.ValidateStruct(&am,
 		v.Field(&am.Password),

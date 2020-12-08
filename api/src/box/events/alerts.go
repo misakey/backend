@@ -17,8 +17,8 @@ import (
 //
 // this file contains handlers about alerting end-user about some activities in boxes
 // type of alerts:
-// - boxCount: count the number of event that has occured in a box for a given user, displayed to the end-user in-app.
-// - digestCount: also count the number of event that has occured in a box for a given user, displayed in digests send to the user out-of-the-app.
+// - boxCount: count the number of event that has occurred in a box for a given user, displayed to the end-user in-app.
+// - digestCount: also count the number of event that has occurred in a box for a given user, displayed in digests send to the user out-of-the-app.
 // - realtime: send to the active user app through websocket updates.
 
 // for all identities except the event sender

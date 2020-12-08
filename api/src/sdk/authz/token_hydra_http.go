@@ -53,6 +53,7 @@ type instropection struct {
 	} `json:"ext"`
 }
 
+// GetClaims ...
 func (h oidcIntroHTTP) GetClaims(ctx context.Context, opaqueTok string) (ac oidc.AccessClaims, err error) {
 	introTok := instropection{}
 	route := "/oauth2/introspect"

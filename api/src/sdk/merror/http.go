@@ -6,12 +6,11 @@ import (
 )
 
 var (
-	// shall never be returned to consumer because of the context of the code
+	// StatusClientClosedRequest shall never be returned to consumer because of the context of the code
 	StatusClientClosedRequest = 499 // http://lxr.nginx.org/source/src/http/ngx_http_request.h#0120
 )
 
-// Conversion function from Misakey Error to HTTP and vice-versa.
-// ToCode returns HTTP code corresponding to Domain Misakey Code
+// ToHTTPCode returns HTTP code corresponding to Domain Misakey Code
 func ToHTTPCode(err error) int {
 	mErr := transform(err)
 	switch mErr.Co {
@@ -43,7 +42,7 @@ func ToHTTPCode(err error) int {
 	return http.StatusInternalServerError
 }
 
-// Transform returns merror corresponding to HTTP code
+// TransformHTTPCode returns merror corresponding to HTTP code
 func TransformHTTPCode(code int) Error {
 	switch code {
 	case http.StatusBadRequest:

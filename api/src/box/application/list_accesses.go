@@ -13,10 +13,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
+// ListAccessesRequest ...
 type ListAccessesRequest struct {
 	boxID string
 }
 
+// BindAndValidate ...
 func (req *ListAccessesRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 	return v.ValidateStruct(req,
@@ -24,6 +26,7 @@ func (req *ListAccessesRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// ListAccesses ...
 func (app *BoxApplication) ListAccesses(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListAccessesRequest)
 

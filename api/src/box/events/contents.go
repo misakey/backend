@@ -10,12 +10,15 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// EmptyContent ...
 type EmptyContent struct{}
 
+// Unmarshal ...
 func (c *EmptyContent) Unmarshal(json types.JSON) error {
 	return json.Unmarshal(c)
 }
 
+// Validate ...
 func (c EmptyContent) Validate() error {
 	return nil
 }

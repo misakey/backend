@@ -11,10 +11,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
+// BackupKeyShareQuery ...
 type BackupKeyShareQuery struct {
 	otherShareHash string
 }
 
+// BindAndValidate ...
 func (query *BackupKeyShareQuery) BindAndValidate(eCtx echo.Context) error {
 	query.otherShareHash = eCtx.Param("other-share-hash")
 
@@ -26,6 +28,7 @@ func (query *BackupKeyShareQuery) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
+// GetBackupKeyShare ...
 func (sso *SSOService) GetBackupKeyShare(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*BackupKeyShareQuery)
 

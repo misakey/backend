@@ -7,9 +7,12 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/quota"
 )
 
 // Box is a volatile object built based on events linked to its ID
@@ -45,7 +48,7 @@ type computer struct {
 	lastEvent  *Event
 }
 
-// ComputeBox box according to the received boxID.
+// Compute box according to the received boxID.
 // The function retrieves events linked to the boxID using received db connector.
 // The function can takes optionally the last event which will be retrieve if nil
 func Compute(
@@ -174,6 +177,7 @@ func (c *computer) playState(_ context.Context, e Event) error {
 	return nil
 }
 
+// GetBoxPublicKey ...
 func GetBoxPublicKey(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
 	createEvent, err := GetCreateEvent(ctx, exec, boxID)
 	if err != nil {
@@ -185,4 +189,24 @@ func GetBoxPublicKey(ctx context.Context, exec boil.ContextExecutor, boxID strin
 	}
 
 	return content.PublicKey, nil
+}
+
+// CleanBox ...
+func CleanBox(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
+	// 1. Delete all the events
+	if err := DeleteAllForBox(ctx, exec, boxID); err != nil {
+		return merror.Transform(err).Describe("deleting events")
+	}
+
+	// 2. Delete the key shares
+	if err := keyshares.EmptyAll(ctx, exec, boxID); err != nil {
+		return merror.Transform(err).Describe("emptying keyshares")
+	}
+
+	// 3. Delete the box used space
+	if err := quota.DeleteBoxUsedSpace(ctx, exec, boxID); err != nil {
+		return merror.Transform(err).Describe("emptying box used space")
+	}
+
+	return nil
 }

@@ -18,6 +18,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
 )
 
+// ContactBox model
 type ContactBox struct {
 	// user info
 	ContactedIdentityID string
@@ -34,6 +35,7 @@ type ContactBox struct {
 	InvitationDataJSON          types.JSON
 }
 
+// CreateContactBox creates the box, sets the `invitation_link` access and invite the contacted user
 func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, filesRepo files.FileStorageRepo, cryptoActionRepo external.CryptoActionRepo, contact ContactBox) (*Box, error) {
 
 	// get contacted user identity

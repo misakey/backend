@@ -14,6 +14,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// StateLifecycleContent ...
 type StateLifecycleContent struct {
 	State string `json:"state"`
 }
@@ -44,7 +45,7 @@ func doLifecycle(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextEx
 }
 
 func notifyLifecycle(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ files.FileStorageRepo, _ Metadata) error {
-	// TODO (perf): use metadahandlers to bear already retrieved data accross handlers ?
+	// TODO (perf): use metadahandlers to bear already retrieved data across handlers ?
 	box, err := Compute(ctx, e.BoxID, exec, identities, e)
 	if err != nil {
 		return merror.Transform(err).Describe("computing box")
@@ -103,6 +104,7 @@ func isClosed(
 	return true, nil
 }
 
+// MustBoxBeOpen ...
 func MustBoxBeOpen(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
 	closed, err := isClosed(ctx, exec, boxID)
 	if err != nil {

@@ -13,10 +13,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 )
 
+// CountEventsRequest ...
 type CountEventsRequest struct {
 	boxID string
 }
 
+// BindAndValidate ...
 func (req *CountEventsRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 	return v.ValidateStruct(req,
@@ -24,6 +26,7 @@ func (req *CountEventsRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// CountEvents ...
 func (app *BoxApplication) CountEvents(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CountEventsRequest)
 	acc := oidc.GetAccesses(ctx)

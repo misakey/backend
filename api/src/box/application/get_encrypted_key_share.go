@@ -11,10 +11,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
+// GetEncryptedKeyShareRequest ...
 type GetEncryptedKeyShareRequest struct {
 	BoxID string `query:"box_id"`
 }
 
+// BindAndValidate ...
 func (req *GetEncryptedKeyShareRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriPath)
@@ -24,6 +26,7 @@ func (req *GetEncryptedKeyShareRequest) BindAndValidate(eCtx echo.Context) error
 	)
 }
 
+// GetEncryptedKeyShare ...
 func (app *BoxApplication) GetEncryptedKeyShare(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*GetEncryptedKeyShareRequest)
 

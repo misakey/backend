@@ -18,6 +18,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 )
 
+// CreateEventRequest ...
 type CreateEventRequest struct {
 	boxID               string
 	Type                string     `json:"type"`
@@ -27,6 +28,7 @@ type CreateEventRequest struct {
 	MetadataForHandlers events.MetadataForUsedSpaceHandler
 }
 
+// BindAndValidate ...
 func (req *CreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -49,6 +51,7 @@ func (req *CreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// CreateEvent ...
 func (app *BoxApplication) CreateEvent(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateEventRequest)
 	acc := oidc.GetAccesses(ctx)

@@ -19,10 +19,12 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
 
+// ConsentInitCmd ...
 type ConsentInitCmd struct {
 	ConsentChallenge string `query:"consent_challenge"`
 }
 
+// BindAndValidate ...
 func (cmd *ConsentInitCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriQuery).Describe(err.Error())
@@ -33,7 +35,7 @@ func (cmd *ConsentInitCmd) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-// Init a user consent stage (a.k.a. consent flow)
+// InitConsent stage for a user (a.k.a. consent flow)
 // It interacts with hydra to know either user has already consented to share data with the RP
 // It returns a URL user's agent should be redirected to
 // Today, it accept directly the consent of the user with the email claim contained in the ID token
@@ -89,10 +91,12 @@ func (sso *SSOService) InitConsent(ctx context.Context, gen request.Request) (in
 	return sso.authFlowService.BuildConsentURL(consentCtx.Challenge), nil
 }
 
+// ConsentInfoQuery ...
 type ConsentInfoQuery struct {
 	ConsentChallenge string `query:"consent_challenge"`
 }
 
+// BindAndValidate ...
 func (query *ConsentInfoQuery) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(query); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
@@ -118,6 +122,7 @@ type ConsentInfoView struct {
 	} `json:"client"`
 }
 
+// GetConsentInfo ...
 func (sso *SSOService) GetConsentInfo(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*ConsentInfoQuery)
 
@@ -141,12 +146,14 @@ func (sso *SSOService) GetConsentInfo(ctx context.Context, gen request.Request) 
 	return view, nil
 }
 
+// ConsentAcceptCmd ...
 type ConsentAcceptCmd struct {
 	IdentityID       string   `json:"identity_id"`
 	ConsentChallenge string   `json:"consent_challenge"`
 	ConsentedScopes  []string `json:"consented_scopes"`
 }
 
+// BindAndValidate ...
 func (cmd *ConsentAcceptCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
@@ -158,6 +165,7 @@ func (cmd *ConsentAcceptCmd) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// AcceptConsent ...
 func (sso *SSOService) AcceptConsent(ctx context.Context, gen request.Request) (interface{}, error) {
 	cmd := gen.(*ConsentAcceptCmd)
 	redirect := consent.Redirect{}

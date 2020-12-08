@@ -4,20 +4,23 @@ import (
 	"context"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/boxes"
 )
 
+// CountBoxesRequest ...
 type CountBoxesRequest struct {
 }
 
+// BindAndValidate ...
 func (req *CountBoxesRequest) BindAndValidate(_ echo.Context) error {
 	return nil
 }
 
+// CountBoxes ...
 func (app *BoxApplication) CountBoxes(ctx context.Context, _ request.Request) (interface{}, error) {
 	// retrieve accesses to filters boxes to return
 	acc := oidc.GetAccesses(ctx)

@@ -24,6 +24,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
+// InitModule ...
 func InitModule(router *echo.Echo) Process {
 	initConfig()
 
@@ -106,8 +107,8 @@ func InitModule(router *echo.Echo) Process {
 	}
 
 	// init services
-	identityService := identity.NewIdentityService(avatarRepo, dbConn)
-	authFlowService := authflow.NewAuthFlowService(
+	identityService := identity.NewService(avatarRepo, dbConn)
+	authFlowService := authflow.NewService(
 		identityService, hydraRepo,
 		viper.GetString("authflow.home_page_url"),
 		viper.GetString("authflow.login_page_url"),
@@ -185,6 +186,7 @@ func InitModule(router *echo.Echo) Process {
 	}
 }
 
+// Process ...
 type Process struct {
 	SSOService               *application.SSOService
 	IdentityIntraProcess     *identity.IntraprocessHelper

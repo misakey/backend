@@ -127,6 +127,7 @@ func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExe
 	return nil, e.persist(ctx, exec)
 }
 
+// FindActiveAccesses ...
 func FindActiveAccesses(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
 		boxID:      null.StringFrom(boxID),
@@ -135,6 +136,7 @@ func FindActiveAccesses(ctx context.Context, exec boil.ContextExecutor, boxID st
 	})
 }
 
+// MustMemberHaveAccess ...
 func MustMemberHaveAccess(
 	ctx context.Context,
 	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
@@ -157,6 +159,7 @@ func MustMemberHaveAccess(
 	return nil
 }
 
+// MustHaveAccess ...
 func MustHaveAccess(
 	ctx context.Context,
 	exec boil.ContextExecutor, identities *IdentityMapper,

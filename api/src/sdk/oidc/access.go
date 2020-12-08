@@ -15,7 +15,7 @@ type AppRole struct {
 	RoleLabel     string
 }
 
-// Claims declared to format our Access JWTs
+// AccessClaims declared to format our Access JWTs
 // Implement https://godoc.org/github.com/dgrijalva/jwt-go#Claims interface
 type AccessClaims struct {
 	Issuer    string   `json:"iss"` // Service which distributed the token
@@ -115,7 +115,7 @@ func GetSignedToken(ac AccessClaims) (string, error) {
 	return token.SignedString([]byte(JWTStaticSignature))
 }
 
-// AcccountConnect return boolean corresponding to the presence of an Account ID in claims
+// AccountConnected return boolean corresponding to the presence of an Account ID in claims
 // it doesn't mean the connected identity has an existing linked account but either the end-user
 // is connected on the account or just the identity (different ACRs)
 func (c AccessClaims) AccountConnected() bool {

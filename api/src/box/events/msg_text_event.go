@@ -7,16 +7,19 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
+// MsgTextContent ...
 type MsgTextContent struct {
 	Encrypted    string    `json:"encrypted"`
 	PublicKey    string    `json:"public_key"`
 	LastEditedAt null.Time `json:"last_edited_at"`
 }
 
+// Unmarshal ...
 func (c *MsgTextContent) Unmarshal(content types.JSON) error {
 	return content.Unmarshal(c)
 }
 
+// Validate ...
 func (c MsgTextContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.Encrypted, v.Required, is.Base64),

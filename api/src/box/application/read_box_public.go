@@ -15,11 +15,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
 )
 
+// ReadBoxPublicRequest ...
 type ReadBoxPublicRequest struct {
 	boxID          string
 	OtherShareHash string `query:"other_share_hash"`
 }
 
+// BindAndValidate ...
 func (req *ReadBoxPublicRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 	if err := eCtx.Bind(req); err != nil {
@@ -31,12 +33,14 @@ func (req *ReadBoxPublicRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
+// PublicBoxView ...
 type PublicBoxView struct {
 	Title   string            `json:"title"`
 	Creator events.SenderView `json:"creator"`
 }
 
-// Since ReadBoxPublic returns public data, there is no access check performed
+// ReadBoxPublic returns public data.
+// No access check performed
 func (app *BoxApplication) ReadBoxPublic(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ReadBoxPublicRequest)
 	// init an identity mapper for the operation

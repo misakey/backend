@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // import psql driver
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 )
@@ -38,6 +38,7 @@ func NewPSQLConn(
 	return db, nil
 }
 
+// Rollback ...
 func Rollback(ctx context.Context, tx *sql.Tx, msg string) {
 	err := tx.Rollback()
 	if err != nil {

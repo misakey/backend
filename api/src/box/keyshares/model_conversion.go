@@ -5,6 +5,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
 )
 
+// BoxKeyShare model
 type BoxKeyShare struct {
 	OtherShareHash              string      `json:"other_share_hash"`
 	Share                       string      `json:"share"`

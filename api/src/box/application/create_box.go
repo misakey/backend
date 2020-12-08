@@ -17,6 +17,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
 )
 
+// CreateBoxRequest ...
 type CreateBoxRequest struct {
 	PublicKey    string `json:"public_key"`
 	Title        string `json:"title"`
@@ -27,6 +28,7 @@ type CreateBoxRequest struct {
 	} `json:"key_share"`
 }
 
+// BindAndValidate ...
 func (req *CreateBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -53,6 +55,7 @@ func (req *CreateBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	return nil
 }
 
+// CreateBox ...
 func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateBoxRequest)
 

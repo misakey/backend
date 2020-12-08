@@ -8,9 +8,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
-//
-// models
-//
+// UsedCoupon model
 type UsedCoupon struct {
 	ID         int       `json:"id"`
 	IdentityID string    `json:"identity_id"`
@@ -26,10 +24,7 @@ func (uc UsedCoupon) toSQLBoiler() *sqlboiler.UsedCoupon {
 	}
 }
 
-//
-// functions
-//
-
+// UseCoupon by recording it
 func UseCoupon(ctx context.Context, exec boil.ContextExecutor, usedCoupon UsedCoupon) error {
 	return usedCoupon.toSQLBoiler().Insert(ctx, exec, boil.Infer())
 }

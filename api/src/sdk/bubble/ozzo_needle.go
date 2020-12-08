@@ -9,22 +9,23 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-type ozzoNeedle struct {
+// OzzoNeedle ...
+type OzzoNeedle struct {
 	matchFirstCap *regexp.Regexp
 	matchAllCap   *regexp.Regexp
 }
 
-// NewOzzoNeedle is the mandatory-to-use ozzoNeedle constructor
+// NewOzzoNeedle is the mandatory-to-use OzzoNeedle constructor
 // it instantiates regexp required to ensure details keys are snake case formatted
-func NewOzzoNeedle() ozzoNeedle {
-	return ozzoNeedle{
+func NewOzzoNeedle() OzzoNeedle {
+	return OzzoNeedle{
 		matchFirstCap: regexp.MustCompile("(.)([A-Z][a-z]+)"),
 		matchAllCap:   regexp.MustCompile("([a-z0-9])([A-Z])"),
 	}
 }
 
 // toSnakeCase transforms the received string into a snake case formatted string
-func (n ozzoNeedle) toSnakeCase(str string) string {
+func (n OzzoNeedle) toSnakeCase(str string) string {
 	if n.matchFirstCap == nil {
 		return "ozzo_needle_wrongly_allocated!"
 	}
@@ -33,7 +34,8 @@ func (n ozzoNeedle) toSnakeCase(str string) string {
 	return strings.ToLower(snake)
 }
 
-func (n ozzoNeedle) Explode(err error) error {
+// Explode ...
+func (n OzzoNeedle) Explode(err error) error {
 	// try to consider error cause as validator error to understand deeper the error
 	valErrs, ok := merror.Cause(err).(v.Errors)
 	if !ok {
@@ -44,7 +46,7 @@ func (n ozzoNeedle) Explode(err error) error {
 	return n.recHandleErrors(mErr, valErrs, nil)
 }
 
-func (n ozzoNeedle) recHandleErrors(mErr merror.Error, valErrs v.Errors, replaceFieldTag *string) merror.Error {
+func (n OzzoNeedle) recHandleErrors(mErr merror.Error, valErrs v.Errors, replaceFieldTag *string) merror.Error {
 	// v.Errors is basically a mao["structure_tag"]error, we parse it
 	for fieldTag, valErr := range valErrs {
 		if replaceFieldTag != nil {

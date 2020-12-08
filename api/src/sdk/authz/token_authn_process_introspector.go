@@ -13,7 +13,7 @@ type processRepo interface {
 	GetClaims(ctx context.Context, token string) (oidc.AccessClaims, error)
 }
 
-// NewAuthnrocessIntrospector
+// NewAuthnProcessIntrospector ...
 // Authorization must be passed through a bearer token in Authorization HTTP Header
 // The opaque token is instropected and information are set inside current context
 // to be checked later by different actors (modules...)

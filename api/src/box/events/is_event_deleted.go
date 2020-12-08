@@ -7,6 +7,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
+// IsDeleted ...
 func IsDeleted(event *sqlboiler.Event) (bool, error) {
 	deletedContent := DeletedContent{}
 	err := json.Unmarshal(event.Content.JSON, &deletedContent)
