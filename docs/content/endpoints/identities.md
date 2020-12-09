@@ -127,6 +127,7 @@ The fiels that can be patched are:
 - `display_name` (string): the identity display name.
 - `notifications` (string): notification setting. Must be one of `minimal`, `moderate`, `frequent`.
 - `pubkey`
+- `non_identified_pubkey`
 
 ### 2.4.2. success response
 

@@ -157,6 +157,13 @@ func bindRoutes(
 		request.ResponseOK,
 	))
 
+	boxUsersPath.POST(oidcHandlerFactory.NewACR2(
+		"/:id/contact",
+		func() request.Request { return &application.BoxUserContactRequest{} },
+		app.BoxUserContact,
+		request.ResponseCreated,
+	))
+
 	// ----------------------
 	// Box Key Shares related routes
 	keySharePath := router.Group("/box-key-shares")

@@ -23,6 +23,7 @@ func Launch() {
 	initCreateIdentityProfileSharingConsentAndRemoveIdentityConfirmed()
 	initAddIdentityPubkey()
 	initCreateIdentityNotificationTable()
+	initAddIdentityNonIdentifiedPubkey()
 
 	db.StartMigration(os.Getenv("DSN_SSO"), os.Getenv("MIGRATION_DIR_SSO"))
 }

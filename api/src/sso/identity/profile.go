@@ -21,6 +21,8 @@ type ProfileView struct {
 		Value string `json:"value"`
 		Kind  string `json:"kind"`
 	} `json:"identifier"`
+	Contactable bool `json:"contactable"`
+	NonIdentifiedPubkey null.String `json:"non_identified_pubkey"`
 }
 type ConfigProfileView struct {
 	Email bool `json:"email"`
@@ -49,6 +51,7 @@ func ProfileGet(ctx context.Context, exec boil.ContextExecutor, identityID strin
 	p.ID = identity.ID
 	p.DisplayName = identity.DisplayName
 	p.AvatarURL = identity.AvatarURL
+	p.NonIdentifiedPubkey = identity.NonIdentifiedPubkey
 	// for now only the email can be shared
 	// NOTE: the shape/logic of the profile might change later with more information to hide/share
 	for _, consent := range consents {
@@ -58,6 +61,11 @@ func ProfileGet(ctx context.Context, exec boil.ContextExecutor, identityID strin
 			p.Identifier.Kind = string(identity.Identifier.Kind)
 		}
 	}
+	p.Contactable = true
+	if identity.AccountID.IsZero() || !identity.NonIdentifiedPubkey.Valid {
+		p.Contactable = false
+	}
+
 	return p, nil
 }
 

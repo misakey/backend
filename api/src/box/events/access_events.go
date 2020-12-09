@@ -81,7 +81,7 @@ func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.C
 					return nil, merror.Transform(err).Describe("computing the box (to get title for notif)")
 				}
 				// creates a crypto action AND the notification
-				err = cryptoActionRepo.CreateInvitationActions(ctx, e.SenderID, e.BoxID, box.Title, c.Value, extraJSON)
+				err = cryptoActionRepo.CreateInvitationActionsForIdentifier(ctx, e.SenderID, e.BoxID, box.Title, c.Value, extraJSON)
 				if err != nil {
 					return nil, merror.Transform(err).Describe("creating crypto actions")
 				}

@@ -8,6 +8,8 @@
       "value": "jean-michel@misakey.com",
       "kind": "email"
   }
+  "non_identified_pubkey": "FYofPprIPU6qaHDtCNCETYtmmQQqdKvtJqYBF2pPXzc",
+  "contactable": true,
 }
 ```
 
@@ -18,3 +20,5 @@ with attributes:
 - `identifier_id`: (string, uuid) the identifier id linked to the identity.
 - `identifier.value`: (string, emptyable) the value of the identifier.
 - `identifier.kind`, (string, emptyable, one of: email): the kind of the identifier.
+- `non_identified_pubkey`, (string, emptyable) the public key of the identity.
+- `contactable`, (bool) is the user directly contactable with Misakey?

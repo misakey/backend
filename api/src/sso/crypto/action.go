@@ -110,15 +110,23 @@ func CreateActions(
 
 }
 
-func CreateInvitationActions(
+func CreateInvitationActionsForIdentity(
+	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
+	senderID, boxID, boxTitle, identityValue string, actionsDataJSON null.JSON,
+) error {
+	identityObj, err := identity.Get(ctx, exec, identityValue)
+	if err != nil {
+		return merror.Transform(err).Describe("getting identity")
+	}
+	identities := []*identity.Identity{&identityObj}
+
+	return CreateInvitationActions(ctx, exec, redConn, identities, actionsDataJSON, senderID, boxID, boxTitle, true)
+}
+
+func CreateInvitationActionsForIdentifier(
 	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	senderID, boxID, boxTitle, identifierValue string, actionsDataJSON null.JSON,
 ) error {
-	var actionsData map[string]string
-	err := actionsDataJSON.Unmarshal(&actionsData)
-	if err != nil {
-		return merror.Transform(err).Describe("unmarshalling actions data")
-	}
 
 	identities, err := identity.ListByIdentifier(ctx, exec,
 		identity.Identifier{
@@ -128,6 +136,20 @@ func CreateInvitationActions(
 	)
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving identities")
+	}
+
+	return CreateInvitationActions(ctx, exec, redConn, identities, actionsDataJSON, senderID, boxID, boxTitle, false)
+}
+
+// CreateInvitationActions for a set of identities
+// using the identity Pubkey (if nonIdentified is false)
+// or the identity NonIdentifiedPubkey (if nonIdentified is true)
+func CreateInvitationActions(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identities []*identity.Identity, actionsDataJSON null.JSON, senderID, boxID, boxTitle string, nonIdentified bool) error {
+
+	var actionsData map[string]string
+	err := actionsDataJSON.Unmarshal(&actionsData)
+	if err != nil {
+		return merror.Transform(err).Describe("unmarshalling actions data")
 	}
 
 	if len(actionsData) != len(identities) {
@@ -140,16 +162,22 @@ func CreateInvitationActions(
 	notifDetailsByIdentityID := make(map[string][]byte, len(identities))
 
 	for i, identity := range identities {
-		if !identity.Pubkey.Valid {
+		// check and assign pubkeys
+		var pubkey string
+		if !nonIdentified && identity.Pubkey.Valid {
+			pubkey = identity.Pubkey.String
+		} else if nonIdentified && identity.NonIdentifiedPubkey.Valid {
+			pubkey = identity.NonIdentifiedPubkey.String
+		} else {
 			return merror.Conflict().Describe("not all identities have a public key")
 		}
-		// cryptoaction
 
-		encryptedCryptoAction, present := actionsData[identity.Pubkey.String]
+		// cryptoaction
+		encryptedCryptoAction, present := actionsData[pubkey]
 		if !present {
 			return merror.BadRequest().Describef(
 				"missing encrypted crypto action for pubkey \"%s\"",
-				identity.Pubkey.String,
+				pubkey,
 			)
 		}
 
@@ -165,7 +193,7 @@ func CreateInvitationActions(
 			SenderIdentityID:    null.StringFrom(senderID),
 			BoxID:               null.StringFrom(boxID),
 			Encrypted:           encryptedCryptoAction,
-			EncryptionPublicKey: identity.Pubkey.String,
+			EncryptionPublicKey: pubkey,
 			CreatedAt:           time.Now(),
 		}
 		actions[i] = action
@@ -183,7 +211,7 @@ func CreateInvitationActions(
 		if err != nil {
 			return merror.Transform(err).Describef(
 				"marshalling notif details for pubkey \"%s\"",
-				identity.Pubkey.String,
+				pubkey,
 			)
 		}
 		notifDetailsByIdentityID[identity.ID] = notifDetailsBytes
@@ -195,14 +223,14 @@ func CreateInvitationActions(
 	}
 
 	for identityID, notifDetailsBytes := range notifDetailsByIdentityID {
-		err = identity.NotificationCreate(ctx, exec, redConn,
+		err := identity.NotificationCreate(ctx, exec, redConn,
 			identityID,
 			"box.auto_invite",
 			null.JSONFrom(notifDetailsBytes),
 		)
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

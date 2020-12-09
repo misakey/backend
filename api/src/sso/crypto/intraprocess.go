@@ -23,13 +23,26 @@ func (ih IntraprocessHelper) CreateCryptoActions(ctx context.Context, actions []
 	return CreateActions(ctx, ih.sqlDB, actions)
 }
 
-func (ih IntraprocessHelper) CreateInvitationActions(ctx context.Context, senderID, boxID, boxTitle, identifierValue string, actionsData null.JSON) error {
+func (ih IntraprocessHelper) CreateInvitationActionsForIdentity(ctx context.Context, senderID, boxID, boxTitle, identityValue string, actionsData null.JSON) error {
 	tr, err := ih.sqlDB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer atomic.SQLRollback(ctx, tr, err)
-	err = CreateInvitationActions(ctx, tr, ih.redConn, senderID, boxID, boxTitle, identifierValue, actionsData)
+	err = CreateInvitationActionsForIdentity(ctx, tr, ih.redConn, senderID, boxID, boxTitle, identityValue, actionsData)
+	if err != nil {
+		return err
+	}
+	return tr.Commit()
+}
+
+func (ih IntraprocessHelper) CreateInvitationActionsForIdentifier(ctx context.Context, senderID, boxID, boxTitle, identifierValue string, actionsData null.JSON) error {
+	tr, err := ih.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer atomic.SQLRollback(ctx, tr, err)
+	err = CreateInvitationActionsForIdentifier(ctx, tr, ih.redConn, senderID, boxID, boxTitle, identifierValue, actionsData)
 	if err != nil {
 		return err
 	}

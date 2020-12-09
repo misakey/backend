@@ -11,12 +11,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
 
-	_ "gitlab.misakey.dev/misakey/backend/api/src/sso/gamification"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+	_ "gitlab.misakey.dev/misakey/backend/api/src/sso/gamification"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
 type IdentityQuery struct {
@@ -70,11 +70,12 @@ func (sso *SSOService) GetIdentity(ctx context.Context, gen request.Request) (in
 
 // PartialUpdateIdentityCmd
 type PartialUpdateIdentityCmd struct {
-	identityID    string
-	DisplayName   string      `json:"display_name"`
-	Notifications string      `json:"notifications"`
-	Color         null.String `json:"color"`
-	Pubkey        null.String `json:"pubkey"`
+	identityID          string
+	DisplayName         string      `json:"display_name"`
+	Notifications       string      `json:"notifications"`
+	Color               null.String `json:"color"`
+	Pubkey              null.String `json:"pubkey"`
+	NonIdentifiedPubkey null.String `json:"non_identified_pubkey"`
 }
 
 // Validate the IdentityAuthableCmd
@@ -134,10 +135,15 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 		curIdentity.Pubkey = cmd.Pubkey
 	}
 
+	if cmd.NonIdentifiedPubkey.Valid {
+		curIdentity.NonIdentifiedPubkey = cmd.NonIdentifiedPubkey
+	}
+
 	err = identity.Update(ctx, tr, &curIdentity)
 	if err != nil {
 		return nil, err
 	}
+
 	return nil, tr.Commit()
 }
 

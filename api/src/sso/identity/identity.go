@@ -17,16 +17,17 @@ import (
 )
 
 type Identity struct {
-	ID            string      `json:"id"`
-	AccountID     null.String `json:"account_id"`
-	IdentifierID  string      `json:"identifier_id"`
-	IsAuthable    bool        `json:"is_authable"`
-	DisplayName   string      `json:"display_name"`
-	Notifications string      `json:"notifications"`
-	AvatarURL     null.String `json:"avatar_url"`
-	Color         null.String `json:"color"`
-	Level         int         `json:"level"`
-	Pubkey        null.String `json:"pubkey"`
+	ID                  string      `json:"id"`
+	AccountID           null.String `json:"account_id"`
+	IdentifierID        string      `json:"identifier_id"`
+	IsAuthable          bool        `json:"is_authable"`
+	DisplayName         string      `json:"display_name"`
+	Notifications       string      `json:"notifications"`
+	AvatarURL           null.String `json:"avatar_url"`
+	Color               null.String `json:"color"`
+	Level               int         `json:"level"`
+	Pubkey              null.String `json:"pubkey"`
+	NonIdentifiedPubkey null.String `json:"non_identified_pubkey"`
 
 	// Identifier is always returned within the identity entity as a nested JSON object
 	Identifier Identifier `json:"identifier"`
@@ -43,16 +44,17 @@ func newIdentity() *Identity { return &Identity{} }
 
 func (i Identity) toSQLBoiler() *sqlboiler.Identity {
 	return &sqlboiler.Identity{
-		ID:            i.ID,
-		AccountID:     i.AccountID,
-		IdentifierID:  i.IdentifierID,
-		IsAuthable:    i.IsAuthable,
-		DisplayName:   i.DisplayName,
-		Notifications: i.Notifications,
-		AvatarURL:     i.AvatarURL,
-		Color:         i.Color,
-		Level:         i.Level,
-		Pubkey:        i.Pubkey,
+		ID:                  i.ID,
+		AccountID:           i.AccountID,
+		IdentifierID:        i.IdentifierID,
+		IsAuthable:          i.IsAuthable,
+		DisplayName:         i.DisplayName,
+		Notifications:       i.Notifications,
+		AvatarURL:           i.AvatarURL,
+		Color:               i.Color,
+		Level:               i.Level,
+		Pubkey:              i.Pubkey,
+		NonIdentifiedPubkey: i.NonIdentifiedPubkey,
 	}
 }
 
@@ -67,6 +69,7 @@ func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 	i.Color = src.Color
 	i.Level = src.Level
 	i.Pubkey = src.Pubkey
+	i.NonIdentifiedPubkey = src.NonIdentifiedPubkey
 
 	if src.R != nil {
 		identifier := src.R.Identifier

@@ -9,5 +9,6 @@ import (
 
 type CryptoActionRepo interface {
 	CreateCryptoActions(ctx context.Context, actions []crypto.Action) error
-	CreateInvitationActions(ctx context.Context, senderID string, boxID string, boxTitle string, identifierValue string, actionsData null.JSON) error
+	CreateInvitationActionsForIdentity(ctx context.Context, senderID string, boxID string, boxTitle string, identityValue string, actionsData null.JSON) error
+	CreateInvitationActionsForIdentifier(ctx context.Context, senderID string, boxID string, boxTitle string, identifierValue string, actionsData null.JSON) error
 }
