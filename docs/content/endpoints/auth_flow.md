@@ -66,7 +66,7 @@ sequenceDiagram
     api.misakey.com->>+app.misakey.com: redirects user's agent to redirect url with code
     app.misakey.com->>-api.misakey.com: 
     api.misakey.com-->auth.misakey.com/_: fetches tokens as an authenticated client
-    api.misakey.com->>app.misakey.com: redirects user's agent to final url with CSRF token (and access token as cookie)
+    api.misakey.com->>app.misakey.com: redirects user's agent to final url with ID Token (and access token as cookie)
 {{</mermaid>}}
 
 ## 1.2. Initiate an authorization code flow
@@ -402,8 +402,6 @@ On success, the route can return two possible json body:
 What is returned is the next URL the user's agent should be redirected to.
 This response is given when the authentication server consider the end-user has proven its identity sufficiently.
 
-Also part of the response, a CSRF token that must be used for the next request as a `X-CSRF-Token` header. This token prevents from CSRF attacks.
-
 The access token is sent and stored in an http-only cookie.
 
 _Code:_
@@ -422,7 +420,6 @@ _JSON Body:_
 
 - `next` (oneof: _redirect_, _authn_step_): the next action the authentication server is waiting for.
 - `redirect_to` (string): the URL the user's agent should be redirected to.
-- `csrf\_token` (string): The CSRF token that must be sent in a `X-CSRF-Token`
 
 #### 2.3.2.2. the "more authentication required" response
 

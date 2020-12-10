@@ -7,7 +7,6 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/csrf"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
@@ -40,21 +39,6 @@ func NewOIDCIntrospector(misakeyAudience string, selfRestrict bool, tokenRester 
 			// only Misakey client can access our API routes
 			if selfRestrict && acc.ClientID != misakeyAudience {
 				return merror.Unauthorized().Describe("unauthorized client")
-			}
-
-			if csrfProtected {
-				// checkCSRFTok
-				tok := ctx.Request().Header.Get("X-CSRF-Token")
-
-				if len(tok) == 0 {
-					return merror.Forbidden().From(merror.OriHeaders).
-						Detail("X-CSRF-Token", merror.DVRequired)
-				}
-
-				if !csrf.IsTokenValid(opaqueTok, tok, redConn) {
-					return merror.Forbidden().From(merror.OriHeaders).
-						Detail("X-CSRF-Token", merror.DVInvalid)
-				}
 			}
 
 			// store last interaction

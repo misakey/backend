@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/csrf"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
@@ -123,16 +122,9 @@ func (acf *AuthorizationCodeFlow) getURLWithAccessToken(c echo.Context, tokenReq
 		return nil, err
 	}
 
-	// CSRF token generation
-	csrfToken, err := csrf.GenerateToken(tokenResp.AccessToken, time.Second*time.Duration(tokenResp.ExpiresIn), acf.redConn)
-	if err != nil {
-		return nil, err
-	}
-
 	urlParams := url.Values{}
 	// add token data as fragment to final URL then return it
 	// fragment parameters tends toward compliancy with https://tools.ietf.org/html/rfc6749#section-5.1
-	urlParams.Add("csrf_token", csrfToken)
 	urlParams.Add("id_token", tokenResp.IDToken)
 	// compute expiry time
 	urlParams.Add("expires_in", strconv.Itoa(tokenResp.ExpiresIn))

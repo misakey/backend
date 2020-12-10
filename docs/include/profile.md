@@ -7,7 +7,7 @@
   "identifier": {
       "value": "jean-michel@misakey.com",
       "kind": "email"
-  }
+  },
   "non_identified_pubkey": "FYofPprIPU6qaHDtCNCETYtmmQQqdKvtJqYBF2pPXzc",
   "contactable": true,
 }

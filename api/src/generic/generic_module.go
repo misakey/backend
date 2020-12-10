@@ -10,4 +10,5 @@ func InitModule(e *echo.Echo) {
 	// Bind generic routes
 	generic := e.Group("")
 	generic.GET("/version", genericPresenter.GetVersion)
+	generic.GET("/csrf", genericPresenter.GetCSRF)
 }
