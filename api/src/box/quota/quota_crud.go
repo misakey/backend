@@ -7,6 +7,8 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
 // Quotum model
@@ -40,9 +42,19 @@ func (q Quotum) ToSQLBoiler() *sqlboiler.StorageQuotum {
 	}
 }
 
+// Create quotum generating the id
+func Create(ctx context.Context, exec boil.ContextExecutor, quotum *Quotum) error {
+	var err error
+	quotum.ID, err = uuid.NewString()
+	if err != nil {
+		return merror.Transform(err).Describe("generating uuid")
+	}
+	return quotum.ToSQLBoiler().Insert(ctx, exec, boil.Infer())
+}
+
 // List quota for a given identityID
-func List(ctx context.Context, exec boil.ContextExecutor, identityID string) ([]Quotum, error) {
-	dbQuota, err := sqlboiler.StorageQuota(sqlboiler.StorageQuotumWhere.IdentityID.EQ(identityID)).All(ctx, exec)
+func List(ctx context.Context, exec boil.ContextExecutor, id string) ([]Quotum, error) {
+	dbQuota, err := sqlboiler.StorageQuota(sqlboiler.StorageQuotumWhere.IdentityID.EQ(id)).All(ctx, exec)
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +67,4 @@ func List(ctx context.Context, exec boil.ContextExecutor, identityID string) ([]
 		quota[idx] = ToDomain(*quotum)
 	}
 	return quota, nil
-}
-
-// Create quotum
-func Create(ctx context.Context, exec boil.ContextExecutor, quotum *Quotum) error {
-	return quotum.ToSQLBoiler().Insert(ctx, exec, boil.Infer())
 }

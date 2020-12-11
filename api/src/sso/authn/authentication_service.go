@@ -12,17 +12,10 @@ type QuotumInterface interface {
 	CreateBase(ctx context.Context, identityID string) (interface{}, error)
 }
 
-// SetQuotaService ...
-func (as *Service) SetQuotaService(quota QuotumInterface) {
-	as.quotaService = quota
-}
-
-// Service ...
+// Service...
 type Service struct {
 	sessions  sessionRepo
 	processes processRepo
-
-	quotaService QuotumInterface
 
 	templates email.Renderer
 	emails    email.Sender

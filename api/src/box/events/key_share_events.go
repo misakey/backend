@@ -15,7 +15,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 )
 
-func doKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionService external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
+func doKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionService external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// check accesses
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")
@@ -105,7 +105,7 @@ func doKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.Co
 		}
 	}
 
-	err = cryptoActionService.CreateCryptoActions(ctx, cryptoActions)
+	err = cryptoActionService.CreateActions(ctx, cryptoActions)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating crypto actions")
 	}

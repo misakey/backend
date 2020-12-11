@@ -99,7 +99,7 @@ func (app *BoxApplication) BoxUserContact(ctx context.Context, genReq request.Re
 	}
 	defer atomic.SQLRollback(ctx, tr, &err)
 
-	box, err := events.CreateContactBox(ctx, tr, app.RedConn, identityMapper, app.filesRepo, app.cryptoActionsRepo, contact)
+	box, err := events.CreateContactBox(ctx, tr, app.RedConn, identityMapper, app.filesRepo, app.cryptoRepo, contact)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating contact box")
 	}

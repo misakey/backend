@@ -16,12 +16,17 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/application"
 	bentrypoints "gitlab.misakey.dev/misakey/backend/api/src/box/entrypoints"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester/http"
 )
 
 // InitModule ...
-func InitModule(router *echo.Echo) Process {
+func InitModule(
+	router *echo.Echo,
+	identityRepo external.IdentityRepo,
+	cryptoRepo external.CryptoRepo,
+) Process {
 	// init the box module configuration
 	initConfig()
 
@@ -59,9 +64,8 @@ func InitModule(router *echo.Echo) Process {
 		log.Fatal().Msg("unknown ENV value (should be production|development)")
 	}
 
-	boxService := application.NewBoxApplication(dbConn, redConn, filesRepo)
+	boxService := application.NewBoxApplication(dbConn, redConn, filesRepo, identityRepo, cryptoRepo)
 	wsHandler := bentrypoints.NewWebsocketHandler(viper.GetStringSlice("websockets.allowed_origins"), &boxService)
-	quotumIntraprocess := bentrypoints.NewQuotumIntraprocess(boxService)
 
 	adminHydraFORM := http.NewClient(
 		viper.GetString("hydra.admin_endpoint"),
@@ -95,13 +99,11 @@ func InitModule(router *echo.Echo) Process {
 		authzMidlwWithoutCSRF,
 	)
 	return Process{
-		BoxService:         &boxService,
-		QuotumIntraprocess: &quotumIntraprocess,
+		BoxService: &boxService,
 	}
 }
 
 // Process ...
 type Process struct {
-	BoxService         *application.BoxApplication
-	QuotumIntraprocess bentrypoints.QuotaIntraprocessInterface
+	BoxService *application.BoxApplication
 }

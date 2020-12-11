@@ -94,7 +94,7 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 		// call the proper event handlers
 		handler := events.Handler(event.Type)
 
-		metadatas[event.ID], err = handler.Do(ctx, &event, batchE.Extra, tr, app.RedConn, identityMapper, app.cryptoActionsRepo, app.filesRepo)
+		metadatas[event.ID], err = handler.Do(ctx, &event, batchE.Extra, tr, app.RedConn, identityMapper, app.cryptoRepo, app.filesRepo)
 		if err != nil {
 			return nil, merror.Transform(err).Describef("doing %s event", event.Type)
 		}

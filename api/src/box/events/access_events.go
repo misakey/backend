@@ -23,7 +23,7 @@ type accessContent struct {
 	AutoInvite      bool   `json:"auto_invite"`
 }
 
-func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionRepo external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
+func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoRepo external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")
@@ -81,7 +81,7 @@ func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.C
 					return nil, merror.Transform(err).Describe("computing the box (to get title for notif)")
 				}
 				// creates a crypto action AND the notification
-				err = cryptoActionRepo.CreateInvitationActionsForIdentifier(ctx, e.SenderID, e.BoxID, box.Title, c.Value, extraJSON)
+				err = cryptoRepo.CreateInvitationActionsForIdentifier(ctx, e.SenderID, e.BoxID, box.Title, c.Value, extraJSON)
 				if err != nil {
 					return nil, merror.Transform(err).Describe("creating crypto actions")
 				}
@@ -96,7 +96,7 @@ func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.C
 	return nil, nil
 }
 
-func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
+func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merror.Transform(err).Describe("checking admin")

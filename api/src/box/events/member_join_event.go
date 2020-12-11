@@ -14,7 +14,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
-func doJoin(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
+func doJoin(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// check that the current sender is not already a box member
 	isMember, err := isMember(ctx, exec, redConn, e.BoxID, e.SenderID)
 	if err != nil {

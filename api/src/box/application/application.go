@@ -13,33 +13,33 @@ import (
 // BoxApplication contains connectors and repositories
 // to interact with all box module services
 type BoxApplication struct {
-	DB                *sql.DB
-	RedConn           *redis.Client
-	identityQuerier   external.IdentityRepo
-	cryptoActionsRepo external.CryptoActionRepo
-	filesRepo         files.FileStorageRepo
-}
+	DB        *sql.DB
+	RedConn   *redis.Client
+	filesRepo files.FileStorageRepo
 
-// SetCryptoActionsRepo to repo
-func (app *BoxApplication) SetCryptoActionsRepo(repo external.CryptoActionRepo) {
-	app.cryptoActionsRepo = repo
+	identityRepo external.IdentityRepo
+	cryptoRepo   external.CryptoRepo
 }
 
 // NewBoxApplication constructor
-func NewBoxApplication(db *sql.DB, redConn *redis.Client, filesRepo files.FileStorageRepo) BoxApplication {
+func NewBoxApplication(
+	db *sql.DB, redConn *redis.Client,
+	filesRepo files.FileStorageRepo,
+
+	identityRepo external.IdentityRepo,
+	cryptoRepo external.CryptoRepo,
+) BoxApplication {
 	return BoxApplication{
 		DB:        db,
 		RedConn:   redConn,
 		filesRepo: filesRepo,
+
+		identityRepo: identityRepo,
+		cryptoRepo:   cryptoRepo,
 	}
 }
 
-// SetIdentityRepo to querier
-func (app *BoxApplication) SetIdentityRepo(querier external.IdentityRepo) {
-	app.identityQuerier = querier
-}
-
 // NewIM constructor
-func (app BoxApplication) NewIM() *events.IdentityMapper {
-	return events.NewIdentityMapper(app.identityQuerier)
+func (ba BoxApplication) NewIM() *events.IdentityMapper {
+	return events.NewIdentityMapper(ba.identityRepo)
 }

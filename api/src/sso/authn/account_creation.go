@@ -91,12 +91,6 @@ func (as *Service) assertAccountCreation(
 		return err
 	}
 
-	// set initial quotas
-	_, err = as.quotaService.CreateBase(ctx, curIdentity.ID)
-	if err != nil {
-		logger.FromCtx(ctx).Error().Err(err).Msgf("setting base quota for %s", curIdentity.ID)
-	}
-
 	// create identity notification about account creation
 	if err := identity.NotificationCreate(
 		ctx, exec, redConn,

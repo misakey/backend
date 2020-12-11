@@ -18,29 +18,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
-type cryptoActionRepo interface {
-	Get(ctx context.Context, actionID string, accountID string) (Action, error)
-	List(ctx context.Context, accountID string) ([]Action, error)
-	Create(ctx context.Context, actions []Action) error
-	DeleteUntil(ctx context.Context, accountID string, untilTime time.Time) error
-	Delete(ctx context.Context, actionID string, accountID string) error
-}
-
-// CryptoActionService ...
-type CryptoActionService struct {
-	cryptoActions cryptoActionRepo
-}
-
-// NewActionService ...
-func NewActionService(
-	cryptoActionRepo cryptoActionRepo,
-) CryptoActionService {
-	return CryptoActionService{
-		cryptoActions: cryptoActionRepo,
-	}
-}
-
-// Action ...
+// Action models and helpers
 type Action struct {
 	ID                  string      `json:"id"`
 	AccountID           string      `json:"-"`

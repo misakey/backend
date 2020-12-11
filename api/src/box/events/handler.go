@@ -23,7 +23,7 @@ type doHandler func(
 	exec boil.ContextExecutor, // transaction
 	redConn *redis.Client,
 	identityMapper *IdentityMapper,
-	cryptoactions external.CryptoActionRepo,
+	cryptoactions external.CryptoRepo,
 	files files.FileStorageRepo,
 ) (Metadata, error)
 
@@ -37,7 +37,7 @@ type afterHandler func(
 	Metadata,
 ) error
 
-func empty(_ context.Context, _ *Event, _ null.JSON, _ boil.ContextExecutor, _ *redis.Client, _ *IdentityMapper, _ external.CryptoActionRepo, _ files.FileStorageRepo) (Metadata, error) {
+func empty(_ context.Context, _ *Event, _ null.JSON, _ boil.ContextExecutor, _ *redis.Client, _ *IdentityMapper, _ external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
 	return nil, nil
 }
 

@@ -36,7 +36,7 @@ type ContactBox struct {
 }
 
 // CreateContactBox creates the box, sets the `invitation_link` access and invite the contacted user
-func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, filesRepo files.FileStorageRepo, cryptoActionRepo external.CryptoActionRepo, contact ContactBox) (*Box, error) {
+func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, filesRepo files.FileStorageRepo, cryptoRepo external.CryptoRepo, contact ContactBox) (*Box, error) {
 
 	// get contacted user identity
 	contactedUser, err := identityMapper.querier.Get(ctx, contact.ContactedIdentityID)
@@ -103,11 +103,11 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 	if err != nil {
 		return nil, merror.Transform(err).Describe("decoding json")
 	}
-	if _, err := doAddAccess(ctx, &accessEvent, null.JSON{}, exec, redConn, identityMapper, cryptoActionRepo, nil); err != nil {
+	if _, err := doAddAccess(ctx, &accessEvent, null.JSON{}, exec, redConn, identityMapper, cryptoRepo, nil); err != nil {
 		return nil, merror.Transform(err).Describe("creating access event")
 	}
 
-	if err := cryptoActionRepo.CreateInvitationActionsForIdentity(ctx, contact.IdentityID, event.BoxID, contact.Title, contact.ContactedIdentityID, null.JSONFrom(decodedInvitationDataJSON)); err != nil {
+	if err := cryptoRepo.CreateInvitationActionsForIdentity(ctx, contact.IdentityID, event.BoxID, contact.Title, contact.ContactedIdentityID, null.JSONFrom(decodedInvitationDataJSON)); err != nil {
 		return nil, merror.Transform(err).Describe("creating invitation action")
 	}
 

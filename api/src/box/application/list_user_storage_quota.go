@@ -38,10 +38,33 @@ func (app *BoxApplication) ListUserStorageQuota(ctx context.Context, genReq requ
 		return nil, merror.Forbidden().Detail("id", merror.DVForbidden)
 	}
 
-	quota, err := quota.List(ctx, app.DB, req.IdentityID)
+	userStorageQuota, err := quota.List(ctx, app.DB, req.IdentityID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("listing user quota")
 	}
 
-	return quota, nil
+	// on no base quota found, it means the identity is new and no base quota has been created yet
+	// create then the base quota
+	if noBaseFound(userStorageQuota) {
+		baseQuotum := quota.Quotum{
+			Origin:     "base",
+			IdentityID: req.IdentityID,
+			Value:      104857600, // default value for newcomers
+		}
+		if err := quota.Create(ctx, app.DB, &baseQuotum); err != nil {
+			return nil, merror.Transform(err).Describe("creating base quota")
+		}
+	}
+
+	return userStorageQuota, nil
+}
+
+// noBaseFound returns true if no quotum with origin base is found in the received slice
+func noBaseFound(userQuota []quota.Quotum) bool {
+	for _, quotum := range userQuota {
+		if quotum.Origin == "base" {
+			return false
+		}
+	}
+	return true
 }

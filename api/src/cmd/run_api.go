@@ -57,11 +57,7 @@ func initService() {
 	// init modules
 	generic.InitModule(e)
 	ssoProcess := sso.InitModule(e)
-	boxProcess := box.InitModule(e)
-
-	boxProcess.BoxService.SetIdentityRepo(ssoProcess.IdentityIntraProcess)
-	boxProcess.BoxService.SetCryptoActionsRepo(ssoProcess.CryptoActionIntraProcess)
-	ssoProcess.SSOService.AuthenticationService.SetQuotaService(boxProcess.QuotumIntraprocess)
+	box.InitModule(e, ssoProcess.IdentityIntraProcess, ssoProcess.CryptoActionIntraProcess)
 
 	// finally launch the echo server
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", viper.GetInt("server.port"))))

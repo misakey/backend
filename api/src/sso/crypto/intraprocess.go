@@ -21,8 +21,8 @@ func NewIntraprocessHelper(sqlDB *sql.DB, redConn *redis.Client) *IntraprocessHe
 	return &IntraprocessHelper{sqlDB: sqlDB, redConn: redConn}
 }
 
-// CreateCryptoActions ...
-func (ih IntraprocessHelper) CreateCryptoActions(ctx context.Context, actions []Action) error {
+// CreateActions ...
+func (ih IntraprocessHelper) CreateActions(ctx context.Context, actions []Action) error {
 	return CreateActions(ctx, ih.sqlDB, actions)
 }
 
