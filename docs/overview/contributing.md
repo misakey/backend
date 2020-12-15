@@ -2,21 +2,20 @@
 title: Contributing
 ---
 
-## Contribution model
+## Contribution Model
 
-Misakey tech is firstly developed by the company Misakey. We decided to share all of our work under open source licenses. And we seek for contributors to integrate the project's codebase:
-- Bug report & bug fixes
-- Feature proposal & feature development
-- UIKit & SDK evolution & creation
-- CMS Plugins improvement & development
+Misakey tech is mainly developed by the Misakey company. We decided to share all of our work under open source licenses and we welcome external contributions, typically:
+- Bug reports & fixes
+- Feature proposal & development
+- UI Kit & SDK
+- CMS Plugins
 
-If you want to contribute to the project, feel free to propose any evolution that could make it better.
 
-## How to ask for features / bugfixes
+## How to Ask for Features or Bug Fixes
 
 You can create issues on GitHub, or if you are not familiar with the tool, email us at [love@misakey.com](mailto:love@misakey.com).
 
-## How to ask for our expertise to integrate the system
+## How to Ask for Our Expertise to Integrate the System
 
-All our code is open source and free to use. Our business model is based on selling our expertise on our product to help companies and projects to integrate our technology. If you need us to go further with the tech, feel free to email us at [love@misakey.com](mailto:love@misakey.com), we will answer you shortly with possible collaboration.
+All our code is open source and free to use. Our business model is based on helping companies and projects integrating our technology. If you need us to go further with the tech, feel free to email us at [love@misakey.com](mailto:love@misakey.com), we will quickly get back to you.
 

@@ -1,33 +1,34 @@
 ---
 title: Authentication
 ---
+
 ## Goal
 
-You can easily integrate authentication to your application using Misakey tech SSO.
+Misakey lets you add modern authentication to your application in a few minutes.
 
-You can host your own SSO instance (cf: the [guide to install the tech](guides/installation.md)), or use Misakey's SSO.
+You can host your own instance of Misakey SSO (see the [installation guide](guides/installation.md)), or you can use Misakey's own SSO instance.
 
-The result will be the integration of the auth system in your app. You can check our [SSO Demo](https://demo.sso.misakey.com/) to see the result on a fresh React app.
+You can see an example of an app (an empty demo React application) using Misakey auth at https://demo.sso.misakey.com/.
 
 ## Integration
 
-### Step 1: create your SSO client
+### Step 1: Create your SSO Client
 
-If you are using your own host of the Misakey tech SSO, please follow the [guide to create a client](guides/create-auth-clients.md).
+If you are using your own instance of Misakey SSO, please follow the [guide to create a client](guides/create-auth-clients.md).
 
-If you want to use Misakey's SSO, please contact us ([love@misakey.com](mailto:love@misakey.com)) to have your credentials (the auto registration interface is still in development).
+If you want to use Misakey's instance, please contact us ([love@misakey.com](mailto:love@misakey.com)). We will create credentials on our instance and send them to you (the automated registration interface is still being developped).
 
-### Step 2: install the SDK
+### Step 2: Install the SDK
 
-For now our SDK is compatible with React apps. If you need another framework, contact us ([love@misakey.com](mailto:love@misakey.com)) we will develop a SDK for your need.
+For now our SDK is only compatible with [React](https://reactjs.org/) applications. If you need another framework, you can tell us at ([love@misakey.com](mailto:love@misakey.com)).
 
 ```bash
 npm install @misakey/sdk
 ```
 
-### Step 3: integrate the SDK to your app
+### Step 3: Integrate the SDK in Your App
 
-#### Import and initialize the configuration
+#### Import and Initialize the Configuration
 
 ```js
 import { useMisakeyAuth } from "@misakey/sdk";
@@ -42,7 +43,7 @@ const authConfig = {
 
 ```
 
-#### Integrate the hook in your app
+#### Integrate the Hook in Your App
 
 ```js
 const { isAuthCallback, isAuthenticated, userProfile } = useMisakeyAuth(authConfig);
@@ -50,7 +51,7 @@ if (isAuthCallback) { return null; }
 
 ```
 
-#### Use the auth context
+#### Use the Auth Context
 
 ```js
 {isAuthenticated ? (
@@ -68,7 +69,7 @@ For more details, you can check out the [repository of the SDK](https://github.c
 
 :::important
 
-This SDK is still in beta. If you need a more robust version of the SDK, contact us ([love@misakey.com](mailto:love@misakey.com)) to give us feedback on the priority for you.
+This SDK is still in beta version. If you need a more robust version of the SDK, contact us ([love@misakey.com](mailto:love@misakey.com)) to tell us what it is you need the most.
 
 :::
 

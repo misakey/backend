@@ -2,38 +2,38 @@
 title: Components
 ---
 
-## Backend stack services
+## Backend Stack Services
 
 Misakey tech is based on a robust backend that will manage the different features:
-- Unified authentication (based on OIDC)
+- Unified authentication based on [Open ID Connect (OIDC)](https://openid.net/specs/openid-connect-core-1_0.html)
 - Consent platform
 - User data management
 - Notifications server
 - Messaging engine
 - End-to-end encryption infrastructure
 
-## Frontend for authentication
+## Frontend for Authentication
 
-By default, a generic frontend is proposed to manage the authentication and consent steps. This frontend is customizable, but you can also create your own one and integrate backend integration with the SDKs.
+A generic frontend is provided by default to manage the authentication and consent steps. This frontend is customizable, but you can also create your own and integrate backend integration with the SDKs.
 
-The frontend proposes multiple features (that are maintained and new ones are developed regularly:
+The frontend provides multiple features, and new ones are added on a regular basis:
 - Passwordless auth (email confirmation)
 - Sign-up / Sing-in 
-- MFA
-- WebauthN
+- Muti-Factor Authentication (MFA/2FA)
+- [WebAuthn](https://webauthn.io/)
 - Consent management (TOS/Privacy policy, data access consent)
 
-## SDKs and UIKit for building apps
+## SDKs and UI Kit for Building Apps
 
-We are providing SDKs and UI kit to integrate the technology in any existing or new application. Those SDKs and UI Kit are useful to integrate with all the features described in the backend:
+We are providing SDKs and a UI kit to integrate the Misakey technology in any existing or new application. They allow integration with all the features provided by the backend:
 - Authentication
-- User data access
-- Notification consumption
+- Access to user data
+- Notification system
 - Messaging
-- Encryption
+- End-to-end encryption
 
-## CMS plugins for one click integration
+## CMS Plugins for One Click Integration
 
-We are developing some plugins for popular CMS (Wordpress, Prestashop, ...) to help people using those tools to integrate Misakey tech.
+We are developing some plugins for popular CMS (Wordpress, Prestashop, ...) to for easy integration.
 
-We are looking for new integration, so feel free to develop some and propose them to integrate the official plugins !
+We are looking for new software to integrate with, so feel free to suggest new integrations or to contribute to ongoing ones (see next section)!
