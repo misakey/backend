@@ -2,11 +2,9 @@
 title: Create auth client
 ---
 
-The totally first step to start an interaction with Misakey tech is to create an auth client to authenticate your users or give access to another service to your user data.
+Before you can interact with Misakey tech, you have to create an authentication client to authenticate your users or give access to another service to your user data.
 
-As the OpenID server, we are using [ORY Hydra](https://www.ory.sh/docs/hydra). To create a client, you have to:
-
-`POST` on `http://your-hydra-admin-url:4445/clients`
+Misakey uses [ORY Hydra](https://www.ory.sh/docs/hydra) as an OpenID server. To create a client, you have to send a `POST` request to `http://your-hydra-admin-url:4445/clients` with the following body:
 
 ```json
 {
