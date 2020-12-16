@@ -2,6 +2,9 @@ FROM golang:1.14 as builder
 
 WORKDIR /go/src/app
 COPY . .
+
+RUN GO111MODULE=on go mod vendor
+
 RUN GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -mod=vendor \
     -installsuffix 'static' \
