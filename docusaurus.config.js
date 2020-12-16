@@ -1,9 +1,9 @@
 module.exports = {
   title: 'Misakey documentation',
   tagline: 'Users deserve better privacy (docs under construction)',
-  url: 'https://your-docusaurus-test-site.com',
+  url: 'https://docs.misakey.com',
   baseUrl: '/',
-  noIndex: true,
+  noIndex: false,
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
   onDuplicateRoutes: 'throw',
@@ -13,15 +13,15 @@ module.exports = {
   themeConfig: {
     respectPrefersColorScheme: true,
     announcementBar: {
-      id: 'support_us', // Any value that will identify this message.
-      content: 'This documentation is a complete work in progress. It\'s not usable, and only accessible for internal users.',
+      id: 'beta', // Any value that will identify this message.
+      content: 'This documentation is a work in progress. Feel free to <a href="mailto:love@misakey.com">email us</a> if you have any constructive feedback!',
       backgroundColor: '#F9D2E1', // Defaults to `#fff`.
       textColor: '#091E42', // Defaults to `#000`.
       isCloseable: true, // Defaults to `true`.
     },
     navbar: {
       title: '',
-      hideOnScroll: true,
+      hideOnScroll: false,
       logo: {
         alt: 'Misakey',
         src: 'https://static.misakey.com/img/MisakeyLogoTypo.svg',
