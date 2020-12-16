@@ -1,4 +1,4 @@
-FROM registry.misakey.dev/misakey/docker/golang-dev:latest
+FROM misakey/golang-dev:latest
 
 WORKDIR /go/src/app
 COPY . .
