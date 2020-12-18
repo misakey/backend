@@ -67,9 +67,9 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 		return nil, merror.Unauthorized()
 	}
 
-	// check the box exists and is not closed
-	if err := events.MustBoxBeOpen(ctx, app.DB, req.boxID); err != nil {
-		return nil, merror.Transform(err).Describe("checking open")
+	// check the box exists
+	if err := events.MustBoxExists(ctx, app.DB, req.boxID); err != nil {
+		return nil, merror.Transform(err).Describe("checking exist")
 	}
 
 	// start a transaction to handle all event in one context and potentially rollback all of them

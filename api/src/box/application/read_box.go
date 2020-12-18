@@ -34,6 +34,11 @@ func (app *BoxApplication) ReadBox(ctx context.Context, genReq request.Request) 
 	// init an identity mapper for the operation
 	identityMapper := app.NewIM()
 
+	// check the box exists
+	if err := events.MustBoxExists(ctx, app.DB, req.boxID); err != nil {
+		return nil, merror.Transform(err).Describe("checking box exist")
+	}
+
 	// check accesses
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {

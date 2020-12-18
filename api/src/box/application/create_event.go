@@ -37,7 +37,6 @@ func (req *CreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 	return v.ValidateStruct(req,
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
 		v.Field(&req.Type, v.Required, v.In(
-			etype.Statelifecycle,
 			etype.StateKeyShare,
 			etype.Msgtext,
 			etype.Msgfile,
@@ -64,9 +63,9 @@ func (app *BoxApplication) CreateEvent(ctx context.Context, genReq request.Reque
 
 	view := events.View{}
 
-	// check the box exists and is not closed
-	if err := events.MustBoxBeOpen(ctx, app.DB, req.boxID); err != nil {
-		return view, merror.Transform(err).Describe("checking open")
+	// check the box exists
+	if err := events.MustBoxExists(ctx, app.DB, req.boxID); err != nil {
+		return view, merror.Transform(err).Describe("checking exist")
 	}
 
 	// init the event

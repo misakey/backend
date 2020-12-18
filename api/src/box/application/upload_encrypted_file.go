@@ -62,9 +62,9 @@ func (app *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq reque
 		return nil, err
 	}
 
-	// upload files works only on open boxes
-	if err := events.MustBoxBeOpen(ctx, app.DB, req.boxID); err != nil {
-		return nil, merror.Transform(err).Describe("checking open")
+	// check box exists
+	if err := events.MustBoxExists(ctx, app.DB, req.boxID); err != nil {
+		return nil, merror.Transform(err).Describe("checking exist")
 	}
 
 	// retrieve the raw []byte from the file

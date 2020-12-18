@@ -3,7 +3,6 @@ package etype
 // Event types constants
 const (
 	Create         = "create"
-	Statelifecycle = "state.lifecycle"
 	StateKeyShare  = "state.key_share"
 	Memberjoin     = "member.join"
 	Memberleave    = "member.leave"
@@ -20,7 +19,6 @@ const (
 func MembersCanSee() []string {
 	return []string{
 		Create,
-		Statelifecycle,
 		StateKeyShare,
 
 		Msgtext,
@@ -36,7 +34,6 @@ func MembersCanSee() []string {
 func RequireToBuild() []string {
 	return []string{
 		Create,
-		Statelifecycle,
 		StateKeyShare,
 	}
 }
@@ -46,7 +43,6 @@ func RequiresContent(eType string) bool {
 	switch eType {
 	case
 		Create,
-		Statelifecycle,
 
 		Msgtext,
 		Msgfile,

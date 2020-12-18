@@ -21,7 +21,6 @@ type Box struct {
 	CreatedAt time.Time `json:"server_created_at"`
 	PublicKey string    `json:"public_key"`
 	Title     string    `json:"title"`
-	Lifecycle string    `json:"lifecycle"`
 
 	// aggregated data
 	EventsCount null.Int    `json:"events_count,omitempty"`
@@ -44,7 +43,6 @@ type computer struct {
 
 	// local save for internal logic
 	creatorID  string
-	closeEvent *Event
 	lastEvent  *Event
 }
 
@@ -69,7 +67,6 @@ func Compute(
 		// NOTE: to add an new event here should involve attention on the RequireToBuild method
 		// used to retrieve events to compute the box
 		etype.Create:         computer.playCreate,
-		etype.Statelifecycle: computer.playState,
 	}
 
 	// automatically retrieve events if 0 events loaded
@@ -110,13 +107,7 @@ func (c *computer) playEvent(ctx context.Context, e Event) error {
 
 // take care of binding the last event in the box
 func (c *computer) handleLast(ctx context.Context) error {
-	// if the box has been closed and the viewer is not the creator or has no token
-	// we force the last event to be the close event and we remove the public key
-	acc := oidc.GetAccesses(ctx)
-	if (acc == nil || acc.IdentityID != c.creatorID) && c.closeEvent != nil {
-		c.lastEvent = c.closeEvent
-		c.box.PublicKey = ""
-	} else if c.lastEvent == nil { // retrieve last event if not already there
+	if c.lastEvent == nil { // retrieve last event if not already there
 		last, err := GetLast(ctx, c.exec, c.box.ID)
 		if err != nil {
 			return merror.Transform(err).Describe("getting last event")
@@ -142,7 +133,6 @@ func (c *computer) playCreate(ctx context.Context, e Event) error {
 	if err := creationContent.Unmarshal(e.JSONContent); err != nil {
 		return err
 	}
-	c.box.Lifecycle = "open"
 	c.box.PublicKey = creationContent.PublicKey
 	c.box.Title = creationContent.Title
 
@@ -159,21 +149,6 @@ func (c *computer) playCreate(ctx context.Context, e Event) error {
 	if err != nil {
 		return merror.Transform(err).Describe("retrieving creator")
 	}
-	return nil
-}
-
-// today, state if only about lifecycle
-func (c *computer) playState(_ context.Context, e Event) error {
-	content := StateLifecycleContent{}
-	if err := e.JSONContent.Unmarshal(&content); err != nil {
-		return err
-	}
-	c.box.Lifecycle = content.State
-
-	if c.box.Lifecycle == "closed" {
-		c.closeEvent = &e
-	}
-
 	return nil
 }
 

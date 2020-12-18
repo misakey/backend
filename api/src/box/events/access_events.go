@@ -13,6 +13,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
@@ -136,6 +137,20 @@ func FindActiveAccesses(ctx context.Context, exec boil.ContextExecutor, boxID st
 	})
 }
 
+
+// MustBoxExists ...
+func MustBoxExists(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
+	_, err := get(ctx, exec, eventFilters{
+		boxID: null.StringFrom(boxID),
+		eType: null.StringFrom(etype.Create),
+	})
+	if err != nil {
+		return merror.Transform(err).Describe("getting box create event")
+	}
+	return nil
+}
+
+
 // MustMemberHaveAccess ...
 func MustMemberHaveAccess(
 	ctx context.Context,
@@ -185,30 +200,20 @@ func MustHaveAccess(
 		return merror.Forbidden().Describe("must be an admin").Detail("reason", "no_access")
 	}
 
-	// 4. if the box is closed, only the admins has access to
-	closedBox, err := isClosed(ctx, exec, boxID)
-	if err != nil {
-		return err
-	}
-
-	if closedBox {
-		return merror.Forbidden().Describe("cannot access a closed box").Detail("reason", "closed")
-	}
-
-	// 5. consider the box can be public to return directly
+	// 4. consider the box can be public to return directly
 	// further security barriers exists because of encryption if the box is public
 	// but was not shared
 	if isPublic(ctx, accesses) {
 		return nil
 	}
 
-	// 6. if the box isn't public, get the identity to check whitelist rules
+	// 5. if the box isn't public, get the identity to check whitelist rules
 	identity, err := identities.Get(ctx, identityID, true)
 	if err != nil {
 		return merror.Transform(err).Describe("getting identity for access check")
 	}
 
-	// 7. check restriction rules
+	// 6. check restriction rules
 	for _, access := range accesses {
 		c := accessContent{}
 		// on marshal error the box is locked and considered as not public
