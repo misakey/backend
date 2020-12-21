@@ -32,7 +32,7 @@ The gateway should be rebuild when modified to have changes applied (`docker-com
 The gateway image is built and deployed each time the repo is pushed. It generates 3 images:
 
 - On `tags`
-  - `registry.misakey.dev/misakey/backend/gateway:<tag>`
+  - `misakey/gateway:<tag>`
 - On `master`
   - `registry.misakey.dev/misakey/backend/gateway:preprod`
   - `registry.misakey.dev/misakey/backend/gateway:latest`
@@ -42,10 +42,18 @@ The gateway image is built and deployed each time the repo is pushed. It generat
 - In the `gateway` root directory, run:
   - If this is the first time
 ```
-helm install --name nginx helm/gateway --set env=<preprod|production> --set image.tag=<preprod|tag> --set dns="<misakey.com|preprod.misakey.dev>"
+# For production
+helm install --name nginx helm/gateway --set env=production --set image.tag=tag --set dns="misakey.com"
+
+# For preprod
+helm install --name nginx helm/gateway --set env=preprod --set image.tag=preprod --set dns="preprod.misakey.dev" --set image.repository="registry.misakey.dev/misakey/backend/gateway"
 ```
   - If this is an upgrade
 ```
-helm upgrade nginx helm/gateway --set env=<preprod|production> --set image.tag=<preprod|tag> --set dns="<misakey.com|preprod.misakey.dev>"
+# For production
+helm upgrade nginx helm/gateway --set env=production --set image.tag=tag --set dns="misakey.com"
+
+# For preprod
+helm upgrade nginx helm/gateway --set env=preprod --set image.tag=preprod --set dns="preprod.misakey.dev" --set image.repository="registry.misakey.dev/misakey/backend/gateway"
 ```
 - Check that the deployment went well by running `kubectl get pods`.

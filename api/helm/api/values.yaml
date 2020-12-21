@@ -9,7 +9,7 @@ ddenv: production
 dns: misakey.com
 
 image:
-  repository: registry.misakey.dev/misakey/backend/api
+  repository: misakey/api
   tag:
   pullPolicy: IfNotPresent
 
