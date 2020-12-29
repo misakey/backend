@@ -139,13 +139,6 @@ class Session(requests.Session):
             call_request_fn_decorated(super().delete, *args, **kwargs)
         )
 
-    def patch(self, *args, **kwargs):
-        kwargs['csrf_token'] = self.csrf_token
-        return self.update_csrf(
-            call_request_fn_decorated(super().patch, *args, **kwargs)
-        )
-
-
 
 def pretty_string_of_response(response: requests.Response):
     try:

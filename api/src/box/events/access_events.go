@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
@@ -10,6 +9,7 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
@@ -18,10 +18,28 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
-type accessContent struct {
+type accessAddContent struct {
 	RestrictionType string `json:"restriction_type"`
 	Value           string `json:"value"`
 	AutoInvite      bool   `json:"auto_invite"`
+}
+
+const (
+	restrictionIdentifier  = "identifier"
+	restrictionEmailDomain = "email_domain"
+)
+
+// Unmarshal a access.add content JSON into its typed structure
+func (c *accessAddContent) Unmarshal(content types.JSON) error {
+	return content.Unmarshal(c)
+}
+
+// Validate a access.add content structure
+func (c accessAddContent) Validate() error {
+	return v.ValidateStruct(&c,
+		v.Field(&c.RestrictionType, v.Required, v.In(restrictionIdentifier, restrictionEmailDomain)),
+		v.Field(&c.Value, v.Required),
+	)
 }
 
 func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoRepo external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
@@ -31,28 +49,18 @@ func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.C
 	}
 
 	// check content format
-	var c accessContent
+	var c accessAddContent
 	if err := e.JSONContent.Unmarshal(&c); err != nil {
 		return nil, merror.Transform(err).Describe("unmarshalling access content")
 	}
-	if err := v.ValidateStruct(&c,
-		v.Field(&c.RestrictionType, v.Required, v.In("invitation_link", "identifier", "email_domain")),
-		v.Field(&c.Value, v.Required.When(c.RestrictionType != "invitation_link")),
-	); err != nil {
-		return nil, merror.Transform(err).Describe("validating access content")
-	}
 
 	// check the access doesn't exist yet
-	content := e.JSONContent.String()
-	if c.RestrictionType == "invitation_link" {
-		content = fmt.Sprintf("{\"restriction_type\":\"%s\"}", c.RestrictionType)
-	}
-
 	_, err := get(ctx, exec, eventFilters{
-		eType:      null.StringFrom("access.add"),
-		unreferred: true,
-		boxID:      null.StringFrom(e.BoxID),
-		content:    &content,
+		eType:           null.StringFrom(etype.Accessadd),
+		unreferred:      true,
+		boxID:           null.StringFrom(e.BoxID),
+		restrictionType: null.StringFrom(c.RestrictionType),
+		accessValue:     null.StringFrom(c.Value),
 	})
 	// no error means the access already exists
 	if err == nil {
@@ -116,13 +124,13 @@ func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExe
 	// the referrer must exist and not been referred yet or it is already removed
 	// access.add referred means an access.rm already exist for it
 	_, err := get(ctx, exec, eventFilters{
-		eType:      null.StringFrom("access.add"),
+		eType:      null.StringFrom(etype.Accessadd),
 		unreferred: true,
 		boxID:      null.StringFrom(e.BoxID),
 		id:         e.ReferrerID,
 	})
 	if err != nil {
-		return nil, merror.Transform(err).Describe("checking access.add referrer_id consistency")
+		return nil, merror.Transform(err).Describef("checking %s referrer_id consistency", etype.Accessadd)
 	}
 
 	return nil, e.persist(ctx, exec)
@@ -132,11 +140,10 @@ func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExe
 func FindActiveAccesses(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
 		boxID:      null.StringFrom(boxID),
-		eType:      null.StringFrom("access.add"),
+		eType:      null.StringFrom(etype.Accessadd),
 		unreferred: true,
 	})
 }
-
 
 // MustBoxExists ...
 func MustBoxExists(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
@@ -150,106 +157,114 @@ func MustBoxExists(ctx context.Context, exec boil.ContextExecutor, boxID string)
 	return nil
 }
 
-
-// MustMemberHaveAccess ...
-func MustMemberHaveAccess(
-	ctx context.Context,
-	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
-	boxID string, identityID string,
-) error {
-	// 1. the identity must have access to the box
-	if err := MustHaveAccess(ctx, exec, identities, boxID, identityID); err != nil {
-		return err
-	}
-
-	// 2. the identity must be a member of the box
-	isMember, err := isMember(ctx, exec, redConn, boxID, identityID)
-	if err != nil {
-		return err
-	}
-	if !isMember {
-		return merror.Forbidden().Describe("must be a member").Detail("reason", "not_member")
-	}
-
-	return nil
-}
-
-// MustHaveAccess ...
-func MustHaveAccess(
+// CanJoin returns no error if the received identityID can joined the box related to the received box id
+func MustBeAbleToJoin(
 	ctx context.Context,
 	exec boil.ContextExecutor, identities *IdentityMapper,
-	boxID string, identityID string,
+	boxID, identityID string,
 ) error {
-	// 1. admin is always allowed to see the box
-	IsAdmin, err := IsAdmin(ctx, exec, boxID, identityID)
-	if err != nil {
-		return err
-	}
-	if IsAdmin {
+	// 1. check if the box is in public mode
+	if isPublic(ctx, exec, boxID) {
 		return nil
 	}
 
-	// 2. check some access exists for the box
+	// 2. from here, the box is considered a in limited mode
+	// check the identity id has access because of any rule
+	return HasAccess(ctx, exec, identities, boxID, identityID, false)
+}
+
+// IsLegimate returns no error if the received identityID is legitimate to be in the box
+func MustBeLegitimate(
+	ctx context.Context,
+	exec boil.ContextExecutor, identities *IdentityMapper,
+	boxID, identityID string,
+) error {
+	// 1.. check if the identity id is an admin
+	isAdmin, err := IsAdmin(ctx, exec, boxID, identityID)
+	if err != nil {
+		return err
+	}
+	if isAdmin {
+		return nil
+	}
+
+	// 1. check the identity id has access because of an identifier restriction rule
+	return HasAccess(ctx, exec, identities, boxID, identityID, true)
+}
+
+// hasAccess returns no error if the received identityID match an active access rule
+// identifierOnly set to true restricts the matching of access rules to only identifier restriction type.
+func HasAccess(ctx context.Context,
+	exec boil.ContextExecutor, identities *IdentityMapper,
+	boxID, identityID string,
+	identifierOnly bool,
+) error {
+	// 1. list existing active accesses for the box
 	accesses, err := FindActiveAccesses(ctx, exec, boxID)
 	if err != nil {
 		return err
 	}
 
-	// 3. if no access exists, only the admins has access to
+	// 2. if no access exists, no-one can join it
 	if len(accesses) == 0 {
 		return merror.Forbidden().Describe("must be an admin").Detail("reason", "no_access")
 	}
 
-	// 4. consider the box can be public to return directly
-	// further security barriers exists because of encryption if the box is public
-	// but was not shared
-	if isPublic(ctx, accesses) {
-		return nil
-	}
-
-	// 5. if the box isn't public, get the identity to check whitelist rules
+	// 2. get the identity to check whitelist rules
 	identity, err := identities.Get(ctx, identityID, true)
 	if err != nil {
 		return merror.Transform(err).Describe("getting identity for access check")
 	}
 
-	// 6. check restriction rules
+	// 5. check restriction rules
 	for _, access := range accesses {
-		c := accessContent{}
-		// on marshal error the box is locked and considered as not public
+		c := accessAddContent{}
+		// on marshal error the box is locked and considered as not joinable
 		if err := access.JSONContent.Unmarshal(&c); err != nil {
 			return merror.Transform(err).Describef("access %s corrupted", access.ID)
 		}
 		switch c.RestrictionType {
-		case "identifier":
+		case restrictionIdentifier:
 			if identity.Identifier.Value == c.Value {
 				return nil
 			}
-		case "email_domain":
+		case restrictionEmailDomain:
+			// ignore this restriction type if only identifier restriction is requested to be checked
+			if identifierOnly {
+				continue
+			}
 			if identity.Identifier.Kind == "email" &&
 				emailHasDomain(identity.Identifier.Value, c.Value) {
 				return nil
 			}
 		}
+		break
 	}
 	return merror.Forbidden().Describe("must match a restriction rule").Detail("reason", "no_access")
 }
 
-func isPublic(ctx context.Context, accesses []Event) bool {
-	for _, access := range accesses {
-		// TODO (perf): save unmarshal into the Event to not re-unmarshal later on
-		c := accessContent{}
-		// on marshal error the box is locked and considered as not public
-		if err := access.JSONContent.Unmarshal(&c); err != nil {
-			logger.FromCtx(ctx).Err(err).Msgf("access %s corrupted", access.ID)
-			return false
-		}
-		// if one found restriction is not an invitation_link, the box is not public
-		if c.RestrictionType != "invitation_link" {
+func isPublic(ctx context.Context, exec boil.ContextExecutor, boxID string) bool {
+	// get() always get last event corresponding to the query
+	accessModeEvent, err := get(ctx, exec, eventFilters{
+		boxID: null.StringFrom(boxID),
+		eType: null.StringFrom(etype.Stateaccessmode),
+	})
+	if err != nil {
+		// NOTE: no access mode event means the default mode is enabled: limited.
+		if merror.HasCode(err, merror.NotFoundCode) {
 			return false
 		}
 	}
-	return true
+	c := AccessModeContent{}
+	// on marshal error the box is locked and considered as not public
+	if err := accessModeEvent.JSONContent.Unmarshal(&c); err != nil {
+		logger.FromCtx(ctx).Err(err).Msgf("access mode %s corrupted", accessModeEvent.ID)
+		return false
+	}
+	if c.Value == PublicMode {
+		return true
+	}
+	return false
 }
 
 func emailHasDomain(email, domain string) bool {

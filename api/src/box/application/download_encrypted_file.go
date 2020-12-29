@@ -31,9 +31,6 @@ func (req *DownloadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) erro
 func (app *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*DownloadEncryptedFileRequest)
 
-	// init an identity mapper for the operation
-	identityMapper := app.NewIM()
-
 	// check the file does exist
 	_, err := files.Get(ctx, app.DB, req.fileID)
 	if err != nil {
@@ -45,7 +42,7 @@ func (app *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq req
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	allowed, err := events.HasAccessOrHasSavedFile(ctx, app.DB, app.RedConn, identityMapper, acc.IdentityID, req.fileID)
+	allowed, err := events.HasAccessOrHasSavedFile(ctx, app.DB, app.RedConn, acc.IdentityID, req.fileID)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("checking access to file")
 	}

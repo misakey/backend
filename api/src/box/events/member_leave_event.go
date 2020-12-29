@@ -12,9 +12,9 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
-func doLeave(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
+func doLeave(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// check that the current sender has access to the box
-	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
+	if err := MustBeMember(ctx, exec, redConn, e.BoxID, e.SenderID); err != nil {
 		// user is a not a box member
 		// so we just return
 		return nil, err

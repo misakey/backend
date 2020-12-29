@@ -34,9 +34,6 @@ func (req *GetKeyShareRequest) BindAndValidate(eCtx echo.Context) error {
 func (app *BoxApplication) GetKeyShare(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*GetKeyShareRequest)
 
-	// init an identity mapper for the operation
-	identityMapper := app.NewIM()
-
 	// check accesses
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
@@ -48,7 +45,7 @@ func (app *BoxApplication) GetKeyShare(ctx context.Context, genReq request.Reque
 		return nil, merror.Transform(err).Describe("getting key share")
 	}
 
-	if err := events.MustHaveAccess(ctx, app.DB, identityMapper, ks.BoxID, acc.IdentityID); err != nil {
+	if err := events.MustBeMember(ctx, app.DB, app.RedConn, ks.BoxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 

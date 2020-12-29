@@ -24,12 +24,12 @@ type MsgEditContent struct {
 	NewPublicKey string `json:"new_public_key"`
 }
 
-// Unmarshal ...
+// Unmarshal a msg.edit content JSON into its typed structure
 func (c *MsgEditContent) Unmarshal(content types.JSON) error {
 	return content.Unmarshal(c)
 }
 
-// Validate ...
+// Validate a msg.edit content structure
 func (c MsgEditContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.NewEncrypted, v.Required, is.Base64),
@@ -37,9 +37,9 @@ func (c MsgEditContent) Validate() error {
 	)
 }
 
-func doEditMsg(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
-	// check that the current sender has access to the box
-	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
+func doEditMsg(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
+	// check that the current sender is a member of the box
+	if err := MustBeMember(ctx, exec, redConn, e.BoxID, e.SenderID); err != nil {
 		return nil, err
 	}
 

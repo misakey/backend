@@ -38,7 +38,7 @@ _JSON Body_:
 
 ## 1.1. CSRF Token
 
-This endpoint allow to retreive the CSRF Token that must be sent in the header
+This endpoint allow to retrieve the CSRF Token that must be sent in the header
 `X-CSRF-Token` with all HTTP verbs that can write data.
 
 ### 1.2.1. request

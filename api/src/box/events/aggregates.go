@@ -7,13 +7,14 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
-// BuildAggregate ...
+// BuildAggregate of an event by modifying the received pointer value
 func BuildAggregate(ctx context.Context, exec boil.ContextExecutor, e *Event) error {
 	// only msg.text and msg.file events can be aggregates
-	if e.Type == "msg.text" || e.Type == "msg.file" {
+	if e.Type == etype.Msgtext || e.Type == etype.Msgfile {
 		msg, err := buildMessage(ctx, exec, e.ID)
 		if err != nil {
 			return merror.Transform(err).Describef("building message %s", e.ID)

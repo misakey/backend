@@ -49,6 +49,8 @@ Note that `public_key` and `other_share_hash` must be in **unpadded url-safe bas
 When a box is created, it already contains a first event
 of type `create` that contains all the information about the creation of the box.
 
+Note that the access mode of a box is limited by default. A `state.access_mode` event must be created to switch it to `public`, see the related event type documentation.
+
 ### 2.1.2. response
 
 _
@@ -98,6 +100,9 @@ _JSON Body:_
 
 **I - The user has no access to the box
 
+The reason of the forbidden is explained is a reason field that have only 2 possible fixed values.
+Only the get box endpoint is ensured to return this error in the current state of the API.
+
 ```bash
 HTTP 403 FORBIDDEN
 ```
@@ -109,7 +114,7 @@ _JSON Body:_
     "origin": "not_defined",
     "desc": "",
     "details": {
-        "lifecyle": "conflict"
+        "reason": "no_access|not_member"
     }
 }
 ```

@@ -15,14 +15,14 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
 )
 
-// ReadBoxPublicRequest ...
-type ReadBoxPublicRequest struct {
+// GetBoxPublicRequest ...
+type GetBoxPublicRequest struct {
 	boxID          string
 	OtherShareHash string `query:"other_share_hash"`
 }
 
 // BindAndValidate ...
-func (req *ReadBoxPublicRequest) BindAndValidate(eCtx echo.Context) error {
+func (req *GetBoxPublicRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 	if err := eCtx.Bind(req); err != nil {
 		return merror.Transform(err).From(merror.OriBody)
@@ -39,10 +39,10 @@ type PublicBoxView struct {
 	Creator events.SenderView `json:"creator"`
 }
 
-// ReadBoxPublic returns public data.
+// GetBoxPublic returns public data.
 // No access check performed
-func (app *BoxApplication) ReadBoxPublic(ctx context.Context, genReq request.Request) (interface{}, error) {
-	req := genReq.(*ReadBoxPublicRequest)
+func (app *BoxApplication) GetBoxPublic(ctx context.Context, genReq request.Request) (interface{}, error) {
+	req := genReq.(*GetBoxPublicRequest)
 	// init an identity mapper for the operation
 	identityMapper := app.NewIM()
 

@@ -14,13 +14,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 )
 
-// ReadBoxRequest ...
-type ReadBoxRequest struct {
+// GetBoxRequest ...
+type GetBoxRequest struct {
 	boxID string
 }
 
 // BindAndValidate ...
-func (req *ReadBoxRequest) BindAndValidate(eCtx echo.Context) error {
+func (req *GetBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 
 	return v.ValidateStruct(req,
@@ -28,15 +28,15 @@ func (req *ReadBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-// ReadBox ...
-func (app *BoxApplication) ReadBox(ctx context.Context, genReq request.Request) (interface{}, error) {
-	req := genReq.(*ReadBoxRequest)
+// GetBox ...
+func (app *BoxApplication) GetBox(ctx context.Context, genReq request.Request) (interface{}, error) {
+	req := genReq.(*GetBoxRequest)
 	// init an identity mapper for the operation
 	identityMapper := app.NewIM()
 
 	// check the box exists
 	if err := events.MustBoxExists(ctx, app.DB, req.boxID); err != nil {
-		return nil, merror.Transform(err).Describe("checking box exist")
+		return nil, merror.Forbidden()
 	}
 
 	// check accesses
@@ -44,7 +44,15 @@ func (app *BoxApplication) ReadBox(ctx context.Context, genReq request.Request) 
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustMemberHaveAccess(ctx, app.DB, app.RedConn, identityMapper, req.boxID, acc.IdentityID); err != nil {
+	// NOTE:
+	if err := events.MustBeMember(ctx, app.DB, app.RedConn, req.boxID, acc.IdentityID); err != nil {
+		// if the err is 403, the user is not a member, check if it has a least has access or not
+		if merror.HasCode(err, merror.ForbiddenCode) {
+			// if user has no access, return the no access error
+			if err := events.HasAccess(ctx, app.DB, identityMapper, req.boxID, acc.IdentityID, false); err != nil {
+				return nil, err
+			}
+		}
 		return nil, err
 	}
 

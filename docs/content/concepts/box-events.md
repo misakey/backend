@@ -42,7 +42,7 @@ An event has the following fields:
   "server_event_created_at": "(RFC3339 time): when the event was received by the server",
   "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
   "sender": {{% include "include/event-identity.json" 2 %}},
-  "type": "(string) (one of: create, msg.txt, msg.file, state.lifecycle, member.join, member.leave): the type of the event",
+  "type": "(string) (one of: create, msg.txt, msg.file, , state.key_share, state.access_mode, member.join, member.leave): the type of the event",
   "content": "(json object) (nullable): its shape depends on the type of event - see definitions below",
   "referrer_id": "(string) (uuid) (nullable): the uuid of a potential referrer event"
 }
@@ -210,21 +210,24 @@ Where `referrer_id` is the ID of the event to edit.
 
 State events are meant to update the state of a box: information that can be set to only one value and are overriden when updated.
 
-### 2.4.1. `State Lifecycle`
+### 2.4.1. `State Access Mode`
 
-The `state.lifecycle` event changes the lifecycle of a box.
+The `state.access_mode` event changes the access mode of a box: public or limited.
+
+Anyone can join a box in public mode.
+Only people matching access rules can join a box in a limited mode.
 
 ```json
 {
-  "type": "state.lifecycle",
+  "type": "state.access_mode",
   "content": {
-    "state": "(string) (one of: closed): the new state of the box"
+    "value": "(string) (one of: public, limited): the new access mode value of the box"
   },
   "referrer_id": null
 }
 ```
 
-### 2.4.2 Key Share
+### 2.4.2. `State Key Share`
 
 `state.key_share` events change the key share of a box.
 
@@ -262,7 +265,7 @@ The add of an access is represented by this event shape
 {
     "type": "access.add",
     "content": {
-        "restriction_type": "(string) (one of : invitation_link, identifier or email_domain): the type of restriction the access bears",
+        "restriction_type": "(string) (one of : identifier or email_domain): the type of restriction the access bears",
         "value": "(string): a value describing the restriction",
         "auto_invite": "(optional) (boolean)",
     },
@@ -273,25 +276,9 @@ The add of an access is represented by this event shape
 Where `auto_invite` is only required if `restriction_type` is `identifier` under some circumstances
 (see Section “to a specific identifier”).
 
-#### 2.5.1.1. Via Invitation Link
-
-This access allows users to access the box using an invitation link (key shares).
-
-If another kind of access restriction exists, both the invitation link and the other access rules are required to access the box. Otherwise, only the invitation link is required.
-
-```json
-{
-    "type": "access.add",
-    "content": {
-        "restriction_type": "(string) (must be: invitation_link)",
-    },
-    "referrer_id": null
-}
-```
-
 Note that there is no `content.value` field (it has been deprecated).
 
-#### 2.5.1.2. To a specific identifier
+#### 2.5.1.1. To a specific identifier
 
 ```json
 {
@@ -327,7 +314,7 @@ to the encrypted crypto action to send to the corresponding identity.
 This will create a crypto action with type `invitation`
 and a notification with type `box.auto_invite`.
 
-#### 2.5.1.3. To an entire email domain
+#### 2.5.1.2. To an entire email domain
 
 ```json
 {

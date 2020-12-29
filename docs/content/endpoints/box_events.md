@@ -68,28 +68,6 @@ HTTP 201 Created
 }
 ```
 
-### 2.1.3. notable error reponses
-
-**I - The box is closed:**
-
-A box that has received a lifecycle closed event cannot received new events.
-
-```bash
-HTTP 409 CONFLICT
-```
-
-_JSON Body:_
-```json
-{
-    "code": "conflict",
-    "origin": "not_defined",
-    "desc": "box is closed.",
-    "details": {
-        "lifecycle": "conflict"
-    }
-}
-```
-
 ## 2.2. BATCH creation of events for a box
 
 This endpoint allows the creation of many events in a single request, on a specific box.
@@ -169,28 +147,6 @@ _JSON Body:_
         "sender": {{% include "include/event-identity.json" 8 %}}
     }
 ]
-```
-
-### 2.2.3. notable error reponses
-
-**I - The box is closed:**
-
-A box that has received a lifecycle closed event cannot received new events.
-
-```bash
-HTTP 409 CONFLICT
-```
-
-_JSON Body:_
-```json
-{
-    "code": "conflict",
-    "origin": "not_defined",
-    "desc": "box is closed.",
-    "details": {
-        "lifecycle": "conflict"
-    }
-}
 ```
 
 ## 2.3. Getting Events in a Box

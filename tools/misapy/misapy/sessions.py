@@ -4,10 +4,10 @@ from . import http, URL_PREFIX
 from .utils.base64 import urlsafe_b64encode
 
 class Session(http.Session):
-    def __init__(self, identity_id: str, email: str):
+    def __init__(self):
         super().__init__()
-        self.identity_id = identity_id
-        self.email = email
+        self.identity_id = ""
+        self.email = ""
 
     def get_identity(self, id :str=None):
         return self.get(f'{URL_PREFIX}/identities/{id or self.identity_id}')

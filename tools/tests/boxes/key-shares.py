@@ -4,7 +4,6 @@ from misapy.check_response import check_response, assert_fn
 from misapy.get_access_token import get_authenticated_session
 from misapy.pretty_error import prettyErrorContext
 from misapy.boxes.key_shares import new_key_share_event
-from misapy.box_helpers import create_add_invitation_link_event
 
 with prettyErrorContext():
     s1 = get_authenticated_session(acr_values=2)
@@ -38,10 +37,12 @@ with prettyErrorContext():
 
     # make box joinable
     s1.post(
-        f'{URL_PREFIX}/boxes/{box_id}/batch-events',
+        f'{URL_PREFIX}/boxes/{box_id}/events',
         json={
-            'batch_type': 'accesses',
-            'events' : [create_add_invitation_link_event()]
+            'type': 'state.access_mode',
+            'content': {
+                'value': 'public',
+            }
         },
         expected_status_code=http.STATUS_CREATED,
     )

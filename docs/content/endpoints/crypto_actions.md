@@ -14,8 +14,7 @@ processes them, and deletes the ones that have been processed.
 
 Right now the only type of crypto action is `invitation`,
 in which case the `encrypted` part decrypts to
-the user key share of the box identified by `box_id`
-(this is the same data one receives through an invitation link).
+the user key share of the box identified by `box_id`.
 
 ## Listing One's Crypto Actions
 

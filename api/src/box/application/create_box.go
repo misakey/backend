@@ -69,13 +69,10 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 
 	event, err := events.CreateCreateEvent(
 		ctx,
+		app.DB, app.RedConn, identityMapper,
 		req.Title,
 		req.PublicKey,
 		acc.IdentityID,
-		app.DB,
-		app.RedConn,
-		identityMapper,
-		app.filesRepo,
 	)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating create event")

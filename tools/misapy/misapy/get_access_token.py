@@ -131,7 +131,7 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
     if not email:
         email = hexlify(os.urandom(3)).decode() + '-test@misakey.com'
 
-    s = http.Session()
+    s = Session()
     s.verify = False
 
     # We expect to get a HTTP 502 Bad Gateway in case the frontend is not up,

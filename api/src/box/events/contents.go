@@ -7,6 +7,7 @@ package events
 
 import (
 	"github.com/volatiletech/sqlboiler/v4/types"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
@@ -34,10 +35,12 @@ type anyContent interface {
 }
 
 var contentTypeGetters = map[string]func() anyContent{
-	"create":   func() anyContent { return &CreationContent{} },
-	"msg.text": func() anyContent { return &MsgTextContent{} },
-	"msg.file": func() anyContent { return &MsgFileContent{} },
-	"msg.edit": func() anyContent { return &MsgEditContent{} },
+	"access.add":        func() anyContent { return &accessAddContent{} },
+	"create":            func() anyContent { return &CreationContent{} },
+	"msg.text":          func() anyContent { return &MsgTextContent{} },
+	"msg.file":          func() anyContent { return &MsgFileContent{} },
+	"msg.edit":          func() anyContent { return &MsgEditContent{} },
+	"state.access_mode": func() anyContent { return &AccessModeContent{} },
 }
 
 func bindAndValidateContent(e *Event) error {

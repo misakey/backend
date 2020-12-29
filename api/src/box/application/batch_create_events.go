@@ -41,7 +41,8 @@ func (req *BatchCreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 	if err := v.ValidateStruct(req,
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
-		v.Field(&req.BatchType, v.Required, v.In("accesses")),
+		// only batch of type `accesses` is allowed
+		v.Field(&req.BatchType, v.Required, v.In(etype.BatchAccesses)),
 		v.Field(&req.Events, v.Required),
 	); err != nil {
 		return err
@@ -53,13 +54,16 @@ func (req *BatchCreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 // then BatchCreateEvent can use v.Each to validate them
 func (req BatchEvent) Validate() error {
 	return v.ValidateStruct(&req,
-		v.Field(&req.Type, v.Required, v.In(etype.Accessadd, etype.Accessrm)),
 		v.Field(&req.ReferrerID, is.UUIDv4),
 		v.Field(&req.Content, v.When(etype.RequiresContent(req.Type), v.Required)),
+		// only `access.*`` event types are allowed for the batch type `accesses`
+		// NOTE: not need to check the batch type is `accesses` since no other type is allowed
+		v.Field(&req.Type, v.Required, v.In(etype.Accessadd, etype.Accessrm)),
 	)
 }
 
-// BatchCreateEvent ...
+// BatchCreateEvent handles many event in a single request.
+// a type batch is request so the event types are strict according to the type rule.
 func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*BatchCreateEventRequest)
 	acc := oidc.GetAccesses(ctx)
@@ -102,7 +106,7 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 	}
 
 	// handle post-batching action according to the batch type
-	if req.BatchType == "accesses" {
+	if req.BatchType == etype.BatchAccesses {
 		var kicks []events.Event
 		kicks, err = events.KickDeprecatedMembers(ctx, tr, identityMapper, req.boxID, acc.IdentityID)
 		if err != nil {

@@ -56,6 +56,19 @@ func New(eType string, jsonContent types.JSON, boxID, senderID string, referrerI
 	return event, nil
 }
 
+func newWithAnyContent(eType string, content anyContent, boxID, senderID string, referrerID *string) (Event, error) {
+	contentBytes, err := json.Marshal(content)
+	if err != nil {
+		return Event{}, merror.Transform(err).Describe("marshalling anyContent into bytes")
+	}
+	jsonContent := types.JSON{}
+	if err := jsonContent.UnmarshalJSON(contentBytes); err != nil {
+		return Event{}, merror.Transform(err).Describe("unmarshalling content bytes into types.JSON")
+	}
+
+	return New(eType, jsonContent, boxID, senderID, referrerID)
+}
+
 func (e *Event) persist(ctx context.Context, exec boil.ContextExecutor) error {
 	// finally insert
 	if err := e.ToSQLBoiler().Insert(ctx, exec, boil.Infer()); err != nil {
@@ -68,7 +81,7 @@ func (e *Event) persist(ctx context.Context, exec boil.ContextExecutor) error {
 func GetLast(ctx context.Context, exec boil.ContextExecutor, boxID string) (Event, error) {
 	return get(ctx, exec, eventFilters{
 		boxID:  null.StringFrom(boxID),
-		eTypes: etype.MembersCanSee(),
+		eTypes: etype.MembersCanSee,
 	})
 }
 
@@ -78,7 +91,7 @@ func ListForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID
 		boxID:  null.StringFrom(boxID),
 		offset: offset,
 		limit:  limit,
-		eTypes: etype.MembersCanSee(),
+		eTypes: etype.MembersCanSee,
 	})
 }
 
@@ -97,7 +110,7 @@ func ListFilesForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, 
 func ListForBuild(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
 		boxID:  null.StringFrom(boxID),
-		eTypes: etype.RequireToBuild(),
+		eTypes: etype.RequireToBuild,
 	})
 }
 
@@ -127,19 +140,6 @@ func ListByTypeAndBoxIDAndSenderID(ctx context.Context, exec boil.ContextExecuto
 	return events, nil
 }
 
-func newWithAnyContent(eType string, content anyContent, boxID, senderID string, referrerID *string) (Event, error) {
-	contentBytes, err := json.Marshal(content)
-	if err != nil {
-		return Event{}, merror.Transform(err).Describe("marshalling anyContent into bytes")
-	}
-	jsonContent := types.JSON{}
-	if err := jsonContent.UnmarshalJSON(contentBytes); err != nil {
-		return Event{}, merror.Transform(err).Describe("unmarshalling content bytes into types.JSON")
-	}
-
-	return New(eType, jsonContent, boxID, senderID, referrerID)
-}
-
 //TODO (perf): struct of size 240 bytes could be of size 224 bytes (maligned)
 type eventFilters struct {
 	// focus on one column filter
@@ -156,9 +156,12 @@ type eventFilters struct {
 	referrerIDs []string
 
 	// filters triggering in jsonb research
-	content  *string
-	unkicked bool
-	fileID   null.String
+	content          *string
+	unkicked         bool
+	fileID           null.String
+	restrictionType  null.String
+	restrictionTypes []string
+	accessValue      null.String
 
 	// ensure the event is not referred by another one
 	unreferred bool
@@ -171,6 +174,7 @@ type eventFilters struct {
 func get(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) (Event, error) {
 	var e Event
 
+	// NOTE: buildMods should always sort event with the most recent one on top of it
 	mods, err := buildMods(ctx, exec, filters)
 	if err != nil {
 		return e, merror.Transform(err).Describe("building mods for event get")
@@ -229,6 +233,7 @@ func list(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) 
 
 func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) ([]qm.QueryMod, error) {
 	mods := []qm.QueryMod{
+		// NOTE: get() function count on this to always get the latest event
 		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " DESC"),
 	}
 	// select only the id if asked
@@ -280,6 +285,22 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 	if filters.fileID.Valid {
 		mods = append(mods, qm.Where(`content->>'encrypted_file_id' = ?`, filters.fileID.String))
 	}
+
+	// add restriction type in restrictionTypes slice
+	if filters.restrictionType.Valid {
+		filters.restrictionTypes = append(filters.restrictionTypes, filters.restrictionType.String)
+	}
+
+	// add restriction types slices in JSONB matching
+	if len(filters.restrictionTypes) > 0 {
+		mods = append(mods, qm.WhereIn(`content->>'restriction_type' IN ?`, slice.StringSliceToInterfaceSlice(filters.restrictionTypes)...))
+	}
+
+	// add access value type in JSONB matching
+	if filters.accessValue.Valid {
+		mods = append(mods, qm.Where(`content->>'value' = ?`, filters.accessValue.String))
+	}
+
 	// add offset for pagination
 	if filters.offset != nil {
 		mods = append(mods, qm.Offset(*filters.offset))
@@ -328,7 +349,7 @@ func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFi
 			subMods = append(subMods, sqlboiler.EventWhere.SenderID.EQ(filters.senderID.String))
 			if filters.unkicked {
 				subMods = append(subMods, qm.Or2(
-					qm.Where(`type = 'member.kick' AND content->>'kicked_member_id' = ?`, filters.senderID.String),
+					qm.Where(`type = ? AND content->>'kicked_member_id' = ?`, etype.Memberkick, filters.senderID.String),
 				))
 			}
 		}
@@ -372,7 +393,7 @@ func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 func CountByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (int, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.EventWhere.BoxID.EQ(boxID),
-		sqlboiler.EventWhere.Type.IN(etype.MembersCanSee()),
+		sqlboiler.EventWhere.Type.IN(etype.MembersCanSee),
 	}
 	count, err := sqlboiler.Events(mods...).Count(ctx, exec)
 	if err != nil {

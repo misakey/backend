@@ -7,7 +7,7 @@ from time import sleep
 from base64 import b64encode, b64decode
 
 from misapy import http, URL_PREFIX
-from misapy.box_helpers import create_box_and_post_some_events_to_it, create_add_invitation_link_event
+from misapy.box_helpers import create_box_and_post_some_events_to_it
 from misapy.container_access import list_encrypted_files
 from misapy.get_access_token import get_authenticated_session
 from misapy.pretty_error import prettyErrorContext

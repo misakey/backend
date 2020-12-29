@@ -13,10 +13,10 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
-func doDeleteMsg(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ external.CryptoRepo, filesRepo files.FileStorageRepo) (Metadata, error) {
+func doDeleteMsg(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ external.CryptoRepo, filesRepo files.FileStorageRepo) (Metadata, error) {
 	// Authorization-related checks should come as soon as possible
 	// so we put them first.
-	if err := MustMemberHaveAccess(ctx, exec, redConn, identities, e.BoxID, e.SenderID); err != nil {
+	if err := MustBeMember(ctx, exec, redConn, e.BoxID, e.SenderID); err != nil {
 		return nil, err
 	}
 

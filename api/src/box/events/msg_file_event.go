@@ -42,11 +42,9 @@ func NewMsgFile(
 	ctx context.Context,
 	boxID string, senderID string,
 	encContent string, pubKey string,
-) (Event, string, error) {
-	e := Event{}
-
+) (e Event, fileID string, err error) {
 	// generate a new uuid as a file ID
-	fileID, err := uuid.NewString()
+	fileID, err = uuid.NewString()
 	if err != nil {
 		return e, "", merror.Transform(err).Describe("file id")
 	}

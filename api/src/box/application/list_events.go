@@ -37,6 +37,7 @@ func (req *ListEventsRequest) BindAndValidate(eCtx echo.Context) error {
 // ListEvents ...
 func (app *BoxApplication) ListEvents(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*ListEventsRequest)
+
 	// init an identity mapper for the operation
 	identityMapper := app.NewIM()
 
@@ -44,7 +45,7 @@ func (app *BoxApplication) ListEvents(ctx context.Context, genReq request.Reques
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustMemberHaveAccess(ctx, app.DB, app.RedConn, identityMapper, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustBeMember(ctx, app.DB, app.RedConn, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 

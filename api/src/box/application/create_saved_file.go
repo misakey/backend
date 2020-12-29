@@ -41,9 +41,6 @@ func (req *CreateSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 func (app *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*CreateSavedFileRequest)
 
-	// init an identity mapper for the operation
-	identityMapper := app.NewIM()
-
 	access := oidc.GetAccesses(ctx)
 	if access == nil {
 		return nil, merror.Unauthorized()
@@ -55,7 +52,7 @@ func (app *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.R
 
 	// check identity has access to the original file
 	hasAccess, err := events.HasAccessToFile(
-		ctx, app.DB, app.RedConn, identityMapper,
+		ctx, app.DB, app.RedConn,
 		access.IdentityID, req.EncryptedFileID,
 	)
 	if err != nil {

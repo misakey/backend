@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
@@ -10,7 +9,6 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
@@ -35,8 +33,8 @@ type ContactBox struct {
 	InvitationDataJSON          types.JSON
 }
 
-// CreateContactBox creates the box, sets the `invitation_link` access and invite the contacted user
-func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, filesRepo files.FileStorageRepo, cryptoRepo external.CryptoRepo, contact ContactBox) (*Box, error) {
+// CreateContactBox creates the box, sets the access mode to public and invite the contacted user
+func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, _ files.FileStorageRepo, cryptoRepo external.CryptoRepo, contact ContactBox) (*Box, error) {
 
 	// get contacted user identity
 	contactedUser, err := identityMapper.querier.Get(ctx, contact.ContactedIdentityID)
@@ -51,13 +49,8 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 	// create contact box
 	event, err := CreateCreateEvent(
 		ctx,
-		contact.Title,
-		contact.PublicKey,
-		contact.IdentityID,
-		exec,
-		redConn,
-		identityMapper,
-		filesRepo,
+		exec, redConn, identityMapper,
+		contact.Title, contact.PublicKey, contact.IdentityID,
 	)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("creating create event")
@@ -74,44 +67,33 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 		return nil, merror.Transform(err).Describe("creating key share")
 	}
 
-	// create access event
-	eventID, err := uuid.NewString()
+	// set the box in public mode
+	accessModeEvent, err := newWithAnyContent(
+		etype.Stateaccessmode,
+		&AccessModeContent{
+			Value: PublicMode,
+		},
+		event.BoxID,
+		contact.IdentityID,
+		nil,
+	)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("generating access event id")
+		return nil, merror.Transform(err).Describe("newing access mode event")
+	}
+	if _, err := doAddAccess(ctx, &accessModeEvent, null.JSON{}, exec, redConn, identityMapper, cryptoRepo, nil); err != nil {
+		return nil, merror.Transform(err).Describe("creating access event")
 	}
 
-	accessContent := accessContent{
-		RestrictionType: "invitation_link",
-		Value:           contact.OtherShareHash,
-		AutoInvite:      false,
-	}
-
-	serializedContent, err := json.Marshal(accessContent)
-	if err != nil {
-		return nil, merror.Transform(err).Describe("serializing access content")
-	}
-
-	accessEvent := Event{
-		ID:          eventID,
-		BoxID:       event.BoxID,
-		SenderID:    contact.IdentityID,
-		Type:        etype.Accessadd,
-		JSONContent: serializedContent,
-	}
-
+	// create crypto invitation actions
 	decodedInvitationDataJSON, err := contact.InvitationDataJSON.MarshalJSON()
 	if err != nil {
 		return nil, merror.Transform(err).Describe("decoding json")
 	}
-	if _, err := doAddAccess(ctx, &accessEvent, null.JSON{}, exec, redConn, identityMapper, cryptoRepo, nil); err != nil {
-		return nil, merror.Transform(err).Describe("creating access event")
-	}
-
 	if err := cryptoRepo.CreateInvitationActionsForIdentity(ctx, contact.IdentityID, event.BoxID, contact.Title, contact.ContactedIdentityID, null.JSONFrom(decodedInvitationDataJSON)); err != nil {
 		return nil, merror.Transform(err).Describe("creating invitation action")
 	}
 
-	// compute box
+	// compute box to return it
 	box, err := Compute(ctx, event.BoxID, exec, identityMapper, &event)
 	if err != nil {
 		return nil, merror.Transform(err).Describe("computing box")

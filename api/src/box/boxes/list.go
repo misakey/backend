@@ -63,7 +63,7 @@ func ListSenderBoxes(
 ) ([]*events.Box, error) {
 	boxes := []*events.Box{}
 	// 1. retrieve lastest events concerning the user's boxes
-	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID, etype.MembersCanSee())
+	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID, etype.MembersCanSee)
 	if err != nil {
 		return boxes, merror.Transform(err).Describe("listing box ids")
 	}

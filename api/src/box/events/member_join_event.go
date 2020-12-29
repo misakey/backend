@@ -24,11 +24,41 @@ func doJoin(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecuto
 		return nil, merror.Conflict().Describe("already box member")
 	}
 
-	// check accesses
-	if err := MustHaveAccess(ctx, exec, identities, e.BoxID, e.SenderID); err != nil {
-		return nil, merror.Transform(err).Describe("checking accesses")
+	// check the sender can join the box
+	if err := MustBeAbleToJoin(ctx, exec, identities, e.BoxID, e.SenderID); err != nil {
+		return nil, merror.Transform(err).Describe("checking joinability")
 	}
 
+	identity, err := identities.Get(ctx, e.SenderID, true)
+	if err != nil {
+		return nil, merror.Transform(err).Describe("doing join")
+	}
+
+	// if the sender can join, add it to access.add list if not done yet
+	_, err = get(ctx, exec, eventFilters{
+		eType:           null.StringFrom(etype.Accessadd),
+		unreferred:      true,
+		boxID:           null.StringFrom(e.BoxID),
+		restrictionType: null.StringFrom("identifier"),
+		accessValue:     null.StringFrom(identity.Identifier.Value),
+	})
+	// NOTE: if the access.add event corresponding to the identifier value is not found, create it
+	if err != nil && merror.HasCode(err, merror.NotFoundCode) {
+		accessEvent, err := newWithAnyContent(
+			etype.Accessadd,
+			&accessAddContent{RestrictionType: "identifier", Value: identity.Identifier.Value},
+			e.BoxID, e.SenderID, nil,
+		)
+		if err != nil {
+			return nil, merror.Transform(err).Describe("newing a join access.add")
+		}
+		// persist the generated access.add event
+		if err := accessEvent.persist(ctx, exec); err != nil {
+			return nil, merror.Transform(err).Describe("persisting a join access.add")
+		}
+	} else if err != nil {
+		return nil, merror.Transform(err).Describe("checking access.add existency")
+	}
 	return nil, e.persist(ctx, exec)
 }
 

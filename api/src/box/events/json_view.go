@@ -7,6 +7,7 @@ import (
 
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/types"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 )
 
@@ -64,7 +65,7 @@ func (e Event) Format(ctx context.Context, identities *IdentityMapper, transpare
 
 	// For deleted messages
 	// we put the deletor identifier in the content
-	if e.Type == "msg.text" || e.Type == "msg.file" {
+	if e.Type == etype.Msgtext || e.Type == etype.Msgfile {
 		var content DeletedContent
 		err := json.Unmarshal(e.JSONContent, &content)
 		if err != nil {
@@ -84,7 +85,7 @@ func (e Event) Format(ctx context.Context, identities *IdentityMapper, transpare
 		}
 	}
 
-	if e.Type == "member.kick" {
+	if e.Type == etype.Memberkick {
 		var content MemberKickContent
 		err := json.Unmarshal(e.JSONContent, &content)
 		if err != nil {

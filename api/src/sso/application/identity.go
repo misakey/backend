@@ -394,7 +394,7 @@ func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen re
 	for _, identity := range identities {
 		if !identity.Pubkey.Valid {
 			// If one of the identities does not have a public key
-			// then invitation should be made through an invitation link
+			// then invitation should be made through an key share
 			// so let's just not expose the public keys
 			return make([]string, 0), nil
 		}

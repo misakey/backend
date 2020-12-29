@@ -3,6 +3,8 @@ package events
 import (
 	"context"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
+
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/go-redis/redis/v7"
@@ -60,25 +62,29 @@ type EventHandler struct {
 }
 
 // NOTE:
-// Do handler is at least responsible for making the event persistent in storage (some events might do it differently though).
+// Do handler is at least responsible for making the event persistent in storage (some events might do it differently tough).
 // After handler must perform non-critical actions that might fail without altering the state of the box.
 var eventTypeHandlerMapping = map[string]EventHandler{
-	"state.key_share": {doKeyShare, nil},
-	"msg.text":        {doMessage, gh(sendRealtimeUpdate, countActivity, computeUsedSpace)},
-	"msg.file":        {doMessage, gh(sendRealtimeUpdate, countActivity, computeUsedSpace)},
-	"msg.edit":        {doEditMsg, gh(sendRealtimeUpdate, computeUsedSpace)},
-	"msg.delete":      {doDeleteMsg, gh(sendRealtimeUpdate, computeUsedSpace)},
-	"access.add":      {doAddAccess, nil},
-	"access.rm":       {doRmAccess, nil},
-	"member.leave":    {doLeave, gh(sendRealtimeUpdate, countActivity, invalidateCaches)},
-	"member.join":     {doJoin, gh(sendRealtimeUpdate, countActivity, invalidateCaches)},
+	etype.Accessadd: {doAddAccess, nil},
+	etype.Accessrm:  {doRmAccess, nil},
+
+	etype.Memberleave: {doLeave, group(sendRealtimeUpdate, countActivity, invalidateCaches)},
+	etype.Memberjoin:  {doJoin, group(sendRealtimeUpdate, countActivity, invalidateCaches)},
+
+	etype.Msgdelete: {doDeleteMsg, group(sendRealtimeUpdate, computeUsedSpace)},
+	etype.Msgedit:   {doEditMsg, group(sendRealtimeUpdate, computeUsedSpace)},
+	etype.Msgfile:   {doMessage, group(sendRealtimeUpdate, countActivity, computeUsedSpace)},
+	etype.Msgtext:   {doMessage, group(sendRealtimeUpdate, countActivity, computeUsedSpace)},
+
+	etype.Stateaccessmode: {doStateAccessMode, nil},
+	etype.Statekeyshare:   {doStateKeyShare, nil},
 
 	// never added by end-users directly but the system
-	"member.kick": {empty, gh(notifyKick, sendRealtimeUpdate, countActivity, invalidateCaches)},
+	etype.Memberkick: {empty, group(notifyKick, sendRealtimeUpdate, countActivity, invalidateCaches)},
 }
 
 // group handlers declaration
-func gh(handlers ...afterHandler) []afterHandler {
+func group(handlers ...afterHandler) []afterHandler {
 	return handlers
 }
 

@@ -46,8 +46,8 @@ func (app *BoxApplication) UpdateBoxSettings(ctx context.Context, genReq request
 		return nil, merror.Forbidden()
 	}
 
-	// check box existency and access
-	if err := events.MustHaveAccess(ctx, app.DB, app.NewIM(), req.boxID, req.identityID); err != nil {
+	// check box existency and membership
+	if err := events.MustBeMember(ctx, app.DB, app.RedConn, req.boxID, req.identityID); err != nil {
 		return nil, err
 	}
 

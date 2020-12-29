@@ -43,7 +43,7 @@ func (app *BoxApplication) GetBoxSettings(ctx context.Context, genReq request.Re
 	}
 
 	// check box existency and access
-	if err := events.MustHaveAccess(ctx, app.DB, app.NewIM(), req.boxID, req.identityID); err != nil {
+	if err := events.MustBeMember(ctx, app.DB, app.RedConn, req.boxID, req.identityID); err != nil {
 		return nil, err
 	}
 

@@ -34,10 +34,7 @@ func (app *BoxApplication) CountBoxFiles(ctx context.Context, genReq request.Req
 		return nil, merror.Unauthorized()
 	}
 
-	// init an identity mapper for the operation
-	identityMapper := app.NewIM()
-
-	if err := events.MustHaveAccess(ctx, app.DB, identityMapper, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustBeMember(ctx, app.DB, app.RedConn, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 

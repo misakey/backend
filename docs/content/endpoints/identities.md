@@ -431,17 +431,6 @@ _JSON Body:_
    "acknowledged_at": "2038-11-05T00:00:05.000Z",
   }, 
   {
-   "id": 76,
-   "type": "box.lifecycle", // not necessary closed
-   "details": {
-     "id": "da9cf1ac-bdb5-4296-99be-9add90d92a9a", // id of the concerned box
-     "title": "Dossier client 66593", // title of the box
-     "lifecycle": "closed" // planned to have other lifecycle (re-opened, as an example).
-   },
-   "created_at": "2038-11-05T00:00:06.000Z",
-   "acknowledged_at": null,
-  },
-  {
    "id": 87,
    "type": "user.reset_password", // the user has reset its password
    "details": null,
@@ -465,7 +454,7 @@ _JSON Body:_
 
 with attributes for each object of the list:
 - `id`: (integer) a unique integer corresponding to the identity notification.
-- `type`: (string, one of: _member.kick_, _box.lifecycle_, _user.reset_password_, _user.create_account_, _user.create_identity_, _box.auto_invite_) the type of notification - details and displayed text should be set considering this value.
+- `type`: (string, one of: _member.kick_, _user.reset_password_, _user.create_account_, _user.create_identity_, _box.auto_invite_) the type of notification - details and displayed text should be set considering this value.
 - `details`: (object) (nullable) a JSON object filled or `null` depending of the type of notification (see all JSON example to get info about it)
 - `created_at`: (date) the moment the server created the notification.
 - `acknowledged_at`: (date) (nullable) the moment the end-user has acknowledged the notification.

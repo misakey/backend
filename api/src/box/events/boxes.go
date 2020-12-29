@@ -17,10 +17,11 @@ import (
 
 // Box is a volatile object built based on events linked to its ID
 type Box struct {
-	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"server_created_at"`
-	PublicKey string    `json:"public_key"`
-	Title     string    `json:"title"`
+	ID         string    `json:"id"`
+	CreatedAt  time.Time `json:"server_created_at"`
+	PublicKey  string    `json:"public_key"`
+	Title      string    `json:"title"`
+	AccessMode string    `json:"access_mode"`
 
 	// aggregated data
 	EventsCount null.Int    `json:"events_count,omitempty"`
@@ -42,8 +43,8 @@ type computer struct {
 	box Box
 
 	// local save for internal logic
-	creatorID  string
-	lastEvent  *Event
+	creatorID string
+	lastEvent *Event
 }
 
 // Compute box according to the received boxID.
@@ -66,7 +67,8 @@ func Compute(
 	computer.ePlayer = map[string]func(context.Context, Event) error{
 		// NOTE: to add an new event here should involve attention on the RequireToBuild method
 		// used to retrieve events to compute the box
-		etype.Create:         computer.playCreate,
+		etype.Create:          computer.playCreate,
+		etype.Stateaccessmode: computer.playStateAccessMode,
 	}
 
 	// automatically retrieve events if 0 events loaded
@@ -82,7 +84,10 @@ func Compute(
 }
 
 func (c *computer) do(ctx context.Context) error {
-	// replay events from the last (most recent) to first ()
+	// 1. before playing all event, set default values:
+	c.box.AccessMode = LimitedMode
+
+	// 2. replay events from the last (most recent) to first ()
 	// to fill the box informations
 	totalCount := len(c.events)
 	for i := 0; i < totalCount; i++ {
@@ -92,6 +97,7 @@ func (c *computer) do(ctx context.Context) error {
 		}
 	}
 
+	// handle the last event that have been potentially set during event plays.
 	return c.handleLast(ctx)
 }
 
@@ -107,7 +113,8 @@ func (c *computer) playEvent(ctx context.Context, e Event) error {
 
 // take care of binding the last event in the box
 func (c *computer) handleLast(ctx context.Context) error {
-	if c.lastEvent == nil { // retrieve last event if not already there
+	// 1. retrieve last event if not already there
+	if c.lastEvent == nil {
 		last, err := GetLast(ctx, c.exec, c.box.ID)
 		if err != nil {
 			return merror.Transform(err).Describe("getting last event")
@@ -115,10 +122,12 @@ func (c *computer) handleLast(ctx context.Context) error {
 		c.lastEvent = &last
 	}
 
+	// 2. build event aggregate
 	if err := BuildAggregate(ctx, c.exec, c.lastEvent); err != nil {
 		return merror.Transform(err).Describe("building aggregate")
 	}
-	// non-transparent mode for the last event
+
+	// 3. format and bind in non-transparent view mode the last event
 	view, err := c.lastEvent.Format(ctx, c.identities, false)
 	if err != nil {
 		return merror.Transform(err).Describe("computing view of last event")
@@ -152,6 +161,15 @@ func (c *computer) playCreate(ctx context.Context, e Event) error {
 	return nil
 }
 
+func (c *computer) playStateAccessMode(ctx context.Context, e Event) error {
+	accessModeContent := AccessModeContent{}
+	if err := accessModeContent.Unmarshal(e.JSONContent); err != nil {
+		return err
+	}
+	c.box.AccessMode = accessModeContent.Value
+	return nil
+}
+
 // GetBoxPublicKey ...
 func GetBoxPublicKey(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
 	createEvent, err := GetCreateEvent(ctx, exec, boxID)
@@ -166,8 +184,8 @@ func GetBoxPublicKey(ctx context.Context, exec boil.ContextExecutor, boxID strin
 	return content.PublicKey, nil
 }
 
-// CleanBox ...
-func CleanBox(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
+// ClearBox ...
+func ClearBox(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
 	// 1. Delete all the events
 	if err := DeleteAllForBox(ctx, exec, boxID); err != nil {
 		return merror.Transform(err).Describe("deleting events")

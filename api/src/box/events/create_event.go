@@ -13,8 +13,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
 
 // CreationContent ...
@@ -67,8 +65,8 @@ func GetCreateEvent(
 // CreateCreateEvent ...
 func CreateCreateEvent(
 	ctx context.Context,
+	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
 	title, publicKey, senderID string,
-	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, filesRepo files.FileStorageRepo,
 ) (Event, error) {
 	event, err := NewCreate(title, publicKey, senderID)
 	if err != nil {
@@ -81,12 +79,12 @@ func CreateCreateEvent(
 	}
 
 	// invalidates cache for creator boxes list
-	if err := invalidateCaches(ctx, &event, exec, redConn, identities, filesRepo, nil); err != nil {
+	if err := invalidateCaches(ctx, &event, exec, redConn, nil, nil, nil); err != nil {
 		logger.FromCtx(ctx).Warn().Err(err).Msgf("invalidating the cache")
 	}
 
 	// send notification to creator
-	if err := sendRealtimeUpdate(ctx, &event, exec, redConn, identities, filesRepo, nil); err != nil {
+	if err := sendRealtimeUpdate(ctx, &event, exec, redConn, identities, nil, nil); err != nil {
 		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not send create notification for box %s", event.BoxID)
 	}
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from misapy import http, URL_PREFIX
-from misapy.box_helpers import create_add_invitation_link_event
 from misapy.check_response import check_response, assert_fn
 from misapy.get_access_token import get_authenticated_session
 from misapy.box_members import join_box
@@ -21,16 +20,8 @@ with prettyErrorContext():
     )
     box_id = r.json()['id']
 
-    s1.post(
-        f'{URL_PREFIX}/boxes/{box_id}/batch-events',
-        json={
-            'batch_type': 'accesses',
-            'events' : [create_add_invitation_link_event()],
-        },
-    )
-
     s2.set_identity_pubkey('s2pubkey')
-
+    
     print('- "Bad Request" if "auto_invite" but no crypto actions data')
     s1.post(
         f'{URL_PREFIX}/boxes/{box_id}/batch-events',

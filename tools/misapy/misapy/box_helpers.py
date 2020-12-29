@@ -12,15 +12,7 @@ from .container_access import list_encrypted_files
 from .check_response import check_response, assert_fn
 from .boxes.key_shares import new_key_share_event
 
-def create_add_invitation_link_event():
-    return {
-        'type': 'access.add',
-        'content': {
-            'restriction_type': 'invitation_link',
-        },
-    }
-
-def create_box_and_post_some_events_to_it(session, close=True):
+def create_box_and_post_some_events_to_it(session, public=True):
     s = session
 
     r = s.post(
@@ -57,28 +49,17 @@ def create_box_and_post_some_events_to_it(session, close=True):
         expected_status_code=201
     )
 
-    print(f'- access invitation_link creation for box {box_id}')
-    event = create_add_invitation_link_event()
-    s.post(
-        f'{URL_PREFIX}/boxes/{box_id}/batch-events',
-        json={
-            'batch_type': 'accesses',
-            'events' : [event,]
-        },
-        expected_status_code=201,
-    )
-
-    if close:
-        print(f'- close box {box_id}')
-        r = s.post(
+    if public:
+        print(f'- set access mode to public for box {box_id}')
+        s.post(
             f'{URL_PREFIX}/boxes/{box_id}/events',
             json={
-                'type': 'state.lifecycle',
+                'type': 'state.access_mode',
                 'content': {
-                    'state': 'closed'
+                    'value': 'public',
                 }
             },
-            expected_status_code=201
+            expected_status_code=201,
         )
 
     print(f'- listing for created box {box_id}')
@@ -86,7 +67,7 @@ def create_box_and_post_some_events_to_it(session, close=True):
     check_response(
         r,
         [
-            lambda r: assert_fn(len(r.json()) == 4 if close else 3),
+            lambda r: assert_fn(len(r.json()) == 3),
         ]
     )
     for event in r.json():

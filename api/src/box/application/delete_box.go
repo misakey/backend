@@ -77,7 +77,7 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 	}
 	defer atomic.SQLRollback(ctx, tr, &err)
 
-	if err := events.CleanBox(ctx, tr, req.boxID); err != nil {
+	if err := events.ClearBox(ctx, tr, req.boxID); err != nil {
 		return nil, err
 	}
 

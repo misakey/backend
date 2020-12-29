@@ -50,15 +50,13 @@ func (req *UploadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) error 
 // UploadEncryptedFile ...
 func (app *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*UploadEncryptedFileRequest)
-	// init an identity mapper for the operation
-	identityMapper := app.NewIM()
 
 	// checking accesses
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustMemberHaveAccess(ctx, app.DB, app.RedConn, identityMapper, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustBeMember(ctx, app.DB, app.RedConn, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 

@@ -15,7 +15,7 @@ with prettyErrorContext():
     s2 = get_authenticated_session(acr_values=2)
 
     # Message Edition & Deletion
-    box1_id, _ = create_box_and_post_some_events_to_it(session=s1, close=False)
+    box1_id, _ = create_box_and_post_some_events_to_it(session=s1)
     r = s1.post(
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={

@@ -37,7 +37,7 @@ func (c MemberKickContent) Validate() error {
 	)
 }
 
-// KickDeprecatedMembers ...
+// KickDeprecatedMembers by checking if the member is still in the identifier accesses list.
 func KickDeprecatedMembers(
 	ctx context.Context,
 	exec boil.ContextExecutor, identities *IdentityMapper,
@@ -53,7 +53,7 @@ func KickDeprecatedMembers(
 
 	// 2. check if we must kick active joins
 	for _, joinEvent := range activeJoins {
-		if err := MustHaveAccess(ctx, exec, identities, boxID, joinEvent.SenderID); err != nil {
+		if err := MustBeLegitimate(ctx, exec, identities, boxID, joinEvent.SenderID); err != nil {
 			// if the member has no access anymore then kick them by creation a member.kick event
 			if merror.HasCode(err, merror.ForbiddenCode) {
 				content := MemberKickContent{KickerID: kickerID}
@@ -74,7 +74,8 @@ func KickDeprecatedMembers(
 	return kicks, nil
 }
 
-func notifyKick(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ files.FileStorageRepo, _ Metadata) error {
+// notifyKick by creating identity notifications for kicked members
+func notifyKick(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redis.Client, identities *IdentityMapper, _ files.FileStorageRepo, _ Metadata) error {
 	// TODO (perf): use metadahandlers to bear already retrieved data across handlers ?
 	box, err := Compute(ctx, e.BoxID, exec, identities, e)
 	if err != nil {
@@ -93,6 +94,6 @@ func notifyKick(ctx context.Context, e *Event, exec boil.ContextExecutor, redCon
 	if err != nil {
 		return merror.Transform(err).Describe("marshalling kick details")
 	}
-	identities.CreateNotifs(ctx, []string{e.SenderID}, "member.kick", null.JSONFrom(bytes))
+	identities.CreateNotifs(ctx, []string{e.SenderID}, etype.Memberkick, null.JSONFrom(bytes))
 	return nil
 }

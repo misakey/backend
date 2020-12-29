@@ -110,11 +110,11 @@ func IsFileOrphan(ctx context.Context, exec boil.ContextExecutor, fileID string)
 // HasAccessOrHasSavedFile ...
 func HasAccessOrHasSavedFile(
 	ctx context.Context,
-	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
+	exec boil.ContextExecutor, redConn *redis.Client,
 	identityID string, fileID string,
 ) (bool, error) {
 	// 1. identity has access to files contained in boxes they have access to
-	hasAccess, err := HasAccessToFile(ctx, exec, redConn, identities, identityID, fileID)
+	hasAccess, err := HasAccessToFile(ctx, exec, redConn, identityID, fileID)
 	if err != nil {
 		return false, err
 	}
@@ -142,7 +142,7 @@ func HasAccessOrHasSavedFile(
 // HasAccessToFile if the file is in a box the identity have access to
 func HasAccessToFile(
 	ctx context.Context,
-	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
+	exec boil.ContextExecutor, redConn *redis.Client,
 	identityID string, fileID string,
 ) (bool, error) {
 	// get all msg events mentioning the file
@@ -156,7 +156,7 @@ func HasAccessToFile(
 	}
 	// for each file event, check the user has currently access to the box
 	for _, event := range filePartialEvents {
-		err := MustMemberHaveAccess(ctx, exec, redConn, identities, event.BoxID, identityID)
+		err := MustBeMember(ctx, exec, redConn, event.BoxID, identityID)
 		// if no error has been raised, the access is allowed
 		if err == nil {
 			return true, nil

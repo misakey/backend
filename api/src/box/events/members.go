@@ -15,7 +15,11 @@ import (
 )
 
 // ListBoxMemberIDs and return their identities ID
-func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, boxID string) ([]string, error) {
+func ListBoxMemberIDs(
+	ctx context.Context,
+	exec boil.ContextExecutor, redConn *redis.Client,
+	boxID string,
+) ([]string, error) {
 	// 1. try to retrieve cache if it exists
 	members, err := redConn.SMembers(cache.GetBoxMembersKey(boxID)).Result()
 	if err == nil && len(members) != 0 {
@@ -63,8 +67,7 @@ func ListBoxMemberIDs(ctx context.Context, exec boil.ContextExecutor, redConn *r
 // MustBeMember ...
 func MustBeMember(
 	ctx context.Context,
-	exec boil.ContextExecutor,
-	redConn *redis.Client,
+	exec boil.ContextExecutor, redConn *redis.Client,
 	boxID, senderID string,
 ) error {
 
@@ -77,7 +80,8 @@ func MustBeMember(
 			if senderIsMember {
 				return nil
 			}
-			return merror.Forbidden().Describe("restricted to member").Detail("sender_id", merror.DVForbidden)
+			return merror.Forbidden().Describe("must be a member").
+				Detail("reason", "not_member").Detail("sender_id", merror.DVForbidden)
 		}
 	}
 
@@ -91,10 +95,10 @@ func MustBeMember(
 	}
 
 	_, err = get(ctx, exec, eventFilters{
-		eType:      null.StringFrom("member.join"),
+		eType:      null.StringFrom(etype.Memberjoin),
 		unreferred: true,
 		boxID:      null.StringFrom(boxID),
-		// NOTE: today senderID is not used to build unreferred filter since boxID is considered before
+		// NOTE: today senderID is not used to build unreferred filter since boxID is considered before.
 		// this is necessary since the sender of member.kick is not the sender of the member.join event.
 		senderID: null.StringFrom(senderID),
 	})
@@ -102,15 +106,13 @@ func MustBeMember(
 	if err == nil {
 		return nil
 	}
-	return merror.Forbidden().Describe("restricted to member").Detail("sender_id", merror.DVForbidden)
+	return merror.Forbidden().Describe("must be a member").Detail("reason", "not_member").Detail("sender_id", merror.DVForbidden)
 }
 
 func isMember(
 	ctx context.Context,
-	exec boil.ContextExecutor,
-	redConn *redis.Client,
-	boxID,
-	senderID string,
+	exec boil.ContextExecutor, redConn *redis.Client,
+	boxID, senderID string,
 ) (bool, error) {
 	err := MustBeMember(ctx, exec, redConn, boxID, senderID)
 	if err != nil && merror.HasCode(err, merror.ForbiddenCode) {

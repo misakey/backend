@@ -29,14 +29,14 @@ func bindRoutes(
 
 	boxPath.GET(oidcHandlerFactory.NewACR1(
 		"/:id",
-		func() request.Request { return &application.ReadBoxRequest{} },
-		app.ReadBox,
+		func() request.Request { return &application.GetBoxRequest{} },
+		app.GetBox,
 		request.ResponseOK,
 	))
 	boxPath.GET(oidcHandlerFactory.NewPublic(
 		"/:id/public",
-		func() request.Request { return &application.ReadBoxPublicRequest{} },
-		app.ReadBoxPublic,
+		func() request.Request { return &application.GetBoxPublicRequest{} },
+		app.GetBoxPublic,
 		request.ResponseOK,
 	))
 	boxPath.HEAD(oidcHandlerFactory.NewACR2(

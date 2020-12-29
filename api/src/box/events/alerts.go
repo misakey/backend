@@ -65,7 +65,7 @@ func countActivity(ctx context.Context, e *Event, exec boil.ContextExecutor, red
 }
 
 // invalidates all redis caches for the boxID & event.senderID
-func invalidateCaches(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ files.FileStorageRepo, _ Metadata) error {
+func invalidateCaches(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ files.FileStorageRepo, _ Metadata) error {
 	_, err := redConn.Del(cache.GetBoxMembersKey(e.BoxID)).Result()
 	if err != nil {
 		logger.FromCtx(ctx).Warn().Msgf("could not invalidate cache %s:members", e.BoxID)

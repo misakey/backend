@@ -43,7 +43,7 @@ func (app *BoxApplication) ListBoxFiles(ctx context.Context, genReq request.Requ
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	if err := events.MustMemberHaveAccess(ctx, app.DB, app.RedConn, identityMapper, req.boxID, acc.IdentityID); err != nil {
+	if err := events.MustBeMember(ctx, app.DB, app.RedConn, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
 	}
 
