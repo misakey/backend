@@ -173,7 +173,6 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
         r = s.get(manual_redirection, raise_for_status=False)
 
     tokens = parse_query_string(urlparse(r.url).fragment)
-    csrf_token = tokens['csrf_token'][0]
     id_token = tokens['id_token'][0]
     # for some reason the cookie does not appear in `r.cookies`
     # but it appears in `s.cookies`
@@ -182,29 +181,27 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
     r = http.get(
         f'https://api.misakey.com.local/identities/{identity_id}',
         cookies={"accesstoken": access_token, "tokentype": "bearer"},
-        headers={"X-CSRF-Token": csrf_token}
     )
     account_id = r.json()['account_id']
     identifier_id = r.json()['identifier_id']
     display_name = r.json()['display_name']
 
+    s.identity_id = identity_id
+    s.email = email
+    s.account_id = account_id
+    s.identifier_id = identifier_id
+    s.display_name = display_name
+
+
     return namedtuple(
         'OAuth2Creds',
-        ['email', 'access_token', 'csrf_token', 'identity_id',
-            'id_token', 'consent_done', 'account_id', 'identifier_id', 'display_name'],
-    )(email, access_token, csrf_token, identity_id, id_token, consent_done, account_id, identifier_id, display_name)
+        ['email', 'access_token', 'identity_id',
+            'id_token', 'consent_done', 'account_id', 'identifier_id', 'display_name',
+            'session'],
+    )(email, access_token, identity_id, id_token, consent_done, account_id, identifier_id, display_name, s)
 
 
 def get_authenticated_session(email=None, require_account=False, acr_values=None, reset_password=False):
     creds = get_credentials(email, require_account, acr_values, reset_password)
-    session = Session(identity_id=creds.identity_id, email=creds.email)
-    cookie_obj = requests.cookies.create_cookie(domain='api.misakey.com.local',name='accesstoken',value=creds.access_token)
-    session.cookies.set_cookie(cookie_obj)
-    cookie_obj = requests.cookies.create_cookie(domain='api.misakey.com.local',name='tokentype',value='bearer')
-    session.cookies.set_cookie(cookie_obj)
-    session.headers.update({'X-CSRF-Token': creds.csrf_token})
     print(f'Tok - {creds.identity_id}: {creds.access_token}')
-    session.account_id = creds.account_id
-    session.identifier_id = creds.identifier_id
-    session.display_name = creds.display_name
-    return session
+    return creds.session

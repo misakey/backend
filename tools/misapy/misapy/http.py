@@ -45,8 +45,15 @@ class UnexpectedResponseStatus(Exception):
             f'got {response.status_code}'
         )
 
-def call_request_fn_decorated(fn, *args, expected_status_code=None, raise_for_status=True, **kwargs):
+def call_request_fn_decorated(fn, *args, expected_status_code=None, raise_for_status=True, csrf_token=None, **kwargs):
     '''`raise_for_status` only has effect when there is no `expected_status_code`'''
+
+    if csrf_token:
+        kwargs['headers'] = {
+            **kwargs.get('headers', {}),
+            'X-CSRF-Token': csrf_token,
+        }
+
     try:
         response = fn(*args, verify=False, **kwargs)
     except requests.exceptions.ConnectionError as error:
@@ -83,20 +90,61 @@ delete = lambda *args, **kwargs: call_request_fn_decorated(requests.delete, *arg
 
 class Session(requests.Session):
     '''requests.Session but with decorated HTTP methods (get, post, etc ...)'''
+    def __init__(self):
+        super().__init__()
+        self.csrf_token = None
+
+    def update_csrf(self, response: requests.Response):
+        for redir in response.history:
+            if '_csrf' in redir.cookies:
+                self.csrf_token = redir.cookies['_csrf']
+
+        if '_csrf' in response.cookies:
+            self.csrf_token = response.cookies['_csrf']
+        return response
+        
     def post(self, *args, **kwargs):
-        return call_request_fn_decorated(super().post, *args, **kwargs)
+        kwargs['csrf_token'] = self.csrf_token
+        return self.update_csrf(
+            call_request_fn_decorated(super().post, *args, **kwargs)
+        )
+
     def head(self, *args, **kwargs):
-        return call_request_fn_decorated(super().head, *args, **kwargs)
+        kwargs['csrf_token'] = self.csrf_token
+        return self.update_csrf(
+            call_request_fn_decorated(super().head, *args, **kwargs)
+        )
+
     def get(self, *args, **kwargs):
-        return call_request_fn_decorated(super().get, *args, **kwargs)
+        kwargs['csrf_token'] = self.csrf_token
+        return self.update_csrf(
+            call_request_fn_decorated(super().get, *args, **kwargs)
+        )
+
     def patch(self, *args, **kwargs):
-        return call_request_fn_decorated(super().patch, *args, **kwargs)
+        kwargs['csrf_token'] = self.csrf_token
+        return self.update_csrf(
+            call_request_fn_decorated(super().patch, *args, **kwargs)
+        )
+
     def put(self, *args, **kwargs):
-        return call_request_fn_decorated(super().put, *args, **kwargs)
+        kwargs['csrf_token'] = self.csrf_token
+        return self.update_csrf(
+            call_request_fn_decorated(super().put, *args, **kwargs)
+        )
+
     def delete(self, *args, **kwargs):
-        return call_request_fn_decorated(super().delete, *args, **kwargs)
+        kwargs['csrf_token'] = self.csrf_token
+        return self.update_csrf(
+            call_request_fn_decorated(super().delete, *args, **kwargs)
+        )
+
     def patch(self, *args, **kwargs):
-        return call_request_fn_decorated(super().patch, *args, **kwargs)
+        kwargs['csrf_token'] = self.csrf_token
+        return self.update_csrf(
+            call_request_fn_decorated(super().patch, *args, **kwargs)
+        )
+
 
 
 def pretty_string_of_response(response: requests.Response):
