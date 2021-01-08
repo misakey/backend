@@ -5,7 +5,7 @@ from base64 import b64encode
 
 from misapy import URL_PREFIX
 from misapy.box_helpers import create_box_and_post_some_events_to_it
-from misapy.box_members import join_box
+from misapy.box_members import join_box, leave_box
 from misapy.check_response import check_response, assert_fn
 from misapy.container_access import list_encrypted_files
 from misapy.get_access_token import get_authenticated_session
@@ -61,6 +61,14 @@ with prettyErrorContext():
         expected_status_code=200
     )
     assert r.json()['access_mode'] == 'public'
+
+    print("- identity 2 get a not_member error trying to get the box")
+    # identity usually first get the box and have a no_member error before joining the box
+    r = s2.get(
+        f'{URL_PREFIX}/boxes/{box_id}',
+        expected_status_code=403,
+    )
+    assert r.json()['details']['reason'] == 'not_member'
 
     print("- identity 2 can become a member of the box and is added to the access list")
     join_box(s2, box_id)
@@ -131,6 +139,7 @@ with prettyErrorContext():
     assert r.json()['access_mode'] == 'limited'
 
     print('- identity 2 (non-creator) is not added twice to the access list if already inside it')
+    leave_box(s2, box_id)
     join_box(s2, box_id)
     r = s1.get(
         f'{URL_PREFIX}/boxes/{box_id}/accesses',

@@ -14,3 +14,12 @@ def join_box(session, box_id):
         },
         expected_status_code=201,
     )
+
+def leave_box(session, box_id):
+    return session.post(
+        f'{URL_PREFIX}/boxes/{box_id}/events',
+        json={
+            'type': 'member.leave',
+        },
+        expected_status_code=201,
+    )
