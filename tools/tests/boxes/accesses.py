@@ -139,7 +139,6 @@ with prettyErrorContext():
     assert r.json()['access_mode'] == 'limited'
 
     print('- identity 2 (non-creator) is not added twice to the access list if already inside it')
-    leave_box(s2, box_id)
     join_box(s2, box_id)
     r = s1.get(
         f'{URL_PREFIX}/boxes/{box_id}/accesses',

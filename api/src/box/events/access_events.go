@@ -199,11 +199,6 @@ func HasAccess(ctx context.Context,
 	boxID, identityID string,
 	identifierOnly bool,
 ) error {
-	// 0. check the box is public, then anyone has access to it
-	if isPublic(ctx, exec, boxID) {
-		return nil
-	}
-
 	// 1. list existing active accesses for the box
 	accesses, err := FindActiveAccesses(ctx, exec, boxID)
 	if err != nil {
