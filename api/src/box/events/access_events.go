@@ -238,7 +238,6 @@ func HasAccess(ctx context.Context,
 				return nil
 			}
 		}
-		break
 	}
 	return merror.Forbidden().Describe("must match a restriction rule").Detail("reason", "no_access")
 }

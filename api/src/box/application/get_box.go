@@ -44,7 +44,7 @@ func (app *BoxApplication) GetBox(ctx context.Context, genReq request.Request) (
 	if acc == nil {
 		return nil, merror.Unauthorized()
 	}
-	// NOTE:
+
 	if err := events.MustBeMember(ctx, app.DB, app.RedConn, req.boxID, acc.IdentityID); err != nil {
 		// if the err is 403, the user is not a member, check if it has a least has access or not
 		if merror.HasCode(err, merror.ForbiddenCode) {
