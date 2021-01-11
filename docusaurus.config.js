@@ -12,6 +12,18 @@ module.exports = {
   projectName: 'docs', // Usually your repo name.
   themeConfig: {
     respectPrefersColorScheme: true,
+    algolia: {
+      apiKey: 'caeec869399ae3eeb050e134fef631c9',
+      indexName: 'misakey',
+
+      // Optional: see doc section bellow
+      contextualSearch: true,
+
+      // Optional: Algolia search parameters
+      searchParameters: {},
+
+      //... other Algolia params
+    },
     announcementBar: {
       id: 'beta', // Any value that will identify this message.
       content: 'This documentation is a work in progress. Feel free to <a href="mailto:love@misakey.com">email us</a> if you have any constructive feedback!',
