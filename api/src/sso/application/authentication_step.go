@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn"
@@ -25,7 +25,7 @@ type AuthenticationStepCmd struct {
 // BindAndValidate ...
 func (cmd *AuthenticationStepCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
 	if err := v.ValidateStruct(&cmd.Step,
@@ -57,13 +57,13 @@ func (sso *SSOService) InitAuthnStep(ctx context.Context, genReq request.Request
 		return nil, err
 	}
 	if !curIdentity.IsAuthable {
-		return nil, merror.Forbidden().Describe("identity not authable")
+		return nil, merr.Forbidden().Desc("identity not authable")
 	}
 
 	// 1. check login challenge
 	_, err = sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
 	if err != nil {
-		return nil, merror.NotFound().Describe("finding login challenge").Detail("login_challenge", merror.DVNotFound)
+		return nil, merr.NotFound().Desc("finding login challenge").Add("login_challenge", merr.DVNotFound)
 	}
 
 	// 2. we try to init the authentication step

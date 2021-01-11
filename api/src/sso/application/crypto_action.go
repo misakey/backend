@@ -10,7 +10,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
@@ -41,11 +41,11 @@ func (sso *SSOService) ListCryptoActions(ctx context.Context, gen request.Reques
 	acc := oidc.GetAccesses(ctx)
 	// querier must have an account
 	if acc == nil || acc.AccountID.IsZero() {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	if query.accountID != acc.AccountID.String {
-		return nil, merror.Forbidden().Describe("can only list one's own crypto actions")
+		return nil, merr.Forbidden().Desc("can only list one's own crypto actions")
 	}
 
 	actions, err := crypto.ListActions(ctx, sso.sqlDB, query.accountID)
@@ -85,11 +85,11 @@ func (sso *SSOService) GetCryptoAction(ctx context.Context, gen request.Request)
 	acc := oidc.GetAccesses(ctx)
 	// querier must have an account
 	if acc == nil || acc.AccountID.IsZero() {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	if query.accountID != acc.AccountID.String {
-		return nil, merror.Forbidden().Describe("can only get one's own crypto actions")
+		return nil, merr.Forbidden().Desc("can only get one's own crypto actions")
 	}
 
 	action, err := crypto.GetAction(ctx, sso.sqlDB, query.actionID, query.accountID)
@@ -128,11 +128,11 @@ func (sso *SSOService) DeleteCryptoAction(ctx context.Context, gen request.Reque
 	acc := oidc.GetAccesses(ctx)
 	// querier must have an account
 	if acc == nil || acc.AccountID.IsZero() {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	if query.accountID != acc.AccountID.String {
-		return nil, merror.Forbidden().Describe("can only delete one's own crypto actions")
+		return nil, merr.Forbidden().Desc("can only delete one's own crypto actions")
 	}
 
 	// start transaction since write actions will be performed

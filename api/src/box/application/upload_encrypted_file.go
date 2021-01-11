@@ -7,7 +7,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -29,13 +29,13 @@ type UploadEncryptedFileRequest struct {
 // BindAndValidate ...
 func (req *UploadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	req.boxID = eCtx.Param("bid")
 	file, err := eCtx.FormFile("encrypted_file")
 	if err != nil {
-		return merror.BadRequest().From(merror.OriBody).
-			Detail("encrypted_file", merror.DVRequired).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).
+			Add("encrypted_file", merr.DVRequired).Desc(err.Error())
 	}
 	req.encFile = file
 	req.size = file.Size
@@ -54,7 +54,7 @@ func (app *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq reque
 	// checking accesses
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 	if err := events.MustBeMember(ctx, app.DB, app.RedConn, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
@@ -62,20 +62,20 @@ func (app *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq reque
 
 	// check box exists
 	if err := events.MustBoxExists(ctx, app.DB, req.boxID); err != nil {
-		return nil, merror.Transform(err).Describe("checking exist")
+		return nil, merr.From(err).Desc("checking exist")
 	}
 
 	// retrieve the raw []byte from the file
 	encData, err := req.encFile.Open()
 	if err != nil {
-		return nil, merror.Internal().Describef("opening encrypted file: %v", err)
+		return nil, merr.Internal().Descf("opening encrypted file: %v", err)
 	}
 	defer encData.Close()
 
 	// create the new msg file that will described the upload action
 	e, fileID, err := events.NewMsgFile(ctx, req.boxID, acc.IdentityID, req.MsgEncContent, req.MsgPubKey)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("creating msg file event")
+		return nil, merr.From(err).Desc("creating msg file event")
 	}
 
 	// create the encrypted file entity
@@ -84,12 +84,12 @@ func (app *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq reque
 		Size: req.size,
 	}
 	if err := files.Create(ctx, app.DB, eFile); err != nil {
-		return nil, merror.Transform(err).Describe("creating file")
+		return nil, merr.From(err).Desc("creating file")
 	}
 
 	// upload the encrypted data
 	if err := files.Upload(ctx, app.filesRepo, fileID, encData); err != nil {
-		return nil, merror.Transform(err).Describe("uploading file")
+		return nil, merr.From(err).Desc("uploading file")
 	}
 
 	// persist the event in storage - on failure, we try to remove the uploaded file
@@ -107,9 +107,9 @@ func (app *BoxApplication) UploadEncryptedFile(ctx context.Context, genReq reque
 	}
 	view, err := app.CreateEvent(ctx, &eReq)
 	if err != nil {
-		err = merror.Transform(err).Describe("inserting event in DB")
+		err = merr.From(err).Desc("inserting event in DB")
 		if delErr := files.Delete(ctx, app.DB, app.filesRepo, fileID); delErr != nil {
-			return nil, merror.Transform(err).Describef("deleting file: %v", delErr)
+			return nil, merr.From(err).Descf("deleting file: %v", delErr)
 		}
 		return nil, err
 	}

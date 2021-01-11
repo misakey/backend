@@ -9,7 +9,7 @@ import (
 	"github.com/volatiletech/null/v8"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -31,7 +31,7 @@ type CreateBoxRequest struct {
 // BindAndValidate ...
 func (req *CreateBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 
 	err := v.ValidateStruct(req,
@@ -61,7 +61,7 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 
 	// init an identity mapper for the operation
@@ -75,13 +75,13 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 		acc.IdentityID,
 	)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("creating create event")
+		return nil, merr.From(err).Desc("creating create event")
 	}
 
 	// build the box view and return it
 	box, err := events.Compute(ctx, event.BoxID, app.DB, identityMapper, &event)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("building box")
+		return nil, merr.From(err).Desc("building box")
 	}
 
 	if req.KeyShareData != nil {
@@ -94,7 +94,7 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 			acc.IdentityID,
 		)
 		if err != nil {
-			return nil, merror.Transform(err).Describe("creating key share")
+			return nil, merr.From(err).Desc("creating key share")
 		}
 	}
 

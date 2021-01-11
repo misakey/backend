@@ -10,7 +10,7 @@ import (
 	"gopkg.in/square/go-jose.v2/jwt"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // Client implementing some Open ID Connect concepts as a Relying Party (a.k.a. Third Party).
@@ -27,18 +27,18 @@ type Client struct {
 func NewClient(id, tokenURL, encodedJWK string) (*Client, error) {
 	decoded, err := base64.StdEncoding.DecodeString(encodedJWK)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("could not decode encoded client jwk")
+		return nil, merr.From(err).Desc("could not decode encoded client jwk")
 	}
 	jwk := jose.JSONWebKey{}
 	if err := jwk.UnmarshalJSON(decoded); err != nil {
-		return nil, merror.Transform(err).Describe("could not unmarshal client jwk")
+		return nil, merr.From(err).Desc("could not unmarshal client jwk")
 	}
 	signer, err := jose.NewSigner(
 		jose.SigningKey{Algorithm: jose.RS256, Key: jwk}, // RS256 is the only encryption algorithm handled by hydra today -https://github.com/ory/hydra/issues/1638
 		(&jose.SignerOptions{}).WithType("JWT"),
 	)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("could not create jose.Signer")
+		return nil, merr.From(err).Desc("could not create jose.Signer")
 	}
 
 	oidcCli := &Client{

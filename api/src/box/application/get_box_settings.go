@@ -7,7 +7,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -23,7 +23,7 @@ type GetBoxSettingsRequest struct {
 // BindAndValidate ...
 func (req *GetBoxSettingsRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	req.identityID = eCtx.Param("id")
 	req.boxID = eCtx.Param("bid")
@@ -39,7 +39,7 @@ func (app *BoxApplication) GetBoxSettings(ctx context.Context, genReq request.Re
 
 	acc := oidc.GetAccesses(ctx)
 	if acc.IdentityID != req.identityID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// check box existency and access

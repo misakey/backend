@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/cache"
@@ -34,7 +34,7 @@ func ListBoxMemberIDs(
 		boxID: null.StringFrom(boxID),
 	})
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting create event")
+		return nil, merr.From(err).Desc("getting create event")
 	}
 	// start the member IDs list with it
 	uniqueMemberIDs := make(map[string]bool)
@@ -80,8 +80,8 @@ func MustBeMember(
 			if senderIsMember {
 				return nil
 			}
-			return merror.Forbidden().Describe("must be a member").
-				Detail("reason", "not_member").Detail("sender_id", merror.DVForbidden)
+			return merr.Forbidden().Desc("must be a member").
+				Add("reason", "not_member").Add("sender_id", merr.DVForbidden)
 		}
 	}
 
@@ -106,7 +106,7 @@ func MustBeMember(
 	if err == nil {
 		return nil
 	}
-	return merror.Forbidden().Describe("must be a member").Detail("reason", "not_member").Detail("sender_id", merror.DVForbidden)
+	return merr.Forbidden().Desc("must be a member").Add("reason", "not_member").Add("sender_id", merr.DVForbidden)
 }
 
 func isMember(
@@ -115,7 +115,7 @@ func isMember(
 	boxID, senderID string,
 ) (bool, error) {
 	err := MustBeMember(ctx, exec, redConn, boxID, senderID)
-	if err != nil && merror.HasCode(err, merror.ForbiddenCode) {
+	if merr.IsAForbidden(err) {
 		return false, nil
 	}
 	// return false admin if an error has occurred

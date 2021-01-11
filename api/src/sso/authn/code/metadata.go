@@ -8,7 +8,7 @@ import (
 	"io"
 
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 var (
@@ -26,7 +26,7 @@ func GenerateAsRawJSON() (ret types.JSON, err error) {
 	b := make([]byte, codeSize)
 	n, err := io.ReadAtLeast(rand.Reader, b, codeSize)
 	if err != nil {
-		return ret, merror.Transform(err).Describe("generate code")
+		return ret, merr.From(err).Desc("generate code")
 	}
 	if n != codeSize {
 		return ret, fmt.Errorf("generate code: read less than the wished size: %d vs %d", n, codeSize)
@@ -45,7 +45,7 @@ func GenerateAsRawJSON() (ret types.JSON, err error) {
 func ToMetadata(msg json.Marshaler) (ret Metadata, err error) {
 	msgJSON, err := msg.MarshalJSON()
 	if err != nil {
-		return ret, merror.Transform(err).Describe("code metadata")
+		return ret, merr.From(err).Desc("code metadata")
 	}
 	err = json.Unmarshal(msgJSON, &ret)
 	return ret, err

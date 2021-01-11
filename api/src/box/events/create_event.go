@@ -11,7 +11,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
@@ -39,7 +39,7 @@ func NewCreate(title, publicKey, senderID string) (e Event, err error) {
 	// generate an id for the created box
 	boxID, err := uuid.NewString()
 	if err != nil {
-		err = merror.Transform(err).Describe("generating box ID")
+		err = merr.From(err).Desc("generating box ID")
 		return
 	}
 
@@ -70,12 +70,12 @@ func CreateCreateEvent(
 ) (Event, error) {
 	event, err := NewCreate(title, publicKey, senderID)
 	if err != nil {
-		return Event{}, merror.Transform(err).Describe("creating create event")
+		return Event{}, merr.From(err).Desc("creating create event")
 	}
 
 	// persist the event in storage
 	if err = event.persist(ctx, exec); err != nil {
-		return Event{}, merror.Transform(err).Describe("inserting event")
+		return Event{}, merr.From(err).Desc("inserting event")
 	}
 
 	// invalidates cache for creator boxes list
@@ -112,7 +112,7 @@ func isCreator(ctx context.Context, exec boil.ContextExecutor, boxID, senderID s
 	}
 
 	// not found error means the user is not the creator
-	if merror.HasCode(err, merror.NotFoundCode) {
+	if merr.IsANotFound(err) {
 		return false, nil
 	}
 	// return the error if unexpected

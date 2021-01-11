@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
@@ -27,7 +27,7 @@ type CreateSavedFileRequest struct {
 // BindAndValidate ...
 func (req *CreateSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	return v.ValidateStruct(req,
 		v.Field(&req.EncryptedFileID, v.Required, is.UUIDv4),
@@ -43,11 +43,11 @@ func (app *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.R
 
 	access := oidc.GetAccesses(ctx)
 	if access == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 	// check request identity consistency
 	if req.IdentityID != access.IdentityID {
-		return nil, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
+		return nil, merr.Forbidden().Add("identity_id", merr.DVForbidden)
 	}
 
 	// check identity has access to the original file
@@ -56,16 +56,16 @@ func (app *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.R
 		access.IdentityID, req.EncryptedFileID,
 	)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("checking file access")
+		return nil, merr.From(err).Desc("checking file access")
 	}
 	if !hasAccess {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// generate a new uuid as a saved file ID
 	id, err := uuid.NewString()
 	if err != nil {
-		return nil, merror.Transform(err).Describe("generating saved file id")
+		return nil, merr.From(err).Desc("generating saved file id")
 	}
 	// create the actual saved_file
 	savedFile := files.SavedFile{
@@ -76,7 +76,7 @@ func (app *BoxApplication) CreateSavedFile(ctx context.Context, genReq request.R
 		KeyFingerprint:    req.KeyFingerprint,
 	}
 	if err := files.CreateSavedFile(ctx, app.DB, &savedFile); err != nil {
-		return nil, merror.Transform(err).Describe("creating saved file")
+		return nil, merr.From(err).Desc("creating saved file")
 	}
 
 	// send websocket

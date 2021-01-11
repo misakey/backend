@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // MustBeAdmin ...
@@ -17,7 +17,7 @@ func MustBeAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID
 		return err
 	}
 	if !isCreator {
-		return merror.Forbidden().Describe("not the creator")
+		return merr.Forbidden().Desc("not the creator")
 	}
 	return nil
 }
@@ -25,10 +25,11 @@ func MustBeAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID
 // IsAdmin ...
 func IsAdmin(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (bool, error) {
 	err := MustBeAdmin(ctx, exec, boxID, senderID)
-	if err != nil && merror.HasCode(err, merror.ForbiddenCode) {
+	// return no error if it is a forbidden, just set admin boolean to false
+	if merr.IsAForbidden(err) {
 		return false, nil
 	}
-	// return false admin if an error has occurred
+	// still return false if an error has occurred
 	return (err == nil), err
 }
 

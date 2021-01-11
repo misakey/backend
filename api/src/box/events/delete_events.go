@@ -8,7 +8,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // DeleteAllForBox ...
@@ -25,7 +25,7 @@ func DeleteAllForBox(
 		return err
 	}
 	if rowsAff == 0 {
-		return merror.NotFound().Detail("box_id", merror.DVNotFound)
+		return merr.NotFound().Add("box_id", merr.DVNotFound)
 	}
 	return nil
 }

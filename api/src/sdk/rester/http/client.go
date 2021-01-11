@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"strings"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
 )
 
@@ -165,7 +165,7 @@ func (r *Client) Perform(
 	// 1. build URL, request, and use optional input to fill body
 	req, err := http.NewRequest(verb, r.buildURL(r.secure, r.url, route, params), nil)
 	if err != nil {
-		return merror.Transform(err).Describe("could not create request")
+		return merr.From(err).Desc("could not create request")
 	}
 	if input != nil {
 		var data []byte
@@ -173,7 +173,7 @@ func (r *Client) Perform(
 		case MimeTypeJSON:
 			data, err = json.Marshal(input)
 			if err != nil {
-				return merror.Transform(err).Describe("could not encode body")
+				return merr.From(err).Desc("could not encode body")
 			}
 		case MimeTypeURLEncodedForm:
 			params := input.(url.Values)
@@ -182,7 +182,7 @@ func (r *Client) Perform(
 			if strings.HasPrefix(format, MimeTypeMultipartForm) {
 				buffer, ok := input.(*bytes.Buffer)
 				if !ok {
-					return merror.Internal().Describe("expecting input as a bytes.Buffer pointer")
+					return merr.Internal().Desc("expecting input as a bytes.Buffer pointer")
 				}
 				data = buffer.Bytes()
 			}
@@ -207,7 +207,7 @@ func (r *Client) Perform(
 	// 2. Perform request
 	resp, err := r.Do(req)
 	if err != nil {
-		return merror.Transform(err).Describe("could perform request")
+		return merr.From(err).Desc("could perform request")
 	}
 
 	// Head format is a special case where we want to retrieve headers instead of body

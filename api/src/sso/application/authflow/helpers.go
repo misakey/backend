@@ -3,11 +3,11 @@ package authflow
 import (
 	"net/url"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // BuildRedirectErr with an error code and a description
-func buildRedirectErr(code merror.Code, desc string, baseURL *url.URL) string {
+func buildRedirectErr(code merr.Code, desc string, baseURL *url.URL) string {
 	redirectURL := *baseURL
 	query := redirectURL.Query()
 	// query parameters tends toward compliancy with https://tools.ietf.org/html/rfc6749#section-5.2

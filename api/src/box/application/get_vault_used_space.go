@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -32,15 +32,15 @@ func (app *BoxApplication) GetVaultUsedSpace(ctx context.Context, genReq request
 
 	access := oidc.GetAccesses(ctx)
 	if access == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 	if req.IdentityID != access.IdentityID {
-		return nil, merror.Forbidden().Detail("id", merror.DVForbidden)
+		return nil, merr.Forbidden().Add("id", merr.DVForbidden)
 	}
 
 	vaultSpace, err := quota.GetVault(ctx, app.DB, req.IdentityID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("get vault space")
+		return nil, merr.From(err).Desc("get vault space")
 	}
 
 	return vaultSpace, nil

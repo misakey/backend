@@ -10,7 +10,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -36,7 +36,7 @@ type BatchEvent struct {
 // BindAndValidate ...
 func (req *BatchCreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	req.boxID = eCtx.Param("id")
 	if err := v.ValidateStruct(req,
@@ -68,18 +68,18 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 	req := genReq.(*BatchCreateEventRequest)
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 
 	// check the box exists
 	if err := events.MustBoxExists(ctx, app.DB, req.boxID); err != nil {
-		return nil, merror.Transform(err).Describe("checking exist")
+		return nil, merr.From(err).Desc("checking exist")
 	}
 
 	// start a transaction to handle all event in one context and potentially rollback all of them
 	tr, err := app.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("initing transaction")
+		return nil, merr.From(err).Desc("initing transaction")
 	}
 	defer atomic.SQLRollback(ctx, tr, &err)
 
@@ -100,7 +100,7 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 
 		metadatas[event.ID], err = handler.Do(ctx, &event, batchE.Extra, tr, app.RedConn, identityMapper, app.cryptoRepo, app.filesRepo)
 		if err != nil {
-			return nil, merror.Transform(err).Describef("doing %s event", event.Type)
+			return nil, merr.From(err).Descf("doing %s event", event.Type)
 		}
 		createdList[i] = event
 	}
@@ -110,13 +110,13 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 		var kicks []events.Event
 		kicks, err = events.KickDeprecatedMembers(ctx, tr, identityMapper, req.boxID, acc.IdentityID)
 		if err != nil {
-			return nil, merror.Transform(err).Describe("potentially kicking")
+			return nil, merr.From(err).Desc("potentially kicking")
 		}
 		createdList = append(createdList, kicks...)
 	}
 
 	if cErr := tr.Commit(); cErr != nil {
-		return nil, merror.Transform(cErr).Describe("committing transaction")
+		return nil, merr.From(cErr).Desc("committing transaction")
 	}
 
 	// not important to wait for after handlers to return
@@ -140,7 +140,7 @@ func (app *BoxApplication) BatchCreateEvent(ctx context.Context, genReq request.
 		// non-transparent mode
 		views[i], fErr = e.Format(ctx, identityMapper, false)
 		if err != nil {
-			return nil, merror.Transform(fErr).Describe("computing event view")
+			return nil, merr.From(fErr).Desc("computing event view")
 		}
 	}
 

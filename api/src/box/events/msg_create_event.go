@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
@@ -20,7 +20,7 @@ func doMessage(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExec
 	}
 
 	if e.ReferrerID.Valid {
-		return nil, merror.BadRequest().Describe("referrer id cannot be set").Detail("referrer_id", merror.DVForbidden)
+		return nil, merr.BadRequest().Desc("referrer id cannot be set").Add("referrer_id", merr.DVForbidden)
 	}
 
 	if err := e.persist(ctx, exec); err != nil {

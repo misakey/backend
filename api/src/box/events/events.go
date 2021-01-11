@@ -10,7 +10,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
@@ -46,12 +46,12 @@ func New(eType string, jsonContent types.JSON, boxID, senderID string, referrerI
 	// bind/validate the shape of the event content
 	err := bindAndValidateContent(&event)
 	if err != nil {
-		return event, merror.Transform(err).Describe("binding content")
+		return event, merr.From(err).Desc("binding content")
 	}
 
 	event.ID, err = uuid.NewString()
 	if err != nil {
-		return event, merror.Transform(err).Describe("generating event id")
+		return event, merr.From(err).Desc("generating event id")
 	}
 	return event, nil
 }
@@ -59,11 +59,11 @@ func New(eType string, jsonContent types.JSON, boxID, senderID string, referrerI
 func newWithAnyContent(eType string, content anyContent, boxID, senderID string, referrerID *string) (Event, error) {
 	contentBytes, err := json.Marshal(content)
 	if err != nil {
-		return Event{}, merror.Transform(err).Describe("marshalling anyContent into bytes")
+		return Event{}, merr.From(err).Desc("marshalling anyContent into bytes")
 	}
 	jsonContent := types.JSON{}
 	if err := jsonContent.UnmarshalJSON(contentBytes); err != nil {
-		return Event{}, merror.Transform(err).Describe("unmarshalling content bytes into types.JSON")
+		return Event{}, merr.From(err).Desc("unmarshalling content bytes into types.JSON")
 	}
 
 	return New(eType, jsonContent, boxID, senderID, referrerID)
@@ -72,7 +72,7 @@ func newWithAnyContent(eType string, content anyContent, boxID, senderID string,
 func (e *Event) persist(ctx context.Context, exec boil.ContextExecutor) error {
 	// finally insert
 	if err := e.ToSQLBoiler().Insert(ctx, exec, boil.Infer()); err != nil {
-		return merror.Transform(err).Describe("inserting event in DB")
+		return merr.From(err).Desc("inserting event in DB")
 	}
 	return nil
 }
@@ -125,7 +125,7 @@ func ListByTypeAndBoxIDAndSenderID(ctx context.Context, exec boil.ContextExecuto
 
 	dbEvents, err := sqlboiler.Events(mods...).All(ctx, exec)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("retrieving db events")
+		return nil, merr.From(err).Desc("retrieving db events")
 	}
 
 	events := make([]Event, len(dbEvents))
@@ -134,7 +134,7 @@ func ListByTypeAndBoxIDAndSenderID(ctx context.Context, exec boil.ContextExecuto
 	}
 
 	if len(events) == 0 {
-		return events, merror.NotFound().Detail("id", merror.DVNotFound)
+		return events, merr.NotFound().Add("id", merr.DVNotFound)
 	}
 
 	return events, nil
@@ -177,15 +177,15 @@ func get(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) (
 	// NOTE: buildMods should always sort event with the most recent one on top of it
 	mods, err := buildMods(ctx, exec, filters)
 	if err != nil {
-		return e, merror.Transform(err).Describe("building mods for event get")
+		return e, merr.From(err).Desc("building mods for event get")
 	}
 
 	dbEvent, err := sqlboiler.Events(mods...).One(ctx, exec)
 	if err == sql.ErrNoRows {
-		return e, merror.NotFound().Detail("id", merror.DVNotFound)
+		return e, merr.NotFound().Add("id", merr.DVNotFound)
 	}
 	if err != nil {
-		return e, merror.Transform(err).Describe("getting event")
+		return e, merr.From(err).Desc("getting event")
 	}
 	return FromSQLBoiler(dbEvent), nil
 }
@@ -202,7 +202,7 @@ func listEventAndReferrers(ctx context.Context, exec boil.ContextExecutor, id st
 		return nil, err
 	}
 	if len(dbEvents) == 0 {
-		return nil, merror.NotFound().Describe("listing events")
+		return nil, merr.NotFound().Desc("listing events")
 	}
 
 	events := make([]Event, len(dbEvents))
@@ -216,7 +216,7 @@ func listEventAndReferrers(ctx context.Context, exec boil.ContextExecutor, id st
 func list(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) ([]Event, error) {
 	mods, err := buildMods(ctx, exec, filters)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("building mods for events list")
+		return nil, merr.From(err).Desc("building mods for events list")
 	}
 
 	dbEvents, err := sqlboiler.Events(mods...).All(ctx, exec)
@@ -315,7 +315,7 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 	if filters.unreferred {
 		notInIDs, err := referentIDs(ctx, exec, filters)
 		if err != nil {
-			return mods, merror.Transform(err).Describe("sub selecting referents")
+			return mods, merr.From(err).Desc("sub selecting referents")
 		}
 		if len(notInIDs) > 0 {
 			mods = append(mods, qm.WhereIn(sqlboiler.EventColumns.ID+" NOT IN ?", slice.StringSliceToInterfaceSlice(notInIDs)...))
@@ -338,7 +338,7 @@ func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFi
 		// check we don't face the cases we should never use
 		if filters.boxID.IsZero() && filters.senderID.IsZero() ||
 			filters.unkicked && filters.senderID.IsZero() {
-			return nil, merror.Internal().Describe("wrong unreferred use")
+			return nil, merr.Internal().Desc("wrong unreferred use")
 		}
 
 		// NOTE: boxID must be checked before senderID - both cannot be used at the same time
@@ -356,7 +356,7 @@ func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFi
 	}
 	referents, err := sqlboiler.Events(subMods...).All(ctx, exec)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("listing referents")
+		return nil, merr.From(err).Desc("listing referents")
 	}
 	// compute the list of event that are referred according to retrieved referents
 	notInIDs := make([]string, len(referents))
@@ -381,7 +381,7 @@ func ListFilesID(ctx context.Context, exec boil.ContextExecutor, boxID string) (
 	for idx, event := range events {
 		err = json.Unmarshal(event.JSONContent, &content)
 		if err != nil {
-			return nil, merror.Internal().Describe("unmarshaling content json")
+			return nil, merr.Internal().Desc("unmarshaling content json")
 		}
 		ids[idx] = content.EncryptedFileID
 	}
@@ -397,7 +397,7 @@ func CountByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) 
 	}
 	count, err := sqlboiler.Events(mods...).Count(ctx, exec)
 	if err != nil {
-		return 0, merror.Transform(err).Describe("retrieving db events")
+		return 0, merr.From(err).Desc("retrieving db events")
 	}
 
 	return int(count), nil
@@ -416,14 +416,14 @@ func CountFilesByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID str
 	}
 	notInIDs, err := referentIDs(ctx, exec, filters)
 	if err != nil {
-		return 0, merror.Transform(err).Describe("sub selecting referents")
+		return 0, merr.From(err).Desc("sub selecting referents")
 	}
 	if len(notInIDs) > 0 {
 		mods = append(mods, qm.WhereIn(sqlboiler.EventColumns.ID+" NOT IN ?", slice.StringSliceToInterfaceSlice(notInIDs)...))
 	}
 	count, err := sqlboiler.Events(mods...).Count(ctx, exec)
 	if err != nil {
-		return 0, merror.Transform(err).Describe("retrieving db events")
+		return 0, merr.From(err).Desc("retrieving db events")
 	}
 
 	return int(count), nil

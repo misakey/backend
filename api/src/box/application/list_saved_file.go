@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -23,7 +23,7 @@ type ListSavedFilesRequest struct {
 // BindAndValidate ...
 func (req *ListSavedFilesRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	return v.ValidateStruct(req,
 		v.Field(&req.IdentityID, v.Required, is.UUIDv4),
@@ -38,12 +38,12 @@ func (app *BoxApplication) ListSavedFiles(ctx context.Context, genReq request.Re
 
 	access := oidc.GetAccesses(ctx)
 	if access == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 
 	// check identity
 	if req.IdentityID != access.IdentityID {
-		return nil, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
+		return nil, merr.Forbidden().Add("identity_id", merr.DVForbidden)
 	}
 
 	filters := files.SavedFileFilters{

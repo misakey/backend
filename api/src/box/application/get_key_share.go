@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -22,7 +22,7 @@ type GetKeyShareRequest struct {
 // BindAndValidate ...
 func (req *GetKeyShareRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriPath)
+		return merr.From(err).Ori(merr.OriPath)
 	}
 	req.otherShareHash = eCtx.Param("other-share-hash")
 	return v.ValidateStruct(req,
@@ -37,12 +37,12 @@ func (app *BoxApplication) GetKeyShare(ctx context.Context, genReq request.Reque
 	// check accesses
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 
 	ks, err := keyshares.Get(ctx, app.DB, req.otherShareHash)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting key share")
+		return nil, merr.From(err).Desc("getting key share")
 	}
 
 	if err := events.MustBeMember(ctx, app.DB, app.RedConn, ks.BoxID, acc.IdentityID); err != nil {

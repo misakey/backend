@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v7"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories"
 )
 
@@ -39,7 +39,7 @@ func (bkr BackupKeyShareService) CreateBackupKeyShare(ctx context.Context, backu
 	key := bkr.storageKey(backupKeyShare.OtherShareHash)
 	value, err := json.Marshal(backupKeyShare)
 	if err != nil {
-		return merror.Internal().Describe("encoding backup key share").Describe(err.Error())
+		return merr.Internal().Desc("encoding backup key share").Desc(err.Error())
 	}
 	return bkr.SimpleKeyRedis.Set(ctx, key, value, bkr.keyExpiration)
 }
@@ -52,7 +52,7 @@ func (bkr BackupKeyShareService) GetBackupKeyShare(ctx context.Context, otherSha
 		return &keyShare, err
 	}
 	if err := json.Unmarshal(value, &keyShare); err != nil {
-		return &keyShare, merror.Transform(err).Describe("unmarshaling backup key share")
+		return &keyShare, merr.From(err).Desc("unmarshaling backup key share")
 	}
 	return &keyShare, nil
 }

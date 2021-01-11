@@ -10,7 +10,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -31,7 +31,7 @@ type CreateEventRequest struct {
 // BindAndValidate ...
 func (req *CreateEventRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	req.boxID = eCtx.Param("id")
 	return v.ValidateStruct(req,
@@ -56,7 +56,7 @@ func (app *BoxApplication) CreateEvent(ctx context.Context, genReq request.Reque
 	req := genReq.(*CreateEventRequest)
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 
 	// init an identity mapper for the operation
@@ -66,7 +66,7 @@ func (app *BoxApplication) CreateEvent(ctx context.Context, genReq request.Reque
 
 	// check the box exists
 	if err := events.MustBoxExists(ctx, app.DB, req.boxID); err != nil {
-		return view, merror.Forbidden()
+		return view, merr.Forbidden()
 	}
 
 	// init the event
@@ -81,19 +81,19 @@ func (app *BoxApplication) CreateEvent(ctx context.Context, genReq request.Reque
 	// initialize transaction
 	tx, err := app.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("creating DB transaction")
+		return nil, merr.From(err).Desc("creating DB transaction")
 	}
 
 	handler := events.Handler(event.Type)
 	metadata, err := handler.Do(ctx, &event, req.Extra, tx, app.RedConn, identityMapper, app.cryptoRepo, app.filesRepo)
 	if err != nil {
 		atomic.SQLRollback(ctx, tx, &err)
-		return nil, merror.Transform(err).Describef("during %s event", event.Type)
+		return nil, merr.From(err).Descf("during %s event", event.Type)
 	}
 
 	// commit transaction
 	if err := tx.Commit(); err != nil {
-		return nil, merror.Transform(err).Describe("committing transaction")
+		return nil, merr.From(err).Desc("committing transaction")
 	}
 
 	// not important to wait for after handlers to return
@@ -111,7 +111,7 @@ func (app *BoxApplication) CreateEvent(ctx context.Context, genReq request.Reque
 	// finally format the event (non-transparent mode)
 	view, err = event.Format(ctx, identityMapper, false)
 	if err != nil {
-		return view, merror.Transform(err).Describe("computing event view")
+		return view, merr.From(err).Desc("computing event view")
 	}
 
 	return view, nil

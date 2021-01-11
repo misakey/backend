@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-redis/redis/v7"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories"
 )
 
@@ -29,7 +29,7 @@ func (srr SessionRedisRepo) key(sessionID string) string {
 func (srr SessionRedisRepo) Upsert(ctx context.Context, session Session, lifetime time.Duration) error {
 	value, err := json.Marshal(session)
 	if err != nil {
-		return merror.Transform(err).Describe("marshaling sesion")
+		return merr.From(err).Desc("marshaling sesion")
 	}
 	return srr.SimpleKeyRedis.Set(ctx, srr.key(session.ID), value, lifetime)
 }
@@ -43,7 +43,7 @@ func (srr SessionRedisRepo) Get(ctx context.Context, sessionID string) (Session,
 		return session, err
 	}
 	if err := json.Unmarshal(value, &session); err != nil {
-		return session, merror.Transform(err).Describe("unmarshaling session")
+		return session, merr.From(err).Desc("unmarshaling session")
 	}
 	session.ID = sessionID
 	return session, nil

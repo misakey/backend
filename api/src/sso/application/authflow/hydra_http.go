@@ -7,7 +7,7 @@ import (
 
 	"github.com/volatiletech/null/v8"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/login"
@@ -68,8 +68,8 @@ func (h HydraHTTP) GetLoginContext(ctx context.Context, loginChallenge string) (
 	logCtx := login.Context{}
 	err := h.adminJSONRester.Get(ctx, "/oauth2/auth/requests/login", params, &hydraLogReq)
 	if err != nil {
-		if merror.HasCode(err, merror.NotFoundCode) {
-			err = merror.Transform(err).Detail("challenge", merror.DVNotFound)
+		if merr.IsANotFound(err) {
+			return logCtx, merr.From(err).Add("challenge", merr.DVNotFound)
 		}
 		return logCtx, err
 	}
@@ -109,8 +109,8 @@ func (h HydraHTTP) Login(ctx context.Context, loginChallenge string, acceptance 
 	params.Add("login_challenge", loginChallenge)
 	err := h.adminJSONRester.Put(ctx, "/oauth2/auth/requests/login/accept", params, acceptance, &redirect)
 	if err != nil {
-		if merror.HasCode(err, merror.NotFoundCode) {
-			err = merror.Transform(err).Detail("challenge", merror.DVNotFound)
+		if merr.IsANotFound(err) {
+			return "", merr.From(err).Add("challenge", merr.DVNotFound)
 		}
 		return "", err
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/null/v8"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
@@ -42,8 +42,8 @@ func (mapper *IdentityMapper) Get(ctx context.Context, identityID string, transp
 		// get unknown identity and save it
 		existingIdentity, err := mapper.querier.Get(ctx, identityID)
 		// NOTE: on not found, the system still fills the SenderView with anonymous information
-		if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
-			return sender, merror.Transform(err).Describe("getting identity")
+		if err != nil && !merr.IsANotFound(err) {
+			return sender, merr.From(err).Desc("getting identity")
 		}
 
 		if err == nil {
@@ -81,7 +81,7 @@ func (mapper *IdentityMapper) List(ctx context.Context, identityIDs []string, tr
 		// get all unknowns and save them
 		identities, err := mapper.querier.List(ctx, identity.Filters{IDs: unknownIDs})
 		if err != nil {
-			return nil, merror.Transform(err).Describe("listing identities")
+			return nil, merr.From(err).Desc("listing identities")
 		}
 
 		// put them in memory
@@ -123,7 +123,7 @@ func (mapper *IdentityMapper) CreateNotifs(ctx context.Context, identityIDs []st
 func (mapper *IdentityMapper) MapToAccountID(ctx context.Context, identityIDs []string) (map[string]string, error) {
 	identities, err := mapper.querier.List(ctx, identity.Filters{IDs: identityIDs})
 	if err != nil {
-		return nil, merror.Transform(err).Describe("listing identities")
+		return nil, merr.From(err).Desc("listing identities")
 	}
 
 	result := make(map[string]string)

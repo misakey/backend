@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
@@ -18,20 +18,20 @@ func doJoin(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecuto
 	// check that the current sender is not already a box member
 	isMember, err := isMember(ctx, exec, redConn, e.BoxID, e.SenderID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("checking membership")
+		return nil, merr.From(err).Desc("checking membership")
 	}
 	if isMember {
-		return nil, merror.Conflict().Describe("already box member")
+		return nil, merr.Conflict().Desc("already box member")
 	}
 
 	// check the sender can join the box
 	if err := MustBeAbleToJoin(ctx, exec, identities, e.BoxID, e.SenderID); err != nil {
-		return nil, merror.Transform(err).Describe("checking joinability")
+		return nil, merr.From(err).Desc("checking joinability")
 	}
 
 	identity, err := identities.Get(ctx, e.SenderID, true)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("doing join")
+		return nil, merr.From(err).Desc("doing join")
 	}
 
 	// if the sender can join, add it to access.add list if not done yet
@@ -43,21 +43,21 @@ func doJoin(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecuto
 		accessValue:     null.StringFrom(identity.Identifier.Value),
 	})
 	// NOTE: if the access.add event corresponding to the identifier value is not found, create it
-	if err != nil && merror.HasCode(err, merror.NotFoundCode) {
-		accessEvent, err := newWithAnyContent(
+	if merr.IsANotFound(err) {
+		accessEvent, newErr := newWithAnyContent(
 			etype.Accessadd,
 			&accessAddContent{RestrictionType: "identifier", Value: identity.Identifier.Value},
 			e.BoxID, e.SenderID, nil,
 		)
-		if err != nil {
-			return nil, merror.Transform(err).Describe("newing a join access.add")
+		if newErr != nil {
+			return nil, merr.From(err).Desc("newing a join access.add")
 		}
 		// persist the generated access.add event
 		if err := accessEvent.persist(ctx, exec); err != nil {
-			return nil, merror.Transform(err).Describe("persisting a join access.add")
+			return nil, merr.From(err).Desc("persisting a join access.add")
 		}
 	} else if err != nil {
-		return nil, merror.Transform(err).Describe("checking access.add existency")
+		return nil, merr.From(err).Desc("checking access.add existency")
 	}
 	return nil, e.persist(ctx, exec)
 }
@@ -72,7 +72,7 @@ func listBoxActiveJoinEvents(ctx context.Context, exec boil.ContextExecutor, box
 		boxID:      null.StringFrom(boxID),
 	})
 	if err != nil {
-		return nil, merror.Transform(err).Describe("listing join events")
+		return nil, merr.From(err).Desc("listing join events")
 	}
 	return activeJoinEvents, nil
 }

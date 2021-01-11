@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // AvatarFileSystem ...
@@ -58,7 +58,7 @@ func (fs *AvatarFileSystem) Delete(ctx context.Context, avatar *AvatarFile) erro
 	path := path.Join(fs.location, avatar.Filename)
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			return merror.NotFound().Describe(err.Error())
+			return merr.NotFound().Desc(err.Error())
 		}
 		return err
 	}

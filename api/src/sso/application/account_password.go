@@ -13,7 +13,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -71,7 +71,7 @@ type ChangePasswordCmd struct {
 // BindAndValidate ...
 func (cmd *ChangePasswordCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
 	cmd.accountID = eCtx.Param("id")
@@ -82,7 +82,7 @@ func (cmd *ChangePasswordCmd) BindAndValidate(eCtx echo.Context) error {
 		v.Field(&cmd.BackupVersion, v.Required),
 		v.Field(&cmd.accountID, v.Required, is.UUIDv4),
 	); err != nil {
-		return merror.Transform(err).Describe("validating change password command")
+		return merr.From(err).Desc("validating change password command")
 	}
 	return nil
 }
@@ -94,12 +94,12 @@ func (sso *SSOService) ChangePassword(ctx context.Context, gen request.Request) 
 	// grab accesses from context
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// verify authenticated account id is linked to the given account id
 	if acc.AccountID.IsZero() || acc.AccountID.String != cmd.accountID {
-		return nil, merror.Forbidden().Detail("account_id", merror.DVForbidden)
+		return nil, merr.Forbidden().Add("account_id", merr.DVForbidden)
 	}
 
 	// start transaction since write actions will be performed
@@ -121,7 +121,7 @@ func (sso *SSOService) ChangePassword(ctx context.Context, gen request.Request) 
 		return nil, err
 	}
 	if !oldPasswordValid {
-		err = merror.Forbidden().Describe("invalid old password").Detail("old_password", merror.DVInvalid)
+		err = merr.Forbidden().Desc("invalid old password").Add("old_password", merr.DVInvalid)
 		return nil, err
 	}
 
@@ -133,10 +133,10 @@ func (sso *SSOService) ChangePassword(ctx context.Context, gen request.Request) 
 
 	// check and update backup data
 	if cmd.BackupVersion != account.BackupVersion+1 {
-		err = merror.Conflict().
-			Describe("bad backup version number").
-			Detail("version", "invalid").
-			Detail("expected_version", fmt.Sprintf("%d", account.BackupVersion+1))
+		err = merr.Conflict().
+			Desc("bad backup version number").
+			Add("version", "invalid").
+			Add("expected_version", fmt.Sprintf("%d", account.BackupVersion+1))
 		return nil, err
 	}
 
@@ -163,7 +163,7 @@ func (cmd PasswordResetCmd) Validate() error {
 		v.Field(&cmd.Password),
 		v.Field(&cmd.BackupData, v.Required),
 	); err != nil {
-		return merror.Transform(err).Describe("validating reset password command")
+		return merr.From(err).Desc("validating reset password command")
 	}
 	return nil
 }
@@ -175,14 +175,14 @@ func (sso *SSOService) resetPassword(
 	// verify authenticated identity id is linked to the given account id
 	curIdentity, err := identity.Get(ctx, exec, identityID)
 	if err != nil {
-		return merror.Forbidden().Describe("invalid token subject")
+		return merr.Forbidden().Desc("invalid token subject")
 	}
 
 	if curIdentity.AccountID.String == "" {
-		return merror.Conflict().
-			Describe("identity is not linked to any account").
-			Detail("identity_id", merror.DVConflict).
-			Detail("account_id", merror.DVRequired)
+		return merr.Conflict().
+			Desc("identity is not linked to any account").
+			Add("identity_id", merr.DVConflict).
+			Add("account_id", merr.DVRequired)
 	}
 
 	// get account

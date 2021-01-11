@@ -8,7 +8,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
@@ -21,13 +21,13 @@ func (wh WebsocketHandler) BoxUsersWS(c echo.Context) error {
 	identityID := c.Param("id")
 
 	if err := v.Validate(identityID, v.Required, is.UUIDv4); err != nil {
-		return merror.BadRequest().From(merror.OriPath).Detail("id", merror.DVMalformed)
+		return merr.BadRequest().Ori(merr.OriPath).Add("id", merr.DVMalformed)
 	}
 
 	// check accesses
 	acc := oidc.GetAccesses(c.Request().Context())
 	if acc == nil || acc.IdentityID != identityID {
-		return merror.Forbidden()
+		return merr.Forbidden()
 	}
 
 	return wh.RedisListener(

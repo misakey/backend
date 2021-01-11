@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // FileSystem contains the files storage location
@@ -60,7 +60,7 @@ func (fs *FileSystem) Delete(ctx context.Context, fileID string) error {
 	path := path.Join(fs.location, fileID)
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			return merror.NotFound().Describe(err.Error())
+			return merr.NotFound().Desc(err.Error())
 		}
 		return err
 	}

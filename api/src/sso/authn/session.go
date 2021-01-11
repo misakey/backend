@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/volatiletech/null/v8"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
@@ -32,7 +32,7 @@ func (as *Service) UpsertSession(ctx context.Context, new Session) error {
 	existing, err := as.sessions.Get(ctx, new.ID)
 	if err != nil {
 		// if not found, we ignore the error to create it
-		if !merror.HasCode(err, merror.NotFoundCode) {
+		if !merr.IsANotFound(err) {
 			return err
 		}
 		// if found but the new sec level is inferior to the new session, we skip it

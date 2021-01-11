@@ -1,4 +1,4 @@
-package merror
+package merr
 
 import (
 	"errors"
@@ -17,17 +17,17 @@ func TestHandleErr(t *testing.T) {
 		"raw error raises internal code error": {
 			inputErr:     errors.New("raw error"),
 			expectedCode: http.StatusInternalServerError,
-			expectedErr:  Error{ErrInternal, InternalCode, OriNotDefined, "raw error", make(map[string]string), false},
+			expectedErr:  Error{ErrInternal, InternalCode, OriNotDefined, "raw error", make(map[string]string)},
 		},
-		"merror raises a badrequest code error": {
-			inputErr:     BadRequest().Describe("uuid is required").From(OriBody),
+		"merr raises a badrequest code error": {
+			inputErr:     BadRequest().Desc("uuid is required").Ori(OriBody),
 			expectedCode: http.StatusBadRequest,
-			expectedErr:  Error{ErrBadRequest, BadRequestCode, OriBody, "uuid is required", make(map[string]string), false},
+			expectedErr:  Error{ErrBadRequest, BadRequestCode, OriBody, "uuid is required", make(map[string]string)},
 		},
-		"merror raises a client closed request code error": {
-			inputErr:     ClientClosedRequest().Describe("canceled context").From(OriBody),
+		"merr raises a client closed request code error": {
+			inputErr:     ClientClosedRequest().Desc("canceled context").Ori(OriBody),
 			expectedCode: StatusClientClosedRequest,
-			expectedErr:  Error{ErrClientClosedRequest, ClientClosedRequestCode, OriBody, "canceled context", make(map[string]string), false},
+			expectedErr:  Error{ErrClientClosedRequest, ClientClosedRequestCode, OriBody, "canceled context", make(map[string]string)},
 		},
 	}
 	for description, test := range tests {

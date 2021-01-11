@@ -8,7 +8,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
@@ -29,7 +29,7 @@ func Get(
 ) (ret BoxKeyShare, err error) {
 	record, err := sqlboiler.FindBoxKeyShare(ctx, exec, invitHash)
 	if err == sql.ErrNoRows {
-		return ret, merror.NotFound().Detail("other_share_hash", merror.DVNotFound)
+		return ret, merr.NotFound().Add("other_share_hash", merr.DVNotFound)
 	}
 	if err != nil {
 		return ret, err

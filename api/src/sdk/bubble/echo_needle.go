@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // EchoNeedle ...
@@ -14,13 +14,13 @@ type EchoNeedle struct {
 
 // Explode ...
 func (n EchoNeedle) Explode(err error) error {
-	echoErr, ok := merror.Cause(err).(*echo.HTTPError)
+	echoErr, ok := merr.Cause(err).(*echo.HTTPError)
 	if !ok {
 		return nil
 	}
 
 	// by default we know nothing about the error
-	errCode := merror.NoCodeCode
+	errCode := merr.NoCodeCode
 	var desc string
 
 	// act according to error http code:
@@ -30,15 +30,15 @@ func (n EchoNeedle) Explode(err error) error {
 	// - 405 means echo router did not find method for requested verb
 	switch echoErr.Code {
 	case http.StatusBadRequest:
-		errCode = merror.BadRequestCode
+		errCode = merr.BadRequestCode
 	case http.StatusUnauthorized:
-		errCode = merror.UnauthorizedCode
+		errCode = merr.UnauthorizedCode
 	case http.StatusNotFound:
-		errCode = merror.NotFoundCode
+		errCode = merr.NotFoundCode
 	case http.StatusForbidden:
-		errCode = merror.ForbiddenCode
+		errCode = merr.ForbiddenCode
 	case http.StatusMethodNotAllowed:
-		errCode = merror.MethodNotAllowedCode
+		errCode = merr.MethodNotAllowedCode
 	}
 
 	// handle many ways for echo error to express error description
@@ -49,15 +49,15 @@ func (n EchoNeedle) Explode(err error) error {
 		// we handle some common cases
 		switch echoErr.Message {
 		case "invalid csrf token":
-			details["csrf_token"] = merror.DVInvalid
+			details["csrf_token"] = merr.DVInvalid
 		}
 		desc = fmt.Sprintf("%v", echoErr.Message)
 	}
 
-	// final transformation of echo error into merror
-	mErr := merror.Transform(err).Code(errCode).Describe(desc)
+	// final transformation of echo error into merr
+	mErr := merr.From(err).Code(errCode).Desc(desc)
 	for key, value := range details {
-		_ = mErr.Detail(key, value)
+		_ = mErr.Add(key, value)
 	}
 	return mErr
 }

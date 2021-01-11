@@ -7,7 +7,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
@@ -23,7 +23,7 @@ func (sso *SSOService) ListBackupArchives(ctx context.Context, _ request.Request
 	acc := oidc.GetAccesses(ctx)
 	// querier must have an account
 	if acc == nil || acc.AccountID.IsZero() {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	archives, err := crypto.ListBackupArchives(ctx, sso.sqlDB, acc.AccountID.String)
@@ -59,20 +59,20 @@ func (sso *SSOService) GetBackupArchiveData(ctx context.Context, gen request.Req
 	acc := oidc.GetAccesses(ctx)
 	// querier must have an account
 	if acc == nil || acc.AccountID.IsZero() {
-		return "", merror.Forbidden()
+		return "", merr.Forbidden()
 	}
 
 	archive, err := crypto.GetBackupArchive(ctx, sso.sqlDB, query.archiveID)
 	if err != nil {
-		return "", merror.Transform(err).Describe("retrieving archive")
+		return "", merr.From(err).Desc("retrieving archive")
 	}
 
 	if acc.AccountID.String != archive.AccountID {
-		return "", merror.Forbidden()
+		return "", merr.Forbidden()
 	}
 
 	if archive.DeletedAt.Valid || archive.RecoveredAt.Valid {
-		return "", merror.Gone()
+		return "", merr.Gone()
 	}
 
 	return archive.Data.String, nil
@@ -87,7 +87,7 @@ type BackupArchiveDeleteCmd struct {
 // BindAndValidate ...
 func (cmd *BackupArchiveDeleteCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriQuery)
+		return merr.BadRequest().Ori(merr.OriQuery)
 	}
 	cmd.archiveID = eCtx.Param("id")
 
@@ -103,7 +103,7 @@ func (sso *SSOService) DeleteBackupArchive(ctx context.Context, gen request.Requ
 	acc := oidc.GetAccesses(ctx)
 	// querier must have an account
 	if acc == nil || acc.AccountID.IsZero() {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// start transaction since write actions will be performed
@@ -115,15 +115,15 @@ func (sso *SSOService) DeleteBackupArchive(ctx context.Context, gen request.Requ
 
 	archive, err := crypto.GetBackupArchiveMetadata(ctx, tr, cmd.archiveID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("retrieving archive metadata")
+		return nil, merr.From(err).Desc("retrieving archive metadata")
 	}
 
 	if acc.AccountID.String != archive.AccountID {
-		err = merror.Forbidden()
+		err = merr.Forbidden()
 		return nil, err
 	}
 	if archive.DeletedAt.Valid || archive.RecoveredAt.Valid {
-		err = merror.Gone()
+		err = merr.Gone()
 		return nil, err
 	}
 

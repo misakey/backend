@@ -5,7 +5,7 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -21,7 +21,7 @@ type ListBoxesRequest struct {
 // BindAndValidate ...
 func (req *ListBoxesRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriQuery)
+		return merr.From(err).Ori(merr.OriQuery)
 	}
 	return v.ValidateStruct(req,
 		v.Field(&req.Offset, v.Min(0)),
@@ -43,7 +43,7 @@ func (app *BoxApplication) ListBoxes(ctx context.Context, genReq request.Request
 	// retrieve accesses to filters boxes to return
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 	boxes, err := boxes.ListSenderBoxes(
 		ctx,
@@ -52,7 +52,7 @@ func (app *BoxApplication) ListBoxes(ctx context.Context, genReq request.Request
 		req.Limit, req.Offset,
 	)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting sender boxes")
+		return nil, merr.From(err).Desc("getting sender boxes")
 	}
 
 	return boxes, nil

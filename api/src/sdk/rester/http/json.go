@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // output as structure to decode received application/json entity
@@ -41,12 +41,12 @@ func handleJSON(resp *http.Response, output interface{}, limit int64) error {
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(io.LimitReader(resp.Body, limit))
 	if err != nil {
-		return merror.Transform(err).Describe("could not read response body")
+		return merr.From(err).Desc("could not read response body")
 	}
 
 	// we consider an error occurred below code 200 and above code 400
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
-		return merror.TransformHTTPCode(resp.StatusCode).Describe(string(data))
+		return merr.TransformHTTPCode(resp.StatusCode).Desc(string(data))
 	}
 
 	// if we were supposed to retrieve an output, we try to unmarshal it
@@ -54,7 +54,7 @@ func handleJSON(resp *http.Response, output interface{}, limit int64) error {
 		err = json.Unmarshal(data, output)
 		if err != nil {
 			desc := fmt.Sprintf("could not decode output: %v (%v)", err, strings.Replace(string(data), "\n", "", -1))
-			return merror.Transform(err).Describe(desc)
+			return merr.From(err).Desc(desc)
 		}
 	}
 	return nil

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 const (
@@ -35,7 +35,7 @@ func decode(encodedHash string) (params Params, hmacSalt []byte, finalHash []byt
 	// there should be 6 parts
 	// with "part[0]" being the empty string
 	if len(parts) != 6 || parts[1] != algorithmID {
-		err = merror.Forbidden().Describef(`the stored hash is not in format "%s"`, algorithmID)
+		err = merr.Forbidden().Descf(`the stored hash is not in format "%s"`, algorithmID)
 		return
 	}
 

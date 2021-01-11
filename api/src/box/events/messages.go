@@ -6,10 +6,10 @@ import (
 
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // Message ...
@@ -55,9 +55,9 @@ func buildMessage(ctx context.Context, exec boil.ContextExecutor, eventID string
 		}
 		if content.EncryptedFileID != "" {
 			file, err := files.Get(ctx, exec, content.EncryptedFileID)
-			// if the file is not found, it should have been deleted previously
-			if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
-				return msg, merror.Transform(err).Describe("getting file")
+			// the only error to not return is a not found: meaning the file should have been deleted previously
+			if err != nil && !merr.IsANotFound(err) {
+				return msg, merr.From(err).Desc("getting file")
 			}
 			if err == nil {
 				msg.NewSize = int(file.Size)
@@ -66,7 +66,7 @@ func buildMessage(ctx context.Context, exec boil.ContextExecutor, eventID string
 		}
 		msg.PublicKey = content.PublicKey
 	default:
-		return msg, merror.Forbidden().Describef("wrong initial event type %s", initialEvent.Type)
+		return msg, merr.Forbidden().Descf("wrong initial event type %s", initialEvent.Type)
 	}
 
 	// if there are no modifiers, return
@@ -102,7 +102,7 @@ func (msg *Message) addEvent(e Event) error {
 		msg.OldSize = msg.NewSize
 		msg.NewSize = len(msg.Encrypted)
 	default:
-		return merror.Forbidden().Describef("wrong referrer event type %s", e.Type)
+		return merr.Forbidden().Descf("wrong referrer event type %s", e.Type)
 	}
 	return nil
 }

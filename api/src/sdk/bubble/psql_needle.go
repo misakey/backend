@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/lib/pq"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // PSQLNeedle ...
@@ -14,26 +14,26 @@ type PSQLNeedle struct {
 // Explode ...
 func (n PSQLNeedle) Explode(err error) error {
 	// try to consider error cause as pq error to understand deeper the error
-	pqErr, ok := merror.Cause(err).(*pq.Error)
+	pqErr, ok := merr.Cause(err).(*pq.Error)
 	if !ok {
 		// still handle NotFound in case of sql errors
 		if err == sql.ErrNoRows {
-			return merror.NotFound().Describe(err.Error())
+			return merr.NotFound().Desc(err.Error())
 		}
 		return nil
 	}
 
 	switch pqErr.Code.Name() {
 	case "foreign_key", "unique_violation", "foreign_key_violation":
-		return merror.Conflict().Describe(err.Error())
+		return merr.Conflict().Desc(err.Error())
 	case "invalid_text_representation", "not_null_violation":
-		return merror.BadRequest().Describe(err.Error())
+		return merr.BadRequest().Desc(err.Error())
 	case "string_data_right_truncation":
-		return merror.RequestEntityTooLarge().Describe(err.Error())
+		return merr.RequestEntityTooLarge().Desc(err.Error())
 	case "query_canceled":
-		return merror.ClientClosedRequest().Describe(err.Error())
+		return merr.ClientClosedRequest().Desc(err.Error())
 	case "too_many_connections":
-		return merror.ServiceUnavailable().Describe(err.Error())
+		return merr.ServiceUnavailable().Desc(err.Error())
 	}
 	return err
 }

@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/bubble"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
@@ -16,22 +16,22 @@ import (
 func errorHandler(err error, ctx echo.Context) {
 	// bubble adds more info to the error if known
 	err = bubble.Explode(err)
-	// force transform to merror and try to interpret the code
-	code, mErr := merror.HandleErr(err)
+	// force transform to merr and try to interpret the code
+	code, mErr := merr.HandleErr(err)
 
 	// log the error
 	details, _ := json.Marshal(mErr.Details)
 	logEvent := logger.FromCtx(ctx.Request().Context())
 	// NOTE: log an error on internal code whereas log an info on others
-	if mErr.Co == merror.InternalCode {
-		logEvent.Error().RawJSON("details", details).Msg(mErr.Desc)
+	if mErr.Co == merr.InternalCode {
+		logEvent.Error().RawJSON("details", details).Msg(mErr.Error())
 		// flush the internal error information on production to avoid giving too much
 		// information to the client
 		if env == "production" {
 			mErr = mErr.Flush()
 		}
 	} else {
-		logEvent.Info().RawJSON("details", details).Msg(mErr.Desc)
+		logEvent.Info().RawJSON("details", details).Msg(mErr.Error())
 	}
 
 	if !ctx.Response().Committed {

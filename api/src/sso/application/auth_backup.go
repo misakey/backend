@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
@@ -29,7 +29,7 @@ type GetBackupQuery struct {
 // BindAndValidate ...
 func (query *GetBackupQuery) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(query); err != nil {
-		return merror.BadRequest().From(merror.OriQuery).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriQuery).Desc(err.Error())
 	}
 
 	return v.ValidateStruct(query,
@@ -46,17 +46,17 @@ func (sso *SSOService) GetBackupDuringAuth(ctx context.Context, gen request.Requ
 	// get token
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return view, merror.Forbidden().From(merror.OriHeaders).Describe("bearer token could not be found")
+		return view, merr.Forbidden().Ori(merr.OriHeaders).Desc("bearer token could not be found")
 	}
 
 	// check login challenge
 	if acc.Subject != query.LoginChallenge {
-		return view, merror.Forbidden().Detail("login_challenge", merror.DVInvalid)
+		return view, merr.Forbidden().Add("login_challenge", merr.DVInvalid)
 	}
 
 	// identity_id must match
 	if acc.IdentityID != query.IdentityID {
-		return view, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
+		return view, merr.Forbidden().Add("identity_id", merr.DVForbidden)
 	}
 
 	// get identity
@@ -66,7 +66,7 @@ func (sso *SSOService) GetBackupDuringAuth(ctx context.Context, gen request.Requ
 	}
 
 	if curIdentity.AccountID.IsZero() {
-		return view, merror.Conflict().Describe("identity has no account")
+		return view, merr.Conflict().Desc("identity has no account")
 	}
 
 	account, err := identity.GetAccount(ctx, sso.sqlDB, curIdentity.AccountID.String)

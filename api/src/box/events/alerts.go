@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/cache"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
@@ -28,7 +28,7 @@ func countActivity(ctx context.Context, e *Event, exec boil.ContextExecutor, red
 	// 1. retrieve member ids
 	memberIDs, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
 	if err != nil {
-		return merror.Transform(err).Describe("notifying member: listing members")
+		return merr.From(err).Desc("notifying member: listing members")
 	}
 
 	// get box settings for all users
@@ -83,7 +83,7 @@ func invalidateCaches(ctx context.Context, e *Event, exec boil.ContextExecutor, 
 func sendRealtimeUpdate(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, _ files.FileStorageRepo, _ Metadata) error {
 	memberIDs, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
 	if err != nil {
-		return merror.Transform(err).Describe("notifying member: listing members")
+		return merr.From(err).Desc("notifying member: listing members")
 	}
 
 	// build a set to ensure unicity
@@ -98,16 +98,16 @@ func sendRealtimeUpdate(ctx context.Context, e *Event, exec boil.ContextExecutor
 	// non-transparent mode for published events
 	formattedEvent, err := e.Format(ctx, identities, false)
 	if err != nil {
-		return merror.Transform(err).Describe("formatting event")
+		return merr.From(err).Desc("formatting event")
 	}
 	transparentFormattedEvent, err := e.Format(ctx, identities, true)
 	if err != nil {
-		return merror.Transform(err).Describe("formatting event")
+		return merr.From(err).Desc("formatting event")
 	}
 
 	boxCreatorID, err := getBoxCreatorID(ctx, exec, e.BoxID)
 	if err != nil {
-		return merror.Transform(err).Describe("getting creator")
+		return merr.From(err).Desc("getting creator")
 	}
 
 	for memberID := range uniqRecipientsIDs {

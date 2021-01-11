@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"reflect"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // MultipartRequest ...
@@ -26,7 +26,7 @@ func (r *Client) multipartGet(ctx context.Context, route string, params url.Valu
 func (r *Client) multipartPost(ctx context.Context, route string, _ url.Values, input interface{}, output interface{}) error {
 	mb, ok := input.(*MultipartRequest)
 	if !ok {
-		return merror.Internal().Describef("input shall be a multipart request type, received %s", reflect.TypeOf(input))
+		return merr.Internal().Descf("input shall be a multipart request type, received %s", reflect.TypeOf(input))
 	}
 	return r.Perform(ctx, "POST", route, nil, mb.Body, mb.Output, mb.ContentType)
 }
@@ -36,7 +36,7 @@ func (r *Client) multipartPost(ctx context.Context, route string, _ url.Values, 
 func (r *Client) multipartPut(ctx context.Context, route string, _ url.Values, input interface{}, output interface{}) error {
 	mb, ok := input.(*MultipartRequest)
 	if !ok {
-		return merror.Internal().Describef("input shall be a multipart request type, received %s", reflect.TypeOf(input))
+		return merr.Internal().Descf("input shall be a multipart request type, received %s", reflect.TypeOf(input))
 	}
 	return r.Perform(ctx, "PUT", route, nil, mb.Body, mb.Output, mb.ContentType)
 }
@@ -46,7 +46,7 @@ func (r *Client) multipartPut(ctx context.Context, route string, _ url.Values, i
 func (r *Client) multipartPatch(ctx context.Context, route string, input interface{}) error {
 	mb, ok := input.(*MultipartRequest)
 	if !ok {
-		return merror.Internal().Describef("input shall be a multipart request type, received %s", reflect.TypeOf(input))
+		return merr.Internal().Descf("input shall be a multipart request type, received %s", reflect.TypeOf(input))
 	}
 	return r.Perform(ctx, "PATCH", route, nil, mb.Body, nil, mb.ContentType)
 }

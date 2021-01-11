@@ -7,7 +7,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/boxes"
@@ -25,7 +25,7 @@ type GetBoxPublicRequest struct {
 func (req *GetBoxPublicRequest) BindAndValidate(eCtx echo.Context) error {
 	req.boxID = eCtx.Param("id")
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	return v.ValidateStruct(req,
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
@@ -52,7 +52,7 @@ func (app *BoxApplication) GetBoxPublic(ctx context.Context, genReq request.Requ
 		return nil, err
 	}
 	if keyShare.BoxID != req.boxID {
-		return nil, merror.Forbidden().Describe("wrong other share hash").Detail("other_share_hash", merror.DVInvalid)
+		return nil, merr.Forbidden().Desc("wrong other share hash").Add("other_share_hash", merr.DVInvalid)
 	}
 
 	// get box title

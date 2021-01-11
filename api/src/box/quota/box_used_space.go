@@ -6,7 +6,7 @@ import (
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
@@ -62,7 +62,7 @@ func UpdateBoxUsedSpace(ctx context.Context, exec boil.ContextExecutor, BoxID st
 		// generate a new uuid as a new box used space ID
 		id, err := uuid.NewString()
 		if err != nil {
-			return merror.Transform(err).Describe("generating new box used space id")
+			return merr.From(err).Desc("generating new box used space id")
 		}
 		value := incrementValue - decrementValue
 		if value < 0 {

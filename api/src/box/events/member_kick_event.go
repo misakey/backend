@@ -10,7 +10,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
@@ -55,11 +55,11 @@ func KickDeprecatedMembers(
 	for _, joinEvent := range activeJoins {
 		if err := MustBeLegitimate(ctx, exec, identities, boxID, joinEvent.SenderID); err != nil {
 			// if the member has no access anymore then kick them by creation a member.kick event
-			if merror.HasCode(err, merror.ForbiddenCode) {
+			if merr.IsAForbidden(err) {
 				content := MemberKickContent{KickerID: kickerID}
 				kickEvent, err := newWithAnyContent(etype.Memberkick, &content, boxID, joinEvent.SenderID, &joinEvent.ID)
 				if err != nil {
-					return kicks, merror.Transform(err).Describe("newing kick event")
+					return kicks, merr.From(err).Desc("newing kick event")
 				}
 				if err := kickEvent.persist(ctx, exec); err != nil {
 					return kicks, err
@@ -79,7 +79,7 @@ func notifyKick(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *red
 	// TODO (perf): use metadahandlers to bear already retrieved data across handlers ?
 	box, err := Compute(ctx, e.BoxID, exec, identities, e)
 	if err != nil {
-		return merror.Transform(err).Describe("computing box")
+		return merr.From(err).Desc("computing box")
 	}
 
 	// notify the kicked identity they have been kicked.
@@ -92,7 +92,7 @@ func notifyKick(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *red
 	}
 	bytes, err := json.Marshal(kickDetails)
 	if err != nil {
-		return merror.Transform(err).Describe("marshalling kick details")
+		return merr.From(err).Desc("marshalling kick details")
 	}
 	identities.CreateNotifs(ctx, []string{e.SenderID}, etype.Memberkick, null.JSONFrom(bytes))
 	return nil

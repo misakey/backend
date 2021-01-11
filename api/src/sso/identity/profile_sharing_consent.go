@@ -9,7 +9,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
@@ -70,7 +70,7 @@ func revokeConsentByIdentityType(ctx context.Context, exec boil.ContextExecutor,
 		return err
 	}
 	if rowsAff == 0 {
-		return merror.NotFound().Describe("no profile sharing consent to revoke")
+		return merr.NotFound().Desc("no profile sharing consent to revoke")
 	}
 	return nil
 }

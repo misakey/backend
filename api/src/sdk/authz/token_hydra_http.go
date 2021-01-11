@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/volatiletech/null/v8"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
@@ -68,17 +68,16 @@ func (h oidcIntroHTTP) GetClaims(ctx context.Context, opaqueTok string) (ac oidc
 	// check access token is active
 	// see https://www.ory.sh/docs/hydra/sdk/api#oauth2tokenintrospection to know what is an active token
 	if !introTok.Active {
-		return ac, merror.Unauthorized().
-			From(merror.OriHeaders).
-			Describe("token is not active").
-			Detail("Authorization", merror.DVInvalid)
+		return ac, merr.Unauthorized().Ori(merr.OriHeaders).
+			Desc("token is not active").
+			Add("Authorization", merr.DVInvalid)
 	}
 
 	// check token is an access_token
 	if introTok.TokenType != "access_token" {
-		return ac, merror.Unauthorized().From(merror.OriHeaders).
-			Describe("token must be an access token").
-			Detail("Authorization", merror.DVInvalid)
+		return ac, merr.Unauthorized().Ori(merr.OriHeaders).
+			Desc("token must be an access token").
+			Add("Authorization", merr.DVInvalid)
 	}
 
 	// fill a claim structure with introspection

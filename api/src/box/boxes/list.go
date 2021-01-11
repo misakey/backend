@@ -9,7 +9,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
@@ -33,13 +33,13 @@ func GetWithSenderInfo(ctx context.Context, exec boil.ContextExecutor, redConn *
 	// fill the eventCounts attribute
 	eventsCount, err := events.GetCountForIdentity(ctx, redConn, identityID, boxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("counting new events")
+		return nil, merr.From(err).Desc("counting new events")
 	}
 	box.EventsCount = null.IntFrom(eventsCount)
 
 	boxSetting, err := events.GetBoxSetting(ctx, exec, identityID, boxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting box setting")
+		return nil, merr.From(err).Desc("getting box setting")
 	}
 	box.BoxSettings = boxSetting
 
@@ -65,7 +65,7 @@ func ListSenderBoxes(
 	// 1. retrieve lastest events concerning the user's boxes
 	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID, etype.MembersCanSee)
 	if err != nil {
-		return boxes, merror.Transform(err).Describe("listing box ids")
+		return boxes, merr.From(err).Desc("listing box ids")
 	}
 
 	// 2. put pagination in place
@@ -87,7 +87,7 @@ func ListSenderBoxes(
 		// TODO (perf): computation in redis
 		box, err := events.Compute(ctx, e.BoxID, exec, identities, &e)
 		if err != nil {
-			return boxes, merror.Transform(err).Describef("computing box %s", e.BoxID)
+			return boxes, merr.From(err).Descf("computing box %s", e.BoxID)
 		}
 		boxes[i] = &box
 		boxIDs = append(boxIDs, box.ID)
@@ -100,7 +100,7 @@ func ListSenderBoxes(
 	}
 	boxSettings, err := events.ListBoxSettings(ctx, exec, settingsFilters)
 	if err != nil {
-		return boxes, merror.Transform(err).Describe("listing box settings")
+		return boxes, merr.From(err).Desc("listing box settings")
 	}
 	indexedBoxSettings := make(map[string]events.BoxSetting, len(boxSettings))
 	for _, boxSetting := range boxSettings {
@@ -141,11 +141,11 @@ func LastSenderBoxIDs(
 	// 2. build list
 	joins, err := events.ListMemberBoxLatestEvents(ctx, exec, senderID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("listing joined box ids")
+		return nil, merr.From(err).Desc("listing joined box ids")
 	}
 	creates, err := events.ListCreatorIDEvents(ctx, exec, senderID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("listing creator box ids")
+		return nil, merr.From(err).Desc("listing creator box ids")
 	}
 
 	// it is forbidden to join box the user has created so we already have unique box IDs
@@ -192,7 +192,7 @@ func LastSenderBoxEvents(
 
 	lastEventsDB, err := sqlboiler.Events(mods...).All(ctx, exec)
 	if err != nil {
-		return []events.Event{}, merror.Transform(err).Describe("retrieving last events")
+		return []events.Event{}, merr.From(err).Desc("retrieving last events")
 	}
 
 	// get last events

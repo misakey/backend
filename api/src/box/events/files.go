@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
@@ -36,7 +36,7 @@ func SetSavedStatus(ctx context.Context, exec boil.ContextExecutor, identityID s
 
 	savedFiles, err := files.ListSavedFiles(ctx, exec, filters)
 	if err != nil {
-		return merror.Transform(err).Describe("getting saved files")
+		return merr.From(err).Desc("getting saved files")
 	}
 
 	for _, file := range savedFiles {
@@ -48,7 +48,7 @@ func SetSavedStatus(ctx context.Context, exec boil.ContextExecutor, identityID s
 			}
 			content.IsSaved = true
 			if err := e.JSONContent.Marshal(content); err != nil {
-				return merror.Transform(err).Describef("marshalling %s content", e.Type)
+				return merr.From(err).Descf("marshalling %s content", e.Type)
 			}
 		}
 	}
@@ -163,7 +163,7 @@ func HasAccessToFile(
 		}
 
 		// if the error is not a forbidden, return it. Otherwise ignore it and continue checking
-		if !merror.HasCode(err, merror.ForbiddenCode) {
+		if err != nil && !merr.IsAForbidden(err) {
 			return false, err
 		}
 	}
@@ -178,11 +178,11 @@ func DeleteOrphanFiles(ctx context.Context, exec boil.ContextExecutor, filesRepo
 		if fileID != "" {
 			isOrphan, err := IsFileOrphan(ctx, exec, fileID)
 			if err != nil {
-				return merror.Transform(err).Describe("checking file is orphan")
+				return merr.From(err).Desc("checking file is orphan")
 			}
 			if isOrphan {
 				if err := files.Delete(ctx, exec, filesRepo, fileID); err != nil {
-					return merror.Transform(err).Describe("deleting stored file")
+					return merr.From(err).Desc("deleting stored file")
 				}
 			}
 		}

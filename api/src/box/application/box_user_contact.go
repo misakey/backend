@@ -10,7 +10,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -36,7 +36,7 @@ type BoxUserContactRequest struct {
 // BindAndValidate ...
 func (req *BoxUserContactRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	req.identityID = eCtx.Param("id")
 	if err := v.ValidateStruct(req,
@@ -70,10 +70,10 @@ func (app *BoxApplication) BoxUserContact(ctx context.Context, genReq request.Re
 	req := genReq.(*BoxUserContactRequest)
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 	if acc.IdentityID != req.identityID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// init an identity mapper for the operation
@@ -95,17 +95,17 @@ func (app *BoxApplication) BoxUserContact(ctx context.Context, genReq request.Re
 
 	tr, err := app.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("initiating transaction")
+		return nil, merr.From(err).Desc("initiating transaction")
 	}
 	defer atomic.SQLRollback(ctx, tr, &err)
 
 	box, err := events.CreateContactBox(ctx, tr, app.RedConn, identityMapper, app.filesRepo, app.cryptoRepo, contact)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("creating contact box")
+		return nil, merr.From(err).Desc("creating contact box")
 	}
 
 	if cErr := tr.Commit(); cErr != nil {
-		return nil, merror.Transform(cErr).Describe("committing transaction")
+		return nil, merr.From(cErr).Desc("committing transaction")
 	}
 
 	return box, err

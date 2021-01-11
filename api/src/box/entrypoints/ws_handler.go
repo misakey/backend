@@ -8,7 +8,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/application"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mwebsockets"
 )
 
@@ -84,7 +84,7 @@ func (wh *WebsocketHandler) RedisListener(
 				// here we close the websocket and send an error to the client
 				logger.FromCtx(ctx).Error().Msg("cannot receive redis messages")
 				_ = ws.SendCloseMessage()
-				return merror.Internal().Describe("cannot receive redis messages")
+				return merr.Internal().Desc("cannot receive redis messages")
 			}
 			ws.Send <- mwebsockets.WebsocketMessage{
 				Msg: msg.Payload,

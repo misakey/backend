@@ -8,7 +8,7 @@ package events
 import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // EmptyContent ...
@@ -56,7 +56,7 @@ func bindAndValidateContent(e *Event) error {
 
 	c := contentTypeGet()
 	if err := e.JSONContent.Unmarshal(c); err != nil {
-		return merror.BadRequest().Describef("unmarshalling %s: %v", e.Type, err)
+		return merr.BadRequest().Descf("unmarshalling %s: %v", e.Type, err)
 	}
 	return c.Validate()
 }

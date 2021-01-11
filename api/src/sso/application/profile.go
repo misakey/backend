@@ -10,7 +10,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
@@ -24,7 +24,7 @@ type ConfigProfileCmd struct {
 // BindAndValidate ...
 func (cmd *ConfigProfileCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	cmd.identityID = eCtx.Param("id")
 
@@ -41,10 +41,10 @@ func (sso *SSOService) SetProfileConfig(ctx context.Context, gen request.Request
 	// verify identity access
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 	if acc.IdentityID != query.identityID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// start transaction since write actions will be performed
@@ -83,10 +83,10 @@ func (sso *SSOService) GetProfileConfig(ctx context.Context, gen request.Request
 	// verify identity access
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 	if acc.IdentityID != query.identityID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	return identity.ProfileConfigGet(ctx, sso.sqlDB, query.identityID)

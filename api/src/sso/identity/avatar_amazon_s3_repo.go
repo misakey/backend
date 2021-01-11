@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // AvatarAmazonS3 ...
@@ -55,7 +55,7 @@ func (s *AvatarAmazonS3) Upload(ctx context.Context, avatar *AvatarFile) (string
 		Body:   avatar.Data,
 	})
 	if err != nil {
-		return "", merror.Internal().Describef("unable to upload %q to %q, %v", s.getKey(avatar), s.bucket, err)
+		return "", merr.Internal().Descf("unable to upload %q to %q, %v", s.getKey(avatar), s.bucket, err)
 	}
 
 	avatarURL, _ := url.Parse(uo.Location)
@@ -73,9 +73,9 @@ func (s *AvatarAmazonS3) Delete(ctx context.Context, avatar *AvatarFile) error {
 	}
 	if _, err := s.session.DeleteObjectWithContext(ctx, delObj); err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NoSuchKey" {
-			return merror.NotFound().Describe(err.Error())
+			return merr.NotFound().Desc(err.Error())
 		}
-		return merror.Transform(err).Describef("unable to delete object %q from %q, %v", s.getKey(avatar), s.bucket, err)
+		return merr.From(err).Descf("unable to delete object %q from %q, %v", s.getKey(avatar), s.bucket, err)
 	}
 	return nil
 }

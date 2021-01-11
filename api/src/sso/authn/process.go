@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
@@ -49,7 +49,7 @@ func (as *Service) computeNextStep(
 ) (Process, error) {
 	s, err := as.NextStep(ctx, exec, identity, p.CompleteAMRs.ToACR(), oidc.NewClassRefs(p.ExpectedACR))
 	if err != nil {
-		return p, merror.Transform(err).Describe("getting next step")
+		return p, merr.From(err).Desc("getting next step")
 	}
 	p.NextStep = &s
 	return p, nil
@@ -66,7 +66,7 @@ func (as *Service) InitProcess(
 ) error {
 	tok, err := genTok()
 	if err != nil {
-		return merror.Transform(err).Describe("generating access token")
+		return merr.From(err).Desc("generating access token")
 	}
 	p := Process{
 		LoginChallenge: challenge,
@@ -91,7 +91,7 @@ func (as *Service) GetProcess(
 	// retrieve the process
 	process, err := as.processes.Get(ctx, challenge)
 	if err != nil {
-		return process, merror.Transform(err).Describe("getting process")
+		return process, merr.From(err).Desc("getting process")
 	}
 	return process, nil
 }
@@ -107,19 +107,19 @@ func (as *Service) UpgradeProcess(
 	// retrieve the process
 	process, err := as.processes.Get(ctx, challenge)
 	if err != nil {
-		return process, merror.Transform(err).Describe("getting process")
+		return process, merr.From(err).Desc("getting process")
 	}
 
 	// if the process already has an identityID bound to it, check its consistency
 	if process.IdentityID != "" && identity.ID != process.IdentityID {
-		return process, merror.Forbidden().Describe("cannot change identity id during a process")
+		return process, merr.Forbidden().Desc("cannot change identity id during a process")
 	}
 
 	// update the process
 	process.CompleteAMRs.Add(amr)
 	process.IdentityID = identity.ID
 	if err := as.processes.Update(ctx, process); err != nil {
-		return process, merror.Transform(err).Describe("updating process")
+		return process, merr.From(err).Desc("updating process")
 	}
 
 	// ACR OK
@@ -130,7 +130,7 @@ func (as *Service) UpgradeProcess(
 	// ACR KO -  compute then return the next authn step
 	process, err = as.computeNextStep(ctx, exec, identity, process)
 	if err != nil {
-		return process, merror.Transform(err).Describe("computing next step")
+		return process, merr.From(err).Desc("computing next step")
 	}
 	return process, nil
 }

@@ -9,7 +9,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
@@ -34,26 +34,26 @@ func (app *BoxApplication) DownloadEncryptedFile(ctx context.Context, genReq req
 	// check the file does exist
 	_, err := files.Get(ctx, app.DB, req.fileID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("finding msg.file event")
+		return nil, merr.From(err).Desc("finding msg.file event")
 	}
 
 	// check accesses
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 	allowed, err := events.HasAccessOrHasSavedFile(ctx, app.DB, app.RedConn, acc.IdentityID, req.fileID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("checking access to file")
+		return nil, merr.From(err).Desc("checking access to file")
 	}
 	if !allowed {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// download the file then render it
 	readCloser, err := files.Download(ctx, app.filesRepo, req.fileID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("downloading")
+		return nil, merr.From(err).Desc("downloading")
 	}
 	return readCloser, nil
 }

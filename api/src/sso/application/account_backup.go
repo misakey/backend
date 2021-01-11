@@ -8,7 +8,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
@@ -44,7 +44,7 @@ func (sso *SSOService) GetBackup(ctx context.Context, gen request.Request) (inte
 	if acc == nil ||
 		acc.AccountID.IsZero() ||
 		acc.AccountID.String != query.accountID {
-		return view, merror.Forbidden()
+		return view, merr.Forbidden()
 	}
 
 	account, err := identity.GetAccount(ctx, sso.sqlDB, query.accountID)
@@ -67,7 +67,7 @@ type BackupUpdateCmd struct {
 // BindAndValidate ...
 func (cmd *BackupUpdateCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
 	cmd.accountID = eCtx.Param("id")
@@ -77,7 +77,7 @@ func (cmd *BackupUpdateCmd) BindAndValidate(eCtx echo.Context) error {
 		v.Field(&cmd.Data, v.Required),
 		v.Field(&cmd.NewVersion, v.Required),
 	); err != nil {
-		return merror.Transform(err).Describe("validating backup update cmd")
+		return merr.From(err).Desc("validating backup update cmd")
 	}
 	return nil
 }
@@ -92,7 +92,7 @@ func (sso *SSOService) UpdateBackup(ctx context.Context, gen request.Request) (i
 	if acc == nil ||
 		acc.AccountID.IsZero() ||
 		acc.AccountID.String != cmd.accountID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// start transaction since write actions will be performed
@@ -110,10 +110,10 @@ func (sso *SSOService) UpdateBackup(ctx context.Context, gen request.Request) (i
 
 	expectedVersion := account.BackupVersion + 1
 	if cmd.NewVersion != expectedVersion {
-		err = merror.Conflict().
-			Describe("wrong new version value").
-			Detail("version", merror.DVInvalid).
-			Detail("expected_version", strconv.Itoa(expectedVersion))
+		err = merr.Conflict().
+			Desc("wrong new version value").
+			Add("version", merr.DVInvalid).
+			Add("expected_version", strconv.Itoa(expectedVersion))
 		return nil, err
 	}
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
@@ -42,7 +42,7 @@ func CreateAccount(ctx context.Context, exec boil.ContextExecutor, account *Acco
 	// generate new UUID
 	id, err := uuid.NewRandom()
 	if err != nil {
-		return merror.Transform(err).Describe("could not generate uuid v4")
+		return merr.From(err).Desc("could not generate uuid v4")
 	}
 
 	account.ID = id.String()
@@ -55,7 +55,7 @@ func CreateAccount(ctx context.Context, exec boil.ContextExecutor, account *Acco
 func GetAccount(ctx context.Context, exec boil.ContextExecutor, accountID string) (ret Account, err error) {
 	sqlAccount, err := sqlboiler.FindAccount(ctx, exec, accountID)
 	if err == sql.ErrNoRows {
-		return ret, merror.NotFound().Detail("id", merror.DVNotFound)
+		return ret, merr.NotFound().Add("id", merr.DVNotFound)
 	}
 	if err != nil {
 		return ret, err
@@ -71,8 +71,8 @@ func UpdateAccount(ctx context.Context, exec boil.ContextExecutor, account *Acco
 		return err
 	}
 	if rowsAff == 0 {
-		return merror.NotFound().Detail("id", merror.DVNotFound).
-			Describe("no account rows affected on udpate")
+		return merr.NotFound().Add("id", merr.DVNotFound).
+			Desc("no account rows affected on udpate")
 	}
 	return nil
 }

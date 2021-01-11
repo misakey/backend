@@ -1,4 +1,4 @@
-package merror
+package merr
 
 import (
 	"net/url"
@@ -43,7 +43,7 @@ func (c Code) String() string {
 	return string(c)
 }
 
-// AddCodeToURL takes a request and adds a merror.Code to it as a query params
+// AddCodeToURL takes a request and adds a merr.Code to it as a query params
 func AddCodeToURL(req string, code Code) (string, error) {
 	requestURL, err := url.ParseRequestURI(req)
 	if err != nil {
@@ -61,8 +61,9 @@ func AddCodeToURL(req string, code Code) (string, error) {
 	return requestURL.String(), nil
 }
 
-// HasCode transforms input error into merror and checks if code are matching
-func HasCode(err error, code Code) bool {
+// hasCode transforms input error into merr and checks if code are matching
+// hasCode return false on nil received error
+func hasCode(err error, code Code) bool {
 	return err != nil && transform(err).Co == code
 }
 
@@ -92,4 +93,20 @@ func ToCode(err error) Code {
 		return ServiceUnavailableCode
 	}
 	return InternalCode
+}
+
+func IsANotFound(err error) bool {
+	return hasCode(err, NotFoundCode)
+}
+
+func IsAForbidden(err error) bool {
+	return hasCode(err, ForbiddenCode)
+}
+
+func IsAConflict(err error) bool {
+	return hasCode(err, ConflictCode)
+}
+
+func IsAnInternal(err error) bool {
+	return hasCode(err, InternalCode)
 }

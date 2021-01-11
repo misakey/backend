@@ -7,7 +7,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
@@ -29,13 +29,13 @@ type UploadSavedFileRequest struct {
 // BindAndValidate ...
 func (req *UploadSavedFileRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	req.identityID = eCtx.Param("id")
 	file, err := eCtx.FormFile("encrypted_file")
 	if err != nil {
-		return merror.BadRequest().From(merror.OriBody).
-			Detail("encrypted_file", merror.DVRequired).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).
+			Add("encrypted_file", merr.DVRequired).Desc(err.Error())
 	}
 	req.encFile = file
 	req.size = file.Size
@@ -54,26 +54,26 @@ func (app *BoxApplication) UploadSavedFile(ctx context.Context, genReq request.R
 	// checking accesses
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 	// user must have an account
 	if acc.AccountID.IsZero() {
-		return nil, merror.Forbidden().Describe("identity has no account")
+		return nil, merr.Forbidden().Desc("identity has no account")
 	}
 	if acc.IdentityID != req.identityID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// retrieve the raw []byte from the file
 	encData, err := req.encFile.Open()
 	if err != nil {
-		return nil, merror.Internal().Describef("opening encrypted file: %v", err)
+		return nil, merr.Internal().Descf("opening encrypted file: %v", err)
 	}
 	defer encData.Close()
 
 	eFileID, err := uuid.NewString()
 	if err != nil {
-		return nil, merror.Transform(err).Describe("encrypted file id")
+		return nil, merr.From(err).Desc("encrypted file id")
 	}
 
 	// create the encrypted file entity
@@ -82,17 +82,17 @@ func (app *BoxApplication) UploadSavedFile(ctx context.Context, genReq request.R
 		Size: req.size,
 	}
 	if err := files.Create(ctx, app.DB, eFile); err != nil {
-		return nil, merror.Transform(err).Describe("creating file")
+		return nil, merr.From(err).Desc("creating file")
 	}
 
 	// upload the encrypted data
 	if err := files.Upload(ctx, app.filesRepo, eFileID, encData); err != nil {
-		return nil, merror.Transform(err).Describe("uploading file")
+		return nil, merr.From(err).Desc("uploading file")
 	}
 
 	sFileID, err := uuid.NewString()
 	if err != nil {
-		return nil, merror.Transform(err).Describe("saved file id")
+		return nil, merr.From(err).Desc("saved file id")
 	}
 
 	// persist saved file
@@ -106,9 +106,9 @@ func (app *BoxApplication) UploadSavedFile(ctx context.Context, genReq request.R
 	}
 
 	if err := files.CreateSavedFile(ctx, app.DB, &sFile); err != nil {
-		err = merror.Transform(err).Describe("inserting event in DB")
+		err = merr.From(err).Desc("inserting event in DB")
 		if delErr := files.Delete(ctx, app.DB, app.filesRepo, eFileID); delErr != nil {
-			return nil, merror.Transform(err).Describef("deleting file: %v", delErr)
+			return nil, merr.From(err).Descf("deleting file: %v", delErr)
 		}
 		return nil, err
 	}

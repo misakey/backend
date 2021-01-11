@@ -7,7 +7,7 @@ import (
 
 	customclock "github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/assert"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 func TestValid(t *testing.T) {
@@ -29,7 +29,7 @@ func TestValid(t *testing.T) {
 				ExpiresAt: 1,
 			},
 			nowTimestamp: 2,
-			err:          merror.Unauthorized().Describef("token expired"),
+			err:          merr.Unauthorized().Descf("token expired"),
 		},
 		"token is used before issued time": {
 			claims: AccessClaims{
@@ -37,7 +37,7 @@ func TestValid(t *testing.T) {
 				IssuedAt:  2,
 			},
 			nowTimestamp: 1,
-			err:          merror.Unauthorized().Describef("token used before issued"),
+			err:          merr.Unauthorized().Descf("token used before issued"),
 		},
 		"token is not valid yet": {
 			claims: AccessClaims{
@@ -46,21 +46,21 @@ func TestValid(t *testing.T) {
 				NotBefore: 2,
 			},
 			nowTimestamp: 1,
-			err:          merror.Unauthorized().Describef("token not valid yet"),
+			err:          merr.Unauthorized().Descf("token not valid yet"),
 		},
 		"token has en empty sub": {
 			claims: AccessClaims{
 				Subject: "",
 			},
 			nowTimestamp: 0,
-			err:          merror.Unauthorized().Describef("empty subject"),
+			err:          merr.Unauthorized().Descf("empty subject"),
 		},
 		"token has en empty identity id": {
 			claims: AccessClaims{
 				Subject: "this_is_the_sub",
 			},
 			nowTimestamp: 0,
-			err:          merror.Unauthorized().Describef("empty mid"),
+			err:          merr.Unauthorized().Descf("empty mid"),
 		},
 	}
 	clockMock := customclock.NewMock()
@@ -105,7 +105,7 @@ func TestValidAudience(t *testing.T) {
 				Audiences: []string{"audience_1", "audience_2"},
 			},
 			expectedAud: "audience_3",
-			err:         merror.Unauthorized().Describef("client is not part of the audience"),
+			err:         merr.Unauthorized().Descf("client is not part of the audience"),
 		},
 		"audience in valid - expectedAud being empty": {
 			claims: AccessClaims{

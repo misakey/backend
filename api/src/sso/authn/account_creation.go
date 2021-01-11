@@ -14,7 +14,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
@@ -29,7 +29,7 @@ func (am accountMetadata) Validate() error {
 		v.Field(&am.Password),
 		v.Field(&am.BackupData, v.Required),
 	); err != nil {
-		return merror.Transform(err).Describe("validating account metadata")
+		return merr.From(err).Desc("validating account metadata")
 	}
 	return nil
 }
@@ -42,32 +42,32 @@ func (as *Service) assertAccountCreation(
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil ||
 		acc.ACR.LessThan(oidc.ACR1) {
-		return merror.Forbidden()
+		return merr.Forbidden()
 	}
 
 	if acc.Subject != challenge {
-		return merror.Forbidden().From(merror.OriHeaders).
-			Describe("authorization header must correspond to the login_challenge").
-			Detail("Authorization", merror.DVConflict).Detail("login_challenge", merror.DVConflict)
+		return merr.Forbidden().Ori(merr.OriHeaders).
+			Desc("authorization header must correspond to the login_challenge").
+			Add("Authorization", merr.DVConflict).Add("login_challenge", merr.DVConflict)
 	}
 
 	if acc.IdentityID != curIdentity.ID {
-		return merror.Forbidden().Describe("wrong identity id")
+		return merr.Forbidden().Desc("wrong identity id")
 	}
 
 	// transform metadata into account metadata structure
 	accountMetadata, err := toMetadata(step.RawJSONMetadata)
 	if err != nil {
-		return merror.BadRequest().
-			Describe(err.Error()).Detail("metadata", merror.DVMalformed)
+		return merr.BadRequest().
+			Desc(err.Error()).Add("metadata", merr.DVMalformed)
 	}
 
 	if err := accountMetadata.Validate(); err != nil {
-		return merror.Transform(err).Describe("validating account metadata")
+		return merr.From(err).Desc("validating account metadata")
 	}
 
 	if curIdentity.AccountID.Valid {
-		return merror.Forbidden().Describe("identity has already an account")
+		return merr.Forbidden().Desc("identity has already an account")
 	}
 
 	// prepare the account to be created
@@ -79,7 +79,7 @@ func (as *Service) assertAccountCreation(
 	// hash the password before storing it
 	account.Password, err = accountMetadata.Password.Hash()
 	if err != nil {
-		return merror.Transform(err).Describe("could not hash the password")
+		return merr.From(err).Desc("could not hash the password")
 	}
 	if err := identity.CreateAccount(ctx, exec, &account); err != nil {
 		return err
@@ -104,7 +104,7 @@ func (as *Service) assertAccountCreation(
 func toMetadata(msg types.JSON) (ret accountMetadata, err error) {
 	msgJSON, err := msg.MarshalJSON()
 	if err != nil {
-		return ret, merror.Transform(err).Describe("password metadata")
+		return ret, merr.From(err).Desc("password metadata")
 	}
 	err = json.Unmarshal(msgJSON, &ret)
 	return ret, err

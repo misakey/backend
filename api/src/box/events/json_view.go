@@ -8,7 +8,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // SenderView is how an event sender (or box creator)
@@ -60,7 +60,7 @@ func (e Event) Format(ctx context.Context, identities *IdentityMapper, transpare
 	var err error
 	view.Sender, err = identities.Get(ctx, e.SenderID, transparent)
 	if err != nil {
-		return view, merror.Transform(err).Describe("getting sender")
+		return view, merr.From(err).Desc("getting sender")
 	}
 
 	// For deleted messages
@@ -69,18 +69,18 @@ func (e Event) Format(ctx context.Context, identities *IdentityMapper, transpare
 		var content DeletedContent
 		err := json.Unmarshal(e.JSONContent, &content)
 		if err != nil {
-			return view, merror.Transform(err).Describef("unmarshaling %s json", e.Type)
+			return view, merr.From(err).Descf("unmarshaling %s json", e.Type)
 		}
 
 		if content.Deleted.ByIdentityID != "" {
 			deletor, err := identities.Get(ctx, content.Deleted.ByIdentityID, transparent)
 			if err != nil {
-				return view, merror.Transform(err).Describe("getting delelor")
+				return view, merr.From(err).Desc("getting delelor")
 			}
 			content.Deleted.ByIdentity = &deletor
 			content.Deleted.ByIdentityID = ""
 			if err := view.Content.Marshal(content); err != nil {
-				return view, merror.Transform(err).Describef("marshalling %s content", e.Type)
+				return view, merr.From(err).Descf("marshalling %s content", e.Type)
 			}
 		}
 	}
@@ -89,19 +89,19 @@ func (e Event) Format(ctx context.Context, identities *IdentityMapper, transpare
 		var content MemberKickContent
 		err := json.Unmarshal(e.JSONContent, &content)
 		if err != nil {
-			return view, merror.Transform(err).Describef("unmarshaling %s json", e.Type)
+			return view, merr.From(err).Descf("unmarshaling %s json", e.Type)
 		}
 
 		if content.KickerID != "" {
 			kicker, err := identities.Get(ctx, content.KickerID, transparent)
 			if err != nil {
-				return view, merror.Transform(err).Describe("getting kicker")
+				return view, merr.From(err).Desc("getting kicker")
 			}
 			content.Kicker = &kicker
 		}
 		content.KickerID = ""
 		if err := view.Content.Marshal(content); err != nil {
-			return view, merror.Transform(err).Describe("marshalling event content")
+			return view, merr.From(err).Desc("marshalling event content")
 		}
 	}
 

@@ -1,4 +1,4 @@
-package merror
+package merr
 
 import (
 	"fmt"

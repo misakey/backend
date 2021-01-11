@@ -11,7 +11,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn/code"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
@@ -19,17 +19,17 @@ import (
 func (as *Service) CreateEmailedCode(ctx context.Context, exec boil.ContextExecutor, identity identity.Identity) error {
 	// try to retrieve an existing code for this identity
 	existing, err := getLastStep(ctx, exec, identity.ID, oidc.AMREmailedCode)
-	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
+	if err != nil && !merr.IsANotFound(err) {
 		return err
 	}
 	// if the last authn step is not complete and not expired, we can't create a new one
 	if err == nil &&
 		!existing.Complete &&
 		time.Since(existing.CreatedAt) < as.codeValidity {
-		return merror.Conflict().
-			Describe("a code has already been generated and not used").
-			Detail("identity_id", merror.DVConflict).
-			Detail("method_name", merror.DVConflict)
+		return merr.Conflict().
+			Desc("a code has already been generated and not used").
+			Add("identity_id", merr.DVConflict).
+			Add("method_name", merr.DVConflict)
 	}
 
 	codeRawJSON, err := code.GenerateAsRawJSON()
@@ -81,7 +81,7 @@ func (as *Service) prepareEmailedCode(
 	err := as.CreateEmailedCode(ctx, exec, identity)
 	// set the error to nil on conflict because we want to fail silently
 	// if an emailed code was already generated
-	if err != nil && merror.HasCode(err, merror.ConflictCode) {
+	if merr.IsAConflict(err) {
 		return nil
 	}
 	return err
@@ -98,31 +98,31 @@ func (as *Service) assertEmailedCode(
 	}
 	// check the most recent step has not been already complete
 	if currentStep.Complete {
-		return merror.Conflict().Describe("emailed code already complete")
+		return merr.Conflict().Desc("emailed code already complete")
 	}
 
 	// transform metadata into code metadata structure
 	input, err := code.ToMetadata(assertion.RawJSONMetadata)
 	if err != nil {
-		return merror.Forbidden().From(merror.OriBody).
-			Describe(err.Error()).Detail("metadata", merror.DVMalformed)
+		return merr.Forbidden().Ori(merr.OriBody).
+			Desc(err.Error()).Add("metadata", merr.DVMalformed)
 	}
 	stored, err := code.ToMetadata(currentStep.RawJSONMetadata)
 	if err != nil {
-		return merror.Forbidden().
-			Describef("could not convert step %d as emailed code: %v", currentStep.ID, err.Error()).
-			Detail("stored_code", merror.DVMalformed)
+		return merr.Forbidden().
+			Descf("could not convert step %d as emailed code: %v", currentStep.ID, err.Error()).
+			Add("stored_code", merr.DVMalformed)
 	}
 
 	// try to match codes
 	match := stored.Matches(input)
 	if !match {
-		return merror.Forbidden().From(merror.OriBody).Detail("metadata", merror.DVInvalid)
+		return merr.Forbidden().Ori(merr.OriBody).Add("metadata", merr.DVInvalid)
 	}
 
 	// check stored code is not expired
 	if time.Now().After(currentStep.CreatedAt.Add(as.codeValidity)) {
-		return merror.Forbidden().From(merror.OriBody).Detail("metadata", merror.DVExpired)
+		return merr.Forbidden().Ori(merr.OriBody).Add("metadata", merr.DVExpired)
 	}
 
 	// complete the authentication step

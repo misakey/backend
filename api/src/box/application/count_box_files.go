@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -31,7 +31,7 @@ func (app *BoxApplication) CountBoxFiles(ctx context.Context, genReq request.Req
 	req := genReq.(*CountBoxFilesRequest)
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 
 	if err := events.MustBeMember(ctx, app.DB, app.RedConn, req.boxID, acc.IdentityID); err != nil {
@@ -40,7 +40,7 @@ func (app *BoxApplication) CountBoxFiles(ctx context.Context, genReq request.Req
 
 	count, err := events.CountFilesByBoxID(ctx, app.DB, req.boxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("counting boxes files")
+		return nil, merr.From(err).Desc("counting boxes files")
 	}
 
 	return count, nil

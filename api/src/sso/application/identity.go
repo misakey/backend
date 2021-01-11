@@ -12,7 +12,7 @@ import (
 	"github.com/volatiletech/null/v8"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
@@ -29,7 +29,7 @@ func (query *IdentityQuery) BindAndValidate(eCtx echo.Context) error {
 	if err := v.ValidateStruct(query,
 		v.Field(&query.identityID, v.Required, is.UUIDv4),
 	); err != nil {
-		return merror.Transform(err).Describe("validating identity query")
+		return merr.From(err).Desc("validating identity query")
 	}
 	return nil
 }
@@ -49,11 +49,11 @@ func (sso *SSOService) GetIdentity(ctx context.Context, gen request.Request) (in
 	// verify identity access
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return view, merror.Forbidden()
+		return view, merr.Forbidden()
 	}
 
 	if acc.IdentityID != query.identityID {
-		return view, merror.Forbidden()
+		return view, merr.Forbidden()
 	}
 
 	// set the view on identity retrieval
@@ -84,7 +84,7 @@ type PartialUpdateIdentityCmd struct {
 // BindAndValidate the IdentityAuthableCmd
 func (cmd *PartialUpdateIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
 	cmd.identityID = eCtx.Param("id")
@@ -94,7 +94,7 @@ func (cmd *PartialUpdateIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 		v.Field(&cmd.DisplayName, v.Length(3, 254)),
 		v.Field(&cmd.Color, v.Length(7, 7)),
 	); err != nil {
-		return merror.Transform(err).Describe("validating identity patch")
+		return merr.From(err).Desc("validating identity patch")
 	}
 	return nil
 }
@@ -106,7 +106,7 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 
 	// verify requested user id and authenticated user id are the same.
 	if acc == nil || acc.IdentityID != cmd.identityID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// start transaction since write actions will be performed
@@ -162,10 +162,10 @@ func (cmd *UploadAvatarCmd) BindAndValidate(eCtx echo.Context) error {
 
 	file, err := eCtx.FormFile("avatar")
 	if err != nil {
-		return merror.BadRequest().From(merror.OriBody).Detail("avatar", merror.DVRequired).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).Add("avatar", merr.DVRequired).Desc(err.Error())
 	}
 	if file.Size >= 3*1024*1024 {
-		return merror.BadRequest().From(merror.OriBody).Detail("size", merror.DVInvalid).Describe("size must be < 3 mo")
+		return merr.BadRequest().Ori(merr.OriBody).Add("size", merr.DVInvalid).Desc("size must be < 3 mo")
 	}
 
 	data, err := file.Open()
@@ -189,7 +189,7 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 
 	// verify requested user id and authenticated user id are the same.
 	if acc == nil || acc.IdentityID != cmd.identityID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// start transaction since write actions will be performed
@@ -220,7 +220,7 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 	// generate an UUID to use as a filename
 	filename, err := uuid.NewRandom()
 	if err != nil {
-		return nil, merror.Transform(err).Describe("could not generate uuid v4")
+		return nil, merr.From(err).Desc("could not generate uuid v4")
 	}
 	avatar.Filename = filename.String() + avatar.Extension
 	avatar.Extension = cmd.Extension
@@ -263,7 +263,7 @@ func (sso *SSOService) DeleteAvatar(ctx context.Context, gen request.Request) (i
 
 	// verify requested user id and authenticated user id are the same.
 	if acc == nil || acc.IdentityID != cmd.identityID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// start transaction since write actions will be performed
@@ -281,7 +281,7 @@ func (sso *SSOService) DeleteAvatar(ctx context.Context, gen request.Request) (i
 
 	// check that the identity has an avatar to delet
 	if curIdentity.AvatarURL.IsZero() {
-		err = merror.Conflict().Describe("avatar is not set").Detail("identity_id", merror.DVConflict)
+		err = merr.Conflict().Desc("avatar is not set").Add("identity_id", merr.DVConflict)
 		return nil, err
 	}
 
@@ -310,7 +310,7 @@ type AttachCouponCmd struct {
 // BindAndValidate ...
 func (cmd *AttachCouponCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 	cmd.identityID = eCtx.Param("id")
 
@@ -327,7 +327,7 @@ func (sso *SSOService) AttachCoupon(ctx context.Context, gen request.Request) (i
 
 	// verify requested user id and authenticated user id are the same.
 	if acc == nil || acc.IdentityID != cmd.identityID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// start transaction since write actions will be performed across entities
@@ -345,12 +345,12 @@ func (sso *SSOService) AttachCoupon(ctx context.Context, gen request.Request) (i
 
 	// Check the coupon hasn't already been applied
 	if curIdentity.Level >= 20 {
-		err = merror.Conflict().Describe("coupon already applied")
+		err = merr.Conflict().Desc("coupon already applied")
 		return nil, err
 	}
 
 	// NOTE: there is no valid coupon nowadays
-	err = merror.BadRequest().Detail("value", merror.DVInvalid).Detail("invalid_value", cmd.Value).Describe("invalid coupon")
+	err = merr.BadRequest().Add("value", merr.DVInvalid).Add("invalid_value", cmd.Value).Desc("invalid coupon")
 	return nil, err
 }
 
@@ -363,7 +363,7 @@ type IdentityPubkeyByIdentifierQuery struct {
 func (query *IdentityPubkeyByIdentifierQuery) BindAndValidate(eCtx echo.Context) error {
 	err := eCtx.Bind(query)
 	if err != nil {
-		return merror.BadRequest().Describe(err.Error())
+		return merr.BadRequest().Desc(err.Error())
 	}
 	return v.ValidateStruct(query,
 		v.Field(&query.IdentifierValue, v.Required),
@@ -377,7 +377,7 @@ func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen re
 	// must only be authenticated
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	identities, err := identity.ListByIdentifier(ctx, sso.sqlDB,
@@ -387,7 +387,7 @@ func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen re
 		},
 	)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("retrieving identities")
+		return nil, merr.From(err).Desc("retrieving identities")
 	}
 
 	var result []string

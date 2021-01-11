@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 var (
@@ -110,17 +110,17 @@ func (ws *Websocket) writePump() error {
 			return nil
 		case <-ticker.C:
 			if err := ws.SendMessage(websocket.PingMessage, []byte{}); err != nil {
-				return merror.Internal().Describef("%s: sending ping", ws.ID)
+				return merr.Internal().Descf("%s: sending ping", ws.ID)
 			}
 		case msg, ok := <-ws.Send:
 			if !ok {
 				_ = ws.SendCloseMessage()
-				return merror.Internal().Describef("%s: getting message", ws.ID)
+				return merr.Internal().Descf("%s: getting message", ws.ID)
 			}
 
 			toSend := []byte(msg.Msg)
 			if err := ws.SendMessage(websocket.TextMessage, toSend); err != nil {
-				return merror.Internal().Describef("%s: sending message", ws.ID)
+				return merr.Internal().Descf("%s: sending message", ws.ID)
 			}
 		}
 	}

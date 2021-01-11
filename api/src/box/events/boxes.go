@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
@@ -93,7 +93,7 @@ func (c *computer) do(ctx context.Context) error {
 	for i := 0; i < totalCount; i++ {
 		e := c.events[totalCount-i-1]
 		if err := c.playEvent(ctx, e); err != nil {
-			return merror.Transform(err).Describef("playing event %s", e.ID)
+			return merr.From(err).Descf("playing event %s", e.ID)
 		}
 	}
 
@@ -117,20 +117,20 @@ func (c *computer) handleLast(ctx context.Context) error {
 	if c.lastEvent == nil {
 		last, err := GetLast(ctx, c.exec, c.box.ID)
 		if err != nil {
-			return merror.Transform(err).Describe("getting last event")
+			return merr.From(err).Desc("getting last event")
 		}
 		c.lastEvent = &last
 	}
 
 	// 2. build event aggregate
 	if err := BuildAggregate(ctx, c.exec, c.lastEvent); err != nil {
-		return merror.Transform(err).Describe("building aggregate")
+		return merr.From(err).Desc("building aggregate")
 	}
 
 	// 3. format and bind in non-transparent view mode the last event
 	view, err := c.lastEvent.Format(ctx, c.identities, false)
 	if err != nil {
-		return merror.Transform(err).Describe("computing view of last event")
+		return merr.From(err).Desc("computing view of last event")
 	}
 	c.box.LastEvent = view
 	return nil
@@ -156,7 +156,7 @@ func (c *computer) playCreate(ctx context.Context, e Event) error {
 	acc := oidc.GetAccesses(ctx)
 	c.box.Creator, err = c.identities.Get(ctx, e.SenderID, (acc != nil && acc.IdentityID == e.SenderID))
 	if err != nil {
-		return merror.Transform(err).Describe("retrieving creator")
+		return merr.From(err).Desc("retrieving creator")
 	}
 	return nil
 }
@@ -174,11 +174,11 @@ func (c *computer) playStateAccessMode(ctx context.Context, e Event) error {
 func GetBoxPublicKey(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
 	createEvent, err := GetCreateEvent(ctx, exec, boxID)
 	if err != nil {
-		return "", merror.Transform(err).Describef("getting creation event")
+		return "", merr.From(err).Descf("getting creation event")
 	}
 	content := CreationContent{}
 	if err = createEvent.JSONContent.Unmarshal(&content); err != nil {
-		return "", merror.Transform(err).Describef("unmarshaling creation event content")
+		return "", merr.From(err).Descf("unmarshaling creation event content")
 	}
 
 	return content.PublicKey, nil
@@ -188,17 +188,17 @@ func GetBoxPublicKey(ctx context.Context, exec boil.ContextExecutor, boxID strin
 func ClearBox(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
 	// 1. Delete all the events
 	if err := DeleteAllForBox(ctx, exec, boxID); err != nil {
-		return merror.Transform(err).Describe("deleting events")
+		return merr.From(err).Desc("deleting events")
 	}
 
 	// 2. Delete the key shares
 	if err := keyshares.EmptyAll(ctx, exec, boxID); err != nil {
-		return merror.Transform(err).Describe("emptying keyshares")
+		return merr.From(err).Desc("emptying keyshares")
 	}
 
 	// 3. Delete the box used space
 	if err := quota.DeleteBoxUsedSpace(ctx, exec, boxID); err != nil {
-		return merror.Transform(err).Describe("emptying box used space")
+		return merr.From(err).Desc("emptying box used space")
 	}
 
 	return nil

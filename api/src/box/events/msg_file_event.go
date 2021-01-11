@@ -9,7 +9,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
@@ -46,7 +46,7 @@ func NewMsgFile(
 	// generate a new uuid as a file ID
 	fileID, err = uuid.NewString()
 	if err != nil {
-		return e, "", merror.Transform(err).Describe("file id")
+		return e, "", merr.From(err).Desc("file id")
 	}
 
 	// build the event content
@@ -58,7 +58,7 @@ func NewMsgFile(
 
 	e, err = newWithAnyContent("msg.file", &content, boxID, senderID, nil)
 	if err != nil {
-		return e, "", merror.Transform(err).Describe("new event")
+		return e, "", merr.From(err).Desc("new event")
 	}
 	return e, fileID, nil
 }

@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // GetBearerTokFromCookie ...
@@ -12,19 +12,19 @@ func GetBearerTokFromCookie(ctx echo.Context) (string, error) {
 	// get authorization cookie
 	bearerTok, err := ctx.Request().Cookie("accesstoken")
 	if err != nil {
-		return "", merror.Unauthorized().From(merror.OriCookies).
-			Detail("accesstoken", merror.DVInvalid)
+		return "", merr.Unauthorized().Ori(merr.OriCookies).
+			Add("accesstoken", merr.DVInvalid)
 	}
 
 	if len(bearerTok.Value) == 0 {
-		return "", merror.Unauthorized().From(merror.OriCookies).
-			Detail("accesstoken", merror.DVRequired)
+		return "", merr.Unauthorized().Ori(merr.OriCookies).
+			Add("accesstoken", merr.DVRequired)
 	}
 
 	tokType, err := ctx.Request().Cookie("tokentype")
 	if err != nil || tokType.Value != "bearer" {
-		return "", merror.Unauthorized().From(merror.OriCookies).
-			Detail("tokentype", merror.DVInvalid)
+		return "", merr.Unauthorized().Ori(merr.OriCookies).
+			Add("tokentype", merr.DVInvalid)
 	}
 
 	return bearerTok.Value, nil
@@ -36,16 +36,15 @@ func GetBearerTokFromHeader(ctx echo.Context) (string, error) {
 	bearerTok := ctx.Request().Header.Get("Authorization")
 
 	if len(bearerTok) == 0 {
-		return "", merror.Unauthorized().From(merror.OriHeaders).
-			Detail("Authorization", merror.DVRequired)
+		return "", merr.Unauthorized().Ori(merr.OriHeaders).
+			Add("Authorization", merr.DVRequired)
 	}
 	// verify authorization header value is a bearer token and extract it
 	tokSplit := strings.SplitAfter(bearerTok, "Bearer ")
 	if len(tokSplit) != 2 {
-		return "", merror.Unauthorized().
-			From(merror.OriHeaders).
-			Describef("token should be of form `Bearer {token}`").
-			Detail("Authorization", merror.DVMalformed)
+		return "", merr.Unauthorized().Ori(merr.OriHeaders).
+			Descf("token should be of form `Bearer {token}`").
+			Add("Authorization", merr.DVMalformed)
 	}
 	return tokSplit[1], nil
 }

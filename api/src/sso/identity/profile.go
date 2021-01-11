@@ -5,7 +5,7 @@ import (
 
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // ProfileView ...
@@ -32,7 +32,7 @@ func ProfileGet(ctx context.Context, exec boil.ContextExecutor, identityID strin
 	// first retrieve the identity
 	identity, err := Get(ctx, exec, identityID)
 	if err != nil {
-		return p, merror.Transform(err).Describe("getting identity")
+		return p, merr.From(err).Desc("getting identity")
 	}
 	// fill information considering profile configuration
 	consents, err := listProfileSharingConsents(ctx, exec,
@@ -42,7 +42,7 @@ func ProfileGet(ctx context.Context, exec boil.ContextExecutor, identityID strin
 		},
 	)
 	if err != nil {
-		return p, merror.Transform(err).Describe("getting profile sharing consent")
+		return p, merr.From(err).Desc("getting profile sharing consent")
 	}
 	p.ID = identity.ID
 	p.DisplayName = identity.DisplayName
@@ -93,7 +93,7 @@ func ProfileConfigGet(ctx context.Context, exec boil.ContextExecutor, identityID
 		identityID: null.StringFrom(identityID),
 	})
 	if err != nil {
-		return c, merror.Transform(err).Describe("getting profile sharing consent")
+		return c, merr.From(err).Desc("getting profile sharing consent")
 	}
 	// for now only the email can be shared
 	// NOTE: the shape/logic of the profile might change later with more information to hide/share

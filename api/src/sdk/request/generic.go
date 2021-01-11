@@ -8,7 +8,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
@@ -132,15 +132,13 @@ func protectReq(eCtx echo.Context, minACR oidc.ClassRef) error {
 	// check accesses if there and acr is compliant
 	acc := oidc.GetAccesses(eCtx.Request().Context())
 	if acc == nil {
-		return merror.Forbidden()
+		return merr.Forbidden()
 	}
 	// check the authentication class reference
 	if acc.ACR.LessThan(minACR) {
-		return merror.Forbidden().
-			From(merror.OriACR).
-			Describef("acr is too low").
-			Detail("acr", merror.DVForbidden).
-			Detail("required_acr", minACR.String())
+		return merr.Forbidden().Ori(merr.OriACR).Descf("acr is too low").
+			Add("acr", merr.DVForbidden).
+			Add("required_acr", minACR.String())
 	}
 	return nil
 }

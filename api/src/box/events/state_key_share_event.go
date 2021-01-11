@@ -9,7 +9,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
@@ -20,7 +20,7 @@ import (
 func doStateKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionService external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// check accesses
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
-		return nil, merror.Transform(err).Describe("checking admin")
+		return nil, merr.From(err).Desc("checking admin")
 	}
 
 	// there is no "content" for this kind of event,
@@ -33,19 +33,19 @@ func doStateKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec bo
 	}{}
 
 	if err := extraJSON.Unmarshal(&extra); err != nil {
-		return nil, merror.Transform(err).Describe("unmarshalling \"for server no store\"")
+		return nil, merr.From(err).Desc("unmarshalling \"for server no store\"")
 	}
 	if err := v.ValidateStruct(&extra,
 		v.Field(&extra.MisakeyShare, v.Required),
 		v.Field(&extra.OtherShareHash, v.Required),
 		v.Field(&extra.EncryptedInvitationKeyShare, v.Required),
 	); err != nil {
-		return nil, merror.Transform(err).Describe("validating \"for server no store\"")
+		return nil, merr.From(err).Desc("validating \"for server no store\"")
 	}
 
 	err := keyshares.EmptyAll(ctx, exec, e.BoxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("deleting previous key shares")
+		return nil, merr.From(err).Desc("deleting previous key shares")
 	}
 
 	if err = keyshares.Create(
@@ -53,7 +53,7 @@ func doStateKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec bo
 		extra.OtherShareHash, extra.MisakeyShare, extra.EncryptedInvitationKeyShare,
 		e.BoxID, e.SenderID,
 	); err != nil {
-		return nil, merror.Transform(err).Describe("creating key share")
+		return nil, merr.From(err).Desc("creating key share")
 	}
 
 	// Creation of crypto actions
@@ -66,19 +66,19 @@ func doStateKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec bo
 
 	boxPublicKey, err := GetBoxPublicKey(ctx, exec, e.BoxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting box public key")
+		return nil, merr.From(err).Desc("getting box public key")
 	}
 
 	membersIdentityID, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("listing box members IDs")
+		return nil, merr.From(err).Desc("listing box members IDs")
 	}
 
 	// note that identities that don't have an account (ACR1 identities)
 	// will not be present in the "accountIDs" mapping
 	accountIDsByIdentityID, err := identityMapper.MapToAccountID(ctx, membersIdentityID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting members identities")
+		return nil, merr.From(err).Desc("getting members identities")
 	}
 
 	// it would be tempting to set an initial size for the crypto action slice,
@@ -109,7 +109,7 @@ func doStateKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec bo
 
 	err = cryptoActionService.CreateActions(ctx, cryptoActions)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("creating crypto actions")
+		return nil, merr.From(err).Desc("creating crypto actions")
 	}
 
 	return nil, e.persist(ctx, exec)

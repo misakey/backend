@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -34,16 +34,16 @@ func (app *BoxApplication) DeleteSavedFile(ctx context.Context, genReq request.R
 
 	access := oidc.GetAccesses(ctx)
 	if access == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 
 	// get saved file
 	savedFile, err := files.GetSavedFile(ctx, app.DB, req.ID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting saved file")
+		return nil, merr.From(err).Desc("getting saved file")
 	}
 	if savedFile.IdentityID != access.IdentityID {
-		return nil, merror.Forbidden().Detail("id", merror.DVForbidden)
+		return nil, merr.Forbidden().Add("id", merr.DVForbidden)
 	}
 
 	if err := files.DeleteSavedFile(ctx, app.DB, req.ID); err != nil {
@@ -53,11 +53,11 @@ func (app *BoxApplication) DeleteSavedFile(ctx context.Context, genReq request.R
 	// delete stored file if orphan
 	isOrphan, err := events.IsFileOrphan(ctx, app.DB, savedFile.EncryptedFileID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("deleting stored file")
+		return nil, merr.From(err).Desc("deleting stored file")
 	}
 	if isOrphan {
 		if err := files.Delete(ctx, app.DB, app.filesRepo, savedFile.EncryptedFileID); err != nil {
-			return nil, merror.Transform(err).Describe("deleting stored file")
+			return nil, merr.From(err).Desc("deleting stored file")
 		}
 	}
 

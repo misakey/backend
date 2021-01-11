@@ -9,7 +9,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -28,7 +28,7 @@ type DeleteBoxRequest struct {
 // BindAndValidate ...
 func (req *DeleteBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(req); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	req.boxID = eCtx.Param("id")
 	return v.ValidateStruct(req,
@@ -44,18 +44,18 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 
 	// verify the deletion sender is an admin of the box
 	if err := events.MustBeAdmin(ctx, app.DB, req.boxID, acc.IdentityID); err != nil {
-		return nil, merror.Transform(err).Describe("checking admin")
+		return nil, merr.From(err).Desc("checking admin")
 	}
 
 	// get box files before deleting events
 	boxFileIDs, err := events.ListFilesID(ctx, app.DB, req.boxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting files")
+		return nil, merr.From(err).Desc("getting files")
 	}
 
 	// get public key before deleting events
@@ -67,13 +67,13 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 	// get box members (to notify them)
 	memberIDs, err := events.ListBoxMemberIDs(ctx, app.DB, app.RedConn, req.boxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting members list")
+		return nil, merr.From(err).Desc("getting members list")
 	}
 
 	// init a transaction to ensure all entities are removed
 	tr, err := app.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("initing transaction")
+		return nil, merr.From(err).Desc("initing transaction")
 	}
 	defer atomic.SQLRollback(ctx, tr, &err)
 
@@ -87,7 +87,7 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 
 	// run db operations
 	if cErr := tr.Commit(); cErr != nil {
-		return nil, merror.Transform(cErr).Describe("committing transaction")
+		return nil, merr.From(cErr).Desc("committing transaction")
 	}
 
 	// send delete events to websockets

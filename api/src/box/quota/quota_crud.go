@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
@@ -47,7 +47,7 @@ func Create(ctx context.Context, exec boil.ContextExecutor, quotum *Quotum) erro
 	var err error
 	quotum.ID, err = uuid.NewString()
 	if err != nil {
-		return merror.Transform(err).Describe("generating uuid")
+		return merr.From(err).Desc("generating uuid")
 	}
 	return quotum.ToSQLBoiler().Insert(ctx, exec, boil.Infer())
 }

@@ -1,4 +1,4 @@
-package merror
+package merr
 
 // detail constants
 const (

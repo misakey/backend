@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
@@ -18,7 +18,7 @@ func (sso *SSOService) Logout(ctx context.Context, _ request.Request) (interface
 	// verify accesses
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 	// start transaction since write actions will be performed
 	tr, err := sso.sqlDB.BeginTx(ctx, nil)
@@ -29,7 +29,7 @@ func (sso *SSOService) Logout(ctx context.Context, _ request.Request) (interface
 
 	err = sso.authFlowService.Logout(ctx, acc.Subject, acc.Token)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("logging out on auth")
+		return nil, merr.From(err).Desc("logging out on auth")
 	}
 
 	// expire all current authentication steps for the logged out subject

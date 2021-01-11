@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
@@ -32,10 +32,10 @@ func NewAuthnProcessIntrospector(selfCliID string, tokens processRepo) echo.Midd
 				// not found authorization is possible during an authn process
 				// some authn step will be required in this case
 				// we don't raise any error regarding this
-				if merror.HasCode(err, merror.NotFoundCode) {
+				if merr.IsANotFound(err) {
 					return next(ctx)
 				}
-				return merror.Unauthorized().From(merror.OriHeaders).Describe(err.Error())
+				return merr.Unauthorized().Ori(merr.OriHeaders).Desc(err.Error())
 			}
 
 			// set access claims in request context

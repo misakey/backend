@@ -14,7 +14,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
 
@@ -67,7 +67,7 @@ func CreateActions(
 		if action.ID == "" {
 			actionID, err := uuid.NewString()
 			if err != nil {
-				return merror.Transform(err).Describe("generating action UUID")
+				return merr.From(err).Desc("generating action UUID")
 			}
 
 			action.ID = actionID
@@ -75,7 +75,7 @@ func CreateActions(
 
 		err := action.toSQLBoiler().Insert(ctx, exec, boil.Infer())
 		if err != nil {
-			return merror.Transform(err).Describe("inserting action")
+			return merr.From(err).Desc("inserting action")
 		}
 	}
 
@@ -90,7 +90,7 @@ func CreateInvitationActionsForIdentity(
 ) error {
 	identityObj, err := identity.Get(ctx, exec, identityValue)
 	if err != nil {
-		return merror.Transform(err).Describe("getting identity")
+		return merr.From(err).Desc("getting identity")
 	}
 	identities := []*identity.Identity{&identityObj}
 
@@ -110,7 +110,7 @@ func CreateInvitationActionsForIdentifier(
 		},
 	)
 	if err != nil {
-		return merror.Transform(err).Describe("retrieving identities")
+		return merr.From(err).Desc("retrieving identities")
 	}
 
 	return CreateInvitationActions(ctx, exec, redConn, identities, actionsDataJSON, senderID, boxID, boxTitle, false)
@@ -124,11 +124,11 @@ func CreateInvitationActions(ctx context.Context, exec boil.ContextExecutor, red
 	var actionsData map[string]string
 	err := actionsDataJSON.Unmarshal(&actionsData)
 	if err != nil {
-		return merror.Transform(err).Describe("unmarshalling actions data")
+		return merr.From(err).Desc("unmarshalling actions data")
 	}
 
 	if len(actionsData) != len(identities) {
-		return merror.BadRequest().Describe(
+		return merr.BadRequest().Desc(
 			"required one entry per identity public key in extra",
 		)
 	}
@@ -144,13 +144,13 @@ func CreateInvitationActions(ctx context.Context, exec boil.ContextExecutor, red
 		} else if nonIdentified && identity.NonIdentifiedPubkey.Valid {
 			pubkey = identity.NonIdentifiedPubkey.String
 		} else {
-			return merror.Conflict().Describe("not all identities have a public key")
+			return merr.Conflict().Desc("not all identities have a public key")
 		}
 
 		// cryptoaction
 		encryptedCryptoAction, present := actionsData[pubkey]
 		if !present {
-			return merror.BadRequest().Describef(
+			return merr.BadRequest().Descf(
 				"missing encrypted crypto action for pubkey \"%s\"",
 				pubkey,
 			)
@@ -158,7 +158,7 @@ func CreateInvitationActions(ctx context.Context, exec boil.ContextExecutor, red
 
 		actionID, err := uuid.NewString()
 		if err != nil {
-			return merror.Transform(err).Describe("generating action UUID")
+			return merr.From(err).Desc("generating action UUID")
 		}
 
 		action := Action{
@@ -184,7 +184,7 @@ func CreateInvitationActions(ctx context.Context, exec boil.ContextExecutor, red
 			CryptoActionID: action.ID,
 		})
 		if err != nil {
-			return merror.Transform(err).Describef(
+			return merr.From(err).Descf(
 				"marshalling notif details for pubkey \"%s\"",
 				pubkey,
 			)
@@ -222,7 +222,7 @@ func GetAction(
 	).One(ctx, exec)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return Action{}, merror.NotFound().Describef("no action with ID %s", actionID)
+			return Action{}, merr.NotFound().Descf("no action with ID %s", actionID)
 		}
 		return Action{}, err
 	}
@@ -256,7 +256,7 @@ func DeleteAction(
 ) error {
 	err := identity.NotificationMarkAutoInvitationUsed(ctx, exec, actionID)
 	if err != nil {
-		return merror.Transform(err).Describe(`marking related invitations as used`)
+		return merr.From(err).Desc(`marking related invitations as used`)
 	}
 
 	// TODO use the transaction here too
@@ -268,7 +268,7 @@ func DeleteAction(
 		return err
 	}
 	if rowsAff == 0 {
-		return merror.NotFound().Describe("no crypto actions to delete")
+		return merr.NotFound().Desc("no crypto actions to delete")
 	}
 	return nil
 }

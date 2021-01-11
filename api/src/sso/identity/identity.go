@@ -11,7 +11,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
@@ -87,7 +87,7 @@ func Create(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Clien
 	// generate new UUID
 	id, err := uuid.NewRandom()
 	if err != nil {
-		return merror.Transform(err).Describe("could not generate uuid v4")
+		return merr.From(err).Desc("could not generate uuid v4")
 	}
 
 	identity.ID = id.String()
@@ -113,7 +113,7 @@ func Create(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Clien
 func Get(ctx context.Context, exec boil.ContextExecutor, identityID string) (ret Identity, err error) {
 	record, err := sqlboiler.FindIdentity(ctx, exec, identityID)
 	if err == sql.ErrNoRows {
-		return ret, merror.NotFound().Describe(err.Error()).Detail(" id", merror.DVNotFound)
+		return ret, merr.NotFound().Desc(err.Error()).Add(" id", merr.DVNotFound)
 	}
 	if err != nil {
 		return ret, err
@@ -123,7 +123,7 @@ func Get(ctx context.Context, exec boil.ContextExecutor, identityID string) (ret
 	// retrieve the related identifier
 	ret.Identifier, err = GetIdentifier(ctx, exec, ret.IdentifierID)
 	if err != nil {
-		return ret, merror.Transform(err).Describe("getting identifier")
+		return ret, merr.From(err).Desc("getting identifier")
 	}
 	return ret, nil
 }
@@ -173,12 +173,12 @@ func GetAuthableByIdentifierID(ctx context.Context, exec boil.ContextExecutor, i
 		return Identity{}, err
 	}
 	if len(identities) < 1 {
-		return Identity{}, merror.NotFound().
-			Detail("identifier_id", merror.DVNotFound).
-			Detail("is_authable", merror.DVNotFound)
+		return Identity{}, merr.NotFound().
+			Add("identifier_id", merr.DVNotFound).
+			Add("is_authable", merr.DVNotFound)
 	}
 	if len(identities) > 1 {
-		return Identity{}, merror.Internal().Describef("more than one authable identity found for %s", identifierID)
+		return Identity{}, merr.Internal().Descf("more than one authable identity found for %s", identifierID)
 	}
 	return *identities[0], nil
 }
@@ -190,7 +190,7 @@ func Update(ctx context.Context, exec boil.ContextExecutor, identity *Identity) 
 		return err
 	}
 	if rowsAff == 0 {
-		return merror.NotFound().Describe("no rows affected").Detail("id", merror.DVNotFound)
+		return merr.NotFound().Desc("no rows affected").Add("id", merr.DVNotFound)
 	}
 	return nil
 }
@@ -199,7 +199,7 @@ func Update(ctx context.Context, exec boil.ContextExecutor, identity *Identity) 
 func ListByIdentifier(ctx context.Context, exec boil.ContextExecutor, identifier Identifier) ([]*Identity, error) {
 	identifier, err := GetIdentifierByKindValue(ctx, exec, identifier)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("retrieving identifier")
+		return nil, merr.From(err).Desc("retrieving identifier")
 	}
 	return List(ctx, exec, Filters{IdentifierID: null.StringFrom(identifier.ID)})
 }

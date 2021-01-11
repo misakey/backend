@@ -8,7 +8,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
@@ -36,7 +36,7 @@ func (app *BoxApplication) ListAccesses(ctx context.Context, genReq request.Requ
 	// retrieve accesses to filters boxes to return
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 	if err := events.MustBeAdmin(ctx, app.DB, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func (app *BoxApplication) ListAccesses(ctx context.Context, genReq request.Requ
 
 	accessEvents, err := events.FindActiveAccesses(ctx, app.DB, req.boxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting sender accesses")
+		return nil, merr.From(err).Desc("getting sender accesses")
 	}
 
 	views := make([]events.View, len(accessEvents))
@@ -52,7 +52,7 @@ func (app *BoxApplication) ListAccesses(ctx context.Context, genReq request.Requ
 		// the user is admin and we need to have transparent identity to list them
 		views[i], err = e.Format(ctx, identityMapper, true)
 		if err != nil {
-			return views, merror.Transform(err).Describe("computing access view")
+			return views, merr.From(err).Desc("computing access view")
 		}
 	}
 	return views, nil

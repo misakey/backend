@@ -6,7 +6,7 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
@@ -23,7 +23,7 @@ func doLeave(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecut
 	// check that the current sender is not the admin
 	// admin can’t leave their own box
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err == nil {
-		return nil, merror.Forbidden().Describe("admin can’t leave their own box")
+		return nil, merr.Forbidden().Desc("admin can’t leave their own box")
 	}
 
 	// get the last join event to set the referrer id
@@ -34,7 +34,7 @@ func doLeave(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecut
 		boxID:      null.StringFrom(e.BoxID),
 	})
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting last join event")
+		return nil, merr.From(err).Desc("getting last join event")
 	}
 	e.ReferrerID = null.StringFrom(joinEvent.ID)
 

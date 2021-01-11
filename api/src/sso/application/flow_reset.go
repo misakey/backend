@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow"
@@ -22,7 +22,7 @@ type FlowResetCmd struct {
 // BindAndValidate ...
 func (cmd *FlowResetCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriQuery)
+		return merr.BadRequest().Ori(merr.OriQuery)
 	}
 	return nil
 }

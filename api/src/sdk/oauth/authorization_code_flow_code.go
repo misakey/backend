@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // AuthorizationCodeInput contains parameters for obtaining a code
@@ -23,7 +23,7 @@ func (acf *AuthorizationCodeFlow) RequestCode(w http.ResponseWriter, r *http.Req
 	state := r.URL.Query().Get("state")
 	// check state parameter - state should not be empty
 	if state == "" {
-		acf.redirectErr(w, merror.MissingParameter.String(), "state")
+		acf.redirectErr(w, merr.MissingParameter.String(), "state")
 		return
 	}
 

@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -32,15 +32,15 @@ func (app *BoxApplication) ListUserStorageQuota(ctx context.Context, genReq requ
 
 	access := oidc.GetAccesses(ctx)
 	if access == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 	if req.IdentityID != access.IdentityID {
-		return nil, merror.Forbidden().Detail("id", merror.DVForbidden)
+		return nil, merr.Forbidden().Add("id", merr.DVForbidden)
 	}
 
 	userStorageQuota, err := quota.List(ctx, app.DB, req.IdentityID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("listing user quota")
+		return nil, merr.From(err).Desc("listing user quota")
 	}
 
 	// on no base quota found, it means the identity is new and no base quota has been created yet
@@ -52,7 +52,7 @@ func (app *BoxApplication) ListUserStorageQuota(ctx context.Context, genReq requ
 			Value:      104857600, // default value for newcomers
 		}
 		if err := quota.Create(ctx, app.DB, &baseQuotum); err != nil {
-			return nil, merror.Transform(err).Describe("creating base quota")
+			return nil, merr.From(err).Desc("creating base quota")
 		}
 	}
 

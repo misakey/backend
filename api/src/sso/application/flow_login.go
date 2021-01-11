@@ -11,7 +11,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -28,10 +28,10 @@ type LoginInitCmd struct {
 // BindAndValidate ...
 func (cmd *LoginInitCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriQuery)
+		return merr.BadRequest().Ori(merr.OriQuery)
 	}
 	if cmd.Challenge == "" {
-		return merror.BadRequest().From(merror.OriQuery).Detail("login_challenge", merror.DVRequired)
+		return merr.BadRequest().Ori(merr.OriQuery).Add("login_challenge", merr.DVRequired)
 	}
 	return nil
 }
@@ -78,7 +78,7 @@ func (sso *SSOService) LoginInit(ctx context.Context, gen request.Request) (inte
 
 	// store information about the incomming authentication process
 	if err := sso.AuthenticationService.InitProcess(ctx, req.Challenge, sessionACR, expectedACR); err != nil {
-		return sso.authFlowService.LoginRedirectErr(merror.Transform(err).Describe("initing authn process")), nil
+		return sso.authFlowService.LoginRedirectErr(merr.From(err).Desc("initing authn process")), nil
 	}
 
 	// return the login page url
@@ -100,7 +100,7 @@ type IdentityAuthableCmd struct {
 // BindAndValidate the IdentityAuthableCmd
 func (cmd *IdentityAuthableCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
 	// validate nested structure separately
@@ -167,14 +167,13 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 	}
 
 	// 2. check if an identity exist for the identifier
-	identityNotFound := func(err error) bool { return err != nil && merror.HasCode(err, merror.NotFoundCode) }
 	authable, err := identity.GetAuthableByIdentifierID(ctx, tr, identifier.ID)
-	if err != nil && !identityNotFound(err) {
+	if err != nil && !merr.IsANotFound(err) {
 		return nil, err
 	}
 
 	// 3. create an identity if nothing was found
-	if identityNotFound(err) {
+	if merr.IsANotFound(err) {
 		// a. create the Identity without account
 		authable = identity.Identity{
 			IdentifierID: identifier.ID,
@@ -192,10 +191,10 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 	// NOTE: not handled - authnsession ACR
 	step, err := sso.AuthenticationService.NextStep(ctx, tr, authable, oidc.ACR0, logCtx.OIDCContext.ACRValues())
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting next authn step")
+		return nil, merr.From(err).Desc("getting next authn step")
 	}
 	if cErr := tr.Commit(); cErr != nil {
-		return nil, merror.Transform(cErr).Describe("committing transaction")
+		return nil, merr.From(cErr).Desc("committing transaction")
 	}
 
 	// bind identity information on view
@@ -218,10 +217,10 @@ type LoginInfoQuery struct {
 // BindAndValidate ...
 func (cmd *LoginInfoQuery) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriQuery)
+		return merr.BadRequest().Ori(merr.OriQuery)
 	}
 	if cmd.Challenge == "" {
-		return merror.BadRequest().From(merror.OriQuery).Detail("login_challenge", merror.DVRequired)
+		return merr.BadRequest().Ori(merr.OriQuery).Add("login_challenge", merr.DVRequired)
 	}
 	return nil
 }
@@ -247,7 +246,7 @@ func (sso *SSOService) LoginInfo(ctx context.Context, gen request.Request) (inte
 
 	logCtx, err := sso.authFlowService.GetLoginContext(ctx, query.Challenge)
 	if err != nil {
-		return view, merror.Transform(err).Describe("could not get context")
+		return view, merr.From(err).Desc("could not get context")
 	}
 
 	// fill view with domain model
@@ -272,7 +271,7 @@ type LoginAuthnStepCmd struct {
 // BindAndValidate ...
 func (cmd *LoginAuthnStepCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
 	// validate nested structure separately
@@ -329,7 +328,7 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 		return view, err
 	}
 	if !curIdentity.IsAuthable {
-		err = merror.Forbidden().Describe("identity not authable")
+		err = merr.Forbidden().Desc("identity not authable")
 		return view, err
 	}
 
@@ -351,10 +350,10 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 	// upgrade the authentication process
 	process, err := sso.AuthenticationService.UpgradeProcess(ctx, tr, logCtx.Challenge, curIdentity, cmd.Step.MethodName)
 	if err != nil {
-		return view, merror.Transform(err).Describe("upgrading authn process")
+		return view, merr.From(err).Desc("upgrading authn process")
 	}
 	if cErr := tr.Commit(); cErr != nil {
-		return nil, merror.Transform(cErr).Describe("committing transaction")
+		return nil, merr.From(cErr).Desc("committing transaction")
 	}
 
 	view.AccessToken = process.AccessToken

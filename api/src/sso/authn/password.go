@@ -8,16 +8,16 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn/argon2"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 // AssertPasswordExistence ...
 func (as *Service) AssertPasswordExistence(ctx context.Context, identity identity.Identity) error {
 	if identity.AccountID.String == "" {
-		return merror.Conflict().Describe("identity has no linked account").
-			Detail("identity_id", merror.DVConflict).
-			Detail("account_id", merror.DVRequired)
+		return merr.Conflict().Desc("identity has no linked account").
+			Add("identity_id", merr.DVConflict).
+			Add("account_id", merr.DVRequired)
 	}
 	return nil
 }
@@ -34,7 +34,7 @@ func (as *Service) preparePassword(ctx context.Context, exec boil.ContextExecuto
 		return err
 	}
 	if err := step.RawJSONMetadata.Marshal(params); err != nil {
-		return merror.Transform(err).Describe("marshaling password metadata")
+		return merr.From(err).Desc("marshaling password metadata")
 	}
 	return nil
 }
@@ -46,13 +46,13 @@ func (as *Service) assertPassword(
 	// transform metadata into argon2 password metadata structure
 	pwdMetadata, err := argon2.ToMetadata(assertion.RawJSONMetadata)
 	if err != nil {
-		return merror.Forbidden().From(merror.OriBody).
-			Describe(err.Error()).Detail("metadata", merror.DVMalformed)
+		return merr.Forbidden().Ori(merr.OriBody).
+			Desc(err.Error()).Add("metadata", merr.DVMalformed)
 	}
 
 	if curIdentity.AccountID.String == "" {
-		return merror.Forbidden().Describe("identity has no linked account").
-			Detail("account_id", merror.DVRequired)
+		return merr.Forbidden().Desc("identity has no linked account").
+			Add("account_id", merr.DVRequired)
 	}
 
 	// retrieve the account
@@ -67,8 +67,8 @@ func (as *Service) assertPassword(
 		return err
 	}
 	if !pwdIsValid {
-		return merror.Forbidden().Describe("invalid password").
-			From(merror.OriBody).Detail("metadata", merror.DVInvalid)
+		return merr.Forbidden().Desc("invalid password").
+			Ori(merr.OriBody).Add("metadata", merr.DVInvalid)
 	}
 	return nil
 }

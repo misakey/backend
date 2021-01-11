@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/rs/zerolog/log"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // FileAmazonS3 ...
@@ -50,8 +50,8 @@ func (s *FileAmazonS3) Upload(ctx context.Context, fileID string, data io.Reader
 		Body:   data,
 	})
 	if err != nil {
-		return merror.Internal().
-			Describef("unable to upload %q to %q, %v", fileID, s.bucket, err)
+		return merr.Internal().
+			Descf("unable to upload %q to %q, %v", fileID, s.bucket, err)
 	}
 	return nil
 }
@@ -64,8 +64,7 @@ func (s *FileAmazonS3) Download(ctx context.Context, fileID string) (io.Reader, 
 	}
 	rawObj, err := s.session.GetObject(getObj)
 	if err != nil {
-		return nil, merror.Internal().
-			Describef("unable to download object %s from bucket %q, %v", fileID, s.bucket, err)
+		return nil, merr.Internal().Descf("unable to download object %s from bucket %q, %v", fileID, s.bucket, err)
 	}
 	return rawObj.Body, nil
 }
@@ -78,10 +77,9 @@ func (s *FileAmazonS3) Delete(ctx context.Context, fileID string) error {
 	}
 	if _, err := s.session.DeleteObjectWithContext(ctx, delObj); err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NoSuchKey" {
-			return merror.NotFound().Describe(err.Error())
+			return merr.NotFound().Desc(err.Error())
 		}
-		return merror.Transform(err).
-			Describef("unable to delete object %q from %q, %v", fileID, s.bucket, err)
+		return merr.From(err).Descf("unable to delete object %q from %q, %v", fileID, s.bucket, err)
 	}
 	return nil
 }

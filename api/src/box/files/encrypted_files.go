@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
 )
@@ -37,7 +37,7 @@ func Create(ctx context.Context, exec boil.ContextExecutor, encryptedFile Encryp
 func Get(ctx context.Context, exec boil.ContextExecutor, fileID string) (*EncryptedFile, error) {
 	dbEncryptedFile, err := sqlboiler.EncryptedFiles(sqlboiler.EncryptedFileWhere.ID.EQ(fileID)).One(ctx, exec)
 	if err == sql.ErrNoRows {
-		return nil, merror.NotFound().Detail("id", merror.DVNotFound)
+		return nil, merr.NotFound().Add("id", merr.DVNotFound)
 	}
 	if err != nil {
 		return nil, err

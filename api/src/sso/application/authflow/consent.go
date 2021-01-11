@@ -8,7 +8,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/domain/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
@@ -44,7 +44,7 @@ func (afs Service) BuildAndAcceptConsent(
 	acceptance.Session.AccessTokenClaims = consentCtx.OIDCContext
 	redirect, err := afs.authFlow.Consent(ctx, consentCtx.Challenge, acceptance)
 	if err != nil {
-		return buildRedirectErr(merror.InvalidFlowCode, err.Error(), afs.consentPageURL)
+		return buildRedirectErr(merr.InvalidFlowCode, err.Error(), afs.consentPageURL)
 	}
 	return redirect.To
 }
@@ -105,12 +105,12 @@ func (afs Service) ShouldSkipConsent(
 
 // ConsentRequiredErr helper
 func (afs Service) ConsentRequiredErr() string {
-	return buildRedirectErr(merror.ConsentRequiredCode, "forbidden prompt=none", afs.consentPageURL)
+	return buildRedirectErr(merr.ConsentRequiredCode, "forbidden prompt=none", afs.consentPageURL)
 }
 
 // ConsentRedirectErr helper
 func (afs Service) ConsentRedirectErr(err error) string {
-	return buildRedirectErr(merror.InvalidFlowCode, err.Error(), afs.consentPageURL)
+	return buildRedirectErr(merr.InvalidFlowCode, err.Error(), afs.consentPageURL)
 }
 
 // BuildConsentURL helper
@@ -134,10 +134,10 @@ func AssertLegalScopes(requested []string, consented []string) error {
 	requestedLegalScopes := getLegalScopes(requested)
 	consentedLegalScopes := getLegalScopes(consented)
 	if len(slice.StrIntersect(requestedLegalScopes, consentedLegalScopes)) != len(requestedLegalScopes) {
-		return merror.Forbidden().
-			Describe("some requested legal scopes have not been consented").
-			Detail("requested_legal_scope", strings.Join(requestedLegalScopes, " ")).
-			Detail("consented_legal_scope", strings.Join(consentedLegalScopes, " "))
+		return merr.Forbidden().
+			Desc("some requested legal scopes have not been consented").
+			Add("requested_legal_scope", strings.Join(requestedLegalScopes, " ")).
+			Add("consented_legal_scope", strings.Join(consentedLegalScopes, " "))
 	}
 	return nil
 }

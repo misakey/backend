@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/stretchr/testify/assert"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 type StructToValidate struct {
@@ -57,13 +57,13 @@ func TestOzzoExplode(t *testing.T) {
 	)
 
 	err = NewOzzoNeedle().Explode(err)
-	mErr := err.(merror.Error)
-	assert.Equalf(t, merror.BadRequestCode, mErr.Co, "code test")
-	assert.Equalf(t, merror.DVRequired, mErr.Details["json_tag"], "required test")
-	assert.Equalf(t, merror.DVMalformed, mErr.Details["password_tag"], "length test")
-	assert.Equalf(t, merror.DVMalformed, mErr.Details["enum_tag"], "enum test")
-	assert.Equalf(t, merror.DVMalformed, mErr.Details["u"], "slice of uuid test")
-	assert.Equalf(t, merror.DVMalformed, mErr.Details["email"], "email test")
+	mErr := err.(merr.Error)
+	assert.Equalf(t, merr.BadRequestCode, mErr.Co, "code test")
+	assert.Equalf(t, merr.DVRequired, mErr.Details["json_tag"], "required test")
+	assert.Equalf(t, merr.DVMalformed, mErr.Details["password_tag"], "length test")
+	assert.Equalf(t, merr.DVMalformed, mErr.Details["enum_tag"], "enum test")
+	assert.Equalf(t, merr.DVMalformed, mErr.Details["u"], "slice of uuid test")
+	assert.Equalf(t, merr.DVMalformed, mErr.Details["email"], "email test")
 
 	// test with a valid structure - mostly for the email format validation
 	// the library plans to invalidate the uppercase characters in the is.Email

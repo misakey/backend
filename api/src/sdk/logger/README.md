@@ -10,7 +10,7 @@ We use two different loggers:
 - The default [echo logger](https://godoc.org/github.com/labstack/echo#Logger), instantiated by the `NewLogger()` middleware. It logs:
   - the requests (automatically)
 - A [zerolog logger](https://github.com/rs/zerolog), instantiated by the `NewZerologLogger()` middleware. It logs:
-  - the errors (automatically, when a merror is returned)
+  - the errors (automatically, when a merr is returned)
   - the logs specified in the service with `logger.FromCtx(ctx)` (`logger` being `import "gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"`)
 
 ## Service Logger

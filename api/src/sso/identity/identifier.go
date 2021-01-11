@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
@@ -35,7 +35,7 @@ func GetIdentifier(ctx context.Context, exec boil.ContextExecutor, id string) (I
 
 	record, err := sqlboiler.Identifiers(mods...).One(ctx, exec)
 	if err == sql.ErrNoRows {
-		return Identifier{}, merror.NotFound().Detail("id", merror.DVNotFound)
+		return Identifier{}, merr.NotFound().Add("id", merr.DVNotFound)
 	}
 	if err != nil {
 		return Identifier{}, err
@@ -81,7 +81,7 @@ func GetIdentifierByKindValue(ctx context.Context, exec boil.ContextExecutor, id
 
 	record, err := sqlboiler.Identifiers(mods...).One(ctx, exec)
 	if err == sql.ErrNoRows {
-		return Identifier{}, merror.NotFound().Detail("kind", merror.DVNotFound).Detail("value", merror.DVNotFound)
+		return Identifier{}, merr.NotFound().Add("kind", merr.DVNotFound).Add("value", merr.DVNotFound)
 	}
 	if err != nil {
 		return Identifier{}, err
@@ -98,7 +98,7 @@ func createIdentifier(ctx context.Context, exec boil.ContextExecutor, identifier
 	// generate new UUID for new record
 	id, err := uuid.NewRandom()
 	if err != nil {
-		return merror.Transform(err).Describe("could not generate uuid v4")
+		return merr.From(err).Desc("could not generate uuid v4")
 	}
 	identifier.ID = id.String()
 

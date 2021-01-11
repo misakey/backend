@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-redis/redis/v7"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/notifications/email"
 )
@@ -63,6 +63,6 @@ func GetNotifPeriod(frequency string) (time.Duration, error) {
 	case "frequent":
 		return 5 * time.Minute, nil
 	default:
-		return 0 * time.Minute, merror.Internal().Describef("wrong frequency value: %s", frequency)
+		return 0 * time.Minute, merr.Internal().Descf("wrong frequency value: %s", frequency)
 	}
 }

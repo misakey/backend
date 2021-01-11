@@ -9,7 +9,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
@@ -50,7 +50,7 @@ func (b BackupArchive) toSQLBoiler() *sqlboiler.BackupArchive {
 func CreateBackupArchive(ctx context.Context, exec boil.ContextExecutor, archive BackupArchive) error {
 	id, err := uuid.NewRandom()
 	if err != nil {
-		return merror.Transform(err).Describe("generating UUID")
+		return merr.From(err).Desc("generating UUID")
 	}
 	archive.ID = id.String()
 	return archive.toSQLBoiler().Insert(ctx, exec, boil.Infer())
@@ -60,7 +60,7 @@ func CreateBackupArchive(ctx context.Context, exec boil.ContextExecutor, archive
 func GetBackupArchive(ctx context.Context, exec boil.ContextExecutor, archiveID string) (BackupArchive, error) {
 	record, err := sqlboiler.FindBackupArchive(ctx, exec, archiveID)
 	if err == sql.ErrNoRows {
-		return BackupArchive{}, merror.NotFound().Detail("id", merror.DVNotFound)
+		return BackupArchive{}, merr.NotFound().Add("id", merr.DVNotFound)
 	}
 	return *newBackupArchive().fromSQLBoiler(*record), err
 }
@@ -106,7 +106,7 @@ func GetBackupArchiveMetadata(ctx context.Context, exec boil.ContextExecutor, ar
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return BackupArchive{}, merror.NotFound().Detail("id", merror.DVNotFound)
+			return BackupArchive{}, merr.NotFound().Add("id", merr.DVNotFound)
 		}
 		return BackupArchive{}, err
 	}
@@ -128,13 +128,13 @@ func DeleteBackupArchive(
 	} else if reason == "recovery" {
 		recoveredAt = now
 	} else {
-		return merror.Internal().Describe("service using deletion reason")
+		return merr.Internal().Desc("service using deletion reason")
 	}
 
 	archive, err := sqlboiler.FindBackupArchive(ctx, exec, archiveID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return merror.NotFound().Detail("id", merror.DVNotFound)
+			return merr.NotFound().Add("id", merr.DVNotFound)
 		}
 		return err
 	}
@@ -150,8 +150,8 @@ func DeleteBackupArchive(
 		return err
 	}
 	if rowsAff == 0 {
-		return merror.NotFound().Detail("id", merror.DVNotFound).
-			Describe("no account rows affected on udpate")
+		return merr.NotFound().Add("id", merr.DVNotFound).
+			Desc("no account rows affected on udpate")
 	}
 	return nil
 }

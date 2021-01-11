@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-redis/redis/v7"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/cache"
 )
@@ -38,7 +38,7 @@ func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID
 		boxID := strings.Split(keys[idx], ":")[2]
 		count, err := strconv.Atoi(eventCount.(string))
 		if err != nil {
-			return nil, merror.Internal().Describef("unexpected value format for %s: %s", keys[idx], err.Error())
+			return nil, merr.Internal().Descf("unexpected value format for %s: %s", keys[idx], err.Error())
 		}
 		result[boxID] = count
 	}

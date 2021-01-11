@@ -3,7 +3,7 @@ package argon2
 import (
 	"encoding/json"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // PwdMetadata ...
@@ -15,7 +15,7 @@ type PwdMetadata struct {
 func ToMetadata(msg json.Marshaler) (ret PwdMetadata, err error) {
 	msgJSON, err := msg.MarshalJSON()
 	if err != nil {
-		return ret, merror.Transform(err).Describe("password metadata")
+		return ret, merr.From(err).Desc("password metadata")
 	}
 	err = json.Unmarshal(msgJSON, &ret)
 	return ret, err

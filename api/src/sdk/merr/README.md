@@ -1,6 +1,6 @@
 # Misakey Error Package
 
-merror package allows us to share same data format for API errors.
+merr package allows us to share same data format for API errors.
 
 It allows us to use internal code to identify some specific behaviour to improve UX or our alerting system.
 

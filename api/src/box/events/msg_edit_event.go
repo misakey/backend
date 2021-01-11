@@ -10,7 +10,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
@@ -50,18 +50,18 @@ func doEditMsg(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExec
 
 	msg, err := buildMessage(ctx, exec, e.ReferrerID.String)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("building message")
+		return nil, merr.From(err).Desc("building message")
 	}
 
 	if e.SenderID != msg.InitialSenderID {
-		return nil, merror.Forbidden().Describe("can only edit own messages")
+		return nil, merr.Forbidden().Desc("can only edit own messages")
 	}
 	// if the message is already deleted, do not go further
 	if !msg.DeletedAt.IsZero() {
-		return nil, merror.Gone().Describe("cannot edit a deleted message")
+		return nil, merr.Gone().Desc("cannot edit a deleted message")
 	}
 	if msg.Type == etype.Msgfile {
-		return msg, merror.Forbidden().Describef("cannot edit event type %s", msg.Type)
+		return msg, merr.Forbidden().Descf("cannot edit event type %s", msg.Type)
 	}
 
 	if err := e.persist(ctx, exec); err != nil {

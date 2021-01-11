@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/login"
 )
 
@@ -34,12 +34,12 @@ func (afs Service) BuildAndAcceptLogin(ctx context.Context, loginCtx login.Conte
 
 // LoginRequiredErr helper
 func (afs Service) LoginRequiredErr() string {
-	return buildRedirectErr(merror.LoginRequiredCode, "forbidden prompt=none", afs.loginPageURL)
+	return buildRedirectErr(merr.LoginRequiredCode, "forbidden prompt=none", afs.loginPageURL)
 }
 
 // LoginRedirectErr helper
 func (afs Service) LoginRedirectErr(err error) string {
-	return buildRedirectErr(merror.InvalidFlowCode, err.Error(), afs.loginPageURL)
+	return buildRedirectErr(merr.InvalidFlowCode, err.Error(), afs.loginPageURL)
 }
 
 // BuildLoginURL ...

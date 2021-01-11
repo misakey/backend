@@ -9,7 +9,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
@@ -37,7 +37,7 @@ func (as *Service) InitStep(
 	case oidc.AMRPrehashedPassword:
 		return as.AssertPasswordExistence(ctx, identity)
 	default:
-		return merror.BadRequest().Describe("unknown method name").Detail("method_name", merror.DVInvalid)
+		return merr.BadRequest().Desc("unknown method name").Add("method_name", merr.DVInvalid)
 	}
 
 }
@@ -59,7 +59,7 @@ func (as *Service) AssertStep(
 	case oidc.AMRAccountCreation:
 		metadataErr = as.assertAccountCreation(ctx, exec, redConn, challenge, identity, assertion)
 	default:
-		metadataErr = merror.BadRequest().Detail("method_name", merror.DVMalformed)
+		metadataErr = merr.BadRequest().Add("method_name", merr.DVMalformed)
 	}
 	return metadataErr
 }

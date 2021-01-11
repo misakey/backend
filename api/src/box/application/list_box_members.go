@@ -6,7 +6,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -35,7 +35,7 @@ func (app *BoxApplication) ListBoxMembers(ctx context.Context, genReq request.Re
 	// retrieve accesses to filters boxes to return
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Unauthorized()
+		return nil, merr.Unauthorized()
 	}
 	if err := events.MustBeMember(ctx, app.DB, app.RedConn, req.boxID, acc.IdentityID); err != nil {
 		return nil, err
@@ -43,12 +43,12 @@ func (app *BoxApplication) ListBoxMembers(ctx context.Context, genReq request.Re
 
 	membersIDs, err := events.ListBoxMemberIDs(ctx, app.DB, app.RedConn, req.boxID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("listing box members")
+		return nil, merr.From(err).Desc("listing box members")
 	}
 	// transparent identity for admins to list members (they wanna know the identifier)
 	isAdmin, err := events.IsAdmin(ctx, app.DB, req.boxID, acc.IdentityID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("checking admin")
+		return nil, merr.From(err).Desc("checking admin")
 	}
 	return identityMapper.List(ctx, membersIDs, isAdmin)
 }

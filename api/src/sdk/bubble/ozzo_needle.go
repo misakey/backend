@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
@@ -37,16 +37,16 @@ func (n OzzoNeedle) toSnakeCase(str string) string {
 // Explode ...
 func (n OzzoNeedle) Explode(err error) error {
 	// try to consider error cause as validator error to understand deeper the error
-	valErrs, ok := merror.Cause(err).(v.Errors)
+	valErrs, ok := merr.Cause(err).(v.Errors)
 	if !ok {
 		return nil
 	}
 
-	mErr := merror.Transform(err).Code(merror.BadRequestCode)
+	mErr := merr.From(err).Code(merr.BadRequestCode)
 	return n.recHandleErrors(mErr, valErrs, nil)
 }
 
-func (n OzzoNeedle) recHandleErrors(mErr merror.Error, valErrs v.Errors, replaceFieldTag *string) merror.Error {
+func (n OzzoNeedle) recHandleErrors(mErr merr.Error, valErrs v.Errors, replaceFieldTag *string) merr.Error {
 	// v.Errors is basically a mao["structure_tag"]error, we parse it
 	for fieldTag, valErr := range valErrs {
 		if replaceFieldTag != nil {
@@ -81,20 +81,20 @@ func (n OzzoNeedle) recHandleErrors(mErr merror.Error, valErrs v.Errors, replace
 			"validation_is_uuid_v4",
 			"validation_match_invalid",
 			"validation_is_base64":
-			_ = mErr.Detail(fieldTag, merror.DVMalformed)
+			_ = mErr.Add(fieldTag, merr.DVMalformed)
 		case
 			"validation_required",
 			"validation_nil_or_not_empty_required":
-			_ = mErr.Detail(fieldTag, merror.DVRequired)
+			_ = mErr.Add(fieldTag, merr.DVRequired)
 		case
 			"validation_min_greater_equal_than_required",
 			"validation_max_less_equal_than_required":
-			_ = mErr.Detail(fieldTag, merror.DVInvalid)
+			_ = mErr.Add(fieldTag, merr.DVInvalid)
 		case
 			"validation_empty":
-			_ = mErr.Detail(fieldTag, merror.DVForbidden)
+			_ = mErr.Add(fieldTag, merr.DVForbidden)
 		default:
-			_ = mErr.Detail(fieldTag, merror.DVInvalid).Detail("please_inform_about_this_unknown_code", errObj.Code())
+			_ = mErr.Add(fieldTag, merr.DVInvalid).Add("please_inform_about_this_unknown_code", errObj.Code())
 		}
 	}
 	return mErr

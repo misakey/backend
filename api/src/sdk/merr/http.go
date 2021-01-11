@@ -1,7 +1,6 @@
-package merror
+package merr
 
 import (
-	"log"
 	"net/http"
 )
 
@@ -42,7 +41,7 @@ func ToHTTPCode(err error) int {
 	return http.StatusInternalServerError
 }
 
-// TransformHTTPCode returns merror corresponding to HTTP code
+// TransformHTTPCode returns merr corresponding to HTTP code
 func TransformHTTPCode(code int) Error {
 	switch code {
 	case http.StatusBadRequest:
@@ -81,12 +80,7 @@ func HandleErr(err error) (int, Error) {
 	if ok {
 		finalErr = mErr
 	} else {
-		finalErr = Internal().Describe(err.Error())
-	}
-
-	// check Error clearness - panic if not clear
-	if !finalErr.Clear() {
-		log.Fatalf("an error is not clear (%s - %s - %s)!", finalErr.Co, finalErr.Desc, finalErr.Error())
+		finalErr = Internal().Desc(err.Error())
 	}
 	return ToHTTPCode(finalErr), finalErr
 }

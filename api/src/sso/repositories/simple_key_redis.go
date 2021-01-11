@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v7"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // SimpleKeyRedis manages operations with simple key/value
@@ -34,7 +34,7 @@ func (skr *SimpleKeyRedis) Get(ctx context.Context, key string) ([]byte, error) 
 	value, err := skr.redConn.Get(key).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return nil, merror.NotFound()
+			return nil, merr.NotFound()
 		}
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (skr *SimpleKeyRedis) MustFind(ctx context.Context, matchKey string) ([][]b
 		return nil, err
 	}
 	if len(keys) == 0 {
-		return nil, merror.NotFound()
+		return nil, merr.NotFound()
 	}
 
 	results, err := skr.redConn.MGet(keys...).Result()

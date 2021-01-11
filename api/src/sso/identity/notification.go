@@ -13,7 +13,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/realtime"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
@@ -113,7 +113,7 @@ func NotificationCount(ctx context.Context, exec boil.ContextExecutor, identityI
 
 	count, err := sqlboiler.IdentityNotifications(mods...).Count(ctx, exec)
 	if err != nil {
-		return -1, merror.Transform(err).Describe("couting identity notifications")
+		return -1, merr.From(err).Desc("couting identity notifications")
 	}
 	return int(count), nil
 }
@@ -164,9 +164,7 @@ func markInvitationAsUsed(ctx context.Context, exec boil.ContextExecutor, notif 
 		return err
 	}
 	if nbRowsAffected != 1 {
-		return merror.Error{
-			Desc: fmt.Sprintf(`%d rows affected (expected 1)`, nbRowsAffected),
-		}
+		return merr.Internal().Descf("%d rows affected (expected 1)", nbRowsAffected)
 	}
 
 	return nil

@@ -9,7 +9,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
@@ -40,7 +40,7 @@ func completeAtStep(ctx context.Context, exec boil.ContextExecutor, id int, comp
 	data := sqlboiler.M{sqlboiler.AuthenticationStepColumns.CompleteAt: null.TimeFrom(completeTime)}
 	rowsAff, err := sqlboiler.AuthenticationSteps(sqlboiler.AuthenticationStepWhere.ID.EQ(id)).UpdateAll(ctx, exec, data)
 	if rowsAff == 0 {
-		return merror.NotFound().Describe("no rows affected in persistent layer")
+		return merr.NotFound().Desc("no rows affected in persistent layer")
 	}
 	return err
 }
@@ -61,9 +61,9 @@ func getLastStep(
 	sqlAuthnStep, err := sqlboiler.AuthenticationSteps(mods...).One(ctx, exec)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return authnStep, merror.NotFound().Describe(err.Error()).
-				Detail("identity_id", merror.DVNotFound).
-				Detail("method_name", merror.DVNotFound)
+			return authnStep, merr.NotFound().Desc(err.Error()).
+				Add("identity_id", merr.DVNotFound).
+				Add("method_name", merr.DVNotFound)
 		}
 		return authnStep, err
 	}

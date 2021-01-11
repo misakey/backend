@@ -7,7 +7,7 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
 )
@@ -30,15 +30,15 @@ func NewOIDCIntrospector(misakeyAudience string, selfRestrict bool, tokenRester 
 			// introspect the token and get the claims
 			acc, err := tokens.GetClaims(ctx.Request().Context(), opaqueTok)
 			if err != nil {
-				if merror.HasCode(err, merror.InternalCode) {
-					return merror.Transform(err).Describe("introspecting token")
+				if merr.IsAnInternal(err) {
+					return merr.From(err).Desc("introspecting token")
 				}
-				return merror.Unauthorized().From(merror.OriHeaders).Describe(err.Error())
+				return merr.Unauthorized().Ori(merr.OriHeaders).Desc(err.Error())
 			}
 
 			// only Misakey client can access our API routes
 			if selfRestrict && acc.ClientID != misakeyAudience {
-				return merror.Unauthorized().Describe("unauthorized client")
+				return merr.Unauthorized().Desc("unauthorized client")
 			}
 
 			// store last interaction

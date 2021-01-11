@@ -14,7 +14,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 )
@@ -27,7 +27,7 @@ type ConsentInitCmd struct {
 // BindAndValidate ...
 func (cmd *ConsentInitCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriQuery).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriQuery).Desc(err.Error())
 	}
 
 	return v.ValidateStruct(cmd,
@@ -51,7 +51,8 @@ func (sso *SSOService) InitConsent(ctx context.Context, gen request.Request) (in
 	// 2. retrieve subject information to put it in ID tokens as claims
 	curIdentity, err := identity.Get(ctx, sso.sqlDB, consentCtx.OIDCContext.MID())
 	if err != nil {
-		if merror.HasCode(err, merror.NotFoundCode) {
+		// reset the flow if the identity id is not found for a better ux
+		if merr.IsANotFound(err) {
 			return sso.authFlowService.BuildResetURL(consentCtx.RequestURL), nil
 		}
 		return sso.authFlowService.ConsentRedirectErr(err), nil
@@ -99,7 +100,7 @@ type ConsentInfoQuery struct {
 // BindAndValidate ...
 func (query *ConsentInfoQuery) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(query); err != nil {
-		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
 	return v.ValidateStruct(query,
@@ -130,7 +131,7 @@ func (sso *SSOService) GetConsentInfo(ctx context.Context, gen request.Request) 
 
 	consentCtx, err := sso.authFlowService.GetConsentContext(ctx, query.ConsentChallenge)
 	if err != nil {
-		return view, merror.Transform(err).Describe("could not get context")
+		return view, merr.From(err).Desc("could not get context")
 	}
 
 	// fill view with domain model
@@ -156,7 +157,7 @@ type ConsentAcceptCmd struct {
 // BindAndValidate ...
 func (cmd *ConsentAcceptCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
 	return v.ValidateStruct(cmd,
@@ -181,7 +182,7 @@ func (sso *SSOService) AcceptConsent(ctx context.Context, gen request.Request) (
 		return redirect, err
 	}
 	if curIdentity.ID != cmd.IdentityID {
-		return redirect, merror.Forbidden().Detail("identity_id", merror.DVForbidden)
+		return redirect, merr.Forbidden().Add("identity_id", merr.DVForbidden)
 	}
 
 	// 3. build consent accept

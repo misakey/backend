@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
@@ -28,7 +28,7 @@ func (query *IdentityNotifCountQuery) BindAndValidate(eCtx echo.Context) error {
 	if err := v.ValidateStruct(query,
 		v.Field(&query.identityID, v.Required, is.UUIDv4),
 	); err != nil {
-		return merror.Transform(err).Describe("validating identity notification count query")
+		return merr.From(err).Desc("validating identity notification count query")
 	}
 	return nil
 }
@@ -40,7 +40,7 @@ func (sso *SSOService) CountIdentityNotification(ctx context.Context, gen reques
 	// verify identity access
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil || acc.IdentityID != query.identityID {
-		return -1, merror.Forbidden()
+		return -1, merr.Forbidden()
 	}
 
 	return identity.NotificationCount(ctx, sso.sqlDB, query.identityID)
@@ -57,14 +57,14 @@ type IdentityNotifListQuery struct {
 // BindAndValidate ...
 func (query *IdentityNotifListQuery) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(query); err != nil {
-		return merror.Transform(err).From(merror.OriBody)
+		return merr.From(err).Ori(merr.OriBody)
 	}
 	query.identityID = eCtx.Param("id")
 
 	if err := v.ValidateStruct(query,
 		v.Field(&query.identityID, v.Required, is.UUIDv4),
 	); err != nil {
-		return merror.Transform(err).Describe("validating identity notification list query")
+		return merr.From(err).Desc("validating identity notification list query")
 	}
 	return nil
 }
@@ -76,13 +76,13 @@ func (sso *SSOService) ListIdentityNotification(ctx context.Context, gen request
 	// verify identity access
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil || acc.IdentityID != query.identityID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// list notifs
 	notifs, err := identity.NotificationList(ctx, sso.sqlDB, query.identityID, query.Offset, query.Limit)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("listing identity notification")
+		return nil, merr.From(err).Desc("listing identity notification")
 	}
 	return notifs, nil
 }
@@ -98,14 +98,14 @@ type IdentityNotifAckCmd struct {
 // BindAndValidate ...
 func (cmd *IdentityNotifAckCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.Transform(err).From(merror.OriQuery)
+		return merr.From(err).Ori(merr.OriQuery)
 	}
 
 	strSliceIDs := strings.Split(cmd.StrNotifIDs, ",")
 	for _, strID := range strSliceIDs {
 		id, err := strconv.ParseUint(strID, 10, 32)
 		if err != nil {
-			return merror.Transform(err).From(merror.OriQuery).Detail("ids", merror.DVMalformed)
+			return merr.From(err).Ori(merr.OriQuery).Add("ids", merr.DVMalformed)
 		}
 		cmd.notifIDs = append(cmd.notifIDs, int(id))
 	}
@@ -114,7 +114,7 @@ func (cmd *IdentityNotifAckCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := v.ValidateStruct(cmd,
 		v.Field(&cmd.identityID, v.Required, is.UUIDv4),
 	); err != nil {
-		return merror.Transform(err).Describe("validating identity notification acknowledged cmd")
+		return merr.From(err).Desc("validating identity notification acknowledged cmd")
 	}
 	return nil
 }
@@ -126,7 +126,7 @@ func (sso *SSOService) AckIdentityNotification(ctx context.Context, gen request.
 	// verify identity access
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil || acc.IdentityID != cmd.identityID {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// start transaction since write actions will be performed

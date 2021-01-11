@@ -7,7 +7,7 @@ import (
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
 )
@@ -54,7 +54,7 @@ func DeleteSavedFile(ctx context.Context, exec boil.ContextExecutor, id string) 
 		return err
 	}
 	if rowAff == 0 {
-		return merror.NotFound().Detail("id", merror.DVNotFound)
+		return merr.NotFound().Add("id", merr.DVNotFound)
 	}
 	return nil
 }
@@ -66,7 +66,7 @@ func CountSavedFilesByIdentityID(ctx context.Context, exec boil.ContextExecutor,
 	}
 	count, err := sqlboiler.SavedFiles(mods...).Count(ctx, exec)
 	if err != nil {
-		return 0, merror.Transform(err).Describe("count save files db")
+		return 0, merr.From(err).Desc("count save files db")
 	}
 
 	return int(count), nil
@@ -118,7 +118,7 @@ func ListSavedFiles(ctx context.Context, exec boil.ContextExecutor, filters Save
 func GetSavedFile(ctx context.Context, exec boil.ContextExecutor, id string) (*SavedFile, error) {
 	dbSavedFile, err := sqlboiler.SavedFiles(sqlboiler.SavedFileWhere.ID.EQ(id)).One(ctx, exec)
 	if err == sql.ErrNoRows {
-		return nil, merror.NotFound().Detail("id", merror.DVNotFound)
+		return nil, merr.NotFound().Add("id", merr.DVNotFound)
 	}
 	if err != nil {
 		return nil, err

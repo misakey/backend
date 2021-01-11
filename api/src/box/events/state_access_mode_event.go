@@ -10,7 +10,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // enum for access mode
@@ -38,7 +38,7 @@ func (c AccessModeContent) Validate() error {
 func doStateAccessMode(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, _ *redis.Client, _ *IdentityMapper, _ external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// check accesses
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
-		return nil, merror.Transform(err).Describe("checking admin")
+		return nil, merr.From(err).Desc("checking admin")
 	}
 	return nil, e.persist(ctx, exec)
 }

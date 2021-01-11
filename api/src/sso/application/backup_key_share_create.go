@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
@@ -27,7 +27,7 @@ type BackupKeyShareCreateCmd struct {
 // BindAndValidate ...
 func (cmd *BackupKeyShareCreateCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
-		return merror.BadRequest().From(merror.OriBody).Describe(err.Error())
+		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
 	if err := v.ValidateStruct(cmd,
@@ -36,7 +36,7 @@ func (cmd *BackupKeyShareCreateCmd) BindAndValidate(eCtx echo.Context) error {
 		v.Field(&cmd.OtherShareHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 		v.Field(&cmd.Share, v.Required, is.Base64),
 	); err != nil {
-		return merror.Transform(err).Describe("validating create backup key share command")
+		return merr.From(err).Desc("validating create backup key share command")
 	}
 	return nil
 }
@@ -47,7 +47,7 @@ func (sso *SSOService) CreateBackupKeyShare(ctx context.Context, gen request.Req
 
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
-		return nil, merror.Forbidden()
+		return nil, merr.Forbidden()
 	}
 
 	// the request must bear authorization for an account
@@ -56,11 +56,11 @@ func (sso *SSOService) CreateBackupKeyShare(ctx context.Context, gen request.Req
 		return nil, err
 	}
 	if identity.AccountID.IsZero() {
-		return nil, merror.Conflict().Describe("no account id in authorization").Detail("account_id", merror.DVConflict)
+		return nil, merr.Conflict().Desc("no account id in authorization").Add("account_id", merr.DVConflict)
 	}
 	// the account id must be the same than the identity linked account
 	if identity.AccountID.String != cmd.AccountID {
-		return nil, merror.Forbidden().Describe("account_id does not match the querier account").Detail("account_id", merror.DVForbidden)
+		return nil, merr.Forbidden().Desc("account_id does not match the querier account").Add("account_id", merr.DVForbidden)
 	}
 
 	backupKeyShare := crypto.BackupKeyShare{
@@ -71,7 +71,7 @@ func (sso *SSOService) CreateBackupKeyShare(ctx context.Context, gen request.Req
 	}
 	err = sso.backupKeyShareService.CreateBackupKeyShare(ctx, backupKeyShare)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("creating")
+		return nil, merr.From(err).Desc("creating")
 	}
 	return backupKeyShare, nil
 }

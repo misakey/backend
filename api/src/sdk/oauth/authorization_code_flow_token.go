@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // TokenRequest contains parameters for exchanging a code against a token
@@ -44,26 +44,25 @@ func (acf *AuthorizationCodeFlow) ExchangeToken(c echo.Context) {
 	// if an error has been transmitted, consider it
 	authErr := r.URL.Query().Get("error")
 	if authErr != "" {
-		errCode := merror.Code(authErr)
 		errDesc := r.URL.Query().Get("error_debug")
 		if errDesc == "" {
 			errDesc = r.URL.Query().Get("error_hint")
 		}
-		acf.redirectErr(w, errCode.String(), errDesc)
+		acf.redirectErr(w, merr.Code(authErr).String(), errDesc)
 		return
 	}
 
 	// check code parameter - it shall not be empty: https://tools.ietf.org/html/rfc6749#section-4.1.2
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		acf.redirectErr(w, merror.MissingParameter.String(), "code")
+		acf.redirectErr(w, merr.MissingParameter.String(), "code")
 		return
 	}
 
 	// check state parameter - it shall not be empty: https://tools.ietf.org/html/rfc6749#section-4.1.2
 	state := r.URL.Query().Get("state")
 	if len(state) == 0 {
-		acf.redirectErr(w, merror.MissingParameter.String(), "state")
+		acf.redirectErr(w, merr.MissingParameter.String(), "state")
 		return
 	}
 
@@ -92,7 +91,7 @@ func (acf *AuthorizationCodeFlow) ExchangeToken(c echo.Context) {
 	}
 	redirectURL, err := acf.getURLWithAccessToken(c, params)
 	if err != nil {
-		tokErr := TokenError{Code: string(merror.UnauthorizedCode), Desc: err.Error()}
+		tokErr := TokenError{Code: string(merr.UnauthorizedCode), Desc: err.Error()}
 		acf.redirectErr(w, tokErr.Code, fmt.Sprintf("%s (%s)", tokErr.Desc, tokErr.Debug))
 		return
 	}

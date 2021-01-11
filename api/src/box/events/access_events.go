@@ -11,7 +11,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
@@ -45,13 +45,13 @@ func (c accessAddContent) Validate() error {
 func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoRepo external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
-		return nil, merror.Transform(err).Describe("checking admin")
+		return nil, merr.From(err).Desc("checking admin")
 	}
 
 	// check content format
 	var c accessAddContent
 	if err := e.JSONContent.Unmarshal(&c); err != nil {
-		return nil, merror.Transform(err).Describe("unmarshalling access content")
+		return nil, merr.From(err).Desc("unmarshalling access content")
 	}
 
 	// check the access doesn't exist yet
@@ -64,12 +64,12 @@ func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.C
 	})
 	// no error means the access already exists
 	if err == nil {
-		return nil, merror.Conflict().Describe("this access already exists").
-			Detail("content", merror.DVConflict).
-			Detail("box_id", merror.DVConflict)
+		return nil, merr.Conflict().Desc("this access already exists").
+			Add("content", merr.DVConflict).
+			Add("box_id", merr.DVConflict)
 	}
 	// a not found is what is expected so we do ignore it
-	if err != nil && !merror.HasCode(err, merror.NotFoundCode) {
+	if merr.IsANotFound(err) {
 		return nil, err
 	}
 
@@ -87,18 +87,18 @@ func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.C
 			if extraJSON.Valid {
 				box, err := Compute(ctx, e.BoxID, exec, identityMapper, nil)
 				if err != nil {
-					return nil, merror.Transform(err).Describe("computing the box (to get title for notif)")
+					return nil, merr.From(err).Desc("computing the box (to get title for notif)")
 				}
 				// creates a crypto action AND the notification
 				err = cryptoRepo.CreateInvitationActionsForIdentifier(ctx, e.SenderID, e.BoxID, box.Title, c.Value, extraJSON)
 				if err != nil {
-					return nil, merror.Transform(err).Describe("creating crypto actions")
+					return nil, merr.From(err).Desc("creating crypto actions")
 				}
 			} else {
-				return nil, merror.BadRequest().Detail("extra", merror.DVRequired)
+				return nil, merr.BadRequest().Add("extra", merr.DVRequired)
 			}
 		} else if extraJSON.Valid {
-			return nil, merror.BadRequest().Detail("auto_invite", merror.DVInvalid)
+			return nil, merr.BadRequest().Add("auto_invite", merr.DVInvalid)
 		}
 	}
 
@@ -108,7 +108,7 @@ func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.C
 func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
-		return nil, merror.Transform(err).Describe("checking admin")
+		return nil, merr.From(err).Desc("checking admin")
 	}
 
 	if err := v.ValidateStruct(e,
@@ -118,7 +118,7 @@ func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExe
 	}
 
 	if e.JSONContent.String() != "{}" {
-		return nil, merror.BadRequest().Describe("content should be empty").Detail("content", merror.DVForbidden)
+		return nil, merr.BadRequest().Desc("content should be empty").Add("content", merr.DVForbidden)
 	}
 
 	// the referrer must exist and not been referred yet or it is already removed
@@ -130,7 +130,7 @@ func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExe
 		id:         e.ReferrerID,
 	})
 	if err != nil {
-		return nil, merror.Transform(err).Describef("checking %s referrer_id consistency", etype.Accessadd)
+		return nil, merr.From(err).Descf("checking %s referrer_id consistency", etype.Accessadd)
 	}
 
 	return nil, e.persist(ctx, exec)
@@ -152,7 +152,7 @@ func MustBoxExists(ctx context.Context, exec boil.ContextExecutor, boxID string)
 		eType: null.StringFrom(etype.Create),
 	})
 	if err != nil {
-		return merror.Transform(err).Describe("getting box create event")
+		return merr.From(err).Desc("getting box create event")
 	}
 	return nil
 }
@@ -207,13 +207,13 @@ func HasAccess(ctx context.Context,
 
 	// 2. if no access exists, no-one can join it
 	if len(accesses) == 0 {
-		return merror.Forbidden().Describe("must be an admin").Detail("reason", "no_access")
+		return merr.Forbidden().Desc("must be an admin").Add("reason", "no_access")
 	}
 
 	// 2. get the identity to check whitelist rules
 	identity, err := identities.Get(ctx, identityID, true)
 	if err != nil {
-		return merror.Transform(err).Describe("getting identity for access check")
+		return merr.From(err).Desc("getting identity for access check")
 	}
 
 	// 5. check restriction rules
@@ -221,7 +221,7 @@ func HasAccess(ctx context.Context,
 		c := accessAddContent{}
 		// on marshal error the box is locked and considered as not joinable
 		if err := access.JSONContent.Unmarshal(&c); err != nil {
-			return merror.Transform(err).Describef("access %s corrupted", access.ID)
+			return merr.From(err).Descf("access %s corrupted", access.ID)
 		}
 		switch c.RestrictionType {
 		case restrictionIdentifier:
@@ -239,7 +239,7 @@ func HasAccess(ctx context.Context,
 			}
 		}
 	}
-	return merror.Forbidden().Describe("must match a restriction rule").Detail("reason", "no_access")
+	return merr.Forbidden().Desc("must match a restriction rule").Add("reason", "no_access")
 }
 
 func isPublic(ctx context.Context, exec boil.ContextExecutor, boxID string) bool {
@@ -248,12 +248,11 @@ func isPublic(ctx context.Context, exec boil.ContextExecutor, boxID string) bool
 		boxID: null.StringFrom(boxID),
 		eType: null.StringFrom(etype.Stateaccessmode),
 	})
-	if err != nil {
-		// NOTE: no access mode event means the default mode is enabled: limited.
-		if merror.HasCode(err, merror.NotFoundCode) {
-			return false
-		}
+	// NOTE: no access mode event found means the default mode is enabled: limited.
+	if merr.IsANotFound(err) {
+		return false
 	}
+
 	c := AccessModeContent{}
 	// on marshal error the box is locked and considered as not public
 	if err := accessModeEvent.JSONContent.Unmarshal(&c); err != nil {

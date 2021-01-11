@@ -6,7 +6,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/volatiletech/null/v8"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // AppRole contains a role owned for a given application.
@@ -45,27 +45,27 @@ func (c AccessClaims) Valid() error {
 
 	// Verify if the token expired
 	if !verifyExp(c.ExpiresAt, now) {
-		return merror.Unauthorized().Describe("token expired")
+		return merr.Unauthorized().Desc("token expired")
 	}
 
 	// Verify if token is already issued
 	if !verifyIat(c.IssuedAt, now) {
-		return merror.Unauthorized().Describe("token used before issued")
+		return merr.Unauthorized().Desc("token used before issued")
 	}
 
 	// We need to setup the NotBefore condition
 	// At the moment the value is 0
 	// Verify not before condition
 	if !verifyNbf(c.NotBefore, now) {
-		return merror.Unauthorized().Describe("token not valid yet")
+		return merr.Unauthorized().Desc("token not valid yet")
 	}
 
 	if c.Subject == "" {
-		return merror.Unauthorized().Describe("empty subject")
+		return merr.Unauthorized().Desc("empty subject")
 	}
 
 	if c.IdentityID == "" {
-		return merror.Unauthorized().Describe("empty mid")
+		return merr.Unauthorized().Desc("empty mid")
 	}
 
 	return nil
@@ -104,7 +104,7 @@ func SetAccessClaimsJWT(ctx context.Context, jwt string) context.Context {
 // ValidAudience : check if the client is part of the audience
 func (c AccessClaims) ValidAudience(expected string) error {
 	if !verifyAud(expected, c.Audiences) {
-		return merror.Unauthorized().Describe("client is not part of the audience")
+		return merr.Unauthorized().Desc("client is not part of the audience")
 	}
 	return nil
 }

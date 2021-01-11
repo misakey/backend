@@ -8,7 +8,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // BuildAggregate of an event by modifying the received pointer value
@@ -17,7 +17,7 @@ func BuildAggregate(ctx context.Context, exec boil.ContextExecutor, e *Event) er
 	if e.Type == etype.Msgtext || e.Type == etype.Msgfile {
 		msg, err := buildMessage(ctx, exec, e.ID)
 		if err != nil {
-			return merror.Transform(err).Describef("building message %s", e.ID)
+			return merr.From(err).Descf("building message %s", e.ID)
 		}
 
 		// if the message is deleted
@@ -25,23 +25,23 @@ func BuildAggregate(ctx context.Context, exec boil.ContextExecutor, e *Event) er
 			var content DeletedContent
 			err := json.Unmarshal(e.JSONContent, &content)
 			if err != nil {
-				return merror.Transform(err).Describef("unmarshaling %s json", e.Type)
+				return merr.From(err).Descf("unmarshaling %s json", e.Type)
 			}
 			content.Deleted.ByIdentityID = msg.LastSenderID
 			if err := e.JSONContent.Marshal(content); err != nil {
-				return merror.Transform(err).Describef("marshalling %s content", e.Type)
+				return merr.From(err).Descf("marshalling %s content", e.Type)
 			}
 		} else if !msg.LastEditedAt.IsZero() {
 			var content MsgTextContent
 			err := json.Unmarshal(e.JSONContent, &content)
 			if err != nil {
-				return merror.Transform(err).Describef("unmarshaling %s json", e.Type)
+				return merr.From(err).Descf("unmarshaling %s json", e.Type)
 			}
 			content.Encrypted = msg.Encrypted
 			content.PublicKey = msg.PublicKey
 			content.LastEditedAt = null.TimeFrom(msg.LastEditedAt)
 			if err := e.JSONContent.Marshal(content); err != nil {
-				return merror.Transform(err).Describef("marshalling %s content", e.Type)
+				return merr.From(err).Descf("marshalling %s content", e.Type)
 			}
 		}
 	}

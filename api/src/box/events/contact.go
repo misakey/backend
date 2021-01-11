@@ -8,7 +8,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merror"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
@@ -39,11 +39,11 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 	// get contacted user identity
 	contactedUser, err := identityMapper.querier.Get(ctx, contact.ContactedIdentityID)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("getting contacted user identity")
+		return nil, merr.From(err).Desc("getting contacted user identity")
 	}
 
 	if contactedUser.AccountID.IsZero() {
-		return nil, merror.Forbidden().Describe("contacted user must have an account_id").Detail("contacted_account", merror.DVRequired)
+		return nil, merr.Forbidden().Desc("contacted user must have an account_id").Add("contacted_account", merr.DVRequired)
 	}
 
 	// create contact box
@@ -53,7 +53,7 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 		contact.Title, contact.PublicKey, contact.IdentityID,
 	)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("creating create event")
+		return nil, merr.From(err).Desc("creating create event")
 	}
 
 	if err := keyshares.Create(
@@ -64,7 +64,7 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 		event.BoxID,
 		contact.IdentityID,
 	); err != nil {
-		return nil, merror.Transform(err).Describe("creating key share")
+		return nil, merr.From(err).Desc("creating key share")
 	}
 
 	// set the box in public mode
@@ -78,25 +78,25 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 		nil,
 	)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("newing access mode event")
+		return nil, merr.From(err).Desc("newing access mode event")
 	}
 	if _, err := doAddAccess(ctx, &accessModeEvent, null.JSON{}, exec, redConn, identityMapper, cryptoRepo, nil); err != nil {
-		return nil, merror.Transform(err).Describe("creating access event")
+		return nil, merr.From(err).Desc("creating access event")
 	}
 
 	// create crypto invitation actions
 	decodedInvitationDataJSON, err := contact.InvitationDataJSON.MarshalJSON()
 	if err != nil {
-		return nil, merror.Transform(err).Describe("decoding json")
+		return nil, merr.From(err).Desc("decoding json")
 	}
 	if err := cryptoRepo.CreateInvitationActionsForIdentity(ctx, contact.IdentityID, event.BoxID, contact.Title, contact.ContactedIdentityID, null.JSONFrom(decodedInvitationDataJSON)); err != nil {
-		return nil, merror.Transform(err).Describe("creating invitation action")
+		return nil, merr.From(err).Desc("creating invitation action")
 	}
 
 	// compute box to return it
 	box, err := Compute(ctx, event.BoxID, exec, identityMapper, &event)
 	if err != nil {
-		return nil, merror.Transform(err).Describe("computing box")
+		return nil, merr.From(err).Desc("computing box")
 	}
 
 	return &box, nil
