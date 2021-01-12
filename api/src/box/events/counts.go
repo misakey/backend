@@ -35,7 +35,7 @@ func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID
 		return nil, err
 	}
 	for idx, eventCount := range eventsCounts {
-		boxID := strings.Split(keys[idx], ":")[2]
+		boxID := strings.Trim(strings.Split(keys[idx], ":")[2], "box_")
 		count, err := strconv.Atoi(eventCount.(string))
 		if err != nil {
 			return nil, merr.Internal().Descf("unexpected value format for %s: %s", keys[idx], err.Error())
