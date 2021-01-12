@@ -15,13 +15,7 @@ module.exports = {
     algolia: {
       apiKey: 'caeec869399ae3eeb050e134fef631c9',
       indexName: 'misakey',
-
-      // Optional: see doc section bellow
-      contextualSearch: true,
-
-      // Optional: Algolia search parameters
-      searchParameters: {},
-
+      contextualSearch: false,
       //... other Algolia params
     },
     announcementBar: {
