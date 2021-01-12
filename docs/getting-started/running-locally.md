@@ -10,18 +10,10 @@ For production install, please check [the dedicated guide](guides/installation.m
 
 ### Prerequisites
 
+- Python3 (with Pip)
 - Docker
 - Docker compose
 - Git
-- Make
-
-Add those lines to your `/etc/hosts` file:
-
-```
-127.0.0.1   api.misakey.com.local
-127.0.0.1   auth.misakey.com.local
-127.0.0.1   app.misakey.com.local
-```
 
 ### Misakey's “Test & Run” Project
 
@@ -29,18 +21,18 @@ We grouped all the tools required to run the app locally in a project called [te
 
 Clone the repository with `git clone git@github.com:misakey/test-and-run.git`.
 
-Run the command `make init`. It will initialize the local project, pull all the images etc… This can take some time.
+Install the CLI:
+- Go to the `misacli` directory
+- Make sure you have `pip` for Python 3
+- Run `pip install -e .`
 
-Edit the `.env` file to set the version of the stack you want to use. Current recommendation is:
+:warning: The `misacli` CLI must be used in the root directory of the project.
 
-```
-NOTIFICATION_JOB_TAG=v0.8.1
-FRONTEND_TAG=v1.8.0
-GATEWAY_TAG=v0.0.6
-API_TAG=v0.8.1
-```
+Run the command `misacli init` and follow the instructions.
 
-Launch the whole stack locally: `make application`
+The others commands are described in the CLI help (`misacli --help`).
+
+**Example:** To run the whole application, run `misacli run app`.
 
 ## Using the Application
 
