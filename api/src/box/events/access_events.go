@@ -69,7 +69,7 @@ func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.C
 			Add("box_id", merr.DVConflict)
 	}
 	// a not found is what is expected so we do ignore it
-	if merr.IsANotFound(err) {
+	if err != nil && !merr.IsANotFound(err) {
 		return nil, err
 	}
 
