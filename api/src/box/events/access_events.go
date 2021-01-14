@@ -225,7 +225,7 @@ func HasAccess(ctx context.Context,
 		}
 		switch c.RestrictionType {
 		case restrictionIdentifier:
-			if identity.Identifier.Value == c.Value {
+			if identity.IdentifierValue == c.Value {
 				return nil
 			}
 		case restrictionEmailDomain:
@@ -233,8 +233,8 @@ func HasAccess(ctx context.Context,
 			if identifierOnly {
 				continue
 			}
-			if identity.Identifier.Kind == "email" &&
-				emailHasDomain(identity.Identifier.Value, c.Value) {
+			if identity.IdentifierKind == "email" &&
+				emailHasDomain(identity.IdentifierValue, c.Value) {
 				return nil
 			}
 		}

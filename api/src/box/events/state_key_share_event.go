@@ -10,11 +10,11 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 )
 
 func doStateKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoActionService external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {

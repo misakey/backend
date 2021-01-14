@@ -33,6 +33,7 @@ func (afs Service) BuildAndAcceptConsent(
 		RememberFor: 0, // remember for ever the user consent
 	}
 	acceptance.Session.IDTokenClaims.Scope = strings.Join(consentCtx.RequestedScope, " ")
+	// NOTE: to_change_on_more_identifier_kind
 	acceptance.Session.IDTokenClaims.Email = identifierValue
 	acceptance.Session.IDTokenClaims.AMR = consentCtx.OIDCContext.AMRs()
 	// Add IdentityID and Account ID in ID Token for the Misakey Application to be able to use it

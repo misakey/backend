@@ -44,9 +44,9 @@ sequenceDiagram
     api.misakey.com-->auth.misakey.com/_: fetches login info
     api.misakey.com->>api.misakey.com: checks user login sessions
     api.misakey.com->>app.misakey.com: redirect to login page
-    app.misakey.com->>api.misakey.com: require an authable identity for an identifier
+    app.misakey.com->>api.misakey.com: require an identity for an identifier
     api.misakey.com->>api.misakey.com: potentially create a new identity/account
-    api.misakey.com->>app.misakey.com: returns the authable identity information
+    api.misakey.com->>app.misakey.com: returns the identity information
     app.misakey.com->>api.misakey.com: authenticates user with credentials
     api.misakey.com-->auth.misakey.com/_: transmits login info and receives redirect url with login verifier
     api.misakey.com->>+app.misakey.com: redirects end user to auth server with login verifier
@@ -147,13 +147,13 @@ _JSON Body_:
 - `acr_values` (string) (nullable): list of acr values sent during the auth flow init.
 - `login_hint` (string): the login_hint sent during the auth flow init.
 
-## 2.2. Require an authable identity for a given identifier
+## 2.2. Require an identity for a given identifier
 
 This request is idempotent.
 
-This route is used to retrieve information the authable identity the end-user will log in.
+This route is used to retrieve information the identity the end-user will log in.
 
-The authable identity can be a new one created for the occasion or an existing one.
+The identity can be a new one created for the occasion or an existing one.
 See _Response_ below for more information.
 
 ### 2.2.1. request
@@ -162,26 +162,23 @@ _Headers:_
 - The request doesn't require an authorization header.
 
 ```bash
-PUT https://api.misakey.com/identities/authable
+PUT https://api.misakey.com/auth/identities
 ```
 
 _JSON Body:_
 ```json
 {
 	"login_challenge": "e45f579fd02d41adbf8cb45e0f6a44ff",
-	"identifier": {
-		"value": "auth@test.com"
-	}
+  "identifier_value": "auth@test.com"
 }
 ```
 
 - `login_challenge` (string): can be found in preivous redirect URL.
-- `identifier` (object): information about the used identifier to authenticate the end-user:
-  - `value` (string): the identifier value the end-user entered in the dedicated input text.
+- `identifier_value` (string): the identifier value the end-user has entered.
 
 ### 2.2.2. success response
 
-This route returns the authable identity the end-user will login as.
+This route returns the identity the end-user will login as.
 
 _Code:_
 ```bash
@@ -204,7 +201,7 @@ _JSON Body:_
 }
 ```
 
-- `identity` (object): the authable identity linked to the received identifier value.
+- `identity` (object): the identity linked to the received identifier value.
   - `display_name` (string): a customizable display name.
   - `avatar_url` (string) (nullable): the web address of the end-user avatar file.
   - `account_id` (string) (nullable): the potential account id linked to the identity.
@@ -264,7 +261,7 @@ This method is retured when:
 - the identity linked to the given identifier has no linked account.
 - the end-user has provided a valid login session corresponding to a previous ACR 1 authentication.
 
-:information_source: The authorization server might return first an `emailed_code` authn step in order to proove the user owns the identifier.
+:information_source: The authorization server might return first an `emailed_code` authn step in order to prove the user owns the identifier.
 :mag: The `account_creation` will then come as a second authn step as a [More Authentication Required Response](http://localhost:1313/endpoints/auth_flow/#622-the-more-authentication-required-response).
 :information_source: This step is skipped if the end-user has provided a valid login session corresponding to a previous ACR 1 authentication.
 
@@ -301,7 +298,7 @@ _JSON Body:_
 
 - `login_challenge` (string): can be found in previous redirect URL.
 - `authn_step` (object): the performed authentication step information:
-  - `identity_id` (uuid string): the authable identity id.
+  - `identity_id` (uuid string): the identity id.
   - `method_name` (string) (one of: _emailed_code_, _prehashed_password_, _account_creation_): the authentication method used.
   - `metadata` (json object): metadata containing the emailed code value or the prehashed password.
 The list of possible formats is defined in the next section.
@@ -367,7 +364,7 @@ _JSON Body:_
 ##### 2.3.1.1.2. method name: **prehashed_password**
 
 :warning: Warning, the metadata has not the exact same shape as [the metadata returned requiring
-an authable identity](./#possible-formats-for-the-metadata-field) with the `prehashed_password` value as preferred method, which contains only the hash parameters of the password.
+an identity](./#possible-formats-for-the-metadata-field) with the `prehashed_password` value as preferred method, which contains only the hash parameters of the password.
 
 ```json
 {
@@ -456,7 +453,7 @@ _JSON Body:_
 - `access_token` (string): an access token allowing more advanced requests while being still in the login flow. Should be used as `Authorization` header.
 - `authn_step` (object): the next expected authn step to end the login flow.
 
-:mag: `method_name` and `metadata` possibilities are defined in [the require authable identity section](#possible-formats-for-the-metadata-field).
+:mag: `method_name` and `metadata` possibilities are defined in [the require identity section](#possible-formats-for-the-metadata-field).
 
 ### 2.3.3. notable error responses
 
@@ -598,7 +595,7 @@ HTTP 409 Conflict
 
 **2. Impossible to perform a prehashed_password method with the identity:**
 
-This error occurs when the authable identity has no linked account. The password being attached to the account, such an authentication method is impossible to be handled.
+This error occurs when the identity has no linked account. The password being attached to the account, such an authentication method is impossible to be handled.
 
 _Code:_
 ```bash
@@ -660,7 +657,7 @@ _JSON Body_:
 }
 ```
 
-- `subject` (uuid string): unique id of the identifier getting the token
+- `subject` (uuid string): unique id of the account getting the token
 - `acr` (string): the acr level for the current flow
 - `scope` (string): list of scope sent during the auth flow init.
 - `context` (object): context of the current consent flow

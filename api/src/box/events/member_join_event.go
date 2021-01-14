@@ -40,13 +40,13 @@ func doJoin(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecuto
 		unreferred:      true,
 		boxID:           null.StringFrom(e.BoxID),
 		restrictionType: null.StringFrom("identifier"),
-		accessValue:     null.StringFrom(identity.Identifier.Value),
+		accessValue:     null.StringFrom(identity.IdentifierValue),
 	})
 	// NOTE: if the access.add event corresponding to the identifier value is not found, create it
 	if merr.IsANotFound(err) {
 		accessEvent, newErr := newWithAnyContent(
 			etype.Accessadd,
-			&accessAddContent{RestrictionType: "identifier", Value: identity.Identifier.Value},
+			&accessAddContent{RestrictionType: "identifier", Value: identity.IdentifierValue},
 			e.BoxID, e.SenderID, nil,
 		)
 		if newErr != nil {

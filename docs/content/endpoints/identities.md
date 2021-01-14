@@ -35,9 +35,9 @@ of an identity is higher than the current one the end-user is logged in.
 
 # 2. Base Identity
 
-## 2.1. Require an authable identity for a given identifier
+## 2.1. Require an identity for a given identifier
 
-Described in [the auth flow section](../auth_flow/#5-require-an-authable-identity-for-a-given-identifier).
+Described in [the auth flow section](../auth_flow/#5-require-an-identity-for-a-given-identifier).
 
 ## 2.2. Create an account on an identity
 
@@ -75,32 +75,23 @@ _JSON Body:_
     "id": "89a27dec-c0bb-40ed-bfc8-dc74a1b99dc9",
     "account_id": null,
     "has_account": false,
-    "is_authable": true,
     "display_name": "iamagreat@dpo.com",
     "notifications": "minimal",
     "avatar_url": null,
-    "identifier_id": "abc9dd47-0c4e-4ef3-ae27-0c21ea6d7450",
     "pubkey": "(null or url-safe base64)",
-    "identifier": {
-      "id": "e5d889de-6be1-4201-bb7e-0772fbbf41e2",
-      "value": "iamagreat@dpo.com",
-      "kind": "email"
-    }
+    "identifier_value": "iamagreat@dpo.com",
+    "identifier_kind": "email"
   }
 ```
 
 - `id` (uuid string): the unique identity id.
 - `account_id` (uuid string) (nullable): the linked account unique id, always null if the end-user is connected with ACR 1.
 - `has_account` (boolean): tell either the identity is linked or not to an account.
-- `is_authable` (uuid string): either the identity can be used in a login flow.
 - `display_name` (uuid string): the name to display to represent the identity.
 - `notifications` (uuid string): the frequency of notifications for this identity.
 - `avatar_url` (uuid string) (nullable): the web-address of the avatar's file content.
-- `identifier_id` (uuid string): the linked identifier unique id.
-- `identifier` (json object): the linked identifier object, nested.
-  - `id` (uuid string): the unique identifier id.
-  - `kind` (string) (oneof: _email_): the kind of the identifier.
-  - `value` (string): the value of the identifier.
+- `identifier_value` (string): the value of the identifier.
+- `identifier_kind` (string) (oneof: _email_): the kind of the identifier.
 
 ## 2.4. Update an identity
 
@@ -222,7 +213,6 @@ End-users can configure their identities to show more or less information public
 
 By default, everything is hidden and only the display name is public.
 Anyone (even not connected people) can access an identity profile page. Only the username is required to get it.
-
 
 ## 3.1. Get an identity profile
 

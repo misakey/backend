@@ -23,7 +23,7 @@ def create_box_and_post_some_events_to_it(session, public=True):
         }
     )
     creator = r.json()['creator']
-    assert creator['identifier']['value'] == s.email
+    assert creator['identifier_value'] == s.email
 
     box_id = r.json()['id']
 
@@ -76,6 +76,6 @@ def create_box_and_post_some_events_to_it(session, public=True):
         assert 'type' in event
         assert 'content' in event
         # impossible to see identifier value while listing events
-        assert event['sender']['identifier']['value'] == ""
+        assert event['sender']['identifier_value'] == ""
 
     return box_id, other_share_hash

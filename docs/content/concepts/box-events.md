@@ -15,7 +15,7 @@ The identity contains complementary information and has some removed considering
 
 It can sometimes be bound to the key `sender`, `kicked`, `deletor`...
 
-:warning: Consumer can rely on `identifier.id` as it is the only information about the end-user always presented.
+:warning: Consumer can rely on the identity id as it is the only information about the end-user always presented.
 
 Here is the description of this view:
 
@@ -155,7 +155,7 @@ Messages of type `msg.file` allow the transfer of blob data.
   "content": {
     "is_saved": "(bool): is the file in user My Documents",
     "encrypted": "(string) (base64): information about file encryption.",
-    "encrypted_file_id": "(string) (uuid format): a unique identifier used to store and download the file",
+    "encrypted_file_id": "(string) (uuid format): a unique uuid used to store and download the file",
     "deleted": { // nullable, indicates the message have been removed
       "at_time": "indicates the deletion time of the message",
       "by_identity": "indicates who has deleted the message",
@@ -274,11 +274,11 @@ The add of an access is represented by this event shape
 ```
 
 Where `auto_invite` is only required if `restriction_type` is `identifier` under some circumstances
-(see Section “to a specific identifier”).
+(see Section “to a specific identifier value”).
 
 Note that there is no `content.value` field (it has been deprecated).
 
-#### 2.5.1.1. To a specific identifier
+#### 2.5.1.1. To a specific identifier value
 
 ```json
 {

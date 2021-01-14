@@ -93,7 +93,7 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 		}
 
 		data := map[string]interface{}{
-			"to":             digestInfo.identity.Identifier.Value,
+			"to":             digestInfo.identity.IdentifierValue,
 			"displayName":    displayName,
 			"firstLetter":    digestInfo.identity.DisplayName[:1],
 			"avatarURL":      digestInfo.identity.AvatarURL.String,
@@ -108,7 +108,7 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 		if digestInfo.identity.AccountID.IsZero() {
 			template = "notificationNoAccount"
 		}
-		content, err := dj.templates.NewEmail(ctx, digestInfo.identity.Identifier.Value, subject, template, data)
+		content, err := dj.templates.NewEmail(ctx, digestInfo.identity.IdentifierValue, subject, template, data)
 		if err != nil {
 			logger.FromCtx(ctx).Error().Err(err).Msgf("could not build email for %s", id)
 			continue

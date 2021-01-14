@@ -7,26 +7,25 @@ import (
 
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/types"
-	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 )
 
 // SenderView is how an event sender (or box creator)
 // is represented in JSON reponses
 type SenderView struct {
-	ID           string      `json:"id"`
-	DisplayName  string      `json:"display_name"`
-	AvatarURL    null.String `json:"avatar_url"`
-	IdentifierID string      `json:"identifier_id"`
-	Identifier   struct {
-		Value string `json:"value"`
-		Kind  string `json:"kind"`
-	} `json:"identifier"`
+	ID              string      `json:"id"`
+	DisplayName     string      `json:"display_name"`
+	AvatarURL       null.String `json:"avatar_url"`
+	IdentifierValue string      `json:"identifier_value"`
+	IdentifierKind  string      `json:"identifier_kind"`
 }
 
 func (sender SenderView) copyOpaque() SenderView {
-	sender.Identifier.Value = ""
-	sender.Identifier.Kind = ""
+	sender.IdentifierValue = ""
+	sender.IdentifierKind = ""
 	return sender
 }
 

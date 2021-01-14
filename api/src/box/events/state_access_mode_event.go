@@ -8,9 +8,11 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
 // enum for access mode

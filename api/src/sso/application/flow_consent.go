@@ -82,7 +82,7 @@ func (sso *SSOService) InitConsent(ctx context.Context, gen request.Request) (in
 
 	// consider both our's and hydra's decision about skipping the manual consent
 	if skip || consentCtx.Skip {
-		return sso.authFlowService.BuildAndAcceptConsent(ctx, consentCtx, curIdentity.Identifier.Value), nil
+		return sso.authFlowService.BuildAndAcceptConsent(ctx, consentCtx, curIdentity.IdentifierValue), nil
 	}
 
 	if authflow.HasNonePrompt(consentCtx.RequestURL) {
@@ -204,6 +204,6 @@ func (sso *SSOService) AcceptConsent(ctx context.Context, gen request.Request) (
 	consentCtx.RequestedScope = append(consentScopes, cmd.ConsentedScopes...)
 
 	// 4. tell hydra the consent contract & returns the hydra url response
-	redirect.To = sso.authFlowService.BuildAndAcceptConsent(ctx, consentCtx, curIdentity.Identifier.Value)
+	redirect.To = sso.authFlowService.BuildAndAcceptConsent(ctx, consentCtx, curIdentity.IdentifierValue)
 	return redirect, nil
 }

@@ -84,9 +84,8 @@ with prettyErrorContext():
         f'{URL_PREFIX}/identities/{s1.identity_id}/profile',
         expected_status_code=200
     )
-    assert r.json()['identifier_id'] == ""
-    assert r.json()['identifier']['value'] == ""
-    assert r.json()['identifier']['kind'] == ""
+    assert r.json()['identifier_value'] == ""
+    assert r.json()['identifier_kind'] == ""
     assert r.json()['display_name'] == s1.display_name
 
     # change the profile config to share email
@@ -100,7 +99,7 @@ with prettyErrorContext():
         f'{URL_PREFIX}/identities/{s1.identity_id}/profile',
         expected_status_code=200
     )
-    assert r.json()['identifier']['value'] == s1.email
+    assert r.json()['identifier_value'] == s1.email
     assert r.json()['display_name'] == s1.display_name
 
    # check the sharing is applied in config
@@ -132,7 +131,7 @@ with prettyErrorContext():
         f'{URL_PREFIX}/identities/{s1.identity_id}/profile',
         expected_status_code=200
     )
-    assert r.json()['identifier']['value'] == ''
+    assert r.json()['identifier_value'] == ''
     assert r.json()['display_name'] == s1.display_name
 
     # check the config private is applied in config

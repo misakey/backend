@@ -78,7 +78,7 @@ An object containing a dynamical number of detail objects.
 
 Each detail object is built with a DetailKey and a DetailValue:
 
--> A DetailKey is an dynamical string representing fields name, query parameters name, resource identifiers...
+-> A DetailKey is an dynamical string representing fields name, query parameters name, resource ids...
 
 -> A DetailValue describes an error code as a string for clearer consumer error identification & reactions. It represents codes related to a detail key.
 
@@ -102,7 +102,7 @@ Each detail object is built with a DetailKey and a DetailValue:
 * `unknown`: unknown detail code
 * `no_code`: no specific code
 
-:warning: In rare cases, the detail is used to give more information about an expected, required value or an resource identifier to allow a deeper error handling on consumer side.
+:warning: In rare cases, the detail is used to give more information about an expected, required value or an resource id to allow a deeper error handling on consumer side.
 In this case, an normal formatted detail about the field goes along with this information to give more context and to still be processed in a generic way if wished.
 
 _Non-exhaustive list of examples:_

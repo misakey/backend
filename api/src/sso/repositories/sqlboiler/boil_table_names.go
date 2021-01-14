@@ -8,7 +8,6 @@ var TableNames = struct {
 	AuthenticationStep            string
 	BackupArchive                 string
 	CryptoAction                  string
-	Identifier                    string
 	Identity                      string
 	IdentityNotification          string
 	IdentityProfileSharingConsent string
@@ -18,7 +17,6 @@ var TableNames = struct {
 	AuthenticationStep:            "authentication_step",
 	BackupArchive:                 "backup_archive",
 	CryptoAction:                  "crypto_action",
-	Identifier:                    "identifier",
 	Identity:                      "identity",
 	IdentityNotification:          "identity_notification",
 	IdentityProfileSharingConsent: "identity_profile_sharing_consent",

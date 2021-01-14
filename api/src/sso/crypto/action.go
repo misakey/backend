@@ -86,129 +86,106 @@ func CreateActions(
 // CreateInvitationActionsForIdentity ...
 func CreateInvitationActionsForIdentity(
 	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
-	senderID, boxID, boxTitle, identityValue string, actionsDataJSON null.JSON,
+	senderID, boxID, boxTitle, identityID string, actionsDataJSON null.JSON,
 ) error {
-	identityObj, err := identity.Get(ctx, exec, identityValue)
+	identityObj, err := identity.Get(ctx, exec, identityID)
 	if err != nil {
-		return merr.From(err).Desc("getting identity")
+		return merr.From(err).Desc("getting identity by id")
 	}
-	identities := []*identity.Identity{&identityObj}
-
-	return CreateInvitationActions(ctx, exec, redConn, identities, actionsDataJSON, senderID, boxID, boxTitle, true)
+	return createInvitationAction(
+		ctx, exec, redConn,
+		identityObj, actionsDataJSON, senderID, boxID, boxTitle, true,
+	)
 }
 
 // CreateInvitationActionsForIdentifier ...
 func CreateInvitationActionsForIdentifier(
-	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
+	ctx context.Context,
+	exec boil.ContextExecutor, redConn *redis.Client,
 	senderID, boxID, boxTitle, identifierValue string, actionsDataJSON null.JSON,
 ) error {
 
-	identities, err := identity.ListByIdentifier(ctx, exec,
-		identity.Identifier{
-			Value: identifierValue,
-			Kind:  identity.EmailIdentifier,
-		},
-	)
+	identityObj, err := identity.GetByIdentifierValue(ctx, exec, identifierValue)
 	if err != nil {
-		return merr.From(err).Desc("retrieving identities")
+		return merr.From(err).Desc("retrieving identity by value")
 	}
-
-	return CreateInvitationActions(ctx, exec, redConn, identities, actionsDataJSON, senderID, boxID, boxTitle, false)
+	return createInvitationAction(
+		ctx, exec, redConn,
+		identityObj, actionsDataJSON, senderID, boxID, boxTitle, false,
+	)
 }
 
-// CreateInvitationActions for a set of identities
+// createInvitationAction for the given identity
 // using the identity Pubkey (if nonIdentified is false)
 // or the identity NonIdentifiedPubkey (if nonIdentified is true)
-func CreateInvitationActions(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identities []*identity.Identity, actionsDataJSON null.JSON, senderID, boxID, boxTitle string, nonIdentified bool) error {
-
+func createInvitationAction(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, guest identity.Identity, actionsDataJSON null.JSON, senderID, boxID, boxTitle string, nonIdentified bool) error {
+	// verify actions metadata
 	var actionsData map[string]string
 	err := actionsDataJSON.Unmarshal(&actionsData)
 	if err != nil {
 		return merr.From(err).Desc("unmarshalling actions data")
 	}
-
-	if len(actionsData) != len(identities) {
-		return merr.BadRequest().Desc(
-			"required one entry per identity public key in extra",
-		)
+	if len(actionsData) != 1 {
+		return merr.BadRequest().Desc("required one entry per identity public key in extra")
 	}
 
-	actions := make([]Action, len(identities))
-	notifDetailsByIdentityID := make(map[string][]byte, len(identities))
-
-	for i, identity := range identities {
-		// check and assign pubkeys
-		var pubkey string
-		if !nonIdentified && identity.Pubkey.Valid {
-			pubkey = identity.Pubkey.String
-		} else if nonIdentified && identity.NonIdentifiedPubkey.Valid {
-			pubkey = identity.NonIdentifiedPubkey.String
-		} else {
-			return merr.Conflict().Desc("not all identities have a public key")
-		}
-
-		// cryptoaction
-		encryptedCryptoAction, present := actionsData[pubkey]
-		if !present {
-			return merr.BadRequest().Descf(
-				"missing encrypted crypto action for pubkey \"%s\"",
-				pubkey,
-			)
-		}
-
-		actionID, err := uuid.NewString()
-		if err != nil {
-			return merr.From(err).Desc("generating action UUID")
-		}
-
-		action := Action{
-			ID:                  actionID,
-			AccountID:           identity.AccountID.String,
-			Type:                "invitation",
-			SenderIdentityID:    null.StringFrom(senderID),
-			BoxID:               null.StringFrom(boxID),
-			Encrypted:           encryptedCryptoAction,
-			EncryptionPublicKey: pubkey,
-			CreatedAt:           time.Now(),
-		}
-		actions[i] = action
-
-		// notification (details differ for each identity)
-		notifDetailsBytes, err := json.Marshal(struct {
-			BoxID          string `json:"box_id"`
-			BoxTitle       string `json:"box_title"`
-			CryptoActionID string `json:"cryptoaction_id"`
-		}{
-			BoxID:          boxID,
-			BoxTitle:       boxTitle,
-			CryptoActionID: action.ID,
-		})
-		if err != nil {
-			return merr.From(err).Descf(
-				"marshalling notif details for pubkey \"%s\"",
-				pubkey,
-			)
-		}
-		notifDetailsByIdentityID[identity.ID] = notifDetailsBytes
-
+	// check and assign pubkeys
+	var pubkey string
+	if !nonIdentified && guest.Pubkey.Valid {
+		pubkey = guest.Pubkey.String
+	} else if nonIdentified && guest.NonIdentifiedPubkey.Valid {
+		pubkey = guest.NonIdentifiedPubkey.String
+	} else {
+		return merr.Conflict().Desc("guest does not have a public key")
 	}
 
-	if err := CreateActions(ctx, exec, actions); err != nil {
+	// cryptoaction
+	encryptedCryptoAction, present := actionsData[pubkey]
+	if !present {
+		return merr.BadRequest().Descf("missing encrypted crypto action for pubkey \"%s\"", pubkey)
+	}
+
+	// prepare action
+	actionID, err := uuid.NewString()
+	if err != nil {
+		return merr.From(err).Desc("generating action UUID")
+	}
+	action := Action{
+		ID:                  actionID,
+		AccountID:           guest.AccountID.String,
+		Type:                "invitation",
+		SenderIdentityID:    null.StringFrom(senderID),
+		BoxID:               null.StringFrom(boxID),
+		Encrypted:           encryptedCryptoAction,
+		EncryptionPublicKey: pubkey,
+		CreatedAt:           time.Now(),
+	}
+
+	// prepare notification
+	notifDetailsBytes, err := json.Marshal(struct {
+		BoxID          string `json:"box_id"`
+		BoxTitle       string `json:"box_title"`
+		CryptoActionID string `json:"cryptoaction_id"`
+	}{
+		BoxID:          boxID,
+		BoxTitle:       boxTitle,
+		CryptoActionID: action.ID,
+	})
+	if err != nil {
+		return merr.From(err).Descf("marshalling notif details for pubkey \"%s\"", pubkey)
+	}
+
+	// create the prepared action
+	if err := CreateActions(ctx, exec, []Action{action}); err != nil {
 		return err
 	}
 
-	for identityID, notifDetailsBytes := range notifDetailsByIdentityID {
-		err := identity.NotificationCreate(ctx, exec, redConn,
-			identityID,
-			"box.auto_invite",
-			null.JSONFrom(notifDetailsBytes),
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	// create the prepared notification
+	err = identity.NotificationCreate(
+		ctx, exec, redConn,
+		guest.ID, "box.auto_invite", null.JSONFrom(notifDetailsBytes),
+	)
+	return err
 }
 
 // GetAction ...

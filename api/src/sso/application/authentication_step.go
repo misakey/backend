@@ -51,13 +51,10 @@ func (sso *SSOService) InitAuthnStep(ctx context.Context, genReq request.Request
 	}
 	defer atomic.SQLRollback(ctx, tr, &err)
 
-	// 0. check if the identity exists and authable
+	// 0. check if the identity exists
 	curIdentity, err := identity.Get(ctx, tr, cmd.Step.IdentityID)
 	if err != nil {
 		return nil, err
-	}
-	if !curIdentity.IsAuthable {
-		return nil, merr.Forbidden().Desc("identity not authable")
 	}
 
 	// 1. check login challenge

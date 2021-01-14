@@ -135,7 +135,6 @@ with prettyErrorContext():
         expected_status_code=201,
     )
     assert r.json()['referrer_id'] == text_msg_id
-    assert r.json()['sender']['identifier_id'] == s1.identifier_id
     assert r.json()['sender']['id'] == s1.identity_id
 
     print(f'- deletion of file message {file_msg_id}')
@@ -202,5 +201,4 @@ with prettyErrorContext():
         },
     )
     assert r.json()['referrer_id'] == msg_id
-    assert r.json()['sender']['identifier_id'] == s1.identifier_id
     assert r.json()['sender']['id'] == s1.identity_id

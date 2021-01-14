@@ -26,8 +26,6 @@ import (
 type Identity struct {
 	ID                  string      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	AccountID           null.String `boil:"account_id" json:"account_id,omitempty" toml:"account_id" yaml:"account_id,omitempty"`
-	IdentifierID        string      `boil:"identifier_id" json:"identifier_id" toml:"identifier_id" yaml:"identifier_id"`
-	IsAuthable          bool        `boil:"is_authable" json:"is_authable" toml:"is_authable" yaml:"is_authable"`
 	DisplayName         string      `boil:"display_name" json:"display_name" toml:"display_name" yaml:"display_name"`
 	Notifications       string      `boil:"notifications" json:"notifications" toml:"notifications" yaml:"notifications"`
 	AvatarURL           null.String `boil:"avatar_url" json:"avatar_url,omitempty" toml:"avatar_url" yaml:"avatar_url,omitempty"`
@@ -36,6 +34,8 @@ type Identity struct {
 	Level               int         `boil:"level" json:"level" toml:"level" yaml:"level"`
 	Pubkey              null.String `boil:"pubkey" json:"pubkey,omitempty" toml:"pubkey" yaml:"pubkey,omitempty"`
 	NonIdentifiedPubkey null.String `boil:"non_identified_pubkey" json:"non_identified_pubkey,omitempty" toml:"non_identified_pubkey" yaml:"non_identified_pubkey,omitempty"`
+	IdentifierKind      string      `boil:"identifier_kind" json:"identifier_kind" toml:"identifier_kind" yaml:"identifier_kind"`
+	IdentifierValue     string      `boil:"identifier_value" json:"identifier_value" toml:"identifier_value" yaml:"identifier_value"`
 
 	R *identityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L identityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -44,8 +44,6 @@ type Identity struct {
 var IdentityColumns = struct {
 	ID                  string
 	AccountID           string
-	IdentifierID        string
-	IsAuthable          string
 	DisplayName         string
 	Notifications       string
 	AvatarURL           string
@@ -54,11 +52,11 @@ var IdentityColumns = struct {
 	Level               string
 	Pubkey              string
 	NonIdentifiedPubkey string
+	IdentifierKind      string
+	IdentifierValue     string
 }{
 	ID:                  "id",
 	AccountID:           "account_id",
-	IdentifierID:        "identifier_id",
-	IsAuthable:          "is_authable",
 	DisplayName:         "display_name",
 	Notifications:       "notifications",
 	AvatarURL:           "avatar_url",
@@ -67,24 +65,15 @@ var IdentityColumns = struct {
 	Level:               "level",
 	Pubkey:              "pubkey",
 	NonIdentifiedPubkey: "non_identified_pubkey",
+	IdentifierKind:      "identifier_kind",
+	IdentifierValue:     "identifier_value",
 }
 
 // Generated where
 
-type whereHelperbool struct{ field string }
-
-func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-
 var IdentityWhere = struct {
 	ID                  whereHelperstring
 	AccountID           whereHelpernull_String
-	IdentifierID        whereHelperstring
-	IsAuthable          whereHelperbool
 	DisplayName         whereHelperstring
 	Notifications       whereHelperstring
 	AvatarURL           whereHelpernull_String
@@ -93,11 +82,11 @@ var IdentityWhere = struct {
 	Level               whereHelperint
 	Pubkey              whereHelpernull_String
 	NonIdentifiedPubkey whereHelpernull_String
+	IdentifierKind      whereHelperstring
+	IdentifierValue     whereHelperstring
 }{
 	ID:                  whereHelperstring{field: "\"identity\".\"id\""},
 	AccountID:           whereHelpernull_String{field: "\"identity\".\"account_id\""},
-	IdentifierID:        whereHelperstring{field: "\"identity\".\"identifier_id\""},
-	IsAuthable:          whereHelperbool{field: "\"identity\".\"is_authable\""},
 	DisplayName:         whereHelperstring{field: "\"identity\".\"display_name\""},
 	Notifications:       whereHelperstring{field: "\"identity\".\"notifications\""},
 	AvatarURL:           whereHelpernull_String{field: "\"identity\".\"avatar_url\""},
@@ -106,12 +95,13 @@ var IdentityWhere = struct {
 	Level:               whereHelperint{field: "\"identity\".\"level\""},
 	Pubkey:              whereHelpernull_String{field: "\"identity\".\"pubkey\""},
 	NonIdentifiedPubkey: whereHelpernull_String{field: "\"identity\".\"non_identified_pubkey\""},
+	IdentifierKind:      whereHelperstring{field: "\"identity\".\"identifier_kind\""},
+	IdentifierValue:     whereHelperstring{field: "\"identity\".\"identifier_value\""},
 }
 
 // IdentityRels is where relationship names are stored.
 var IdentityRels = struct {
 	Account                        string
-	Identifier                     string
 	AuthenticationSteps            string
 	SenderIdentityCryptoActions    string
 	IdentityNotifications          string
@@ -119,7 +109,6 @@ var IdentityRels = struct {
 	UsedCoupons                    string
 }{
 	Account:                        "Account",
-	Identifier:                     "Identifier",
 	AuthenticationSteps:            "AuthenticationSteps",
 	SenderIdentityCryptoActions:    "SenderIdentityCryptoActions",
 	IdentityNotifications:          "IdentityNotifications",
@@ -130,7 +119,6 @@ var IdentityRels = struct {
 // identityR is where relationships are stored.
 type identityR struct {
 	Account                        *Account                           `boil:"Account" json:"Account" toml:"Account" yaml:"Account"`
-	Identifier                     *Identifier                        `boil:"Identifier" json:"Identifier" toml:"Identifier" yaml:"Identifier"`
 	AuthenticationSteps            AuthenticationStepSlice            `boil:"AuthenticationSteps" json:"AuthenticationSteps" toml:"AuthenticationSteps" yaml:"AuthenticationSteps"`
 	SenderIdentityCryptoActions    CryptoActionSlice                  `boil:"SenderIdentityCryptoActions" json:"SenderIdentityCryptoActions" toml:"SenderIdentityCryptoActions" yaml:"SenderIdentityCryptoActions"`
 	IdentityNotifications          IdentityNotificationSlice          `boil:"IdentityNotifications" json:"IdentityNotifications" toml:"IdentityNotifications" yaml:"IdentityNotifications"`
@@ -147,8 +135,8 @@ func (*identityR) NewStruct() *identityR {
 type identityL struct{}
 
 var (
-	identityAllColumns            = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "notifications", "avatar_url", "created_at", "color", "level", "pubkey", "non_identified_pubkey"}
-	identityColumnsWithoutDefault = []string{"id", "account_id", "identifier_id", "is_authable", "display_name", "avatar_url", "color", "pubkey", "non_identified_pubkey"}
+	identityAllColumns            = []string{"id", "account_id", "display_name", "notifications", "avatar_url", "created_at", "color", "level", "pubkey", "non_identified_pubkey", "identifier_kind", "identifier_value"}
+	identityColumnsWithoutDefault = []string{"id", "account_id", "display_name", "avatar_url", "color", "pubkey", "non_identified_pubkey", "identifier_kind", "identifier_value"}
 	identityColumnsWithDefault    = []string{"notifications", "created_at", "level"}
 	identityPrimaryKeyColumns     = []string{"id"}
 )
@@ -254,20 +242,6 @@ func (o *Identity) Account(mods ...qm.QueryMod) accountQuery {
 
 	query := Accounts(queryMods...)
 	queries.SetFrom(query.Query, "\"account\"")
-
-	return query
-}
-
-// Identifier pointed to by the foreign key.
-func (o *Identity) Identifier(mods ...qm.QueryMod) identifierQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.IdentifierID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Identifiers(queryMods...)
-	queries.SetFrom(query.Query, "\"identifier\"")
 
 	return query
 }
@@ -467,102 +441,6 @@ func (identityL) LoadAccount(ctx context.Context, e boil.ContextExecutor, singul
 				local.R.Account = foreign
 				if foreign.R == nil {
 					foreign.R = &accountR{}
-				}
-				foreign.R.Identities = append(foreign.R.Identities, local)
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadIdentifier allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (identityL) LoadIdentifier(ctx context.Context, e boil.ContextExecutor, singular bool, maybeIdentity interface{}, mods queries.Applicator) error {
-	var slice []*Identity
-	var object *Identity
-
-	if singular {
-		object = maybeIdentity.(*Identity)
-	} else {
-		slice = *maybeIdentity.(*[]*Identity)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &identityR{}
-		}
-		args = append(args, object.IdentifierID)
-
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &identityR{}
-			}
-
-			for _, a := range args {
-				if a == obj.IdentifierID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.IdentifierID)
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`identifier`),
-		qm.WhereIn(`identifier.id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Identifier")
-	}
-
-	var resultSlice []*Identifier
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Identifier")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for identifier")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for identifier")
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Identifier = foreign
-		if foreign.R == nil {
-			foreign.R = &identifierR{}
-		}
-		foreign.R.Identities = append(foreign.R.Identities, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.IdentifierID == foreign.ID {
-				local.R.Identifier = foreign
-				if foreign.R == nil {
-					foreign.R = &identifierR{}
 				}
 				foreign.R.Identities = append(foreign.R.Identities, local)
 				break
@@ -1105,53 +983,6 @@ func (o *Identity) RemoveAccount(ctx context.Context, exec boil.ContextExecutor,
 		related.R.Identities = related.R.Identities[:ln-1]
 		break
 	}
-	return nil
-}
-
-// SetIdentifier of the identity to the related item.
-// Sets o.R.Identifier to related.
-// Adds o to related.R.Identities.
-func (o *Identity) SetIdentifier(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Identifier) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"identity\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"identifier_id"}),
-		strmangle.WhereClause("\"", "\"", 2, identityPrimaryKeyColumns),
-	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.IdentifierID = related.ID
-	if o.R == nil {
-		o.R = &identityR{
-			Identifier: related,
-		}
-	} else {
-		o.R.Identifier = related
-	}
-
-	if related.R == nil {
-		related.R = &identifierR{
-			Identities: IdentitySlice{o},
-		}
-	} else {
-		related.R.Identities = append(related.R.Identities, o)
-	}
-
 	return nil
 }
 

@@ -32,7 +32,7 @@ _Headers:_
 _JSON Body:_
 ```json
     {
-      "title": "Requête RGPD FNAC",
+      "title": "Requête RGPD",
       "public_key": "SXvalkvhuhcj2UiaS4d0Q3OeuHOhMVeQT7ZGfCH2YCw",
       "key_share": {
         "misakey_share": "lBHT1vfwFAIBig5Nj+sD+w==",

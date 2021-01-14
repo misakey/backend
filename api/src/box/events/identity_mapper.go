@@ -138,21 +138,19 @@ func (mapper *IdentityMapper) MapToAccountID(ctx context.Context, identityIDs []
 
 func senderViewFrom(identity identity.Identity) SenderView {
 	sender := SenderView{
-		ID:           identity.ID,
-		IdentifierID: identity.IdentifierID,
-		DisplayName:  identity.DisplayName,
-		AvatarURL:    identity.AvatarURL,
+		ID:          identity.ID,
+		DisplayName: identity.DisplayName,
+		AvatarURL:   identity.AvatarURL,
 	}
-	sender.Identifier.Value = identity.Identifier.Value
-	sender.Identifier.Kind = string(identity.Identifier.Kind)
+	sender.IdentifierValue = identity.IdentifierValue
+	sender.IdentifierKind = string(identity.IdentifierKind)
 	return sender
 }
 
 func anonymousSenderView() SenderView {
 	sender := SenderView{
-		ID:           "anonymous-user",
-		IdentifierID: "anonymous-user",
-		DisplayName:  "Anonymous User",
+		ID:          "anonymous-user",
+		DisplayName: "Anonymous User",
 	}
 	return sender
 }

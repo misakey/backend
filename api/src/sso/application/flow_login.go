@@ -85,41 +85,32 @@ func (sso *SSOService) LoginInit(ctx context.Context, gen request.Request) (inte
 	return sso.authFlowService.BuildLoginURL(req.Challenge), nil
 }
 
-// IdentityAuthableCmd orders:
+// RequireIdentityCmd orders:
 // - the assurance of an identifier matching the received value
-// - a new account if not authable identity linked to such identifier is found
-// - a new identity authable linking both previous entities
+// - a new account/identity if nothing linked to the identifier value is found
 // - a init of confirmation code authencation method for the identity
-type IdentityAuthableCmd struct {
-	LoginChallenge string `json:"login_challenge"`
-	Identifier     struct {
-		Value string `json:"value"`
-	} `json:"identifier"`
+type RequireIdentityCmd struct {
+	LoginChallenge  string `json:"login_challenge"`
+	IdentifierValue string `json:"identifier_value"`
 }
 
-// BindAndValidate the IdentityAuthableCmd
-func (cmd *IdentityAuthableCmd) BindAndValidate(eCtx echo.Context) error {
+// BindAndValidate the RequireIdentityCmd
+func (cmd *RequireIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
-	// validate nested structure separately
-	if err := v.ValidateStruct(&cmd.Identifier,
-		v.Field(&cmd.Identifier.Value, v.Required, is.EmailFormat),
-	); err != nil {
-		return err
-	}
-
 	if err := v.ValidateStruct(cmd,
 		v.Field(&cmd.LoginChallenge, v.Required),
+		v.Field(&cmd.IdentifierValue, v.Required, is.EmailFormat),
 	); err != nil {
 		return err
 	}
 	return nil
 }
 
-// IdentityAuthableView ...
-type IdentityAuthableView struct {
+// RequireIdentityAView ...
+type RequireIdentityView struct {
 	Identity struct {
 		DisplayName string      `json:"display_name"`
 		AvatarURL   null.String `json:"avatar_url"`
@@ -133,15 +124,15 @@ type nextStepView struct {
 	Metadata   *types.JSON    `json:"metadata"`
 }
 
-// RequireAuthableIdentity for an auth flow.
-// This method is used to retrieve information about the authable identity attached to an identifier value.
+// RequireIdentity for an auth flow.
+// This method is used to retrieve information about the identity attached to an identifier value.
 // The identifier value is set by the end-user on the interface and we receive it here.
 // The function returns information about the Account & Identity that corresponds to the identifier.
-// It creates if required the trio identifier/account/identity.
+// It creates if required the pair account/identity.
 // If an identity is created during this process, an confirmation code auth method is started
 // This method will exceptionnaly both proof the identity and confirm the login flow within the auth flow.
-func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.Request) (interface{}, error) {
-	cmd := gen.(*IdentityAuthableCmd)
+func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request) (interface{}, error) {
+	cmd := gen.(*RequireIdentityCmd)
 
 	// start transaction since write actions will be performed
 	tr, err := sso.sqlDB.BeginTx(ctx, nil)
@@ -156,40 +147,30 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 		return nil, err
 	}
 
-	// 1. ensure create the Identifier does exist
-	identifier := identity.Identifier{
-		Kind:  identity.EmailIdentifier,
-		Value: cmd.Identifier.Value,
-	}
-	err = identity.RequireIdentifier(ctx, tr, &identifier)
-	if err != nil {
-		return nil, err
-	}
-
-	// 2. check if an identity exist for the identifier
-	authable, err := identity.GetAuthableByIdentifierID(ctx, tr, identifier.ID)
+	// 1. check if an identity exist for the identifier
+	// NOTE: to_change_on_more_identifier_kind
+	curIdentity, err := identity.GetByIdentifierValue(ctx, tr, cmd.IdentifierValue)
 	if err != nil && !merr.IsANotFound(err) {
 		return nil, err
 	}
 
-	// 3. create an identity if nothing was found
+	// 2. create an identity if nothing was found
 	if merr.IsANotFound(err) {
 		// a. create the Identity without account
-		authable = identity.Identity{
-			IdentifierID: identifier.ID,
-			DisplayName:  strings.Title(strings.Replace(strings.Split(cmd.Identifier.Value, "@")[0], ".", " ", -1)),
-			IsAuthable:   true,
-			// fill the identifier manually for later use
-			Identifier: identifier,
+		curIdentity = identity.Identity{
+			DisplayName:     strings.Title(strings.Replace(strings.Split(cmd.IdentifierValue, "@")[0], ".", " ", -1)),
+			IdentifierValue: cmd.IdentifierValue,
+			IdentifierKind:  identity.EmailIdentifier,
 		}
-		err = identity.Create(ctx, tr, sso.redConn, &authable)
+		err = identity.Create(ctx, tr, sso.redConn, &curIdentity)
 		if err != nil {
 			return nil, err
 		}
 	}
-	// get the appropriate authn step
+
+	// 3. get the appropriate authn step
 	// NOTE: not handled - authnsession ACR
-	step, err := sso.AuthenticationService.NextStep(ctx, tr, authable, oidc.ACR0, logCtx.OIDCContext.ACRValues())
+	step, err := sso.AuthenticationService.NextStep(ctx, tr, curIdentity, oidc.ACR0, logCtx.OIDCContext.ACRValues())
 	if err != nil {
 		return nil, merr.From(err).Desc("getting next authn step")
 	}
@@ -197,11 +178,11 @@ func (sso *SSOService) RequireAuthableIdentity(ctx context.Context, gen request.
 		return nil, merr.From(cErr).Desc("committing transaction")
 	}
 
-	// bind identity information on view
-	view := IdentityAuthableView{}
-	view.Identity.DisplayName = authable.DisplayName
-	view.Identity.AvatarURL = authable.AvatarURL
-	view.AuthnStep.IdentityID = authable.ID
+	// 4. bind identity information on view
+	view := RequireIdentityView{}
+	view.Identity.DisplayName = curIdentity.DisplayName
+	view.Identity.AvatarURL = curIdentity.AvatarURL
+	view.AuthnStep.IdentityID = curIdentity.ID
 	view.AuthnStep.MethodName = step.MethodName
 	if step.RawJSONMetadata != nil {
 		view.AuthnStep.Metadata = &step.RawJSONMetadata
@@ -318,17 +299,13 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 	}
 	defer atomic.SQLRollback(ctx, tr, &err)
 
-	// ensure the login challenge is correct and the identity is authable
+	// ensure the login challenge is correct
 	logCtx, err := sso.authFlowService.GetLoginContext(ctx, cmd.LoginChallenge)
 	if err != nil {
 		return view, err
 	}
 	curIdentity, err := identity.Get(ctx, tr, cmd.Step.IdentityID)
 	if err != nil {
-		return view, err
-	}
-	if !curIdentity.IsAuthable {
-		err = merr.Forbidden().Desc("identity not authable")
 		return view, err
 	}
 
@@ -373,8 +350,12 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 
 	// finally accept the login!
 
-	// set subject to the identifier id
-	logCtx.Subject = curIdentity.IdentifierID
+	// set subject to the account id if there otherwise use the identity id
+	if curIdentity.AccountID.Valid {
+		logCtx.Subject = curIdentity.AccountID.String
+	} else {
+		logCtx.Subject = curIdentity.ID
+	}
 	logCtx.OIDCContext.SetACRValue(process.CompleteAMRs.ToACR())
 	logCtx.OIDCContext.SetAMRs(process.CompleteAMRs)
 	logCtx.OIDCContext.SetMID(curIdentity.ID)

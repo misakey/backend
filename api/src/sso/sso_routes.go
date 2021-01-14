@@ -140,13 +140,6 @@ func bindRoutes(
 		ss.GetIdentityPubkeyByIdentifier,
 		request.ResponseOK,
 	))
-	// NOTE: part of the auth flow - the path would be clearer with /auth/identities
-	identityPath.PUT(authnProcessHandlers.NewOptional(
-		"/authable",
-		func() request.Request { return &application.IdentityAuthableCmd{} },
-		ss.RequireAuthableIdentity,
-		request.ResponseOK,
-	))
 
 	// BACKUP KEY SHARES ROUTES
 	backupKeySharePath := router.Group("/backup-key-shares")
@@ -212,6 +205,14 @@ func bindRoutes(
 		ss.AssertAuthnStep,
 		request.ResponseOK,
 	))
+	// identity in auth
+	authPath.PUT(authnProcessHandlers.NewOptional(
+		"/identities",
+		func() request.Request { return &application.RequireIdentityCmd{} },
+		ss.RequireIdentity,
+		request.ResponseOK,
+	))
+
 	// consent flow
 	authPath.GET(authnProcessHandlers.NewPublic(
 		"/consent",

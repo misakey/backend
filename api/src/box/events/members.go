@@ -80,8 +80,7 @@ func MustBeMember(
 			if senderIsMember {
 				return nil
 			}
-			return merr.Forbidden().Desc("must be a member").
-				Add("reason", "not_member").Add("sender_id", merr.DVForbidden)
+			return merr.Forbidden().Desc("must be a member").Add("reason", "not_member").Add("sender_id", merr.DVForbidden)
 		}
 	}
 

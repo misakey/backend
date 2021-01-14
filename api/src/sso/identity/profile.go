@@ -10,15 +10,12 @@ import (
 
 // ProfileView ...
 type ProfileView struct {
-	ID           string      `json:"id"`
-	DisplayName  string      `json:"display_name"`
-	AvatarURL    null.String `json:"avatar_url"`
-	IdentifierID string      `json:"identifier_id"`
-	Identifier   struct {
-		Value string `json:"value"`
-		Kind  string `json:"kind"`
-	} `json:"identifier"`
-	Contactable bool `json:"contactable"`
+	ID                  string      `json:"id"`
+	DisplayName         string      `json:"display_name"`
+	AvatarURL           null.String `json:"avatar_url"`
+	IdentifierValue     string      `json:"identifier_value"`
+	IdentifierKind      string      `json:"identifier_kind"`
+	Contactable         bool        `json:"contactable"`
 	NonIdentifiedPubkey null.String `json:"non_identified_pubkey"`
 }
 
@@ -51,10 +48,10 @@ func ProfileGet(ctx context.Context, exec boil.ContextExecutor, identityID strin
 	// for now only the email can be shared
 	// NOTE: the shape/logic of the profile might change later with more information to hide/share
 	for _, consent := range consents {
-		if consent.informationType == string(identity.Identifier.Kind) {
-			p.IdentifierID = identity.Identifier.ID
-			p.Identifier.Value = identity.Identifier.Value
-			p.Identifier.Kind = string(identity.Identifier.Kind)
+		if consent.informationType == string(identity.IdentifierKind) {
+			p.IdentifierValue = identity.IdentifierValue
+			p.IdentifierKind = string(identity.IdentifierKind)
+			break
 		}
 	}
 	p.Contactable = true

@@ -18,28 +18,32 @@ import (
 
 // Identity ...
 type Identity struct {
-	ID                  string      `json:"id"`
-	AccountID           null.String `json:"account_id"`
-	IdentifierID        string      `json:"identifier_id"`
-	IsAuthable          bool        `json:"is_authable"`
-	DisplayName         string      `json:"display_name"`
-	Notifications       string      `json:"notifications"`
-	AvatarURL           null.String `json:"avatar_url"`
-	Color               null.String `json:"color"`
-	Level               int         `json:"level"`
-	Pubkey              null.String `json:"pubkey"`
-	NonIdentifiedPubkey null.String `json:"non_identified_pubkey"`
-
-	// Identifier is always returned within the identity entity as a nested JSON object
-	Identifier Identifier `json:"identifier"`
+	ID                  string         `json:"id"`
+	AccountID           null.String    `json:"account_id"`
+	IdentifierValue     string         `json:"identifier_value"`
+	IdentifierKind      IdentifierKind `json:"identifier_kind"`
+	DisplayName         string         `json:"display_name"`
+	Notifications       string         `json:"notifications"`
+	AvatarURL           null.String    `json:"avatar_url"`
+	Color               null.String    `json:"color"`
+	Level               int            `json:"level"`
+	Pubkey              null.String    `json:"pubkey"`
+	NonIdentifiedPubkey null.String    `json:"non_identified_pubkey"`
 }
+
+// IdentifierKind ...
+type IdentifierKind string
+
+const (
+	// EmailIdentifier ...
+	EmailIdentifier IdentifierKind = "email"
+)
 
 // Filters ...
 type Filters struct {
-	IdentifierID null.String
-	IsAuthable   null.Bool
-	IDs          []string
-	AccountID    null.String
+	IdentifierValue null.String
+	IDs             []string
+	AccountID       null.String
 }
 
 func newIdentity() *Identity { return &Identity{} }
@@ -48,8 +52,8 @@ func (i Identity) toSQLBoiler() *sqlboiler.Identity {
 	return &sqlboiler.Identity{
 		ID:                  i.ID,
 		AccountID:           i.AccountID,
-		IdentifierID:        i.IdentifierID,
-		IsAuthable:          i.IsAuthable,
+		IdentifierValue:     i.IdentifierValue,
+		IdentifierKind:      string(i.IdentifierKind),
 		DisplayName:         i.DisplayName,
 		Notifications:       i.Notifications,
 		AvatarURL:           i.AvatarURL,
@@ -63,8 +67,8 @@ func (i Identity) toSQLBoiler() *sqlboiler.Identity {
 func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 	i.ID = src.ID
 	i.AccountID = src.AccountID
-	i.IdentifierID = src.IdentifierID
-	i.IsAuthable = src.IsAuthable
+	i.IdentifierValue = src.IdentifierValue
+	i.IdentifierKind = IdentifierKind(src.IdentifierKind)
 	i.DisplayName = src.DisplayName
 	i.Notifications = src.Notifications
 	i.AvatarURL = src.AvatarURL
@@ -72,13 +76,6 @@ func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 	i.Level = src.Level
 	i.Pubkey = src.Pubkey
 	i.NonIdentifiedPubkey = src.NonIdentifiedPubkey
-
-	if src.R != nil {
-		identifier := src.R.Identifier
-		i.Identifier.ID = identifier.ID
-		i.Identifier.Kind = IdentifierKind(identifier.Kind)
-		i.Identifier.Value = identifier.Value
-	}
 	return i
 }
 
@@ -111,41 +108,43 @@ func Create(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Clien
 
 // Get ...
 func Get(ctx context.Context, exec boil.ContextExecutor, identityID string) (ret Identity, err error) {
-	record, err := sqlboiler.FindIdentity(ctx, exec, identityID)
+	mods := []qm.QueryMod{
+		sqlboiler.IdentityWhere.ID.EQ(identityID),
+	}
+	record, err := sqlboiler.Identities(mods...).One(ctx, exec)
 	if err == sql.ErrNoRows {
-		return ret, merr.NotFound().Desc(err.Error()).Add(" id", merr.DVNotFound)
+		return ret, merr.NotFound().Desc(err.Error()).Add("id", merr.DVNotFound)
 	}
 	if err != nil {
 		return ret, err
 	}
-	ret.fromSQLBoiler(*record)
+	return *ret.fromSQLBoiler(*record), nil
+}
 
-	// retrieve the related identifier
-	ret.Identifier, err = GetIdentifier(ctx, exec, ret.IdentifierID)
-	if err != nil {
-		return ret, merr.From(err).Desc("getting identifier")
+// GetByIdentifierValue...
+func GetByIdentifierValue(ctx context.Context, exec boil.ContextExecutor, identifierValue string) (ret Identity, err error) {
+	mods := []qm.QueryMod{
+		sqlboiler.IdentityWhere.IdentifierValue.EQ(identifierValue),
 	}
-	return ret, nil
+	record, err := sqlboiler.Identities(mods...).One(ctx, exec)
+	if err == sql.ErrNoRows {
+		return ret, merr.NotFound().Desc(err.Error()).Add("identifier_value", merr.DVNotFound)
+	}
+	if err != nil {
+		return ret, err
+	}
+	return *ret.fromSQLBoiler(*record), nil
 }
 
 // List ...
 func List(ctx context.Context, exec boil.ContextExecutor, filters Filters) ([]*Identity, error) {
 	mods := []qm.QueryMod{}
-	if filters.IdentifierID.Valid {
-		mods = append(mods, sqlboiler.IdentityWhere.IdentifierID.EQ(filters.IdentifierID.String))
-	}
-	if filters.IsAuthable.Valid {
-		mods = append(mods, sqlboiler.IdentityWhere.IsAuthable.EQ(filters.IsAuthable.Bool))
-	}
 	if len(filters.IDs) > 0 {
 		mods = append(mods, sqlboiler.IdentityWhere.ID.IN(filters.IDs))
 	}
 	if filters.AccountID.Valid {
 		mods = append(mods, sqlboiler.IdentityWhere.AccountID.EQ(filters.AccountID))
 	}
-
-	// eager loading
-	mods = append(mods, qm.Load("Identifier"))
 
 	identityRecords, err := sqlboiler.Identities(mods...).All(ctx, exec)
 	identities := make([]*Identity, len(identityRecords))
@@ -162,27 +161,6 @@ func List(ctx context.Context, exec boil.ContextExecutor, filters Filters) ([]*I
 	return identities, nil
 }
 
-// GetAuthableByIdentifierID ...
-func GetAuthableByIdentifierID(ctx context.Context, exec boil.ContextExecutor, identifierID string) (Identity, error) {
-	filters := Filters{
-		IdentifierID: null.StringFrom(identifierID),
-		IsAuthable:   null.BoolFrom(true),
-	}
-	identities, err := List(ctx, exec, filters)
-	if err != nil {
-		return Identity{}, err
-	}
-	if len(identities) < 1 {
-		return Identity{}, merr.NotFound().
-			Add("identifier_id", merr.DVNotFound).
-			Add("is_authable", merr.DVNotFound)
-	}
-	if len(identities) > 1 {
-		return Identity{}, merr.Internal().Descf("more than one authable identity found for %s", identifierID)
-	}
-	return *identities[0], nil
-}
-
 // Update ...
 func Update(ctx context.Context, exec boil.ContextExecutor, identity *Identity) error {
 	rowsAff, err := identity.toSQLBoiler().Update(ctx, exec, boil.Infer())
@@ -193,13 +171,4 @@ func Update(ctx context.Context, exec boil.ContextExecutor, identity *Identity) 
 		return merr.NotFound().Desc("no rows affected").Add("id", merr.DVNotFound)
 	}
 	return nil
-}
-
-// ListByIdentifier ...
-func ListByIdentifier(ctx context.Context, exec boil.ContextExecutor, identifier Identifier) ([]*Identity, error) {
-	identifier, err := GetIdentifierByKindValue(ctx, exec, identifier)
-	if err != nil {
-		return nil, merr.From(err).Desc("retrieving identifier")
-	}
-	return List(ctx, exec, Filters{IdentifierID: null.StringFrom(identifier.ID)})
 }

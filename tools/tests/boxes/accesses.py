@@ -5,7 +5,7 @@ from base64 import b64encode
 
 from misapy import URL_PREFIX
 from misapy.box_helpers import create_box_and_post_some_events_to_it
-from misapy.box_members import join_box, leave_box
+from misapy.box_members import join_box
 from misapy.check_response import check_response, assert_fn
 from misapy.container_access import list_encrypted_files
 from misapy.get_access_token import get_authenticated_session
@@ -258,7 +258,7 @@ with prettyErrorContext():
         expected_status_code=200
     )
     for member in r.json():
-        assert member['identifier']['value'] == ""
+        assert member['identifier_value'] == ""
 
     print('- batch events removes accesses and add email_domain')
     access_email_domain = {
@@ -294,7 +294,7 @@ with prettyErrorContext():
         expected_status_code=200
     )
     assert len(r.json()) == 1
-    assert r.json()[0]['identifier']['value'] == s1.email
+    assert r.json()[0]['identifier_value'] == s1.email
     
     print('- the box is not listed when the user requested their boxes')
     r = s2.get(

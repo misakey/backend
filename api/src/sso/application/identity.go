@@ -81,7 +81,7 @@ type PartialUpdateIdentityCmd struct {
 	NonIdentifiedPubkey null.String `json:"non_identified_pubkey"`
 }
 
-// BindAndValidate the IdentityAuthableCmd
+// BindAndValidate the RequireIdentityCmd
 func (cmd *PartialUpdateIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
@@ -370,7 +370,7 @@ func (query *IdentityPubkeyByIdentifierQuery) BindAndValidate(eCtx echo.Context)
 	)
 }
 
-// GetIdentityPubkeyByIdentifier ...
+// GetIdentityPubkeyByIdentifier returns a list of pubkeys corresponding to the received identifier
 func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*IdentityPubkeyByIdentifierQuery)
 
@@ -380,26 +380,9 @@ func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen re
 		return nil, merr.Forbidden()
 	}
 
-	identities, err := identity.ListByIdentifier(ctx, sso.sqlDB,
-		identity.Identifier{
-			Value: query.IdentifierValue,
-			Kind:  identity.EmailIdentifier,
-		},
-	)
+	identity, err := identity.GetByIdentifierValue(ctx, sso.sqlDB, query.IdentifierValue)
 	if err != nil {
 		return nil, merr.From(err).Desc("retrieving identities")
 	}
-
-	var result []string
-	for _, identity := range identities {
-		if !identity.Pubkey.Valid {
-			// If one of the identities does not have a public key
-			// then invitation should be made through an key share
-			// so let's just not expose the public keys
-			return make([]string, 0), nil
-		}
-		result = append(result, identity.Pubkey.String)
-	}
-
-	return result, nil
+	return []string{identity.Pubkey.String}, nil
 }

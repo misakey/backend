@@ -3,7 +3,7 @@ version: '2.1'
 services:
   sso_migrate:
     build:
-      context: ../../../../
+      context: ../../../
       dockerfile: Dockerfile
     depends_on:
       sso_db:
@@ -11,7 +11,7 @@ services:
     environment:
       - DSN_SSO=postgres://misakey:secret@sso_db:5432/sso-migration-test?sslmode=disable
       - ENV=development
-    command: "sso-migrate --goose=up"
+    command: "sso-migrate"
 
   sso_db:
     image: postgres:11.4

@@ -56,7 +56,7 @@ func (sso *SSOService) ResetFlow(ctx context.Context, gen request.Request) (inte
 			// retrieve the identity/identifier couple using the
 			identity, err := identity.Get(ctx, sso.sqlDB, session.IdentityID)
 			if err == nil {
-				oriAuthURL, _ = format.AddQueryParam(oriAuthURL, "login_hint", identity.Identifier.Value)
+				oriAuthURL, _ = format.AddQueryParam(oriAuthURL, "login_hint", identity.IdentifierValue)
 				return sso.authFlowService.BuildResetURL(oriAuthURL), nil
 			}
 		}
@@ -67,7 +67,7 @@ func (sso *SSOService) ResetFlow(ctx context.Context, gen request.Request) (inte
 			// retrieve the identity/identifier couple using the
 			curIdentity, err := identity.Get(ctx, sso.sqlDB, process.IdentityID)
 			if err == nil {
-				oriAuthURL, _ = format.AddQueryParam(oriAuthURL, "login_hint", curIdentity.Identifier.Value)
+				oriAuthURL, _ = format.AddQueryParam(oriAuthURL, "login_hint", curIdentity.IdentifierValue)
 				return sso.authFlowService.BuildResetURL(oriAuthURL), nil
 			}
 		}

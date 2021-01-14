@@ -30,7 +30,7 @@ with prettyErrorContext():
     assert r.json()['title'] != ''
     assert r.json()['creator']['display_name'] == s1.display_name
     assert r.json()['creator']['id'] == s1.identity_id
-    assert r.json()['creator']['identifier']['value'] == ''
+    assert r.json()['creator']['identifier_value'] == ''
 
     print('- file upload')
     r = s1.post(

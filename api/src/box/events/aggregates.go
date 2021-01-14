@@ -7,8 +7,9 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 )
 
 // BuildAggregate of an event by modifying the received pointer value

@@ -20,12 +20,10 @@ def new_password_hash(password):
 
 def login_flow(s, login_challenge, email, reset_password=False):
     r = s.put(
-        'https://api.misakey.com.local/identities/authable',
+        'https://api.misakey.com.local/auth/identities',
         json={
             'login_challenge': login_challenge,
-            'identifier': {
-                'value': email,
-            }
+            'identifier_value': email
         }
     )
     identity_id = r.json()['authn_step']['identity_id']
@@ -183,22 +181,20 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
         cookies={"accesstoken": access_token, "tokentype": "bearer"},
     )
     account_id = r.json()['account_id']
-    identifier_id = r.json()['identifier_id']
     display_name = r.json()['display_name']
 
     s.identity_id = identity_id
     s.email = email
     s.account_id = account_id
-    s.identifier_id = identifier_id
     s.display_name = display_name
 
 
     return namedtuple(
         'OAuth2Creds',
         ['email', 'access_token', 'identity_id',
-            'id_token', 'consent_done', 'account_id', 'identifier_id', 'display_name',
+            'id_token', 'consent_done', 'account_id', 'display_name',
             'session'],
-    )(email, access_token, identity_id, id_token, consent_done, account_id, identifier_id, display_name, s)
+    )(email, access_token, identity_id, id_token, consent_done, account_id, display_name, s)
 
 
 def get_authenticated_session(email=None, require_account=False, acr_values=None, reset_password=False):

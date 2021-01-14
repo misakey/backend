@@ -57,11 +57,11 @@ func (as *Service) CreateEmailedCode(ctx context.Context, exec boil.ContextExecu
 	}
 
 	data := map[string]interface{}{
-		"to":   identity.Identifier.Value,
+		"to":   identity.IdentifierValue,
 		"code": decodedCode.Code,
 	}
 	subject := fmt.Sprintf("Votre code de confirmation est %s", decodedCode.Code)
-	content, err := as.templates.NewEmail(ctx, identity.Identifier.Value, subject, "code", data)
+	content, err := as.templates.NewEmail(ctx, identity.IdentifierValue, subject, "code", data)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (as *Service) prepareEmailedCode(
 	identity identity.Identity, step *Step,
 ) error {
 	step.MethodName = oidc.AMREmailedCode
-	// we ignore the conflict error code - if a code already exist, we still want to return authable identity information
+	// we ignore the conflict error code - if a code already exist, we still want to return identity information
 	err := as.CreateEmailedCode(ctx, exec, identity)
 	// set the error to nil on conflict because we want to fail silently
 	// if an emailed code was already generated
