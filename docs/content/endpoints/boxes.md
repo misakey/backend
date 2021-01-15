@@ -274,7 +274,7 @@ To add or remove accesses in a given box, please refer to:
 
 ## 3.2. List accesses for a given box
 
-Listing accesses allows admins to see the current state of the box reachability.
+Listing accesses allows members to see the current state of the box reachability.
 
 ### 3.2.1. request
 
@@ -286,7 +286,7 @@ _Path Parameter:_
 - `id` (string) (uuid): the box id to list accesses on.
 
 _Cookies:_
-- `accesstoken` (opaque token) (ACR >= 2): the access token should belongs the a box admin.
+- `accesstoken` (opaque token) (ACR >= 1): the access token should belongs to a box member.
 - `tokentype`: must be `bearer`
 
 _Headers:_
