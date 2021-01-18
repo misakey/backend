@@ -6,8 +6,11 @@ import (
 	"net/url"
 )
 
+// ContextKey ...
+type ContextKey string
+
 // HeadersContextKey ...
-const HeadersContextKey = "headers"
+const HeadersContextKey ContextKey = "headers"
 
 // Client ...
 type Client interface {

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/login"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/userinfo"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/domain/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
@@ -64,6 +65,8 @@ type authFlowRepo interface {
 
 	DeleteSession(ctx context.Context, subject string) error
 	RevokeToken(ctx context.Context, token string) error
+
+	GetUserInfo(ctx context.Context, token string) (*userinfo.UserInfo, error)
 }
 
 // HasNonePrompt returns true if the received string contains `promt=none` string

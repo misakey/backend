@@ -61,3 +61,9 @@ hydra:
       refresh_token: 720h
       id_token: 1h
       auth_code: 10m
+
+    webfinger:
+      oidc_discovery:
+        userinfo_url: https://app.preprod.misakey.dev/auth/userinfo
+
+

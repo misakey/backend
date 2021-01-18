@@ -875,3 +875,55 @@ _JSON Body:_
 ```json
 {{% include "include/backup-key-share.json" %}}
 ```
+
+# 5. OIDC endpoints
+
+These endpoints are openid RFC-compliant endpoints.
+
+## 5.1. Get User Info
+
+This endpoint basically allow to get some of the ID token info.
+
+It must be authenticated.
+
+### 5.1.1. request
+
+```bash
+GET https://api.misakey.com/auth/userinfo
+```
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1)
+- `tokentype`: must be `bearer`
+
+### 5.1.2. response
+
+_Code_:
+```bash
+HTTP 200 OK
+```
+
+_JSON Body_:
+```json
+{
+  "acr": "2",
+  "aid": "97db9036-4190-4374-b0d1-0775b55f4e94",
+  "amr": [
+    "browser_cookie"
+  ],
+  "email": "joni@misakey.com",
+  "mid": "aba11ab7-a077-4520-b76c-dba9fac01693",
+  "sco": "openid tos privacy_policy",
+  "sid": "562e4b78-86d2-4674-b80a-79dcfffb5d38",
+  "sub": "2828b8d0-439c-4326-b49b-2736bd6eacb7"
+}
+```
+
+- `acr` (string): ACR corresponding to the currrent token,
+- `amr` (string array): the way the user got the token
+- `email` (string): the user email,
+- `sco` (string): list of space separated scopes linked to the token,
+- `sid` (string): the session identifier,
+- `sub` (string): the user identifier,
+- `mid` (string): the Misakey specific identifier,
+- `aid` (string): the user account identifier,

@@ -11,6 +11,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/login"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/userinfo"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/domain/consent"
 )
 
@@ -166,6 +167,18 @@ func (h *HydraHTTP) GetConsentSessions(ctx context.Context, identityID string) (
 		return nil, err
 	}
 	return consents, nil
+}
+
+// UserInfo ...
+func (h *HydraHTTP) GetUserInfo(ctx context.Context, token string) (*userinfo.UserInfo, error) {
+	userInfo := userinfo.UserInfo{}
+	headers := make(map[string]string)
+	headers["Authorization"] = "Bearer " + token
+	ctxWithAuth := context.WithValue(ctx, rester.HeadersContextKey, headers)
+	if err := h.publicJSONRester.Get(ctxWithAuth, "/userinfo", nil, &userInfo); err != nil {
+		return nil, err
+	}
+	return &userInfo, nil
 }
 
 //

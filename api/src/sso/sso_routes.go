@@ -266,4 +266,11 @@ func bindRoutes(
 		request.ResponseRedirectFound,
 		ss.CleanCookie,
 	))
+	// user info
+	authPath.GET(oidcHandlers.NewOptional(
+		"/userinfo",
+		func() request.Request { return &application.GetUserInfoCmd{} },
+		ss.GetUserInfo,
+		request.ResponseOK,
+	))
 }
