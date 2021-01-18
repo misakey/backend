@@ -47,6 +47,21 @@ The most important use of realtime at Misakey is to manage new events.
 
 Here are the events that can be received:
 
+#### `state.access_mode`
+
+```json
+{
+    "id": "(string) id of the event",
+    "type": "state.access_mode",
+    "box_id": "(string) id of the box",
+    "content": {
+        "value": "(string) (one of: public, limited): the new access mode value of the box",
+    },
+    "server_event_created_at": "(RFC3339 time): when the event was received by the server",
+    "sender": {{% include "include/event-identity.json" 4 %}}
+}
+```
+
 #### `msg.text`
 
 ```json

@@ -76,7 +76,7 @@ var eventTypeHandlerMapping = map[string]EventHandler{
 	etype.Msgfile:   {doMessage, group(sendRealtimeUpdate, countActivity, computeUsedSpace)},
 	etype.Msgtext:   {doMessage, group(sendRealtimeUpdate, countActivity, computeUsedSpace)},
 
-	etype.Stateaccessmode: {doStateAccessMode, nil},
+	etype.Stateaccessmode: {doStateAccessMode, group(sendRealtimeUpdate, countActivity)},
 	etype.Statekeyshare:   {doStateKeyShare, nil},
 
 	// never added by end-users directly but the system

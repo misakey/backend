@@ -21,7 +21,7 @@ const (
 )
 
 // MembersCanSee contains all event types that can be seen by members
-var MembersCanSee = []string{Create, Memberjoin, Memberleave, Memberkick, Msgtext, Msgfile, Statekeyshare}
+var MembersCanSee = []string{Create, Memberjoin, Memberleave, Memberkick, Msgtext, Msgfile, Statekeyshare, Stateaccessmode}
 
 // RequireToBuild contains all event types required to build the box
 var RequireToBuild = []string{Create, Stateaccessmode, Statekeyshare}
