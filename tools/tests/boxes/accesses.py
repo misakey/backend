@@ -70,9 +70,9 @@ with prettyErrorContext():
     )
     assert r.json()['details']['reason'] == 'not_member'
 
-    print("- identity 2 can become a member of the box and is added to the access list that they can list")
+    print("- identity 2 can become a member of the box and is added to the access list")
     join_box(s2, box_id)
-    r = s2.get(
+    r = s1.get(
         f'{URL_PREFIX}/boxes/{box_id}/accesses',
         expected_status_code=200,
     )

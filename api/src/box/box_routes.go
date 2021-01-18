@@ -70,7 +70,7 @@ func bindRoutes(
 
 	// ----------------------
 	// Access related routes
-	boxPath.GET(oidcHandlerFactory.NewACR1(
+	boxPath.GET(oidcHandlerFactory.NewACR2(
 		"/:id/accesses",
 		func() request.Request { return &application.ListAccessesRequest{} },
 		app.ListAccesses,

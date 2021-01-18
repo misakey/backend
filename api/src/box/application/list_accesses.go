@@ -38,6 +38,9 @@ func (app *BoxApplication) ListAccesses(ctx context.Context, genReq request.Requ
 	if acc == nil {
 		return nil, merr.Unauthorized()
 	}
+	if err := events.MustBeAdmin(ctx, app.DB, req.boxID, acc.IdentityID); err != nil {
+		return nil, err
+	}
 
 	accessEvents, err := events.FindActiveAccesses(ctx, app.DB, req.boxID)
 	if err != nil {
