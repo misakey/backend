@@ -71,6 +71,47 @@ func (sso *SSOService) GetIdentity(ctx context.Context, gen request.Request) (in
 	return view, err
 }
 
+// IdentityPubkeyByIdentifierQuery ...
+type IdentityPubkeyByIdentifierQuery struct {
+	IdentifierValue string `query:"identifier_value"`
+}
+
+// BindAndValidate ...
+func (query *IdentityPubkeyByIdentifierQuery) BindAndValidate(eCtx echo.Context) error {
+	err := eCtx.Bind(query)
+	if err != nil {
+		return merr.BadRequest().Desc(err.Error())
+	}
+	return v.ValidateStruct(query,
+		v.Field(&query.IdentifierValue, v.Required),
+	)
+}
+
+// GetIdentityPubkeyByIdentifier returns a list of pubkeys corresponding to the received identifier
+func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen request.Request) (interface{}, error) {
+	query := gen.(*IdentityPubkeyByIdentifierQuery)
+
+	// must only be authenticated
+	acc := oidc.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merr.Forbidden()
+	}
+
+	identity, err := identity.GetByIdentifierValue(ctx, sso.sqlDB, query.IdentifierValue)
+	// return an empty list of not found to respect list route semantic
+	if merr.IsANotFound(err) {
+		return []string{}, nil
+	}
+	if err != nil {
+		return nil, merr.From(err).Desc("retrieving identities")
+	}
+
+	if identity.Pubkey.IsZero() {
+		return []string{}, nil
+	}
+	return []string{identity.Pubkey.String}, nil
+}
+
 // PartialUpdateIdentityCmd ...
 type PartialUpdateIdentityCmd struct {
 	identityID          string
@@ -352,37 +393,4 @@ func (sso *SSOService) AttachCoupon(ctx context.Context, gen request.Request) (i
 	// NOTE: there is no valid coupon nowadays
 	err = merr.BadRequest().Add("value", merr.DVInvalid).Add("invalid_value", cmd.Value).Desc("invalid coupon")
 	return nil, err
-}
-
-// IdentityPubkeyByIdentifierQuery ...
-type IdentityPubkeyByIdentifierQuery struct {
-	IdentifierValue string `query:"identifier_value"`
-}
-
-// BindAndValidate ...
-func (query *IdentityPubkeyByIdentifierQuery) BindAndValidate(eCtx echo.Context) error {
-	err := eCtx.Bind(query)
-	if err != nil {
-		return merr.BadRequest().Desc(err.Error())
-	}
-	return v.ValidateStruct(query,
-		v.Field(&query.IdentifierValue, v.Required),
-	)
-}
-
-// GetIdentityPubkeyByIdentifier returns a list of pubkeys corresponding to the received identifier
-func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen request.Request) (interface{}, error) {
-	query := gen.(*IdentityPubkeyByIdentifierQuery)
-
-	// must only be authenticated
-	acc := oidc.GetAccesses(ctx)
-	if acc == nil {
-		return nil, merr.Forbidden()
-	}
-
-	identity, err := identity.GetByIdentifierValue(ctx, sso.sqlDB, query.IdentifierValue)
-	if err != nil {
-		return nil, merr.From(err).Desc("retrieving identities")
-	}
-	return []string{identity.Pubkey.String}, nil
 }

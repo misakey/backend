@@ -193,8 +193,9 @@ This must be used to build data for automatic invitations to boxes
 GET /identities/pubkey?identifier_value=michel@misakey.com
 ```
 
-Success response:
+Success Response:
 
+_Code:_
 ```bash
 HTTP 200 OK
 ```
@@ -205,7 +206,6 @@ HTTP 200 OK
   "anotherUrlSafeBase64PubKey"
 ]
 ```
-
 
 # 3. Identity Profiles
 
