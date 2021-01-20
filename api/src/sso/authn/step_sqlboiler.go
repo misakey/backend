@@ -3,7 +3,6 @@ package authn
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/volatiletech/null/v8"
@@ -25,11 +24,9 @@ func createStep(ctx context.Context, exec boil.ContextExecutor, step *Step) erro
 	if !step.CreatedAt.IsZero() {
 		sqlAuthnStep.CreatedAt = step.CreatedAt
 	}
-	fmt.Println("the step, ", step)
 	if err := sqlAuthnStep.Insert(ctx, exec, boil.Infer()); err != nil {
 		return err
 	}
-	fmt.Println("inserted ! ", sqlAuthnStep.ID)
 	// copy data potentially created in SQL layer
 	step.ID = sqlAuthnStep.ID
 	step.CreatedAt = sqlAuthnStep.CreatedAt
