@@ -70,11 +70,11 @@ func ListBoxSettings(ctx context.Context, exec boil.ContextExecutor, filters Box
 	mods := []qm.QueryMod{}
 
 	if filters.IdentityID != "" {
-		sqlboiler.BoxSettingWhere.IdentityID.EQ(filters.IdentityID)
+		mods = append(mods, sqlboiler.BoxSettingWhere.IdentityID.EQ(filters.IdentityID))
 	}
 
 	if len(filters.BoxIDs) != 0 {
-		sqlboiler.BoxSettingWhere.BoxID.IN(filters.BoxIDs)
+		mods = append(mods, sqlboiler.BoxSettingWhere.BoxID.IN(filters.BoxIDs))
 	}
 
 	dbBoxSettings, err := sqlboiler.BoxSettings(mods...).All(ctx, exec)
