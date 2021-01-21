@@ -90,7 +90,7 @@ func ListSenderBoxes(
 			return boxes, merr.From(err).Descf("computing box %s", e.BoxID)
 		}
 		boxes[i] = &box
-		boxIDs = append(boxIDs, box.ID)
+		boxIDs[i] = box.ID
 	}
 
 	// 4. retrieve box settings
