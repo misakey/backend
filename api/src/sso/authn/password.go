@@ -12,8 +12,9 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
-// AssertPasswordExistence ...
-func (as *Service) AssertPasswordExistence(ctx context.Context, identity identity.Identity) error {
+// assertPasswordExistence by checking the account id validity
+// return a conflict error is not valid
+func assertPasswordExistence(ctx context.Context, identity identity.Identity) error {
 	if identity.AccountID.String == "" {
 		return merr.Conflict().Desc("identity has no linked account").
 			Add("identity_id", merr.DVConflict).
@@ -23,20 +24,45 @@ func (as *Service) AssertPasswordExistence(ctx context.Context, identity identit
 }
 
 // preparePassword step by setting password hash information
-func (as *Service) preparePassword(ctx context.Context, exec boil.ContextExecutor, curIdentity identity.Identity, step *Step) error {
+func preparePassword(
+	ctx context.Context, as *Service, exec boil.ContextExecutor,
+	curIdentity identity.Identity, currentACR oidc.ClassRef, step *Step,
+) (*Step, error) {
 	step.MethodName = oidc.AMRPrehashedPassword
+	// if the identity does not have an account, to prepare the password impossible
+	// ask then for an account creation
+	if err := assertPasswordExistence(ctx, curIdentity); err != nil {
+		return requireAccount(ctx, as, exec, curIdentity, currentACR, step)
+	}
+
 	account, err := identity.GetAccount(ctx, exec, curIdentity.AccountID.String)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	params, err := argon2.DecodeParams(account.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := step.RawJSONMetadata.Marshal(params); err != nil {
-		return merr.From(err).Desc("marshaling password metadata")
+		return nil, merr.From(err).Desc("marshaling password metadata")
 	}
-	return nil
+	return step, nil
+}
+
+func requireAccount(
+	ctx context.Context, as *Service, exec boil.ContextExecutor,
+	curIdentity identity.Identity, currentACR oidc.ClassRef, step *Step,
+) (*Step, error) {
+	// if the ACR of the current authn process is less than 1, return an emailed code step to upgrade it
+	// because before setting an account, it is required to claim the email in the authn process
+	if currentACR.LessThan(oidc.ACR1) {
+		return prepareEmailedCode(ctx, as, exec, curIdentity, currentACR, step)
+	}
+
+	// otherwise, ask for account creation
+	step.MethodName = oidc.AMRAccountCreation
+	step.RawJSONMetadata = nil
+	return step, nil
 }
 
 func (as *Service) assertPassword(

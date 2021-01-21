@@ -15,8 +15,8 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
-// CreateEmailedCode authentication step
-func (as *Service) CreateEmailedCode(ctx context.Context, exec boil.ContextExecutor, identity identity.Identity) error {
+// createEmailedCode authentication step
+func (as *Service) createEmailedCode(ctx context.Context, exec boil.ContextExecutor, identity identity.Identity) error {
 	// try to retrieve an existing code for this identity
 	existing, err := getLastStep(ctx, exec, identity.ID, oidc.AMREmailedCode)
 	if err != nil && !merr.IsANotFound(err) {
@@ -72,19 +72,19 @@ func (as *Service) CreateEmailedCode(ctx context.Context, exec boil.ContextExecu
 	return nil
 }
 
-func (as *Service) prepareEmailedCode(
-	ctx context.Context, exec boil.ContextExecutor,
-	identity identity.Identity, step *Step,
-) error {
+func prepareEmailedCode(
+	ctx context.Context, as *Service, exec boil.ContextExecutor,
+	identity identity.Identity, currentACR oidc.ClassRef, step *Step,
+) (*Step, error) {
 	step.MethodName = oidc.AMREmailedCode
 	// we ignore the conflict error code - if a code already exist, we still want to return identity information
-	err := as.CreateEmailedCode(ctx, exec, identity)
+	err := as.createEmailedCode(ctx, exec, identity)
 	// set the error to nil on conflict because we want to fail silently
 	// if an emailed code was already generated
 	if merr.IsAConflict(err) {
-		return nil
+		return step, nil
 	}
-	return err
+	return step, err
 }
 
 func (as *Service) assertEmailedCode(

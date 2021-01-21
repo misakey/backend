@@ -36,6 +36,7 @@ type Identity struct {
 	NonIdentifiedPubkey null.String `boil:"non_identified_pubkey" json:"non_identified_pubkey,omitempty" toml:"non_identified_pubkey" yaml:"non_identified_pubkey,omitempty"`
 	IdentifierKind      string      `boil:"identifier_kind" json:"identifier_kind" toml:"identifier_kind" yaml:"identifier_kind"`
 	IdentifierValue     string      `boil:"identifier_value" json:"identifier_value" toml:"identifier_value" yaml:"identifier_value"`
+	MfaMethod           string      `boil:"mfa_method" json:"mfa_method" toml:"mfa_method" yaml:"mfa_method"`
 
 	R *identityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L identityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -54,6 +55,7 @@ var IdentityColumns = struct {
 	NonIdentifiedPubkey string
 	IdentifierKind      string
 	IdentifierValue     string
+	MfaMethod           string
 }{
 	ID:                  "id",
 	AccountID:           "account_id",
@@ -67,6 +69,7 @@ var IdentityColumns = struct {
 	NonIdentifiedPubkey: "non_identified_pubkey",
 	IdentifierKind:      "identifier_kind",
 	IdentifierValue:     "identifier_value",
+	MfaMethod:           "mfa_method",
 }
 
 // Generated where
@@ -84,6 +87,7 @@ var IdentityWhere = struct {
 	NonIdentifiedPubkey whereHelpernull_String
 	IdentifierKind      whereHelperstring
 	IdentifierValue     whereHelperstring
+	MfaMethod           whereHelperstring
 }{
 	ID:                  whereHelperstring{field: "\"identity\".\"id\""},
 	AccountID:           whereHelpernull_String{field: "\"identity\".\"account_id\""},
@@ -97,6 +101,7 @@ var IdentityWhere = struct {
 	NonIdentifiedPubkey: whereHelpernull_String{field: "\"identity\".\"non_identified_pubkey\""},
 	IdentifierKind:      whereHelperstring{field: "\"identity\".\"identifier_kind\""},
 	IdentifierValue:     whereHelperstring{field: "\"identity\".\"identifier_value\""},
+	MfaMethod:           whereHelperstring{field: "\"identity\".\"mfa_method\""},
 }
 
 // IdentityRels is where relationship names are stored.
@@ -135,9 +140,9 @@ func (*identityR) NewStruct() *identityR {
 type identityL struct{}
 
 var (
-	identityAllColumns            = []string{"id", "account_id", "display_name", "notifications", "avatar_url", "created_at", "color", "level", "pubkey", "non_identified_pubkey", "identifier_kind", "identifier_value"}
+	identityAllColumns            = []string{"id", "account_id", "display_name", "notifications", "avatar_url", "created_at", "color", "level", "pubkey", "non_identified_pubkey", "identifier_kind", "identifier_value", "mfa_method"}
 	identityColumnsWithoutDefault = []string{"id", "account_id", "display_name", "avatar_url", "color", "pubkey", "non_identified_pubkey", "identifier_kind", "identifier_value"}
-	identityColumnsWithDefault    = []string{"notifications", "created_at", "level"}
+	identityColumnsWithDefault    = []string{"notifications", "created_at", "level", "mfa_method"}
 	identityPrimaryKeyColumns     = []string{"id"}
 )
 

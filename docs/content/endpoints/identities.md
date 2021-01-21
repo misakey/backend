@@ -80,7 +80,8 @@ _JSON Body:_
     "avatar_url": null,
     "pubkey": "(null or url-safe base64)",
     "identifier_value": "iamagreat@dpo.com",
-    "identifier_kind": "email"
+    "identifier_kind": "email",
+    "mfa_method": "disabled"
   }
 ```
 
@@ -92,6 +93,7 @@ _JSON Body:_
 - `avatar_url` (uuid string) (nullable): the web-address of the avatar's file content.
 - `identifier_value` (string): the value of the identifier.
 - `identifier_kind` (string) (oneof: _email_): the kind of the identifier.
+- `mfa_method` (string) (oneof: _disabled_, _totp_, _webauthn_): the mfa method used by the identity, default is `disabled`.
 
 ## 2.4. Update an identity
 
@@ -116,9 +118,10 @@ _Path Parameters:_
 
 The fiels that can be patched are:
 - `display_name` (string): the identity display name.
-- `notifications` (string): notification setting. Must be one of `minimal`, `moderate`, `frequent`.
+- `notifications` (string) (oneof: _minimal_, _moderate_, _frequent_): notification setting.
 - `pubkey`
 - `non_identified_pubkey`
+- `mfa_method` (string) (oneof: _disabled_, _totp_, _webauthn_): configured mfa method of the user.
 
 ### 2.4.2. success response
 

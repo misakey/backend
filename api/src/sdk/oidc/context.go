@@ -24,7 +24,7 @@ func (ctx Context) SetACRValue(acr ClassRef) Context {
 	return ctx
 }
 
-// ACRValues ...
+// ACRValues return acr_values as an ClassRefs type
 func (ctx Context) ACRValues() ClassRefs {
 	acrs, ok := ctx["acr_values"]
 	if !ok {

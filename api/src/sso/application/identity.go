@@ -120,9 +120,10 @@ type PartialUpdateIdentityCmd struct {
 	Color               null.String `json:"color"`
 	Pubkey              null.String `json:"pubkey"`
 	NonIdentifiedPubkey null.String `json:"non_identified_pubkey"`
+	MFAMethod           null.String `json:"mfa_method"`
 }
 
-// BindAndValidate the RequireIdentityCmd
+// BindAndValidate the PartialUpdateIdentityCmd
 func (cmd *PartialUpdateIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
@@ -134,6 +135,7 @@ func (cmd *PartialUpdateIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 		v.Field(&cmd.Notifications, v.In("minimal", "moderate", "frequent")),
 		v.Field(&cmd.DisplayName, v.Length(3, 254)),
 		v.Field(&cmd.Color, v.Length(7, 7)),
+		v.Field(&cmd.MFAMethod, v.In("disabled", "totp", "webauthn")),
 	); err != nil {
 		return merr.From(err).Desc("validating identity patch")
 	}
@@ -180,6 +182,10 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 
 	if cmd.NonIdentifiedPubkey.Valid {
 		curIdentity.NonIdentifiedPubkey = cmd.NonIdentifiedPubkey
+	}
+
+	if cmd.MFAMethod.Valid {
+		curIdentity.MFAMethod = cmd.MFAMethod.String
 	}
 
 	err = identity.Update(ctx, tr, &curIdentity)

@@ -43,18 +43,6 @@ type processRepo interface {
 	GetClaims(ctx context.Context, token string) (oidc.AccessClaims, error)
 }
 
-func (as *Service) computeNextStep(
-	ctx context.Context, exec boil.ContextExecutor,
-	identity identity.Identity, p Process,
-) (Process, error) {
-	s, err := as.NextStep(ctx, exec, identity, p.CompleteAMRs.ToACR(), oidc.NewClassRefs(p.ExpectedACR))
-	if err != nil {
-		return p, merr.From(err).Desc("getting next step")
-	}
-	p.NextStep = &s
-	return p, nil
-}
-
 // InitProcess and store it
 // Set an AMR "BrowserCookie" if sessionACR is not empty.
 // NOTE: the identityID is not set by the init of a process today
@@ -122,15 +110,13 @@ func (as *Service) UpgradeProcess(
 		return process, merr.From(err).Desc("updating process")
 	}
 
-	// ACR OK
-	if process.CompleteAMRs.ToACR() >= process.ExpectedACR {
-		return process, nil
-	}
-
-	// ACR KO -  compute then return the next authn step
-	process, err = as.computeNextStep(ctx, exec, identity, process)
+	// get potential next step - can be nil
+	process.NextStep, err = as.PrepareNextStep(
+		ctx, exec,
+		identity, process.CompleteAMRs.ToACR(), process.ExpectedACR,
+	)
 	if err != nil {
-		return process, merr.From(err).Desc("computing next step")
+		return process, merr.From(err).Desc("getting next step")
 	}
 	return process, nil
 }

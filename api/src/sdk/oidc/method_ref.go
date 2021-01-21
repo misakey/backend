@@ -12,16 +12,20 @@ type MethodRef string
 type MethodRefs []MethodRef
 
 const (
-	// AMRBrowserCookie ...
+	// AMRBrowserCookie is the use of browser cookie to store an auth session
 	AMRBrowserCookie MethodRef = "browser_cookie"
-	// AMREmailedCode ...
+	// AMREmailedCode is the entering of a code received by email
 	AMREmailedCode MethodRef = "emailed_code"
-	// AMRPrehashedPassword ...
+	// AMRPrehashedPassword is the entering of a password
 	AMRPrehashedPassword MethodRef = "prehashed_password"
-	// AMRAccountCreation ...
+	// AMRAccountCreation is the creation of an account
 	AMRAccountCreation MethodRef = "account_creation"
-	// AMRResetPassword ...
+	// AMRResetPassword is the use of reset password flow
 	AMRResetPassword MethodRef = "reset_password"
+	// AMRTOTP is the use of a totp
+	AMRTOTP MethodRef = "totp"
+	// AMRWebauthn is the use of webauthn protocol
+	AMRWebauthn MethodRef = "webauthn"
 )
 
 // Add ...
@@ -40,15 +44,34 @@ func (amrs MethodRefs) Has(method MethodRef) bool {
 }
 
 // ToACR ...
+// password + webauthn = acr 4
+// password + totp: acr 3
+// password, reset password, account creation: acr 2
+// emailed code: acr 1
 func (amrs MethodRefs) ToACR() ClassRef {
+	// acr 4
+	if amrs.Has(AMRWebauthn) && amrs.Has(AMRPrehashedPassword) {
+		return ACR4
+	}
+
+	// acr 3
+	if amrs.Has(AMRTOTP) && amrs.Has(AMRPrehashedPassword) {
+		return ACR3
+	}
+
+	// acr 2
 	if amrs.Has(AMRPrehashedPassword) ||
 		amrs.Has(AMRResetPassword) ||
 		amrs.Has(AMRAccountCreation) {
 		return ACR2
 	}
+
+	// acr 1
 	if amrs.Has(AMREmailedCode) {
 		return ACR1
 	}
+
+	// acr 0
 	return ACR0
 }
 

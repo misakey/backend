@@ -33,13 +33,13 @@ func (as *Service) InitStep(
 ) error {
 	switch methodName {
 	case oidc.AMREmailedCode:
-		return as.CreateEmailedCode(ctx, exec, identity)
+		_, err := prepareEmailedCode(ctx, as, exec, identity, oidc.ACR0, &Step{})
+		return err
 	case oidc.AMRPrehashedPassword:
-		return as.AssertPasswordExistence(ctx, identity)
+		return assertPasswordExistence(ctx, identity)
 	default:
-		return merr.BadRequest().Desc("unknown method name").Add("method_name", merr.DVInvalid)
+		return merr.BadRequest().Desc("cannot init method").Add("method_name", merr.DVInvalid)
 	}
-
 }
 
 // AssertStep considering the method name and the received metadata
@@ -64,68 +64,49 @@ func (as *Service) AssertStep(
 	return metadataErr
 }
 
-// NextStep returns an Step according to ACR expectation and identity state
-// without expectation:
-// - return the preferredStep
-// with expectations:
-// - ACR1:
-//     * return emailed_code
-// - ACR2:
-//     * without account:
-//       -> unauthorized: return emailed_code
-//       -> authorized: return account_creation
-//     * with account: return prehashed_password
-func (as *Service) NextStep(
+type authnMethodHandler func(
+	context.Context, *Service, boil.ContextExecutor,
+	identity.Identity, oidc.ClassRef, *Step,
+) (*Step, error)
+
+var prepareStepFunc = map[oidc.MethodRef]authnMethodHandler{
+	oidc.AMREmailedCode:       prepareEmailedCode,
+	oidc.AMRPrehashedPassword: preparePassword,
+	oidc.AMRTOTP:              prepareTOTP,
+	oidc.AMRWebauthn:          prepareWebauthn,
+}
+
+// PrepareNextStep returns a prepared authn Step according to
+// the current ACR, expected ACR, and the identity state
+// it return a nil step when no step are required anymore
+//
+// see https://backend.docs.misakey.dev/concepts/authorization-and-authentication/#43-methods for more details about ruling
+func (as *Service) PrepareNextStep(
 	ctx context.Context, exec boil.ContextExecutor,
-	identity identity.Identity, currentACR oidc.ClassRef, expectations oidc.ClassRefs,
-) (Step, error) {
-	var err error
+	identity identity.Identity, currentACR oidc.ClassRef, expectedACR oidc.ClassRef,
+) (*Step, error) {
 	var step Step
 
-	switch expectations.Get() {
-	case oidc.ACR1:
-		err = as.prepareEmailedCode(ctx, exec, identity, &step)
-	case oidc.ACR2:
-		// no linked account ? require one
-		if identity.AccountID.IsZero() {
-			err = as.requireAccount(ctx, exec, identity, currentACR, &step)
-		} else {
-			err = as.preparePassword(ctx, exec, identity, &step)
+	// if no ACR is expected, set it according to the identity state
+	if expectedACR == "" || expectedACR == oidc.ACR0 {
+		expectedACR = oidc.ACR1
+		if identity.AccountID.Valid {
+			expectedACR = oidc.ACR2
 		}
-	default:
-		err = as.preferredStep(ctx, exec, identity, &step)
 	}
+	// in all cases, if any MFA method is setup, the expected ACR is enforce according to it
+	if identity.MFAMethod != "disabled" {
+		expectedACR = oidc.GetMethodACR(identity.MFAMethod)
+	}
+
+	nextMethod := oidc.GetNextMethod(currentACR, expectedACR)
+	if nextMethod == nil {
+		return nil, nil
+	}
+
+	step.MethodName = *nextMethod
 	step.IdentityID = identity.ID
-	return step, err
-}
-
-func (as *Service) requireAccount(
-	ctx context.Context, exec boil.ContextExecutor,
-	identity identity.Identity, currentACR oidc.ClassRef, step *Step,
-) error {
-	// if the ACR brought by authorization is less than 1, return an emailed code step to upgrade it
-	if currentACR.LessThan(oidc.ACR1) {
-		return as.prepareEmailedCode(ctx, exec, identity, step)
-	}
-
-	// otherwise, ask for account creation
-	step.MethodName = oidc.AMRAccountCreation
-	step.RawJSONMetadata = nil
-	return nil
-}
-
-// preferredStep is defined according to the identity state
-// - has no account: emailed_code
-// - has a linked account: prehashed_password
-func (as *Service) preferredStep(
-	ctx context.Context, exec boil.ContextExecutor,
-	identity identity.Identity, step *Step,
-) error {
-	// if the identity has no linked account, we automatically init a emailed code authentication step
-	if identity.AccountID.IsZero() {
-		return as.prepareEmailedCode(ctx, exec, identity, step)
-	}
-	return as.preparePassword(ctx, exec, identity, step)
+	return prepareStepFunc[step.MethodName](ctx, as, exec, identity, currentACR, &step)
 }
 
 // ExpireAll ...

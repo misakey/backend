@@ -114,11 +114,12 @@ it can contain default scopes, caller types, consented purposes or assigned role
 ID Token example:
 ```json
 {
-  "acr": "2",
+  "acr": "4",
   "amr": [
-    "pwd"
+    "pwd",
+    "webauthn"
   ],
-  "sco": "openid user pur.minimum_required rol.admin.31e987bb-5e2c-4174-9e4b-49c5786b192e",
+  "sco": "openid",
   "at_hash": "z-N-JLaW6RbtqWfqTABIrw",
   "aud": [
     "00000000-0000-0000-0000-000000000000"
@@ -187,6 +188,8 @@ Table of correspondance between ACR and Authentication methods:
 - `browser_cookie`: depends of the authentication method used to generate the session.
 - `emailed_code`: ACR 1.
 - `prehashed_password`: ACR 2.
+- `prehashed_password` + `totp`: ACR 3.
+- `prehashed_password` + `webauthn`: ACR 4.
 
 #### 4.3.2. Browser Cookie
 
@@ -226,6 +229,36 @@ To perform it:
 - The auth step method name must be: `prehashed_password`.
 
 Used alone, its final corresponding `acr` is 2.
+
+#### 4.3.4. (WIP) TOTP
+
+[TOTP][] is a way to achieve multi-factor authentication using a specific algorithm generating time-based one time password.
+
+To enforce it, during the init of the auth flow:
+- `acr_values` query parameter must be set to `3`.
+- `prompt` query parameter must be set to `login`.
+- the end-user must always have an account configured with `totp`. `webauthn` method might be used instead (cf dedicated section) and will result with an acr 4 (with a stronger authentication then).
+:warning: If the user hasn't configure any mfa method, this method cannot be performed and the final acr will be set according to the previous entered method (1, 2...).
+
+To perform it:
+- The auth step method name must be: `totp`.
+
+It is always combined with a `prehashed_password` first. Its final corresponding `acr` is 3.
+
+#### 4.3.4. (WIP) Webauthn
+
+[Webauthn][] is a way to achieve multi-factor authentication using public-key cryptography.
+
+To enforce it, during the init of the auth flow:
+- `acr_values` query parameter must be set to `4` or `3`.
+- `prompt` query parameter must be set to `login`.
+- the end-user must always have an account configured with `webauthn` method.
+- :warning: If the user hasn't configure any mfa method, this method cannot be performed and the final acr will be set according to the previous entered method (1, 2...).
+
+To perform it:
+- The auth step method name must be: `webauthn`.
+
+It is always combined with a `prehashed_password` first. Its final corresponding `acr` is 4.
 
 ### 4.4 ACR Errors Handling
 
@@ -268,6 +301,8 @@ while initing the auth flow to access the resource.
 [the authentication request]: https://openid.net/specs/openid-connect-core-1_0.html#ImplicitAuthRequest
 [Level of Assurance]: https://www.itu.int/rec/T-REC-X.1254-201209-I/en
 [Argon2 server relief]: https://password-hashing.net/submissions/specs/Argon-v3.pdf
+[TOTP]: https://tools.ietf.org/html/rfc6238
+[Webauthn]: https://webauthn.guide/
 
 ## 5. CSRF Protection
 

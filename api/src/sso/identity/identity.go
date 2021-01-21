@@ -29,6 +29,7 @@ type Identity struct {
 	Level               int            `json:"level"`
 	Pubkey              null.String    `json:"pubkey"`
 	NonIdentifiedPubkey null.String    `json:"non_identified_pubkey"`
+	MFAMethod           string         `json:"mfa_method"`
 }
 
 // IdentifierKind ...
@@ -61,6 +62,7 @@ func (i Identity) toSQLBoiler() *sqlboiler.Identity {
 		Level:               i.Level,
 		Pubkey:              i.Pubkey,
 		NonIdentifiedPubkey: i.NonIdentifiedPubkey,
+		MfaMethod:           i.MFAMethod,
 	}
 }
 
@@ -76,6 +78,7 @@ func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 	i.Level = src.Level
 	i.Pubkey = src.Pubkey
 	i.NonIdentifiedPubkey = src.NonIdentifiedPubkey
+	i.MFAMethod = src.MfaMethod
 	return i
 }
 

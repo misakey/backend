@@ -161,6 +161,7 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 			DisplayName:     strings.Title(strings.Replace(strings.Split(cmd.IdentifierValue, "@")[0], ".", " ", -1)),
 			IdentifierValue: cmd.IdentifierValue,
 			IdentifierKind:  identity.EmailIdentifier,
+			MFAMethod:       "disabled",
 		}
 		err = identity.Create(ctx, tr, sso.redConn, &curIdentity)
 		if err != nil {
@@ -168,11 +169,18 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 		}
 	}
 
-	// 3. get the appropriate authn step
-	// NOTE: not handled - authnsession ACR
-	step, err := sso.AuthenticationService.NextStep(ctx, tr, curIdentity, oidc.ACR0, logCtx.OIDCContext.ACRValues())
+	// 3. get the appropriate authn step - this is the start of the login flow so the current ACR is 0
+	expectedACR := logCtx.OIDCContext.ACRValues().Get()
+	currentACR := oidc.ACR0
+	step, err := sso.AuthenticationService.PrepareNextStep(
+		ctx, tr,
+		curIdentity, currentACR, expectedACR,
+	)
 	if err != nil {
-		return nil, merr.From(err).Desc("getting next authn step")
+		return nil, merr.From(err).Descf("preparing step").Add("identity_id", curIdentity.ID).Add("expected_acr", expectedACR.String())
+	}
+	if step == nil {
+		return nil, merr.Internal().Descf("step is nil").Add("identity_id", curIdentity.ID).Add("expected_acr", expectedACR.String())
 	}
 	if cErr := tr.Commit(); cErr != nil {
 		return nil, merr.From(cErr).Desc("committing transaction")

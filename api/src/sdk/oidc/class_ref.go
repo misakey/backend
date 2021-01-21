@@ -15,6 +15,10 @@ const (
 	ACR1 ClassRef = "1"
 	// ACR2 ...
 	ACR2 ClassRef = "2"
+	// ACR3 ...
+	ACR3 ClassRef = "3"
+	// ACR4 ...
+	ACR4 ClassRef = "4"
 )
 
 // String ...
@@ -22,25 +26,17 @@ func (acr ClassRef) String() string {
 	return string(acr)
 }
 
+var acrToInt = map[ClassRef]int{
+	ACR0: 0,
+	ACR1: 1,
+	ACR2: 2,
+	ACR3: 3,
+	ACR4: 4,
+}
+
 // LessThan ...
 func (acr ClassRef) LessThan(minimum ClassRef) bool {
-	// empty acr is always lesser
-	if acr == "" {
-		return true
-	}
-
-	// ACR0 has only one equivalent: 0
-	if acr == ACR0 && minimum != ACR0 {
-		return true
-	}
-
-	// ACR1 is beaten if minimum is ACR2
-	if acr == ACR1 && minimum == ACR2 {
-		return true
-	}
-
-	// ACR2 can't be beaten
-	return false
+	return acrToInt[acr] < acrToInt[minimum]
 }
 
 // NewClassRefs ...
@@ -48,17 +44,15 @@ func NewClassRefs(acr ClassRef) ClassRefs {
 	return []ClassRef{acr}
 }
 
-// Get ...
-// Multiple ACRValues capability is ignored so it always takes the first one
+// Get the highest acr values
 func (acrs ClassRefs) Get() ClassRef {
-	acr := ACR0
-	if len(acrs) > 0 {
-		switch acrs[0] {
-		case ACR0, ACR1, ACR2:
-			acr = acrs[0]
+	max := ACR0
+	for _, acr := range acrs {
+		if max.LessThan(acr) {
+			max = acr
 		}
 	}
-	return acr
+	return max
 }
 
 // Set ...
@@ -73,8 +67,43 @@ func (acr ClassRef) RememberFor() int {
 	switch acr {
 	case ACR1:
 		return 3600 // 1h
-	case ACR2:
+	case ACR2, ACR3, ACR4:
 		return 2592000 // 30d
 	}
 	return 0
+}
+
+var methodToACR = map[MethodRef]ClassRef{
+	AMREmailedCode:       ACR1,
+	AMRPrehashedPassword: ACR2,
+	AMRTOTP:              ACR3,
+	AMRWebauthn:          ACR4,
+}
+
+// GetMethodACR based on the static map above
+func GetMethodACR(methodRefStr string) ClassRef {
+	return methodToACR[MethodRef(methodRefStr)]
+}
+
+var acrToMethod = map[ClassRef]MethodRef{
+	ACR1: AMREmailedCode,
+	ACR2: AMRPrehashedPassword,
+	ACR3: AMRTOTP,
+	ACR4: AMRWebauthn,
+}
+
+// GetNextMethord returns next expected authn method
+// and return nil if no next method is expected
+func GetNextMethod(currentACR ClassRef, expectedACR ClassRef) *MethodRef {
+	// if the current ACR equals or is higher than the expected,
+	// there is no more authn method to perform
+	if acrToInt[currentACR] >= acrToInt[expectedACR] {
+		return nil
+	}
+
+	method, ok := acrToMethod[expectedACR]
+	if ok {
+		return &method
+	}
+	return nil
 }

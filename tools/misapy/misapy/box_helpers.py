@@ -49,7 +49,10 @@ def create_box_and_post_some_events_to_it(session, public=True):
         expected_status_code=201
     )
 
+    expected_event_count = 3
+
     if public:
+        expected_event_count += 1
         print(f'- set access mode to public for box {box_id}')
         s.post(
             f'{URL_PREFIX}/boxes/{box_id}/events',
@@ -67,7 +70,7 @@ def create_box_and_post_some_events_to_it(session, public=True):
     check_response(
         r,
         [
-            lambda r: assert_fn(len(r.json()) == 3),
+            lambda r: assert_fn(len(r.json()) == expected_event_count),
         ]
     )
     for event in r.json():

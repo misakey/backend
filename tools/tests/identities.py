@@ -67,7 +67,42 @@ with prettyErrorContext():
     assert r.json()[0]['details'] == None
     assert r.json()[0]['acknowledged_at'] != None
 
-
+    print('- check some patch on identites')
+    # default settings are there
+    r = s1.get(
+        f'{URL_PREFIX}/identities/{s1.identity_id}',
+        expected_status_code=200
+    )
+    assert r.json()['identifier_value'] == s1.email
+    assert r.json()['notifications'] == 'minimal'
+    assert r.json()['mfa_method'] == 'disabled'
+    # patch both notifications and mfa_mode
+    s1.patch(
+        f'{URL_PREFIX}/identities/{s1.identity_id}',
+        json={'notifications': 'moderate', 'mfa_method': 'totp'},
+        expected_status_code=204
+    )
+    # verify the patch
+    r = s1.get(
+        f'{URL_PREFIX}/identities/{s1.identity_id}',
+        expected_status_code=200
+    )
+    assert r.json()['identifier_value'] == s1.email # verify non-emptyness
+    assert r.json()['notifications'] == 'moderate'
+    assert r.json()['mfa_method'] == 'totp'
+    # try non-existing mfa_method
+    s1.patch(
+        f'{URL_PREFIX}/identities/{s1.identity_id}',
+        json={'notifications': 'moderate', 'mfa_method': 'canexistepas'},
+        expected_status_code=400
+    )
+    # put back to disabled for potential further testing
+    s1.patch(
+        f'{URL_PREFIX}/identities/{s1.identity_id}',
+        json={'mfa_method': 'disabled'},
+        expected_status_code=204
+    )
+    
     print('- check profile routes')
     s1 = get_authenticated_session(acr_values=2)
     s2 = get_authenticated_session(acr_values=2)
