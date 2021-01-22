@@ -6,8 +6,6 @@ Nginx configuration to distribute requests across services.
 
 ### Gateway Introduction
 
-By default, the service is only reachable from `misakey_vpn` network, if you have configured it this way. In order to expose the service to the external world, we use a reverse proxy.
-
 The reverse proxy we use today is [nginx](https://www.nginx.com/resources/wiki/).
 
 This reverse proxy is responsible for:
@@ -37,6 +35,8 @@ The gateway image is built and deployed each time the repo is pushed. It generat
   - `registry.misakey.dev/misakey/backend/gateway:preprod`
   - `registry.misakey.dev/misakey/backend/gateway:latest`
 
+
+:warning: Following command consider dns is the misakey.com app demo on production and pre-production.
 
 - Make sure the image you want to deploy exists
 - In the `gateway` root directory, run:

@@ -9,33 +9,10 @@
 
 </td></tr></table>
 
-## Introduction
+## What is Misakey ?
 
-[Misakey](https://misakey.com) is the user account solution for people and applications who
-value privacy and simplicity.
-
-You can find more info about Misakey in our [website](https://www.misakey.com) and our [about page](https://about.misakey.com/).
-
-## Folder architecture
-
-The project is composed of:
-* `api`: the main API service, crafted with Golang. 
-* `hydra`: configuration to run an instance of [Ory Hydra](https://github.com/ory/hydra) to manage the auth protocol.
-* `gateway`: an nginx gateway configuration.
-* `tools`: some script helpers and functional testing.
-* `docs`: the concepts and endpoints documentation.
-
-We host the platform on a Kubernetes cluster, so everything we build is done to work in Docker and k8s.
-
-## Community
-
-We don't have tools to welcome community for now. 
-
-You want to talk with us, or contribute to the project? 
-You can open an issue, or contact us by email at [love@misakey.com](mailto:love@misakey.com)!.
-
-We will answer you quickly and would love to hear feedback from you!
-
+- The project documentation is available [here](https://docs.misakey.com/docs/).
+- The REST API documentation is available [here](https://backend.docs.misakey.dev/).
 ## License
 
 Most of the code is released under the AGPLv3. 
