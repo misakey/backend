@@ -9,12 +9,12 @@ module.exports = {
     {
       type: 'category',
       label: 'Getting Started',
-      items: ['getting-started/auth-quickstart', 'getting-started/running-locally'],
+      items: ['getting-started/running-locally'],
     },
     {
       type: 'category',
       label: 'Guides',
-      items: ['guides/installation', 'guides/sdk-integration', 'guides/cms-integration', 'guides/create-auth-clients'],
+      items: ['guides/authentication', 'guides/deploy-on-prod', 'guides/create-auth-clients', 'guides/sdk-integration', 'guides/cms-integration'],
     },
   ],
 };

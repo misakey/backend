@@ -4,19 +4,20 @@ title: Authentication
 
 ## Goal
 
-Misakey lets you add modern authentication to your application in a few minutes.
+Misakey lets you add modern authentication to your application in a few minutes. You have two possibilites to do so:
 
-You can host your own instance of Misakey SSO (see the [installation guide](guides/installation.md)), or you can use Misakey's own SSO instance.
+- You can host your own instance of Misakey SSO [locally](getting-started/running-locally.md) and [on your infrastructure](guides/deploy-on-prod.md)).
+- You can use [Misakey's own SSO instance](app.misakey.com).
 
 You can see an example of an app (an empty demo React application) using Misakey auth at https://demo.sso.misakey.com/.
 
 ## Integration
-
 ### Step 1: Create your SSO Client
 
-If you are using your own instance of Misakey SSO, please follow the [guide to create a client](guides/create-auth-clients.md).
+If you are using your own instance of Misakey SSO, you must create your own sso client following [this guide](guides/create-auth-clients.md).
 
-If you want to use Misakey's instance, please contact us ([love@misakey.com](mailto:love@misakey.com)). We will create credentials on our instance and send them to you (the automated registration interface is still being developped).
+If you want to use [Misakey's instance](app.misakey.com), please contact us ([love@misakey.com](mailto:love@misakey.com)).
+We will quickly create credentials on our instance and send them to you (the automated registration interface is still being developped).
 
 ### Step 2: Install the SDK
 

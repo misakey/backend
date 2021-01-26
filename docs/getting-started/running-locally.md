@@ -4,7 +4,7 @@ title: Running locally
 
 In this tutorial, you will get to run the Misakey's stack locally in 5 min. After that you will be able to start hacking around. 
 
-For production install, please check [the dedicated guide](guides/installation.md).
+For production install, please check [the dedicated guide](guides/deploy-on-prod.md).
 
 ## Install the Stack
 
@@ -48,4 +48,4 @@ Then you can play with the demo application: using the auth, creating data chann
 
 From there, you can create your own app using the SSO and the other bricks of the system. 
 
-You can find a more complete documentation of the APIs and the usage of the stack in dedicated guides.
+You can find a more complete [documentation of the APIs](https://backend.docs.misakey.dev/) and the usage of the stack in dedicated guides.

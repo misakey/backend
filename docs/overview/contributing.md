@@ -11,11 +11,11 @@ Misakey tech is mainly developed by the Misakey company. We decided to share all
 - CMS Plugins
 
 
-## How to Ask for Features or Bug Fixes
+## How to Ask for Integrations, Features or Bug Fixes
 
-You can create issues on GitHub, or if you are not familiar with the tool, email us at [love@misakey.com](mailto:love@misakey.com).
+Please open a [Github issue](https://github.com/misakey/backend/issues/new) or if you prefer, feel free to contact us at [love@misakey.com](mailto:love@misakey.com).
 
 ## How to Ask for Our Expertise to Integrate the System
 
-All our code is open source and free to use. Our business model is based on helping companies and projects integrating our technology. If you need us to go further with the tech, feel free to email us at [love@misakey.com](mailto:love@misakey.com), we will quickly get back to you.
+All our code is open source and free to use. Our business model is based on helping companies and projects integrating our technology. If you need us to go further with the tech, feel free to email us at [love@misakey.com](mailto:love@misakey.com), we will quickly get in touch with you.
 

@@ -50,11 +50,19 @@ module.exports = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Main',
           items: [
             {
-              label: 'Style Guide',
-              to: 'docs/',
+              label: 'Website',
+              href: 'https://www.misakey.com',
+            },
+            {
+              label: 'Demo',
+              href: 'https://app.misakey.com',
+            },
+            {
+              label: 'GitHub',
+              href: 'https://github.com/misakey',
             },
           ],
         },
@@ -62,16 +70,12 @@ module.exports = {
           title: 'Community',
           items: [
             {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-            },
-            {
-              label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
-            },
-            {
               label: 'Twitter',
-              href: 'https://twitter.com/docusaurus',
+              href: 'https://twitter.com/gomisakey',
+            },
+            {
+              label: 'Linkedin',
+              href: 'https://www.linkedin.com/company/gomisakey',
             },
           ],
         },
@@ -79,16 +83,16 @@ module.exports = {
           title: 'More',
           items: [
             {
-              label: 'Website',
-              href: 'https://www.misakey.com',
-            },
-            {
-              label: 'Blog',
+              label: 'French Blog',
               href: 'https://blog.misakey.com'
             },
             {
-              label: 'GitHub',
-              href: 'https://github.com/misakey/backend',
+              label: 'Encryption White Paper',
+              href: 'https://about.misakey.com/cryptography/white-paper.html'
+            },
+            {
+              label: 'About',
+              href: 'https://about.misakey.com/#/fr/',
             },
           ],
         },

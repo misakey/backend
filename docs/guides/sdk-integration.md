@@ -9,14 +9,11 @@ If you need a SDK for a specific technology, feel free to contact us ([love@misa
 
 ## General Considerations
 
-Misakey aims at helping every website and application to get a clean user management and personal data management.
+Most of the processing in Misakey technology is done by the Misakey services, which you can either host yourself or consume as a SaaS (see [the CMS integration guide](/guides/cms-integration.md)). Now all you have to do for your application to communicate with the Misakey services is to use one of our SDKs.
 
-Most of the processing in Misakey technolory is done by the Misakey services, which you can either host yourself or consume as a SaaS (see [the CMS integration guide](/guides/cms-integration.md)). Now all you have to do for your application to communicate with the Misakey services is to use one of our SDKs.
+Do not hesitate to develop your own SDK or contribute to existing ones!
 
-Since everything we do is open source, if you have the right skills you can even develop your own SDK!
-
-
-## Whatdo Misakey SDKs Do ?
+## What does Misakey SDKs do?
 
 ### Frontend SDK
 
@@ -28,10 +25,10 @@ Frontend SDK provide the following features:
 
 ### Backend SDK
 
-- Definition of Access management rules
+- Definition of access management rules
 - Data model management
 - Programmatic data access 
-- Messaging 
+- Messaging
 
 ## Which SDKs are available ?
 
