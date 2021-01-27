@@ -162,7 +162,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 _Query Parameters:_
 Pagination ([more info](/concepts/pagination)). No pagination by default.
@@ -195,7 +195,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 _Query Parameters:_
 
@@ -233,7 +233,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 ### 2.5.2. response
 
@@ -259,7 +259,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 ### 2.6.2. response
 

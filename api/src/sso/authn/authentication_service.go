@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/duo-labs/webauthn/webauthn"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/notifications/email"
 )
 
@@ -21,6 +23,8 @@ type Service struct {
 	emails    email.Sender
 
 	codeValidity time.Duration
+
+	WebauthnHandler *webauthn.WebAuthn
 }
 
 type sessionRepo interface {
@@ -32,12 +36,14 @@ type sessionRepo interface {
 func NewService(
 	sessions sessionRepo, processes processRepo,
 	templates email.Renderer, emails email.Sender,
+	webauthnHandler *webauthn.WebAuthn,
 ) Service {
 	return Service{
-		sessions:     sessions,
-		processes:    processes,
-		templates:    templates,
-		emails:       emails,
-		codeValidity: 5 * time.Minute,
+		sessions:        sessions,
+		processes:       processes,
+		templates:       templates,
+		emails:          emails,
+		codeValidity:    5 * time.Minute,
+		WebauthnHandler: webauthnHandler,
 	}
 }

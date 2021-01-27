@@ -3,13 +3,14 @@ package authn
 import (
 	"context"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn/argon2"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn/argon2"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
 // assertPasswordExistence by checking the account id validity
@@ -25,14 +26,14 @@ func assertPasswordExistence(ctx context.Context, identity identity.Identity) er
 
 // preparePassword step by setting password hash information
 func preparePassword(
-	ctx context.Context, as *Service, exec boil.ContextExecutor,
+	ctx context.Context, as *Service, exec boil.ContextExecutor, redConn *redis.Client,
 	curIdentity identity.Identity, currentACR oidc.ClassRef, step *Step,
 ) (*Step, error) {
 	step.MethodName = oidc.AMRPrehashedPassword
 	// if the identity does not have an account, to prepare the password impossible
 	// ask then for an account creation
 	if err := assertPasswordExistence(ctx, curIdentity); err != nil {
-		return requireAccount(ctx, as, exec, curIdentity, currentACR, step)
+		return requireAccount(ctx, as, exec, redConn, curIdentity, currentACR, step)
 	}
 
 	account, err := identity.GetAccount(ctx, exec, curIdentity.AccountID.String)
@@ -50,13 +51,13 @@ func preparePassword(
 }
 
 func requireAccount(
-	ctx context.Context, as *Service, exec boil.ContextExecutor,
+	ctx context.Context, as *Service, exec boil.ContextExecutor, redConn *redis.Client,
 	curIdentity identity.Identity, currentACR oidc.ClassRef, step *Step,
 ) (*Step, error) {
 	// if the ACR of the current authn process is less than 1, return an emailed code step to upgrade it
 	// because before setting an account, it is required to claim the email in the authn process
 	if currentACR.LessThan(oidc.ACR1) {
-		return prepareEmailedCode(ctx, as, exec, curIdentity, currentACR, step)
+		return prepareEmailedCode(ctx, as, exec, redConn, curIdentity, currentACR, step)
 	}
 
 	// otherwise, ask for account creation

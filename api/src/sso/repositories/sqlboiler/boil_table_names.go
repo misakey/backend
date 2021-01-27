@@ -12,6 +12,7 @@ var TableNames = struct {
 	IdentityNotification          string
 	IdentityProfileSharingConsent string
 	UsedCoupon                    string
+	WebauthnCredential            string
 }{
 	Account:                       "account",
 	AuthenticationStep:            "authentication_step",
@@ -21,4 +22,5 @@ var TableNames = struct {
 	IdentityNotification:          "identity_notification",
 	IdentityProfileSharingConsent: "identity_profile_sharing_consent",
 	UsedCoupon:                    "used_coupon",
+	WebauthnCredential:            "webauthn_credential",
 }

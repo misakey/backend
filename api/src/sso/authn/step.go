@@ -28,15 +28,17 @@ type Step struct {
 
 // InitStep ...
 func (as *Service) InitStep(
-	ctx context.Context, exec boil.ContextExecutor,
+	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	identity identity.Identity, methodName oidc.MethodRef,
 ) error {
 	switch methodName {
 	case oidc.AMREmailedCode:
-		_, err := prepareEmailedCode(ctx, as, exec, identity, oidc.ACR0, &Step{})
+		_, err := prepareEmailedCode(ctx, as, exec, redConn, identity, oidc.ACR0, &Step{})
 		return err
 	case oidc.AMRPrehashedPassword:
 		return assertPasswordExistence(ctx, identity)
+	case oidc.AMRWebauthn:
+		return assertWebauthnCredentials(ctx, exec, identity)
 	default:
 		return merr.BadRequest().Desc("cannot init method").Add("method_name", merr.DVInvalid)
 	}
@@ -58,6 +60,8 @@ func (as *Service) AssertStep(
 		metadataErr = as.assertPassword(ctx, exec, *identity, assertion)
 	case oidc.AMRAccountCreation:
 		metadataErr = as.assertAccountCreation(ctx, exec, redConn, challenge, identity, assertion)
+	case oidc.AMRWebauthn:
+		metadataErr = as.assertWebauthn(ctx, exec, redConn, *identity, assertion)
 	default:
 		metadataErr = merr.BadRequest().Add("method_name", merr.DVMalformed)
 	}
@@ -65,7 +69,7 @@ func (as *Service) AssertStep(
 }
 
 type authnMethodHandler func(
-	context.Context, *Service, boil.ContextExecutor,
+	context.Context, *Service, boil.ContextExecutor, *redis.Client,
 	identity.Identity, oidc.ClassRef, *Step,
 ) (*Step, error)
 
@@ -82,7 +86,7 @@ var prepareStepFunc = map[oidc.MethodRef]authnMethodHandler{
 //
 // see https://backend.docs.misakey.dev/concepts/authorization-and-authentication/#43-methods for more details about ruling
 func (as *Service) PrepareNextStep(
-	ctx context.Context, exec boil.ContextExecutor,
+	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	identity identity.Identity, currentACR oidc.ClassRef, expectedACR oidc.ClassRef,
 ) (*Step, error) {
 	var step Step
@@ -106,7 +110,7 @@ func (as *Service) PrepareNextStep(
 
 	step.MethodName = *nextMethod
 	step.IdentityID = identity.ID
-	return prepareStepFunc[step.MethodName](ctx, as, exec, identity, currentACR, &step)
+	return prepareStepFunc[step.MethodName](ctx, as, exec, redConn, identity, currentACR, &step)
 }
 
 // ExpireAll ...

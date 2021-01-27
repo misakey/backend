@@ -64,7 +64,7 @@ func (sso *SSOService) InitAuthnStep(ctx context.Context, genReq request.Request
 	}
 
 	// 2. we try to init the authentication step
-	err = sso.AuthenticationService.InitStep(ctx, tr, curIdentity, cmd.Step.MethodName)
+	err = sso.AuthenticationService.InitStep(ctx, tr, sso.redConn, curIdentity, cmd.Step.MethodName)
 	if err != nil {
 		return nil, err
 	}

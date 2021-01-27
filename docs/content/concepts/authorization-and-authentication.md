@@ -245,12 +245,12 @@ To perform it:
 
 It is always combined with a `prehashed_password` first. Its final corresponding `acr` is 3.
 
-#### 4.3.4. (WIP) Webauthn
+#### 4.3.4. Webauthn
 
-[Webauthn][] is a way to achieve multi-factor authentication using public-key cryptography.
+[Webauthn][https://webauthn.guide/] is a way to achieve multi-factor authentication using public-key cryptography.
 
 To enforce it, during the init of the auth flow:
-- `acr_values` query parameter must be set to `4` or `3`.
+- `acr_values` query parameter must be set to `4`.
 - `prompt` query parameter must be set to `login`.
 - the end-user must always have an account configured with `webauthn` method.
 - :warning: If the user hasn't configure any mfa method, this method cannot be performed and the final acr will be set according to the previous entered method (1, 2...).

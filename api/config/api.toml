@@ -6,6 +6,7 @@
   avatar_url = "https://api.misakey.com.local/avatars"
   # optional location of box encrypted files (in case of ENV=development - storage on the file system instead of remote aws s3)
   encrypted_files = "/etc/encrypted-files"
+  domain = "app.misakey.com.local"
 
 [authflow]
   # frontend location to redirect user if big issues occurs

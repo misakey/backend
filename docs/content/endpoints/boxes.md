@@ -27,7 +27,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 _JSON Body:_
 ```json
@@ -79,7 +79,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 _Path Parameters:_
 - `id` (uuid string): the box id wished to be retrieved.
@@ -168,7 +168,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 ### 2.4.2. response
 
@@ -199,7 +199,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 _Path Parameters:_
 - `id` (uuid string): the box id wished to be deleted.
@@ -251,7 +251,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 ### 2.6.2. success response
 
@@ -290,7 +290,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 ### 3.2.2. success response
 
@@ -346,7 +346,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 _Query Parameters:_
 
@@ -387,7 +387,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 ### 4.2.2. response
 

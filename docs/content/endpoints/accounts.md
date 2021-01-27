@@ -42,7 +42,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 _Path Parameters:_
 - `id` (uuid string): the account id.
@@ -130,7 +130,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 _Path Parameters:_
 - `id` (uuid string): the unique account id.
@@ -167,7 +167,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 _Path Parameters:_
 - `id` (uuid string): the unique account id.

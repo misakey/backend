@@ -112,6 +112,7 @@ var IdentityRels = struct {
 	IdentityNotifications          string
 	IdentityProfileSharingConsents string
 	UsedCoupons                    string
+	WebauthnCredentials            string
 }{
 	Account:                        "Account",
 	AuthenticationSteps:            "AuthenticationSteps",
@@ -119,6 +120,7 @@ var IdentityRels = struct {
 	IdentityNotifications:          "IdentityNotifications",
 	IdentityProfileSharingConsents: "IdentityProfileSharingConsents",
 	UsedCoupons:                    "UsedCoupons",
+	WebauthnCredentials:            "WebauthnCredentials",
 }
 
 // identityR is where relationships are stored.
@@ -129,6 +131,7 @@ type identityR struct {
 	IdentityNotifications          IdentityNotificationSlice          `boil:"IdentityNotifications" json:"IdentityNotifications" toml:"IdentityNotifications" yaml:"IdentityNotifications"`
 	IdentityProfileSharingConsents IdentityProfileSharingConsentSlice `boil:"IdentityProfileSharingConsents" json:"IdentityProfileSharingConsents" toml:"IdentityProfileSharingConsents" yaml:"IdentityProfileSharingConsents"`
 	UsedCoupons                    UsedCouponSlice                    `boil:"UsedCoupons" json:"UsedCoupons" toml:"UsedCoupons" yaml:"UsedCoupons"`
+	WebauthnCredentials            WebauthnCredentialSlice            `boil:"WebauthnCredentials" json:"WebauthnCredentials" toml:"WebauthnCredentials" yaml:"WebauthnCredentials"`
 }
 
 // NewStruct creates a new relationship struct
@@ -351,6 +354,27 @@ func (o *Identity) UsedCoupons(mods ...qm.QueryMod) usedCouponQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"used_coupon\".*"})
+	}
+
+	return query
+}
+
+// WebauthnCredentials retrieves all the webauthn_credential's WebauthnCredentials with an executor.
+func (o *Identity) WebauthnCredentials(mods ...qm.QueryMod) webauthnCredentialQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"webauthn_credential\".\"identity_id\"=?", o.ID),
+	)
+
+	query := WebauthnCredentials(queryMods...)
+	queries.SetFrom(query.Query, "\"webauthn_credential\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"webauthn_credential\".*"})
 	}
 
 	return query
@@ -911,6 +935,97 @@ func (identityL) LoadUsedCoupons(ctx context.Context, e boil.ContextExecutor, si
 	return nil
 }
 
+// LoadWebauthnCredentials allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (identityL) LoadWebauthnCredentials(ctx context.Context, e boil.ContextExecutor, singular bool, maybeIdentity interface{}, mods queries.Applicator) error {
+	var slice []*Identity
+	var object *Identity
+
+	if singular {
+		object = maybeIdentity.(*Identity)
+	} else {
+		slice = *maybeIdentity.(*[]*Identity)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &identityR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &identityR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`webauthn_credential`),
+		qm.WhereIn(`webauthn_credential.identity_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load webauthn_credential")
+	}
+
+	var resultSlice []*WebauthnCredential
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice webauthn_credential")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on webauthn_credential")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for webauthn_credential")
+	}
+
+	if singular {
+		object.R.WebauthnCredentials = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &webauthnCredentialR{}
+			}
+			foreign.R.Identity = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.IdentityID {
+				local.R.WebauthnCredentials = append(local.R.WebauthnCredentials, foreign)
+				if foreign.R == nil {
+					foreign.R = &webauthnCredentialR{}
+				}
+				foreign.R.Identity = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetAccount of the identity to the related item.
 // Sets o.R.Account to related.
 // Adds o to related.R.Identities.
@@ -1317,6 +1432,59 @@ func (o *Identity) AddUsedCoupons(ctx context.Context, exec boil.ContextExecutor
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &usedCouponR{
+				Identity: o,
+			}
+		} else {
+			rel.R.Identity = o
+		}
+	}
+	return nil
+}
+
+// AddWebauthnCredentials adds the given related objects to the existing relationships
+// of the identity, optionally inserting them as new records.
+// Appends related to o.R.WebauthnCredentials.
+// Sets related.R.Identity appropriately.
+func (o *Identity) AddWebauthnCredentials(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WebauthnCredential) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.IdentityID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"webauthn_credential\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"identity_id"}),
+				strmangle.WhereClause("\"", "\"", 2, webauthnCredentialPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.IdentityID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &identityR{
+			WebauthnCredentials: related,
+		}
+	} else {
+		o.R.WebauthnCredentials = append(o.R.WebauthnCredentials, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &webauthnCredentialR{
 				Identity: o,
 			}
 		} else {

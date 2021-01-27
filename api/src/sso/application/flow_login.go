@@ -173,7 +173,7 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 	expectedACR := logCtx.OIDCContext.ACRValues().Get()
 	currentACR := oidc.ACR0
 	step, err := sso.AuthenticationService.PrepareNextStep(
-		ctx, tr,
+		ctx, tr, sso.redConn,
 		curIdentity, currentACR, expectedACR,
 	)
 	if err != nil {
@@ -333,7 +333,7 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 	}
 
 	// upgrade the authentication process
-	process, err := sso.AuthenticationService.UpgradeProcess(ctx, tr, logCtx.Challenge, curIdentity, cmd.Step.MethodName)
+	process, err := sso.AuthenticationService.UpgradeProcess(ctx, tr, sso.redConn, logCtx.Challenge, curIdentity, cmd.Step.MethodName)
 	if err != nil {
 		return view, merr.From(err).Desc("upgrading authn process")
 	}

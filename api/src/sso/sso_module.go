@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -57,6 +58,17 @@ func InitModule(router *echo.Echo) Process {
 	)
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not create the oidc client")
+	}
+
+	// init webauthn handler
+	webauthnHandler, err := webauthn.New(&webauthn.Config{
+		RPDisplayName: "Misakey",
+		RPID:          viper.GetString("server.domain"),
+		RPOrigin:      viper.GetString("authflow.home_page_url"),
+		RPIcon:        "https://static.misakey.com/ssoClientsLogo/misakey.png",
+	})
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not init webauthn handler")
 	}
 
 	// init resters
@@ -118,6 +130,7 @@ func InitModule(router *echo.Echo) Process {
 	authenticationService := authn.NewService(
 		authnSessionRepo, authnProcessRepo,
 		emailRenderer, emailRepo,
+		webauthnHandler,
 	)
 	backupKeyShareService := crypto.NewBackupKeyShareService(redConn, viper.GetDuration("backup_key_share.expiration"))
 	ssoService := application.NewSSOService(

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
@@ -73,7 +74,7 @@ func (as *Service) createEmailedCode(ctx context.Context, exec boil.ContextExecu
 }
 
 func prepareEmailedCode(
-	ctx context.Context, as *Service, exec boil.ContextExecutor,
+	ctx context.Context, as *Service, exec boil.ContextExecutor, _ *redis.Client,
 	identity identity.Identity, currentACR oidc.ClassRef, step *Step,
 ) (*Step, error) {
 	step.MethodName = oidc.AMREmailedCode

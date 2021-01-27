@@ -140,6 +140,33 @@ func bindRoutes(
 		ss.GetIdentityPubkeyByIdentifier,
 		request.ResponseOK,
 	))
+	identityPath.GET(oidcHandlers.NewACR2(
+		"/:id/webauthn-credentials/create",
+		func() request.Request { return &application.BeginWebAuthnRegistrationQuery{} },
+		ss.BeginWebAuthnRegistration,
+		request.ResponseOK,
+	))
+	identityPath.POST(oidcHandlers.NewACR2(
+		"/:id/webauthn-credentials/create",
+		func() request.Request { return &application.FinishWebAuthnRegistrationQuery{} },
+		ss.FinishWebAuthnRegistration,
+		request.ResponseOK,
+	))
+
+	// WEBAUTHN CREDENTIALS
+	webauthnCredentialPath := router.Group("/webauthn-credentials")
+	webauthnCredentialPath.GET(oidcHandlers.NewACR2(
+		"",
+		func() request.Request { return &application.ListCredentialsQuery{} },
+		ss.ListCredentials,
+		request.ResponseOK,
+	))
+	webauthnCredentialPath.DELETE(oidcHandlers.NewACR2(
+		"/:id",
+		func() request.Request { return &application.DeleteCredentialQuery{} },
+		ss.DeleteCredential,
+		request.ResponseNoContent,
+	))
 
 	// BACKUP KEY SHARES ROUTES
 	backupKeySharePath := router.Group("/backup-key-shares")

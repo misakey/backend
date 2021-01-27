@@ -6,7 +6,9 @@ import (
 	"encoding/base64"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
@@ -88,7 +90,7 @@ func (as *Service) GetProcess(
 // it inits the process if required,
 // it returns the upgraded Process, telling the login flow require more authn-step to be performed if a NextStep has been set.
 func (as *Service) UpgradeProcess(
-	ctx context.Context, exec boil.ContextExecutor,
+	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	challenge string, identity identity.Identity, amr oidc.MethodRef,
 ) (Process, error) {
 	process := Process{}
@@ -112,7 +114,7 @@ func (as *Service) UpgradeProcess(
 
 	// get potential next step - can be nil
 	process.NextStep, err = as.PrepareNextStep(
-		ctx, exec,
+		ctx, exec, redConn,
 		identity, process.CompleteAMRs.ToACR(), process.ExpectedACR,
 	)
 	if err != nil {

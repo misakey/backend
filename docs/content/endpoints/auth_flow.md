@@ -265,6 +265,34 @@ This method is retured when:
 :mag: The `account_creation` will then come as a second authn step as a [More Authentication Required Response](http://localhost:1313/endpoints/auth_flow/#622-the-more-authentication-required-response).
 :information_source: This step is skipped if the end-user has provided a valid login session corresponding to a previous ACR 1 authentication.
 
+#### 2.2.3.4. method name: **webauthn**
+
+
+```json
+{
+  [...]
+  "method_name": "webauthn",
+  "metadata":
+      {
+          "publicKey": {
+              "challenge":"<string>",
+              "timeout":<int>,
+              "rpId":"<string>",
+              "allowCredentials":[{
+                  "type":"<string>",
+                  "id":"<string>"
+              },{
+                  "type":"<string>",
+                  "id":"<string>"
+              }]
+          }
+    },
+    [...]
+}
+```
+
+The metadata content is defined and explained in the webauthn documentation.
+
 ## 2.3. Perform an authentication step in the login flow
 
 The next step to authenticate the end-user is to let them enter some information
@@ -299,8 +327,8 @@ _JSON Body:_
 - `login_challenge` (string): can be found in previous redirect URL.
 - `authn_step` (object): the performed authentication step information:
   - `identity_id` (uuid string): the identity id.
-  - `method_name` (string) (one of: _emailed_code_, _prehashed_password_, _account_creation_): the authentication method used.
-  - `metadata` (json object): metadata containing the emailed code value or the prehashed password.
+  - `method_name` (string) (one of: _emailed\_code_, _prehashed\_password_, _account\_creation_, _webauthn_): the authentication method used.
+  - `metadata` (json object): metadata containing the emailed code value, the prehashed password or the webauthn options.
 The list of possible formats is defined in the next section.
 
 #### 2.3.1.1. Possible formats for the `metadata` field
@@ -389,6 +417,30 @@ an identity](./#possible-formats-for-the-metadata-field) with the `prehashed_pas
   [...]
 }
 ```
+
+##### 2.3.1.1.4. method name: **webauthn**
+
+
+```json
+{
+  [...]
+  "method_name": "webauthn",
+  "metadata": {
+      "id":"<string>",
+      "rawId":"<string>",
+      "response":{
+          "clientDataJSON":"<string>",
+          "authenticatorData":"<string>",
+          "signature":"<string>",
+          "userHandle":"<string>"
+      },
+      "type":"<string>"
+    },
+  [...]
+}
+```
+
+The metadata content is explained in the webauthn documentation
 
 ### 2.3.2. success response
 
@@ -791,7 +843,7 @@ POST https://api.misakey.com/auth/logout
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 ### 4.1.2. success response
 

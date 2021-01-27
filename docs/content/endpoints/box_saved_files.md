@@ -133,7 +133,7 @@ _Cookies:_
 - `tokentype`: must be `bearer`
 
 _Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks. Delivered at the end of the auth flow.
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 _Query Parameters:_
 - `identity_id` (string) (uuid): a filter to count only files belonging to this identity
