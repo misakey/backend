@@ -21,7 +21,8 @@ func ListBoxMemberIDs(
 	boxID string,
 ) ([]string, error) {
 	// 1. try to retrieve cache if it exists
-	members, err := redConn.SMembers(cache.GetBoxMembersKey(boxID)).Result()
+	cacheKey := cache.MemberIDsKeyByBox(boxID)
+	members, err := redConn.SMembers(cacheKey).Result()
 	if err == nil && len(members) != 0 {
 		return members, nil
 	}
@@ -57,7 +58,7 @@ func ListBoxMemberIDs(
 	}
 
 	// 4. update the cache
-	if _, err := redConn.SAdd(cache.GetBoxMembersKey(boxID), slice.StringSliceToInterfaceSlice(memberIDs)...).Result(); err != nil {
+	if _, err := redConn.SAdd(cacheKey, slice.StringSliceToInterfaceSlice(memberIDs)...).Result(); err != nil {
 		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not build members cache for %s", boxID)
 	}
 
@@ -72,10 +73,11 @@ func MustBeMember(
 ) error {
 
 	// check the membership in the cache if it exists
-	exists, err := redConn.Exists(cache.GetBoxMembersKey(boxID)).Result()
+	cacheKey := cache.MemberIDsKeyByBox(boxID)
+	exists, err := redConn.Exists(cacheKey).Result()
 	if err == nil && exists == 1 {
 		// if cache is valid
-		senderIsMember, err := redConn.SIsMember(cache.GetBoxMembersKey(boxID), senderID).Result()
+		senderIsMember, err := redConn.SIsMember(cacheKey, senderID).Result()
 		if err != nil {
 			if senderIsMember {
 				return nil

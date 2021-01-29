@@ -35,8 +35,9 @@ func (req *GetBoxPublicRequest) BindAndValidate(eCtx echo.Context) error {
 
 // PublicBoxView ...
 type PublicBoxView struct {
-	Title   string            `json:"title"`
-	Creator events.SenderView `json:"creator"`
+	Title      string            `json:"title"`
+	Creator    events.SenderView `json:"creator"`
+	OwnerOrgID string            `json:"owner_org_id"`
 }
 
 // GetBoxPublic returns public data.
@@ -62,8 +63,9 @@ func (app *BoxApplication) GetBoxPublic(ctx context.Context, genReq request.Requ
 	}
 
 	view := PublicBoxView{
-		Title:   box.Title,
-		Creator: box.Creator,
+		Title:      box.Title,
+		Creator:    box.Creator,
+		OwnerOrgID: box.OwnerOrgID,
 	}
 	return view, nil
 }

@@ -58,11 +58,13 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 		return nil, merr.From(err).Desc("getting files")
 	}
 
-	// get public key before deleting events
-	boxPublicKey, err := events.GetBoxPublicKey(ctx, app.DB, req.boxID)
+	// get creation content before deleting events because both public key and owner org id are required
+	creationContent, err := events.GetCreationContent(ctx, app.DB, req.boxID)
 	if err != nil {
-		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not get publicKey for %s", req.boxID)
+		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not get creation content for %s", req.boxID)
 	}
+	boxPublicKey := creationContent.PublicKey
+	ownerOrgID := creationContent.OwnerOrgID
 
 	// get box members (to notify them)
 	memberIDs, err := events.ListBoxMemberIDs(ctx, app.DB, app.RedConn, req.boxID)
@@ -108,14 +110,14 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 	}
 
 	// clean up some redis keys
-	if err := cache.CleanBoxCache(ctx, app.RedConn, req.boxID); err != nil {
+	if err := cache.CleanBoxByID(ctx, app.RedConn, req.boxID); err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("cleaning box %s cache", req.boxID)
 	}
 
 	// invalidate cache for members
 	// to avoid having this box in user lists
 	for _, memberID := range memberIDs {
-		if err := cache.CleanBoxesListCache(ctx, app.RedConn, memberID); err != nil {
+		if err := cache.CleanUserBoxByUserOrg(ctx, app.RedConn, memberID, ownerOrgID); err != nil {
 			logger.FromCtx(ctx).Error().Err(err).Msgf("cleaning boxes list for %s cache", memberID)
 		}
 	}

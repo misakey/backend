@@ -8,6 +8,7 @@ package events
 import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
@@ -35,12 +36,12 @@ type anyContent interface {
 }
 
 var contentTypeGetters = map[string]func() anyContent{
-	"access.add":        func() anyContent { return &accessAddContent{} },
-	"create":            func() anyContent { return &CreationContent{} },
-	"msg.text":          func() anyContent { return &MsgTextContent{} },
-	"msg.file":          func() anyContent { return &MsgFileContent{} },
-	"msg.edit":          func() anyContent { return &MsgEditContent{} },
-	"state.access_mode": func() anyContent { return &AccessModeContent{} },
+	etype.Accessadd:       func() anyContent { return &accessAddContent{} },
+	etype.Create:          func() anyContent { return &CreationContent{} },
+	etype.Msgtext:         func() anyContent { return &MsgTextContent{} },
+	etype.Msgfile:         func() anyContent { return &MsgFileContent{} },
+	etype.Msgedit:         func() anyContent { return &MsgEditContent{} },
+	etype.Stateaccessmode: func() anyContent { return &AccessModeContent{} },
 }
 
 func bindAndValidateContent(e *Event) error {

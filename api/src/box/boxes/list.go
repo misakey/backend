@@ -2,20 +2,16 @@ package boxes
 
 import (
 	"context"
-	"sort"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/cache"
-	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
-	"gitlab.misakey.dev/misakey/backend/api/src/box/repositories/sqlboiler"
 )
 
 // Get ...
@@ -46,24 +42,29 @@ func GetWithSenderInfo(ctx context.Context, exec boil.ContextExecutor, redConn *
 	return &box, nil
 }
 
-// CountForSender ...
-func CountForSender(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, senderID string) (int, error) {
-	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID, []string{})
-	return len(list), err
+// CountForIdentity returns the number of boxes the identity is concerned by
+func CountForIdentity(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityID, ownerOrgID string) (int, error) {
+	boxIDs, err := listBoxIDsForIdentity(ctx, exec, redConn, identityID, ownerOrgID)
+	return len(boxIDs), err
 }
 
-// ListSenderBoxes ...
-func ListSenderBoxes(
+// ListBoxesForIdentity ...
+func ListBoxesForIdentity(
 	ctx context.Context,
-	exec boil.ContextExecutor,
-	redConn *redis.Client,
-	identities *events.IdentityMapper,
-	senderID string,
+	exec boil.ContextExecutor, redConn *redis.Client, identities *events.IdentityMapper,
+	identityID, ownerOrgID string,
 	limit, offset int,
 ) ([]*events.Box, error) {
 	boxes := []*events.Box{}
-	// 1. retrieve lastest events concerning the user's boxes
-	list, err := LastSenderBoxEvents(ctx, exec, redConn, senderID, etype.MembersCanSee)
+
+	// 0. list box ids the identity is concerned by
+	allBoxIDs, err := listBoxIDsForIdentity(ctx, exec, redConn, identityID, ownerOrgID)
+	if err != nil {
+		return boxes, err
+	}
+
+	// 1. retrieve lastest events concerning the boxes the identity has access to
+	list, err := events.ListLastestForEachBoxID(ctx, exec, allBoxIDs)
 	if err != nil {
 		return boxes, merr.From(err).Desc("listing box ids")
 	}
@@ -81,7 +82,7 @@ func ListSenderBoxes(
 	}
 
 	// 3. compute all boxes
-	boxIDs := make([]string, len(list))
+	paginatedBoxIDs := make([]string, len(list))
 	boxes = make([]*events.Box, len(list))
 	for i, e := range list {
 		// TODO (perf): computation in redis
@@ -90,13 +91,13 @@ func ListSenderBoxes(
 			return boxes, merr.From(err).Descf("computing box %s", e.BoxID)
 		}
 		boxes[i] = &box
-		boxIDs[i] = box.ID
+		paginatedBoxIDs[i] = box.ID
 	}
 
 	// 4. retrieve box settings
 	settingsFilters := events.BoxSettingFilters{
-		BoxIDs:     boxIDs,
-		IdentityID: senderID,
+		BoxIDs:     paginatedBoxIDs,
+		IdentityID: identityID,
 	}
 	boxSettings, err := events.ListBoxSettings(ctx, exec, settingsFilters)
 	if err != nil {
@@ -112,12 +113,12 @@ func ListSenderBoxes(
 		// we won’t return an error since the list
 		// can still be returned
 		// with a wrong amount of event counts
-		box.EventsCount = null.IntFrom(events.ComputeCount(ctx, redConn, senderID, box.ID))
+		box.EventsCount = null.IntFrom(events.ComputeCount(ctx, redConn, identityID, box.ID))
 
 		// add box settings
 		boxSetting, ok := indexedBoxSettings[box.ID]
 		if !ok {
-			boxSetting = *events.GetDefaultBoxSetting(senderID, box.ID)
+			boxSetting = *events.GetDefaultBoxSetting(identityID, box.ID)
 		}
 		box.BoxSettings = &boxSetting
 	}
@@ -125,30 +126,38 @@ func ListSenderBoxes(
 	return boxes, nil
 }
 
-// LastSenderBoxIDs ...
-func LastSenderBoxIDs(
+func listBoxIDsForIdentity(
 	ctx context.Context,
 	exec boil.ContextExecutor,
 	redConn *redis.Client,
-	senderID string,
+	identityID, ownerOrgID string,
 ) ([]string, error) {
-	// 1. try to retrieve cache
-	cacheBoxIDs, err := redConn.SMembers(cache.GetSenderBoxesKey(senderID)).Result()
+	// 1. try to retrieve and use cache
+	cacheKey := cache.BoxIDsKeyByUserOrg(identityID, ownerOrgID)
+	cacheBoxIDs, err := redConn.SMembers(cacheKey).Result()
 	if err == nil && len(cacheBoxIDs) != 0 {
 		return cacheBoxIDs, nil
 	}
 
-	// 2. build list
-	joins, err := events.ListMemberBoxLatestEvents(ctx, exec, senderID)
+	// otherwise, let's build the cache which is organized this way: per user -> per org -> box ids
+	// 2. to build the cache means to build the list of user's boxes for all organizations
+	// the user's boxes are defined by:
+	// - what they have joined (a)
+	// - what they have created (b)
+	// a.
+	joins, err := events.ListMemberBoxLatestEvents(ctx, exec, identityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("listing joined box ids")
 	}
-	creates, err := events.ListCreatorIDEvents(ctx, exec, senderID)
+	// b.
+	creates, err := events.ListCreateByCreatorID(ctx, exec, identityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("listing creator box ids")
 	}
 
-	// it is forbidden to join box the user has created so we already have unique box IDs
+	// need to retrieve all create events of the boxes in order to class by org ids
+	// 1.a. list the create contents for all the box ids identified for the user
+	// it contains org id information that is used to sort the boxes
 	boxIDs := make([]string, len(joins)+len(creates))
 	idx := 0
 	for _, event := range append(joins, creates...) {
@@ -156,53 +165,35 @@ func LastSenderBoxIDs(
 		idx++
 	}
 
-	// 3. update cache
-	if len(boxIDs) > 0 {
-		if _, err := redConn.SAdd(cache.GetSenderBoxesKey(senderID), slice.StringSliceToInterfaceSlice(boxIDs)...).Result(); err != nil {
-			logger.FromCtx(ctx).Warn().Err(err).Msgf("could not build boxes cache for %s", senderID)
+	// if the identity has access to no box, return directly
+	if len(boxIDs) == 0 {
+		return []string{}, nil
+	}
+
+	contentByBoxID, err := events.MapCreationContentByBoxID(ctx, exec, boxIDs)
+	if err != nil {
+		return nil, merr.From(err).Desc("listing creation contents")
+	}
+	// 1.b. sort the boxIDs by orgID
+	boxIDsByOrgID := make(map[string][]string)
+	for boxID, createContent := range contentByBoxID {
+		boxIDsByOrgID[createContent.OwnerOrgID] = append(boxIDsByOrgID[createContent.OwnerOrgID], boxID)
+	}
+
+	// 3. if no box correspond to the org id:
+	// return directly an empty list - don't update the cache
+	// return the just computed box by org id
+	finalBoxIDs, ok := boxIDsByOrgID[ownerOrgID]
+	if !ok {
+		return []string{}, nil
+	}
+
+	// 4. update cache
+	for ownerOrgID, boxIDs := range boxIDsByOrgID {
+		key := cache.BoxIDsKeyByUserOrg(identityID, ownerOrgID)
+		if _, err := redConn.SAdd(key, slice.StringSliceToInterfaceSlice(boxIDs)...).Result(); err != nil {
+			logger.FromCtx(ctx).Warn().Err(err).Msgf("could not add boxes cache for identity=%s org=%s", identityID, ownerOrgID)
 		}
 	}
-
-	return boxIDs, nil
-}
-
-// LastSenderBoxEvents ...
-func LastSenderBoxEvents(
-	ctx context.Context,
-	exec boil.ContextExecutor,
-	redConn *redis.Client,
-	senderID string,
-	etypes []string,
-) ([]events.Event, error) {
-	boxIDs, err := LastSenderBoxIDs(ctx, exec, redConn, senderID)
-	if err != nil {
-		return nil, err
-	}
-
-	mods := []qm.QueryMod{
-		qm.Select("DISTINCT ON (box_id) box_id, event.*"),
-		sqlboiler.EventWhere.BoxID.IN(boxIDs),
-		qm.OrderBy(sqlboiler.EventColumns.BoxID),
-		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " DESC"),
-	}
-
-	if len(etypes) > 0 {
-		mods = append(mods, sqlboiler.EventWhere.Type.IN(etypes))
-	}
-
-	lastEventsDB, err := sqlboiler.Events(mods...).All(ctx, exec)
-	if err != nil {
-		return []events.Event{}, merr.From(err).Desc("retrieving last events")
-	}
-
-	// get last events
-	lastEvents := make([]events.Event, len(lastEventsDB))
-	idx := 0
-	for _, event := range lastEventsDB {
-		lastEvents[idx] = events.FromSQLBoiler(event)
-		idx++
-	}
-
-	sort.Slice(lastEvents, func(i, j int) bool { return lastEvents[i].CreatedAt.Unix() > lastEvents[j].CreatedAt.Unix() })
-	return lastEvents, nil
+	return finalBoxIDs, nil
 }

@@ -14,7 +14,7 @@ import (
 
 // DelCounts for couple <identityID, boxID>
 func DelCounts(ctx context.Context, redConn *redis.Client, identityID, boxID string) error {
-	if _, err := redConn.Del(cache.GetEventCountKey(identityID, boxID)).Result(); err != nil {
+	if _, err := redConn.Del(cache.EventCountKeyByUserBox(identityID, boxID)).Result(); err != nil {
 		return err
 	}
 	return nil
@@ -23,7 +23,7 @@ func DelCounts(ctx context.Context, redConn *redis.Client, identityID, boxID str
 // GetCountsForIdentity and return a map with box IDs and their corresponding new events count for the user
 func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID string) (map[string]int, error) {
 	result := make(map[string]int)
-	keys, err := redConn.Keys(cache.GetEventCountKeys(identityID)).Result()
+	keys, err := redConn.Keys(cache.EventCountKeyByUser(identityID)).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID
 
 // GetCountForIdentity and return an int for the asked box
 func GetCountForIdentity(ctx context.Context, redConn *redis.Client, identityID, boxID string) (int, error) {
-	eventsCount, err := redConn.Get(cache.GetEventCountKey(identityID, boxID)).Int()
+	eventsCount, err := redConn.Get(cache.EventCountKeyByUserBox(identityID, boxID)).Int()
 	if err != nil && err == redis.Nil {
 		// if no result, then there is no new event
 		return 0, nil
@@ -63,7 +63,7 @@ func GetCountForIdentity(ctx context.Context, redConn *redis.Client, identityID,
 func IncrBoxCounts(ctx context.Context, redConn *redis.Client, identityIDs []string, boxID string) error {
 	pipe := redConn.TxPipeline()
 	for _, identityID := range identityIDs {
-		if _, err := pipe.Incr(cache.GetEventCountKey(identityID, boxID)).Result(); err != nil {
+		if _, err := pipe.Incr(cache.EventCountKeyByUserBox(identityID, boxID)).Result(); err != nil {
 			return err
 		}
 	}

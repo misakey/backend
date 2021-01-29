@@ -29,9 +29,9 @@ with prettyErrorContext():
     check_response(
         r,
         [
-            lambda r: r.json()['share'] == initial_key_share_data['misakey_share'],
-            lambda r: r.json()['other_share_hash'] == initial_key_share_data['other_share_hash'],
-            lambda r: r.json()['box_id'] == box_id,
+            lambda r: assert_fn(r.json()['share'] == initial_key_share_data['misakey_share']),
+            lambda r: assert_fn(r.json()['other_share_hash'] == initial_key_share_data['other_share_hash']),
+            lambda r: assert_fn(r.json()['box_id'] == box_id),
         ]
     )
 
@@ -75,9 +75,9 @@ with prettyErrorContext():
     check_response(
         r,
         [
-            lambda r: r.json()['share'] == key_share_event['extra']['misakey_share'],
-            lambda r: r.json()['other_share_hash'] == key_share_event['extra']['other_share_hash'],
-            lambda r: r.json()['box_id'] == box_id,
+            lambda r: assert_fn(r.json()['share'] == key_share_event['extra']['misakey_share']),
+            lambda r: assert_fn(r.json()['other_share_hash'] == key_share_event['extra']['other_share_hash']),
+            lambda r: assert_fn(r.json()['box_id'] == box_id),
         ]
     )
 
@@ -95,15 +95,16 @@ with prettyErrorContext():
         ]
     )
 
-    r = s2.get(f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions')
-    check_response(
-        r,
-        [
-            lambda r: assert_fn(len(r.json()) == 1),
-            lambda r: assert_fn(r.json()[0]['type'] == 'set_box_key_share'),
-            lambda r: assert_fn(r.json()[0]['encrypted'] == key_share_event['extra']['encrypted_invitation_key_share'])
-        ]
-    )
+    # TODO: to repare with https://gitlab.misakey.dev/misakey/backend/-/issues/277
+    # r = s2.get(f'{URL_PREFIX}/accounts/{s2.account_id}/crypto/actions')
+    # check_response(
+    #     r,
+    #     [
+    #         lambda r: assert_fn(len(r.json()) == 1),
+    #         lambda r: assert_fn(r.json()[0]['type'] == 'set_box_key_share'),
+    #         lambda r: assert_fn(r.json()[0]['encrypted'] == key_share_event['extra']['encrypted_invitation_key_share'])
+    #     ]
+    # )
 
     print('- cannot update box key share if not box admin')
     r = s2.post(

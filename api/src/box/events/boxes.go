@@ -19,6 +19,7 @@ import (
 type Box struct {
 	ID         string    `json:"id"`
 	CreatedAt  time.Time `json:"server_created_at"`
+	OwnerOrgID string    `json:"owner_org_id"`
 	PublicKey  string    `json:"public_key"`
 	Title      string    `json:"title"`
 	AccessMode string    `json:"access_mode"`
@@ -102,6 +103,10 @@ func (c *computer) do(ctx context.Context) error {
 }
 
 func (c *computer) playEvent(ctx context.Context, e Event) error {
+	// owner org id is set in all events so it may be use later for optimization purpose:
+	// (aka invalidating caches)
+	e.ownerOrgID = null.StringFrom(c.box.OwnerOrgID)
+
 	// play the event
 	if play, ok := c.ePlayer[e.Type]; ok {
 		if err := play(ctx, e); err != nil {
@@ -142,6 +147,7 @@ func (c *computer) playCreate(ctx context.Context, e Event) error {
 	if err := creationContent.Unmarshal(e.JSONContent); err != nil {
 		return err
 	}
+	c.box.OwnerOrgID = creationContent.OwnerOrgID
 	c.box.PublicKey = creationContent.PublicKey
 	c.box.Title = creationContent.Title
 
@@ -172,16 +178,11 @@ func (c *computer) playStateAccessMode(ctx context.Context, e Event) error {
 
 // GetBoxPublicKey ...
 func GetBoxPublicKey(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
-	createEvent, err := GetCreateEvent(ctx, exec, boxID)
+	createContent, err := GetCreationContent(ctx, exec, boxID)
 	if err != nil {
 		return "", merr.From(err).Descf("getting creation event")
 	}
-	content := CreationContent{}
-	if err = createEvent.JSONContent.Unmarshal(&content); err != nil {
-		return "", merr.From(err).Descf("unmarshaling creation event content")
-	}
-
-	return content.PublicKey, nil
+	return createContent.PublicKey, nil
 }
 
 // ClearBox ...

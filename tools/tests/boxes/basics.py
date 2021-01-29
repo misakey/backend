@@ -3,7 +3,7 @@
 import os
 from base64 import b64encode
 
-from misapy import http, URL_PREFIX
+from misapy import http, URL_PREFIX, SELF_CLIENT_ID
 from misapy.box_helpers import create_box_and_post_some_events_to_it
 from misapy.boxes.key_shares import new_key_share_event
 from misapy.box_members import join_box
@@ -28,9 +28,26 @@ with prettyErrorContext():
         expected_status_code=200,
     )
     assert r.json()['title'] != ''
+    assert r.json()['owner_org_id'] == SELF_CLIENT_ID
     assert r.json()['creator']['display_name'] == s1.display_name
     assert r.json()['creator']['id'] == s1.identity_id
     assert r.json()['creator']['identifier_value'] == ''
+
+
+    print("- get box")
+    r = s1.get(
+        f'{URL_PREFIX}/boxes/{box1_id}',
+        expected_status_code=200,
+    )
+    assert r.json()['title'] != ''
+    assert r.json()['owner_org_id'] == SELF_CLIENT_ID
+    assert r.json()['creator']['display_name'] == s1.display_name
+    assert r.json()['creator']['id'] == s1.identity_id
+    assert r.json()['public_key'] != ''
+    assert r.json()['access_mode'] == 'public'
+    assert r.json()['last_event'] != None
+    assert r.json()['settings'] != None
+    assert r.json()['events_count'] != None
 
     print('- file upload')
     r = s1.post(

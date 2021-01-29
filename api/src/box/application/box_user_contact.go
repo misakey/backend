@@ -83,8 +83,9 @@ func (app *BoxApplication) BoxUserContact(ctx context.Context, genReq request.Re
 		ContactedIdentityID: req.ContactedIdentityID,
 		IdentityID:          req.identityID,
 
-		Title:     req.Box.Title,
-		PublicKey: req.Box.PublicKey,
+		OwnerOrgID: app.selfOrgID,
+		Title:      req.Box.Title,
+		PublicKey:  req.Box.PublicKey,
 
 		OtherShareHash:              req.KeyShareData.OtherShareHash,
 		Share:                       req.KeyShareData.Share,

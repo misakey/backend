@@ -19,8 +19,9 @@ import (
 
 // CreateBoxRequest ...
 type CreateBoxRequest struct {
-	PublicKey    string `json:"public_key"`
-	Title        string `json:"title"`
+	PublicKey    string  `json:"public_key"`
+	Title        string  `json:"title"`
+	OwnerOrgID   *string `json:"owner_org_id"`
 	KeyShareData *struct {
 		OtherShareHash              string      `json:"other_share_hash"`
 		Share                       string      `json:"misakey_share"`
@@ -67,11 +68,15 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 	// init an identity mapper for the operation
 	identityMapper := app.NewIM()
 
+	// set defaults
+	if req.OwnerOrgID == nil {
+		req.OwnerOrgID = &app.selfOrgID
+	}
+
 	event, err := events.CreateCreateEvent(
 		ctx,
 		app.DB, app.RedConn, identityMapper,
-		req.Title,
-		req.PublicKey,
+		req.Title, req.PublicKey, *req.OwnerOrgID,
 		acc.IdentityID,
 	)
 	if err != nil {
@@ -97,6 +102,5 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 			return nil, merr.From(err).Desc("creating key share")
 		}
 	}
-
 	return box, nil
 }

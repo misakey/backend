@@ -4,9 +4,10 @@
     "public_key": "ShouldBeUnpaddedUrlSafeBase64",
     "title": "Test Box",
     "access_mode": "limited",
+    "owner_org_id": "d1e9bfa6-e931-46b1-b73c-77cb3530aadb",
     "creator": {{ include include/event-identity.json 6 }},
     "events_count": 8, //if authenticated call
-    "box_settings": {
+    "settings": {
         "identity_id": "ee4a5315-03f6-43ac-b40d-a9b2478587b9",
         "box_id": "91ec8274-2b6d-40ff-afad-83e8ba5808e5",
         "muted": true

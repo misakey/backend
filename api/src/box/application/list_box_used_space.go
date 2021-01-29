@@ -42,7 +42,7 @@ func (app *BoxApplication) ListBoxUsedSpace(ctx context.Context, genReq request.
 		return nil, merr.Forbidden().Add("identity_id", merr.DVForbidden)
 	}
 
-	creates, err := events.ListCreatorIDEvents(ctx, app.DB, req.IdentityID)
+	creates, err := events.ListCreateByCreatorID(ctx, app.DB, req.IdentityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("listing creator box ids")
 	}

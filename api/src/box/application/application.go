@@ -16,6 +16,7 @@ type BoxApplication struct {
 	DB        *sql.DB
 	RedConn   *redis.Client
 	filesRepo files.FileStorageRepo
+	selfOrgID string
 
 	identityRepo external.IdentityRepo
 	cryptoRepo   external.CryptoRepo
@@ -25,6 +26,7 @@ type BoxApplication struct {
 func NewBoxApplication(
 	db *sql.DB, redConn *redis.Client,
 	filesRepo files.FileStorageRepo,
+	selfOrgID string,
 
 	identityRepo external.IdentityRepo,
 	cryptoRepo external.CryptoRepo,
@@ -33,6 +35,7 @@ func NewBoxApplication(
 		DB:        db,
 		RedConn:   redConn,
 		filesRepo: filesRepo,
+		selfOrgID: selfOrgID,
 
 		identityRepo: identityRepo,
 		cryptoRepo:   cryptoRepo,

@@ -4,7 +4,9 @@ import (
 	"context"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -14,8 +16,9 @@ import (
 
 // ListBoxesRequest ...
 type ListBoxesRequest struct {
-	Offset int `query:"offset" json:"-"`
-	Limit  int `query:"limit" json:"-"`
+	OwnerOrgID *string `query:"owner_org_id" json:"-"`
+	Offset     int     `query:"offset" json:"-"`
+	Limit      int     `query:"limit" json:"-"`
 }
 
 // BindAndValidate ...
@@ -24,6 +27,7 @@ func (req *ListBoxesRequest) BindAndValidate(eCtx echo.Context) error {
 		return merr.From(err).Ori(merr.OriQuery)
 	}
 	return v.ValidateStruct(req,
+		v.Field(&req.OwnerOrgID, is.UUIDv4),
 		v.Field(&req.Offset, v.Min(0)),
 		v.Field(&req.Limit, v.Min(0)),
 	)
@@ -35,20 +39,26 @@ func (app *BoxApplication) ListBoxes(ctx context.Context, genReq request.Request
 	// init an identity mapper for the operation
 	identityMapper := app.NewIM()
 
-	// default limit is 10
-	if req.Limit == 0 {
-		req.Limit = 10
-	}
-
 	// retrieve accesses to filters boxes to return
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
 		return nil, merr.Unauthorized()
 	}
-	boxes, err := boxes.ListSenderBoxes(
+
+	// default limit is 10
+	if req.Limit == 0 {
+		req.Limit = 10
+	}
+
+	// default owner org id is the self org
+	if req.OwnerOrgID == nil {
+		req.OwnerOrgID = &app.selfOrgID
+	}
+
+	boxes, err := boxes.ListBoxesForIdentity(
 		ctx,
 		app.DB, app.RedConn, identityMapper,
-		acc.IdentityID,
+		acc.IdentityID, *req.OwnerOrgID,
 		req.Limit, req.Offset,
 	)
 	if err != nil {

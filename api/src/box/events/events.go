@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"sort"
 	"time"
 
 	"github.com/volatiletech/null/v8"
@@ -30,6 +31,7 @@ type Event struct {
 
 	Content             interface{}
 	MetadataForHandlers MetadataForUsedSpaceHandler
+	ownerOrgID          null.String
 }
 
 // New ...
@@ -95,6 +97,30 @@ func ListForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID
 	})
 }
 
+// ListLastestForEachBoxID returns the latest events of each box id.
+func ListLastestForEachBoxID(ctx context.Context, exec boil.ContextExecutor, boxIDs []string) ([]Event, error) {
+	mods := []qm.QueryMod{
+		qm.Select("DISTINCT ON (box_id) box_id, event.*"),
+		sqlboiler.EventWhere.BoxID.IN(boxIDs),
+		qm.OrderBy(sqlboiler.EventColumns.BoxID),
+		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " DESC"),
+	}
+
+	// retrieve last events
+	records, err := sqlboiler.Events(mods...).All(ctx, exec)
+	if err != nil {
+		return []Event{}, merr.From(err).Desc("retrieving last events")
+	}
+
+	// build the final last events list
+	lastEvents := make([]Event, len(records))
+	for idx, event := range records {
+		lastEvents[idx] = FromSQLBoiler(event)
+	}
+	sort.Slice(lastEvents, func(i, j int) bool { return lastEvents[i].CreatedAt.Unix() > lastEvents[j].CreatedAt.Unix() })
+	return lastEvents, nil
+}
+
 // ListFilesForMembersByBoxID ...
 func ListFilesForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string, offset, limit *int) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
@@ -149,6 +175,7 @@ type eventFilters struct {
 	// classic filters
 	id          null.String
 	boxID       null.String
+	boxIDs      []string
 	eType       null.String
 	eTypes      []string
 	senderID    null.String
@@ -157,7 +184,6 @@ type eventFilters struct {
 
 	// filters triggering in jsonb research
 	content          *string
-	unkicked         bool
 	fileID           null.String
 	restrictionType  null.String
 	restrictionTypes []string
@@ -166,7 +192,7 @@ type eventFilters struct {
 	// ensure the event is not referred by another one
 	unreferred bool
 
-	// pagintation
+	// pagination
 	offset *int
 	limit  *int
 }
@@ -273,10 +299,14 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 		// because there is no way the attacker can control `sqlboiler.EventColumns.ReferrerID`
 		mods = append(mods, qm.AndIn(sqlboiler.EventColumns.ReferrerID+" IN ?", slice.StringSliceToInterfaceSlice(filters.referrerIDs)...))
 	}
-	// add box query
+	// add box id queries
 	if filters.boxID.Valid {
-		mods = append(mods, sqlboiler.EventWhere.BoxID.EQ(filters.boxID.String))
+		filters.boxIDs = append(filters.boxIDs, filters.boxID.String)
 	}
+	if len(filters.boxIDs) > 0 {
+		mods = append(mods, sqlboiler.EventWhere.BoxID.IN(filters.boxIDs))
+	}
+
 	// add JSONB matching
 	if filters.content != nil {
 		mods = append(mods, qm.Where(`content::jsonb @> ?`, *filters.content))
@@ -336,22 +366,16 @@ func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFi
 		subMods = append(subMods, sqlboiler.EventWhere.ReferrerID.IsNotNull())
 
 		// check we don't face the cases we should never use
-		if filters.boxID.IsZero() && filters.senderID.IsZero() ||
-			filters.unkicked && filters.senderID.IsZero() {
+		if filters.boxID.IsZero() && filters.senderID.IsZero() {
 			return nil, merr.Internal().Desc("wrong unreferred use")
 		}
 
 		// NOTE: boxID must be checked before senderID - both cannot be used at the same time
-		// TODO (perf/usage): need to improve this query to be more natural to build
+		// TODO (usage): need to improve this query to be more natural to build
 		if filters.boxID.Valid {
 			subMods = append(subMods, sqlboiler.EventWhere.BoxID.EQ(filters.boxID.String))
 		} else if filters.senderID.Valid {
 			subMods = append(subMods, sqlboiler.EventWhere.SenderID.EQ(filters.senderID.String))
-			if filters.unkicked {
-				subMods = append(subMods, qm.Or2(
-					qm.Where(`type = ? AND content->>'kicked_member_id' = ?`, etype.Memberkick, filters.senderID.String),
-				))
-			}
 		}
 	}
 	referents, err := sqlboiler.Events(subMods...).All(ctx, exec)

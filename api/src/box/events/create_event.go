@@ -9,6 +9,8 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events/cache"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
@@ -17,8 +19,9 @@ import (
 
 // CreationContent ...
 type CreationContent struct {
-	PublicKey string `json:"public_key"`
-	Title     string `json:"title"`
+	OwnerOrgID string `json:"owner_org_id"`
+	PublicKey  string `json:"public_key"`
+	Title      string `json:"title"`
 }
 
 // Unmarshal ...
@@ -29,46 +32,30 @@ func (c *CreationContent) Unmarshal(json types.JSON) error {
 // Validate ...
 func (c CreationContent) Validate() error {
 	return v.ValidateStruct(&c,
+		v.Field(&c.OwnerOrgID, v.Required),
 		v.Field(&c.PublicKey, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 		v.Field(&c.Title, v.Required, v.Length(1, 50)),
 	)
-}
-
-// NewCreate ...
-func NewCreate(title, publicKey, senderID string) (e Event, err error) {
-	// generate an id for the created box
-	boxID, err := uuid.NewString()
-	if err != nil {
-		err = merr.From(err).Desc("generating box ID")
-		return
-	}
-
-	c := CreationContent{
-		PublicKey: publicKey,
-		Title:     title,
-	}
-	return newWithAnyContent("create", &c, boxID, senderID, nil)
-}
-
-// GetCreateEvent ...
-func GetCreateEvent(
-	ctx context.Context,
-	exec boil.ContextExecutor,
-	boxID string,
-) (Event, error) {
-	return get(ctx, exec, eventFilters{
-		boxID: null.StringFrom(boxID),
-		eType: null.StringFrom("create"),
-	})
 }
 
 // CreateCreateEvent ...
 func CreateCreateEvent(
 	ctx context.Context,
 	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
-	title, publicKey, senderID string,
+	title, publicKey, ownerOrgID, senderID string,
 ) (Event, error) {
-	event, err := NewCreate(title, publicKey, senderID)
+	// generate an id for the created box
+	boxID, err := uuid.NewString()
+	if err != nil {
+		return Event{}, merr.From(err).Desc("generating box ID")
+	}
+
+	c := CreationContent{
+		OwnerOrgID: ownerOrgID,
+		PublicKey:  publicKey,
+		Title:      title,
+	}
+	event, err := newWithAnyContent(etype.Create, &c, boxID, senderID, nil)
 	if err != nil {
 		return Event{}, merr.From(err).Desc("creating create event")
 	}
@@ -78,9 +65,10 @@ func CreateCreateEvent(
 		return Event{}, merr.From(err).Desc("inserting event")
 	}
 
-	// invalidates cache for creator boxes list
-	if err := invalidateCaches(ctx, &event, exec, redConn, nil, nil, nil); err != nil {
-		logger.FromCtx(ctx).Warn().Err(err).Msgf("invalidating the cache")
+	// clean box cache for the creator
+	err = cache.CleanUserBoxByUserOrg(ctx, redConn, senderID, ownerOrgID)
+	if err != nil {
+		logger.FromCtx(ctx).Warn().Msgf("clean user box cache %s: %v", senderID, err)
 	}
 
 	// send notification to creator
@@ -91,18 +79,62 @@ func CreateCreateEvent(
 	return event, nil
 }
 
-// ListCreatorIDEvents ...
-func ListCreatorIDEvents(ctx context.Context, exec boil.ContextExecutor, creatorID string) ([]Event, error) {
+// GetCreationEvent retrieves the create event of the box and marshal its content into a CreationContent structure
+func GetCreationContent(
+	ctx context.Context,
+	exec boil.ContextExecutor,
+	boxID string,
+) (c CreationContent, err error) {
+	e, err := get(ctx, exec, eventFilters{
+		boxID: null.StringFrom(boxID),
+		eType: null.StringFrom(etype.Create),
+	})
+	if err != nil {
+		return c, merr.From(err).Desc("getting create event")
+	}
+	if err := e.JSONContent.Unmarshal(&c); err != nil {
+		return c, merr.From(err).Descf("unmarshaling creation event content")
+	}
+	return c, nil
+}
+
+// ListCreateEventsByCreatorID ...
+func ListCreateByCreatorID(ctx context.Context, exec boil.ContextExecutor, creatorID string) ([]Event, error) {
 	createEvents, err := list(ctx, exec, eventFilters{
-		eType:    null.StringFrom("create"),
+		eType:    null.StringFrom(etype.Create),
 		senderID: null.StringFrom(creatorID),
 	})
 	return createEvents, err
 }
 
+// MapCreationContentByBoxID retrieves the create event of the boxes and marshal its content
+// it returns a map[boxID]CreationContent
+func MapCreationContentByBoxID(
+	ctx context.Context,
+	exec boil.ContextExecutor,
+	boxIDs []string,
+) (map[string]CreationContent, error) {
+	events, err := list(ctx, exec, eventFilters{
+		boxIDs: boxIDs,
+		eType:  null.StringFrom(etype.Create),
+	})
+	if err != nil {
+		return nil, merr.From(err).Desc("listing create event")
+	}
+	contentByBoxID := make(map[string]CreationContent, len(events))
+	for _, e := range events {
+		c := CreationContent{}
+		if err := e.JSONContent.Unmarshal(&c); err != nil {
+			return nil, merr.From(err).Descf("unmarshaling creation event content")
+		}
+		contentByBoxID[e.BoxID] = c
+	}
+	return contentByBoxID, nil
+}
+
 func isCreator(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (bool, error) {
 	_, err := get(ctx, exec, eventFilters{
-		eType:    null.StringFrom("create"),
+		eType:    null.StringFrom(etype.Create),
 		senderID: null.StringFrom(senderID),
 		boxID:    null.StringFrom(boxID),
 	})
@@ -121,7 +153,7 @@ func isCreator(ctx context.Context, exec boil.ContextExecutor, boxID, senderID s
 
 func getBoxCreatorID(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
 	e, err := get(ctx, exec, eventFilters{
-		eType: null.StringFrom("create"),
+		eType: null.StringFrom(etype.Create),
 		boxID: null.StringFrom(boxID),
 	})
 

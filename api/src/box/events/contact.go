@@ -23,8 +23,9 @@ type ContactBox struct {
 	IdentityID          string
 
 	// box info
-	Title     string
-	PublicKey string
+	OwnerOrgID string
+	Title      string
+	PublicKey  string
 
 	// contact info
 	OtherShareHash              string
@@ -50,7 +51,7 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 	event, err := CreateCreateEvent(
 		ctx,
 		exec, redConn, identityMapper,
-		contact.Title, contact.PublicKey, contact.IdentityID,
+		contact.Title, contact.PublicKey, contact.OwnerOrgID, contact.IdentityID,
 	)
 	if err != nil {
 		return nil, merr.From(err).Desc("creating create event")

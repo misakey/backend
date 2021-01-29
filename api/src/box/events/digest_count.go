@@ -12,7 +12,7 @@ import (
 func IncrDigestCount(ctx context.Context, redConn *redis.Client, identityIDs []string, boxID string) error {
 	pipe := redConn.TxPipeline()
 	for _, identityID := range identityIDs {
-		if _, err := pipe.Incr(cache.GetDigestCountKey(identityID, boxID)).Result(); err != nil {
+		if _, err := pipe.Incr(cache.DigestCountKeyByUserBox(identityID, boxID)).Result(); err != nil {
 			return err
 		}
 	}
@@ -24,7 +24,7 @@ func IncrDigestCount(ctx context.Context, redConn *redis.Client, identityIDs []s
 
 // GetAllDigestCountKeys ...
 func GetAllDigestCountKeys(ctx context.Context, redConn *redis.Client) ([]string, error) {
-	keys, err := redConn.Keys(cache.GetAllDigestCountKeys()).Result()
+	keys, err := redConn.Keys(cache.DigestCountKeyAll()).Result()
 	if err != nil {
 		return []string{}, err
 	}
@@ -33,7 +33,7 @@ func GetAllDigestCountKeys(ctx context.Context, redConn *redis.Client) ([]string
 
 // DelDigestCount for couple <identityID, boxID>
 func DelDigestCount(ctx context.Context, redConn *redis.Client, identityID, boxID string) error {
-	if _, err := redConn.Del(cache.GetDigestCountKey(identityID, boxID)).Result(); err != nil {
+	if _, err := redConn.Del(cache.DigestCountKeyByUserBox(identityID, boxID)).Result(); err != nil {
 		return err
 	}
 	return nil
@@ -41,7 +41,7 @@ func DelDigestCount(ctx context.Context, redConn *redis.Client, identityID, boxI
 
 // DelAllDigestCountForIdentity identityID
 func DelAllDigestCountForIdentity(ctx context.Context, redConn *redis.Client, identityID string) error {
-	keys, err := redConn.Keys(cache.GetAllDigestCountKeysForIdentity(identityID)).Result()
+	keys, err := redConn.Keys(cache.DigestCountKeyByUser(identityID)).Result()
 	if err != nil {
 		return err
 	}

@@ -34,7 +34,7 @@ func doJoin(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecuto
 		return nil, merr.From(err).Desc("doing join")
 	}
 
-	// if the sender can join, add it to access.add list if not done yet
+	// if the sender joins, they must be in the access.add list as identifier so let's verify it is there
 	_, err = get(ctx, exec, eventFilters{
 		eType:           null.StringFrom(etype.Accessadd),
 		unreferred:      true,
@@ -83,7 +83,6 @@ func ListMemberBoxLatestEvents(ctx context.Context, exec boil.ContextExecutor, s
 		eType:      null.StringFrom(etype.Memberjoin),
 		unreferred: true,
 		senderID:   null.StringFrom(senderID),
-		// unkicked:   true,
 	})
 	return joins, err
 }

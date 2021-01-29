@@ -5,7 +5,7 @@ import os
 import sys
 from time import sleep
 
-from . import http, URL_PREFIX
+from . import http, URL_PREFIX, SELF_CLIENT_ID
 from .utils.base64 import b64encode, urlsafe_b64encode
 from .get_access_token import get_authenticated_session
 from .container_access import list_encrypted_files
@@ -18,12 +18,18 @@ def create_box_and_post_some_events_to_it(session, public=True):
     r = s.post(
         f'{URL_PREFIX}/boxes',
         json={
+            'owner_org_id': SELF_CLIENT_ID,
             'public_key': 'ShouldBeUnpaddedUrlSafeBase64',
             'title': 'Test Box',
         }
     )
-    creator = r.json()['creator']
-    assert creator['identifier_value'] == s.email
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(r.json()['creator']['identifier_value'] == s.email),
+            lambda r: assert_fn(r.json()['owner_org_id'] == SELF_CLIENT_ID),
+        ]
+    )
 
     box_id = r.json()['id']
 

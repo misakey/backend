@@ -62,7 +62,7 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 
 	// we keep box title in a cache to avoid too many calls to the db
 	boxTitleCache := make(map[string]string)
-	for id, digestInfo := range digestInfos {
+	for userID, digestInfo := range digestInfos {
 		//get the boxes info (try to make profit of the already fetched information): title and silenced
 		// get box settings
 		var totalNewMessages int
@@ -76,7 +76,7 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 					continue
 				}
 			}
-			newMsgCount, err := dj.redConn.Get(cache.GetDigestCountKey(id, boxID)).Int()
+			newMsgCount, err := dj.redConn.Get(cache.DigestCountKeyByUserBox(userID, boxID)).Int()
 			if err != nil {
 				logger.FromCtx(ctx).Error().Err(err).Msgf("could not get new messages count for box %s", boxID)
 				continue
@@ -100,7 +100,7 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 			"boxes":          digestInfo.boxesInfo,
 			"total":          totalNewMessages,
 			"domain":         dj.domain,
-			"accountBaseURL": fmt.Sprintf("https://%s/accounts/%s", dj.domain, id),
+			"accountBaseURL": fmt.Sprintf("https://%s/accounts/%s", dj.domain, userID),
 		}
 
 		subject := "Misakey - Nouveau(x) message(s)"
@@ -110,19 +110,19 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 		}
 		content, err := dj.templates.NewEmail(ctx, digestInfo.identity.IdentifierValue, subject, template, data)
 		if err != nil {
-			logger.FromCtx(ctx).Error().Err(err).Msgf("could not build email for %s", id)
+			logger.FromCtx(ctx).Error().Err(err).Msgf("could not build email for %s", userID)
 			continue
 		}
 
-		logger.FromCtx(ctx).Debug().Msgf("sending email to %s", id)
+		logger.FromCtx(ctx).Debug().Msgf("sending email to %s", userID)
 		if err := dj.emails.Send(ctx, content); err != nil {
-			logger.FromCtx(ctx).Error().Err(err).Msgf("could not send email to %s", id)
+			logger.FromCtx(ctx).Error().Err(err).Msgf("could not send email to %s", userID)
 			continue
 		}
 
 		//delete the keys digestCount:user_*
-		if err := events.DelAllDigestCountForIdentity(ctx, dj.redConn, id); err != nil {
-			logger.FromCtx(ctx).Error().Err(err).Msgf("could not del digestCount key for user %s", id)
+		if err := events.DelAllDigestCountForIdentity(ctx, dj.redConn, userID); err != nil {
+			logger.FromCtx(ctx).Error().Err(err).Msgf("could not del digestCount key for user %s", userID)
 		}
 	}
 

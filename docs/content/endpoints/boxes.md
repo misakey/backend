@@ -33,6 +33,7 @@ _JSON Body:_
 ```json
     {
       "title": "Requête RGPD",
+      "owner_org_id": "d1e9bfa6-e931-46b1-b73c-77cb3530aadb",
       "public_key": "SXvalkvhuhcj2UiaS4d0Q3OeuHOhMVeQT7ZGfCH2YCw",
       "key_share": {
         "misakey_share": "lBHT1vfwFAIBig5Nj+sD+w==",
@@ -42,12 +43,13 @@ _JSON Body:_
     }
 ```
 
-Where `key_share` is *optional* (but will soon become mandatory).
-
-Note that `public_key` and `other_share_hash` must be in **unpadded url-safe base64**.
+- `title` is a free text required that is meant to describe the box purpose.
+- `owner_org_id` is an optional uuid corresponding to the organization owning the box (default is self org).
+- `public_key` and `other_share_hash` must be in **unpadded url-safe base64**.
+- `key_share` is **optional** but will be soon mandatory.
 
 When a box is created, it already contains a first event
-of type `create` that contains all the information about the creation of the box.
+of type `create` that contains most of the information about the creation of the box.
 
 Note that the access mode of a box is limited by default. A `state.access_mode` event must be created to switch it to `public`, see the related event type documentation.
 
@@ -147,40 +149,11 @@ _JSON Body:_
 ```json
 {
     "title": "<title of the box>",
+    "owner_org_id": "<uuid representing the organization owning the box>",
     "creator": {{% include "include/event-identity.json" %}}
 }
 ```
-
-## 2.4. Count boxes for the current user
-
-### 2.4.1. request
-
-This request allows to retrieval of information about accessible boxes list.
-
-Today only the total count of boxes is returned as an response header.
-
-```bash
-  HEAD https://api.misakey.com/boxes/joined
-```
-
-_Cookies:_
-- `accesstoken` (opaque token) (ACR >= 1): a valid token.
-- `tokentype`: must be `bearer`
-
-_Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks.
-
-### 2.4.2. response
-
-_Code:_
-```bash
-HTTP 204 NO CONTENT
-```
-
-_Headers:_
-- `X-Total-Count` (integer): the total count of boxes that the user can access.
-
-## 2.5. Delete a box
+## 2.4. Delete a box
 
 [Box admins](../../concepts/box-events/#21-admins) only are able to delete corresponding boxes.
 
@@ -188,7 +161,7 @@ A removed box sees its data completely removed from Misakey storage. This action
 
 This action removes all data related to the box (events, key-shares...).
 
-### 2.5.1. request
+### 2.4.1. request
 
 ```bash
 DELETE https://api.misakey.com/boxes/:id
@@ -213,14 +186,14 @@ _JSON Body:_
 
 - `user_confirmation` (string) (one of: _delete_, _supprimer_): the input the end-user has entered to confirm the deletion. The server will check if the value corresponds to some expected strings (cf one of).
 
-### 2.5.2. response
+### 2.4.2. response
 
 _Code:_
 ```bash
 HTTP 204 NO CONTENT
 ```
 
-## 2.6. Reset the new events count for an identity
+## 2.5. Reset the new events count for an identity
 
 The list of boxes return many information for each boxes, including a numerical field `events_count` telling how many event have occured since the connected identity's last visit.
 
@@ -228,7 +201,7 @@ This endpoint allows to reset the new events count of a box for a given identity
 
 It is a kind of an acknowledgement and it must be used when the user want to mark the box as "read".
 
-### 2.6.1. request
+### 2.5.1. request
 
 ```bash
 PUT https://api.misakey.com/boxes/:id/new-events-count/ack
@@ -253,7 +226,7 @@ _Cookies:_
 _Headers:_
 - `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
-### 2.6.2. success response
+### 2.5.2. success response
 
 _Code:_
 ```bash
@@ -328,9 +301,9 @@ To add or remove membership for a couple <box, identity>, please refer to:
 * the [sending an event to a box endpoint](../box_events/#21-single-creation-of-an-event-for-a-box).
 * the [member type events documentation](/concepts/box-events/#12-member-type-events).
 
-## 4.1. Listing actively joined user's boxes.
+## 4.2. List joined boxes for the current user
 
-### 4.1.1. request
+### 4.2.1. request
 
 Users are able to list boxes they have an access to.
 
@@ -343,16 +316,16 @@ GET https://api.misakey.com/boxes/joined
 
 _Cookies:_
 - `accesstoken` (opaque token) (ACR >= 1): a valid token.
-- `tokentype`: must be `bearer`
+- `tokentype`: must be `bearer`.
 
 _Headers:_
 - `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
 _Query Parameters:_
+- `owner_org_id` (uuid) (default: hosting-org): the organization id owning the box.
+- Pagination ([more info](/concepts/pagination)) with default limit set to 10.
 
-Pagination ([more info](/concepts/pagination)) with default limit set to 10.
-
-### 4.1.2. response
+### 4.2.2. response
 
 _Code:_
 ```bash
@@ -366,14 +339,45 @@ A list of event is returned.
 ]
 ```
 
+## 4.3. Count joined boxes for the current user
 
-## 4.2. Listing all box's active members
+### 4.3.1. request
+
+This request allows to retrieval of information about accessible boxes list.
+
+Today only the total count of boxes is returned as an response header.
+
+```bash
+  HEAD https://api.misakey.com/boxes/joined?owner_org_id=d1e9bfa6-e931-46b1-b73c-77cb3530aadb
+```
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 1): a valid token.
+- `tokentype`: must be `bearer`
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
+
+_Query Parameters:_
+- `owner_org_id` (uuid) (default: hosting-org): the organization id owning the box.
+
+### 4.3.2. response
+
+_Code:_
+```bash
+HTTP 204 NO CONTENT
+```
+
+_Headers:_
+- `X-Total-Count` (integer): the total count of boxes that the user can access.
+
+## 4.4. Listing active members of a box.
 
 This endpoint return all identities that have an active membership to the box.
 
 Identities who have left and have been kicked out of the box are not returned.
 
-### 4.2.1. request
+### 4.4.1. request
 
 ```bash
 GET https://api.misakey.com/boxes/:id/members
@@ -389,7 +393,7 @@ _Cookies:_
 _Headers:_
 - `X-CSRF-Token`: a token to prevent from CSRF attacks.
 
-### 4.2.2. response
+### 4.4.2. response
 
 _Code:_
 ```bash

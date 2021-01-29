@@ -64,7 +64,7 @@ func InitModule(
 		log.Fatal().Msg("unknown ENV value (should be production|development)")
 	}
 
-	boxService := application.NewBoxApplication(dbConn, redConn, filesRepo, identityRepo, cryptoRepo)
+	boxService := application.NewBoxApplication(dbConn, redConn, filesRepo, viper.GetString("authflow.self_client_id"), identityRepo, cryptoRepo)
 	wsHandler := bentrypoints.NewWebsocketHandler(viper.GetStringSlice("websockets.allowed_origins"), &boxService)
 
 	adminHydraFORM := http.NewClient(

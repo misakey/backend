@@ -147,7 +147,7 @@ with prettyErrorContext():
     assert len(r.json()) == 1
     s2_access_event_id = r.json()[0]['id']
 
-    print('- identity 2 (non-creator) can list all events on box')
+    print('- identity 2 (non-creator) can list events on box')
     r = s2.get(f'{URL_PREFIX}/boxes/{box_id}/events')
     check_response(
         r,

@@ -4,6 +4,7 @@
     "public_key": "ShouldBeUnpaddedUrlSafeBase64",
     "title": "Test Box",
     "access_mode": "public",
+    "owner_org_id": "d1e9bfa6-e931-46b1-b73c-77cb3530aadb",
     "creator": {{ include include/event-identity.json 6 }},
     "last_event": {
         "id": "ff6114f3-9838-40ed-a80d-bb376fd929f5",
