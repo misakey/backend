@@ -25,6 +25,7 @@ type Service struct {
 	codeValidity time.Duration
 
 	WebauthnHandler *webauthn.WebAuthn
+	AppName         string
 }
 
 type sessionRepo interface {
@@ -36,7 +37,7 @@ type sessionRepo interface {
 func NewService(
 	sessions sessionRepo, processes processRepo,
 	templates email.Renderer, emails email.Sender,
-	webauthnHandler *webauthn.WebAuthn,
+	webauthnHandler *webauthn.WebAuthn, appName string,
 ) Service {
 	return Service{
 		sessions:        sessions,
@@ -45,5 +46,6 @@ func NewService(
 		emails:          emails,
 		codeValidity:    5 * time.Minute,
 		WebauthnHandler: webauthnHandler,
+		AppName:         appName,
 	}
 }

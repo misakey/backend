@@ -130,7 +130,7 @@ func InitModule(router *echo.Echo) Process {
 	authenticationService := authn.NewService(
 		authnSessionRepo, authnProcessRepo,
 		emailRenderer, emailRepo,
-		webauthnHandler,
+		webauthnHandler, viper.GetString("authflow.app_name"),
 	)
 	backupKeyShareService := crypto.NewBackupKeyShareService(redConn, viper.GetDuration("backup_key_share.expiration"))
 	ssoService := application.NewSSOService(

@@ -152,6 +152,30 @@ func bindRoutes(
 		ss.FinishWebAuthnRegistration,
 		request.ResponseOK,
 	))
+	identityPath.GET(oidcHandlers.NewACR2(
+		"/:id/totp/enroll",
+		func() request.Request { return &application.BeginTOTPEnrollmentQuery{} },
+		ss.BeginTOTPEnrollment,
+		request.ResponseOK,
+	))
+	identityPath.POST(oidcHandlers.NewACR2(
+		"/:id/totp/enroll",
+		func() request.Request { return &application.FinishTOTPEnrollmentQuery{} },
+		ss.FinishTOTPEnrollment,
+		request.ResponseOK,
+	))
+	identityPath.POST(oidcHandlers.NewACR3(
+		"/:id/totp/recovery-codes",
+		func() request.Request { return &application.RegenerateRecoveryCodesQuery{} },
+		ss.RegenerateRecoveryCodes,
+		request.ResponseOK,
+	))
+	identityPath.DELETE(oidcHandlers.NewACR2(
+		"/:id/totp",
+		func() request.Request { return &application.DeleteSecretQuery{} },
+		ss.DeleteSecret,
+		request.ResponseNoContent,
+	))
 
 	// WEBAUTHN CREDENTIALS
 	webauthnCredentialPath := router.Group("/webauthn-credentials")

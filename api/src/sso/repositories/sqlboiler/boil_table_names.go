@@ -11,6 +11,7 @@ var TableNames = struct {
 	Identity                      string
 	IdentityNotification          string
 	IdentityProfileSharingConsent string
+	TotpSecret                    string
 	UsedCoupon                    string
 	WebauthnCredential            string
 }{
@@ -21,6 +22,7 @@ var TableNames = struct {
 	Identity:                      "identity",
 	IdentityNotification:          "identity_notification",
 	IdentityProfileSharingConsent: "identity_profile_sharing_consent",
+	TotpSecret:                    "totp_secret",
 	UsedCoupon:                    "used_coupon",
 	WebauthnCredential:            "webauthn_credential",
 }

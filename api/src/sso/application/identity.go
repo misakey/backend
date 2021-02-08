@@ -15,7 +15,10 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/mtotp"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/mwebauthn"
 )
 
 // IdentityQuery ...
@@ -37,7 +40,8 @@ func (query *IdentityQuery) BindAndValidate(eCtx echo.Context) error {
 // IdentityView ...
 type IdentityView struct {
 	identity.Identity
-	HasAccount bool `json:"has_account"`
+	HasAccount    bool `json:"has_account"`
+	HasTOTPSecret bool `json:"has_totp_secret"`
 }
 
 // GetIdentity ...
@@ -68,6 +72,10 @@ func (sso *SSOService) GetIdentity(ctx context.Context, gen request.Request) (in
 	if !acc.AccountConnected() {
 		view.Identity.AccountID = null.String{}
 	}
+
+	// add information about MFA configuration
+	view.HasTOTPSecret = mtotp.SecretExist(ctx, sso.sqlDB, query.identityID)
+
 	return view, err
 }
 
@@ -186,6 +194,11 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 
 	if cmd.MFAMethod.Valid {
 		curIdentity.MFAMethod = cmd.MFAMethod.String
+		// check if mfa is possible
+		if curIdentity.MFAMethod == "webauthn" && !mwebauthn.CredentialsExist(ctx, sso.sqlDB, curIdentity.ID) ||
+			curIdentity.MFAMethod == "totp" && !mtotp.SecretExist(ctx, sso.sqlDB, curIdentity.ID) {
+			return nil, merr.Conflict().Add("mfa_method", merr.DVConflict).Add("reason", "no credential")
+		}
 	}
 
 	err = identity.Update(ctx, tr, &curIdentity)

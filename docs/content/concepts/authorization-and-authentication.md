@@ -230,14 +230,14 @@ To perform it:
 
 Used alone, its final corresponding `acr` is 2.
 
-#### 4.3.4. (WIP) TOTP
+#### 4.3.4. TOTP
 
-[TOTP][] is a way to achieve multi-factor authentication using a specific algorithm generating time-based one time password.
+[TOTP][https://tools.ietf.org/html/rfc6238] is a way to achieve multi-factor authentication using a specific algorithm generating time-based one time password.
 
 To enforce it, during the init of the auth flow:
 - `acr_values` query parameter must be set to `3`.
 - `prompt` query parameter must be set to `login`.
-- the end-user must always have an account configured with `totp`. `webauthn` method might be used instead (cf dedicated section) and will result with an acr 4 (with a stronger authentication then).
+- the end-user must always have an account configured with `totp`.
 :warning: If the user hasn't configure any mfa method, this method cannot be performed and the final acr will be set according to the previous entered method (1, 2...).
 
 To perform it:

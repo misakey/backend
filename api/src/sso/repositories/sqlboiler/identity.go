@@ -111,6 +111,7 @@ var IdentityRels = struct {
 	SenderIdentityCryptoActions    string
 	IdentityNotifications          string
 	IdentityProfileSharingConsents string
+	TotpSecrets                    string
 	UsedCoupons                    string
 	WebauthnCredentials            string
 }{
@@ -119,6 +120,7 @@ var IdentityRels = struct {
 	SenderIdentityCryptoActions:    "SenderIdentityCryptoActions",
 	IdentityNotifications:          "IdentityNotifications",
 	IdentityProfileSharingConsents: "IdentityProfileSharingConsents",
+	TotpSecrets:                    "TotpSecrets",
 	UsedCoupons:                    "UsedCoupons",
 	WebauthnCredentials:            "WebauthnCredentials",
 }
@@ -130,6 +132,7 @@ type identityR struct {
 	SenderIdentityCryptoActions    CryptoActionSlice                  `boil:"SenderIdentityCryptoActions" json:"SenderIdentityCryptoActions" toml:"SenderIdentityCryptoActions" yaml:"SenderIdentityCryptoActions"`
 	IdentityNotifications          IdentityNotificationSlice          `boil:"IdentityNotifications" json:"IdentityNotifications" toml:"IdentityNotifications" yaml:"IdentityNotifications"`
 	IdentityProfileSharingConsents IdentityProfileSharingConsentSlice `boil:"IdentityProfileSharingConsents" json:"IdentityProfileSharingConsents" toml:"IdentityProfileSharingConsents" yaml:"IdentityProfileSharingConsents"`
+	TotpSecrets                    TotpSecretSlice                    `boil:"TotpSecrets" json:"TotpSecrets" toml:"TotpSecrets" yaml:"TotpSecrets"`
 	UsedCoupons                    UsedCouponSlice                    `boil:"UsedCoupons" json:"UsedCoupons" toml:"UsedCoupons" yaml:"UsedCoupons"`
 	WebauthnCredentials            WebauthnCredentialSlice            `boil:"WebauthnCredentials" json:"WebauthnCredentials" toml:"WebauthnCredentials" yaml:"WebauthnCredentials"`
 }
@@ -333,6 +336,27 @@ func (o *Identity) IdentityProfileSharingConsents(mods ...qm.QueryMod) identityP
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"identity_profile_sharing_consent\".*"})
+	}
+
+	return query
+}
+
+// TotpSecrets retrieves all the totp_secret's TotpSecrets with an executor.
+func (o *Identity) TotpSecrets(mods ...qm.QueryMod) totpSecretQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"totp_secret\".\"identity_id\"=?", o.ID),
+	)
+
+	query := TotpSecrets(queryMods...)
+	queries.SetFrom(query.Query, "\"totp_secret\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"totp_secret\".*"})
 	}
 
 	return query
@@ -834,6 +858,97 @@ func (identityL) LoadIdentityProfileSharingConsents(ctx context.Context, e boil.
 				local.R.IdentityProfileSharingConsents = append(local.R.IdentityProfileSharingConsents, foreign)
 				if foreign.R == nil {
 					foreign.R = &identityProfileSharingConsentR{}
+				}
+				foreign.R.Identity = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadTotpSecrets allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (identityL) LoadTotpSecrets(ctx context.Context, e boil.ContextExecutor, singular bool, maybeIdentity interface{}, mods queries.Applicator) error {
+	var slice []*Identity
+	var object *Identity
+
+	if singular {
+		object = maybeIdentity.(*Identity)
+	} else {
+		slice = *maybeIdentity.(*[]*Identity)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &identityR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &identityR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`totp_secret`),
+		qm.WhereIn(`totp_secret.identity_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load totp_secret")
+	}
+
+	var resultSlice []*TotpSecret
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice totp_secret")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on totp_secret")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for totp_secret")
+	}
+
+	if singular {
+		object.R.TotpSecrets = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &totpSecretR{}
+			}
+			foreign.R.Identity = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.IdentityID {
+				local.R.TotpSecrets = append(local.R.TotpSecrets, foreign)
+				if foreign.R == nil {
+					foreign.R = &totpSecretR{}
 				}
 				foreign.R.Identity = local
 				break
@@ -1379,6 +1494,59 @@ func (o *Identity) AddIdentityProfileSharingConsents(ctx context.Context, exec b
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &identityProfileSharingConsentR{
+				Identity: o,
+			}
+		} else {
+			rel.R.Identity = o
+		}
+	}
+	return nil
+}
+
+// AddTotpSecrets adds the given related objects to the existing relationships
+// of the identity, optionally inserting them as new records.
+// Appends related to o.R.TotpSecrets.
+// Sets related.R.Identity appropriately.
+func (o *Identity) AddTotpSecrets(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*TotpSecret) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.IdentityID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"totp_secret\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"identity_id"}),
+				strmangle.WhereClause("\"", "\"", 2, totpSecretPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.IdentityID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &identityR{
+			TotpSecrets: related,
+		}
+	} else {
+		o.R.TotpSecrets = append(o.R.TotpSecrets, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &totpSecretR{
 				Identity: o,
 			}
 		} else {

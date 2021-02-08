@@ -9,6 +9,8 @@
   domain = "app.misakey.com.local"
 
 [authflow]
+  # name of the app - needed for some auth methods
+  app_name = "Misakey"
   # frontend location to redirect user if big issues occurs
   home_page_url = "https://app.misakey.com.local"
   # frontend location to ask for user to authenticate

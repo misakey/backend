@@ -293,6 +293,18 @@ This method is retured when:
 
 The metadata content is defined and explained in the webauthn documentation.
 
+#### 2.2.3.5. method name: **totp**
+
+
+```json
+{
+  [...]
+  "method_name": "totp",
+  "metadata": null,
+    [...]
+}
+```
+
 ## 2.3. Perform an authentication step in the login flow
 
 The next step to authenticate the end-user is to let them enter some information
@@ -327,7 +339,7 @@ _JSON Body:_
 - `login_challenge` (string): can be found in previous redirect URL.
 - `authn_step` (object): the performed authentication step information:
   - `identity_id` (uuid string): the identity id.
-  - `method_name` (string) (one of: _emailed\_code_, _prehashed\_password_, _account\_creation_, _webauthn_): the authentication method used.
+  - `method_name` (string) (one of: _emailed\_code_, _prehashed\_password_, _account\_creation_, _webauthn_, _totp_): the authentication method used.
   - `metadata` (json object): metadata containing the emailed code value, the prehashed password or the webauthn options.
 The list of possible formats is defined in the next section.
 
@@ -441,6 +453,27 @@ an identity](./#possible-formats-for-the-metadata-field) with the `prehashed_pas
 ```
 
 The metadata content is explained in the webauthn documentation
+
+##### 2.3.1.1.5. method name: **totp**
+
+
+```json
+{
+  [...]
+  "method_name": "totp",
+  "metadata": {
+      "code": "<string>",
+      "recovery_code": "<string>"
+    },
+  [...]
+}
+```
+
+The `code` must be the otp given by the external app.
+
+The `recovery_code` must be in the user recovery codes set.
+
+One of `code` or `recovery_code` is required, but the other one must be blank.
 
 ### 2.3.2. success response
 

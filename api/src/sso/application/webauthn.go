@@ -264,11 +264,7 @@ func (sso *SSOService) DeleteCredential(ctx context.Context, gen request.Request
 		return nil, merr.Forbidden()
 	}
 
-	mods := []qm.QueryMod{
-		sqlboiler.WebauthnCredentialWhere.IdentityID.EQ(acc.IdentityID),
-	}
-
-	number, err := sqlboiler.WebauthnCredentials(mods...).Count(ctx, sso.sqlDB)
+	number, err := mwebauthn.CredentialsNumber(ctx, sso.sqlDB, acc.IdentityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("counting credentials")
 	}

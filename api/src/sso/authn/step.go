@@ -39,6 +39,8 @@ func (as *Service) InitStep(
 		return assertPasswordExistence(ctx, identity)
 	case oidc.AMRWebauthn:
 		return assertWebauthnCredentials(ctx, exec, identity)
+	case oidc.AMRTOTP:
+		return assertTOTPSecret(ctx, exec, identity)
 	default:
 		return merr.BadRequest().Desc("cannot init method").Add("method_name", merr.DVInvalid)
 	}
@@ -62,6 +64,8 @@ func (as *Service) AssertStep(
 		metadataErr = as.assertAccountCreation(ctx, exec, redConn, challenge, identity, assertion)
 	case oidc.AMRWebauthn:
 		metadataErr = as.assertWebauthn(ctx, exec, redConn, *identity, assertion)
+	case oidc.AMRTOTP:
+		metadataErr = as.assertTOTP(ctx, exec, redConn, *identity, assertion)
 	default:
 		metadataErr = merr.BadRequest().Add("method_name", merr.DVMalformed)
 	}

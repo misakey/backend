@@ -94,6 +94,23 @@ func (f *HandlerFactory) NewOptional(
 	return subPath, handler, f.authzMdlw
 }
 
+// NewACR3 ...
+func (f *HandlerFactory) NewACR3(
+	subPath string,
+	initReq func() Request,
+	appFunc func(context.Context, Request) (interface{}, error),
+	responseFunc func(echo.Context, interface{}) error,
+	afterOpts ...func(echo.Context, interface{}) error,
+) (string, echo.HandlerFunc, echo.MiddlewareFunc) {
+	handler := func(eCtx echo.Context) error {
+		if err := protectReq(eCtx, oidc.ACR3); err != nil {
+			return err
+		}
+		return processReq(eCtx, initReq, appFunc, responseFunc, afterOpts...)
+	}
+	return subPath, handler, f.authzMdlw
+}
+
 // NewACR2 ...
 func (f *HandlerFactory) NewACR2(
 	subPath string,

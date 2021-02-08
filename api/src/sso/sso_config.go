@@ -12,6 +12,7 @@ func initConfig() {
 	// handle missing mandatory fields
 	mandatoryFields := []string{
 		"server.domain",
+		"authflow.app_name",
 		"authflow.home_page_url",
 		"authflow.login_page_url",
 		"authflow.consent_page_url",
