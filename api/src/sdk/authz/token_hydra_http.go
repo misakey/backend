@@ -42,8 +42,8 @@ type instropection struct {
 	NotBefore int64  `json:"nbf"`
 
 	// fields validated inside this service
-	Active    bool   `json:"active"`
-	TokenType string `json:"token_type"`
+	Active   bool   `json:"active"`
+	TokenUse string `json:"token_use"`
 
 	// Additional custom claims
 	Ext struct {
@@ -74,7 +74,7 @@ func (h oidcIntroHTTP) GetClaims(ctx context.Context, opaqueTok string) (ac oidc
 	}
 
 	// check token is an access_token
-	if introTok.TokenType != "access_token" {
+	if introTok.TokenUse != "access_token" {
 		return ac, merr.Unauthorized().Ori(merr.OriHeaders).
 			Desc("token must be an access token").
 			Add("Authorization", merr.DVInvalid)
