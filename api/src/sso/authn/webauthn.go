@@ -24,10 +24,22 @@ func assertWebauthnCredentials(ctx context.Context, exec boil.ContextExecutor, c
 func prepareWebauthn(
 	ctx context.Context, as *Service, exec boil.ContextExecutor, redConn *redis.Client,
 	curIdentity identity.Identity, currentACR oidc.ClassRef, step *Step,
+	passwordReset bool,
 ) (*Step, error) {
-	// first ask for a password
-	if currentACR.LessThan(oidc.ACR2) {
-		return preparePassword(ctx, as, exec, redConn, curIdentity, currentACR, step)
+	// if in a password reset flow, ask for an email code
+	if passwordReset {
+		if currentACR.LessThan(oidc.ACR1) {
+			return prepareEmailedCode(ctx, as, exec, redConn, curIdentity, currentACR, step, false)
+		}
+		// if at the end of a password reset flow, ask for the new password
+		if currentACR == oidc.ACR3 {
+			return prepareResetPassword(step)
+		}
+	} else {
+		// first start with a password
+		if currentACR.LessThan(oidc.ACR2) {
+			return preparePassword(ctx, as, exec, redConn, curIdentity, currentACR, step, false)
+		}
 	}
 
 	// then it is time for webauthn

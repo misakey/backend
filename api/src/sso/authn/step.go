@@ -33,7 +33,7 @@ func (as *Service) InitStep(
 ) error {
 	switch methodName {
 	case oidc.AMREmailedCode:
-		_, err := prepareEmailedCode(ctx, as, exec, redConn, identity, oidc.ACR0, &Step{})
+		_, err := prepareEmailedCode(ctx, as, exec, redConn, identity, oidc.ACR0, &Step{}, false)
 		return err
 	case oidc.AMRPrehashedPassword:
 		return assertPasswordExistence(ctx, identity)
@@ -66,6 +66,8 @@ func (as *Service) AssertStep(
 		metadataErr = as.assertWebauthn(ctx, exec, redConn, *identity, assertion)
 	case oidc.AMRTOTP:
 		metadataErr = as.assertTOTP(ctx, exec, redConn, *identity, assertion)
+	case oidc.AMRResetPassword:
+		metadataErr = as.resetPassword(ctx, exec, redConn, challenge, *identity, assertion)
 	default:
 		metadataErr = merr.BadRequest().Add("method_name", merr.DVMalformed)
 	}
@@ -75,6 +77,7 @@ func (as *Service) AssertStep(
 type authnMethodHandler func(
 	context.Context, *Service, boil.ContextExecutor, *redis.Client,
 	identity.Identity, oidc.ClassRef, *Step,
+	bool,
 ) (*Step, error)
 
 var prepareStepFunc = map[oidc.MethodRef]authnMethodHandler{
@@ -92,20 +95,9 @@ var prepareStepFunc = map[oidc.MethodRef]authnMethodHandler{
 func (as *Service) PrepareNextStep(
 	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	identity identity.Identity, currentACR oidc.ClassRef, expectedACR oidc.ClassRef,
+	passwordReset bool,
 ) (*Step, error) {
 	var step Step
-
-	// if no ACR is expected, set it according to the identity state
-	if expectedACR == "" || expectedACR == oidc.ACR0 {
-		expectedACR = oidc.ACR1
-		if identity.AccountID.Valid {
-			expectedACR = oidc.ACR2
-		}
-	}
-	// in all cases, if any MFA method is setup, the expected ACR is enforce according to it
-	if identity.MFAMethod != "disabled" {
-		expectedACR = oidc.GetMethodACR(identity.MFAMethod)
-	}
 
 	nextMethod := oidc.GetNextMethod(currentACR, expectedACR)
 	if nextMethod == nil {
@@ -114,7 +106,7 @@ func (as *Service) PrepareNextStep(
 
 	step.MethodName = *nextMethod
 	step.IdentityID = identity.ID
-	return prepareStepFunc[step.MethodName](ctx, as, exec, redConn, identity, currentACR, &step)
+	return prepareStepFunc[step.MethodName](ctx, as, exec, redConn, identity, currentACR, &step, passwordReset)
 }
 
 // ExpireAll ...

@@ -169,12 +169,14 @@ _JSON Body:_
 ```json
 {
 	"login_challenge": "e45f579fd02d41adbf8cb45e0f6a44ff",
-  "identifier_value": "auth@test.com"
+  "identifier_value": "auth@test.com",
+  "password_reset": false
 }
 ```
 
 - `login_challenge` (string): can be found in preivous redirect URL.
 - `identifier_value` (string): the identifier value the end-user has entered.
+- `password_reset` (bool): a boolean to initiate a new password reset flow.
 
 ### 2.2.2. success response
 
@@ -305,6 +307,22 @@ The metadata content is defined and explained in the webauthn documentation.
 }
 ```
 
+#### 2.2.3.6. method name: **reset_password**
+
+This method must only be used at the end of the flow.
+
+This will set a new password for the given identity.
+
+```json
+{
+
+  [...]
+  "method_name": "reset_password",
+  "metadata": null,
+    [...]
+}
+```
+
 ## 2.3. Perform an authentication step in the login flow
 
 The next step to authenticate the end-user is to let them enter some information
@@ -363,43 +381,6 @@ _JSON Body:_
   [...]
 }
 ```
-
-###### 2.3.1.1.1.1. reset password extension
-
-Reset password is an extension that can be used during the user authentication, when an `emailed_code` authn step is performed.
-
-:warning: The extension requires the current identity to be linked to an account.
-
-Extending the JSON body payload, you can set new value to the account password (and the backup since the backup requires updates when the password changes).
-Using this extension, the final token ACR will be considered as if the `prehashed_password` method has been used instead of the `emailed_code` method.
-
-The extension adds to the initial payload explained below
-a `password_reset` json object describing the new password and backup values.
-
-:mag: The `prehashed_password` contains information following [Argon2 server relief concepts](../../concepts/server-relief/).
-
-_JSON Body:_
-```json
-  {
-    [...] (json payload described in the route below)  
-    "password_reset": {
-      "prehashed_password": {{% include "include/passwordHash.json" 6 %}},
-      "backup_data": "[STRINGIFIED JSON]"
-    }
-  }
-```
-
-- `password_reset` (object): information concerning the new password and backup.
-  - `prehashed_password` (object): prehashed password using argon2:
-    - `params` (object): argon2 parameters:
-      - `memory` (integer).
-      - `parallelism` (integer).
-      - `iterations` (integer).
-      - `salt_base64` (base64 string).
-    - `hash_base64` (base64 string): the prehashed password.
-  - `backup_data` (string): the new user backup data.
-
-
 
 ##### 2.3.1.1.2. method name: **prehashed_password**
 
@@ -474,6 +455,32 @@ The `code` must be the otp given by the external app.
 The `recovery_code` must be in the user recovery codes set.
 
 One of `code` or `recovery_code` is required, but the other one must be blank.
+
+##### 2.3.1.1.6. method name: **reset_password**
+
+_JSON Body:_
+```json
+  {
+    "method_name": "reset_password",
+    "metadata": {
+      "prehashed_password": {{% include "include/passwordHash.json" 6 %}},
+      "backup_data": "[STRINGIFIED JSON]"
+    }
+  [...]
+  }
+```
+
+- `password_reset` (object): information concerning the new password and backup.
+  - `prehashed_password` (object): prehashed password using argon2:
+    - `params` (object): argon2 parameters:
+      - `memory` (integer).
+      - `parallelism` (integer).
+      - `iterations` (integer).
+      - `salt_base64` (base64 string).
+    - `hash_base64` (base64 string): the prehashed password.
+  - `backup_data` (string): the new user backup data.
+
+:mag: The `prehashed_password` contains information following [Argon2 server relief concepts](../../concepts/server-relief/).
 
 ### 2.3.2. success response
 

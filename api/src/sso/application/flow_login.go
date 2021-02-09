@@ -92,6 +92,7 @@ func (sso *SSOService) LoginInit(ctx context.Context, gen request.Request) (inte
 type RequireIdentityCmd struct {
 	LoginChallenge  string `json:"login_challenge"`
 	IdentifierValue string `json:"identifier_value"`
+	PasswordReset   bool   `json:"password_reset"`
 }
 
 // BindAndValidate the RequireIdentityCmd
@@ -169,12 +170,26 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 		}
 	}
 
-	// 3. get the appropriate authn step - this is the start of the login flow so the current ACR is 0
+	// 3. compute the expected ACR
+	// if no ACR is expected, set it according to the identity state
 	expectedACR := logCtx.OIDCContext.ACRValues().Get()
+	if expectedACR == oidc.ACR0 {
+		expectedACR = oidc.ACR1
+		if curIdentity.AccountID.Valid {
+			expectedACR = oidc.ACR2
+		}
+	}
+	// in all cases, if any MFA method is setup, the expected ACR is enforce according to it
+	if curIdentity.MFAMethod != "disabled" {
+		expectedACR = oidc.GetMethodACR(curIdentity.MFAMethod)
+	}
+
+	// 4. get the appropriate authn step - this is the start of the login flow so the current ACR is 0
 	currentACR := oidc.ACR0
 	step, err := sso.AuthenticationService.PrepareNextStep(
 		ctx, tr, sso.redConn,
 		curIdentity, currentACR, expectedACR,
+		cmd.PasswordReset,
 	)
 	if err != nil {
 		return nil, merr.From(err).Descf("preparing step").Add("identity_id", curIdentity.ID).Add("expected_acr", expectedACR.String())
@@ -182,11 +197,18 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 	if step == nil {
 		return nil, merr.Internal().Descf("step is nil").Add("identity_id", curIdentity.ID).Add("expected_acr", expectedACR.String())
 	}
+
+	// 5. update process with the right expected ACR
+	// and with password reset argument
+	if err := sso.AuthenticationService.UpdateProcess(ctx, sso.redConn, logCtx.Challenge, expectedACR, cmd.PasswordReset); err != nil {
+		return nil, merr.From(err).Desc("updating process")
+	}
+
 	if cErr := tr.Commit(); cErr != nil {
 		return nil, merr.From(cErr).Desc("committing transaction")
 	}
 
-	// 4. bind identity information on view
+	// 5. bind identity information on view
 	view := RequireIdentityView{}
 	view.Identity.DisplayName = curIdentity.DisplayName
 	view.Identity.AvatarURL = curIdentity.AvatarURL
@@ -252,9 +274,8 @@ func (sso *SSOService) LoginInfo(ctx context.Context, gen request.Request) (inte
 
 // LoginAuthnStepCmd ...
 type LoginAuthnStepCmd struct {
-	LoginChallenge   string            `json:"login_challenge"`
-	Step             authn.Step        `json:"authn_step"`
-	PasswordResetExt *PasswordResetCmd `json:"password_reset"`
+	LoginChallenge string     `json:"login_challenge"`
+	Step           authn.Step `json:"authn_step"`
 }
 
 // BindAndValidate ...
@@ -278,9 +299,6 @@ func (cmd *LoginAuthnStepCmd) BindAndValidate(eCtx echo.Context) error {
 		return err
 	}
 
-	if cmd.PasswordResetExt != nil {
-		return cmd.PasswordResetExt.Validate()
-	}
 	return nil
 }
 
@@ -321,15 +339,6 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 	err = sso.AuthenticationService.AssertStep(ctx, tr, sso.redConn, logCtx.Challenge, &curIdentity, cmd.Step)
 	if err != nil {
 		return view, err
-	}
-
-	// emailed_code has potentially a reset password extension
-	if cmd.Step.MethodName == oidc.AMREmailedCode && cmd.PasswordResetExt != nil {
-		err = sso.resetPassword(ctx, tr, sso.redConn, *cmd.PasswordResetExt, cmd.Step.IdentityID)
-		if err != nil {
-			return view, err
-		}
-		cmd.Step.MethodName = oidc.AMRResetPassword
 	}
 
 	// upgrade the authentication process

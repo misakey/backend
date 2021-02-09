@@ -83,9 +83,7 @@ HTTP 204 NO CONTENT
 
 ## 4. Reset password
 
-The reset password is possible as an extension of an authentication step within an auth flow.
-
-[See here for more information](../auth_flow/#61111-reset-password-extension)
+To reset password, `password_reset` must be set to true when calling `/auth/identities`.
 
 ## 5. Get the account password parameters
 

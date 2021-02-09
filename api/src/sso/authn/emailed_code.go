@@ -76,6 +76,7 @@ func (as *Service) createEmailedCode(ctx context.Context, exec boil.ContextExecu
 func prepareEmailedCode(
 	ctx context.Context, as *Service, exec boil.ContextExecutor, _ *redis.Client,
 	identity identity.Identity, currentACR oidc.ClassRef, step *Step,
+	_ bool,
 ) (*Step, error) {
 	step.MethodName = oidc.AMREmailedCode
 	// we ignore the conflict error code - if a code already exist, we still want to return identity information

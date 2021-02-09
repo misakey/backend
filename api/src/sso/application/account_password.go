@@ -6,19 +6,14 @@ import (
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-	"github.com/go-redis/redis/v7"
 	"github.com/labstack/echo/v4"
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn/argon2"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
@@ -149,75 +144,4 @@ func (sso *SSOService) ChangePassword(ctx context.Context, gen request.Request) 
 		return nil, err
 	}
 	return nil, tr.Commit()
-}
-
-// PasswordResetCmd ...
-type PasswordResetCmd struct {
-	Password   argon2.HashedPassword `json:"prehashed_password"`
-	BackupData string                `json:"backup_data"`
-}
-
-// Validate ...
-func (cmd PasswordResetCmd) Validate() error {
-	if err := v.ValidateStruct(&cmd,
-		v.Field(&cmd.Password),
-		v.Field(&cmd.BackupData, v.Required),
-	); err != nil {
-		return merr.From(err).Desc("validating reset password command")
-	}
-	return nil
-}
-
-func (sso *SSOService) resetPassword(
-	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
-	cmd PasswordResetCmd, identityID string,
-) error {
-	// verify authenticated identity id is linked to the given account id
-	curIdentity, err := identity.Get(ctx, exec, identityID)
-	if err != nil {
-		return merr.Forbidden().Desc("invalid token subject")
-	}
-
-	if curIdentity.AccountID.String == "" {
-		return merr.Conflict().
-			Desc("identity is not linked to any account").
-			Add("identity_id", merr.DVConflict).
-			Add("account_id", merr.DVRequired)
-	}
-
-	// get account
-	account, err := identity.GetAccount(ctx, exec, curIdentity.AccountID.String)
-	if err != nil {
-		return err
-	}
-
-	backupArchive := crypto.BackupArchive{
-		AccountID: account.ID,
-		Data:      null.StringFrom(account.BackupData),
-	}
-	err = crypto.CreateBackupArchive(ctx, exec, backupArchive)
-	if err != nil {
-		return err
-	}
-
-	// update password
-	account.Password, err = cmd.Password.Hash()
-	if err != nil {
-		return err
-	}
-
-	account.BackupData = cmd.BackupData
-	account.BackupVersion++
-
-	// save account
-	if err := identity.UpdateAccount(ctx, exec, &account); err != nil {
-		return err
-	}
-
-	// create identity notification about password reset
-	if err := identity.NotificationCreate(ctx, exec, redConn, curIdentity.ID, "user.reset_password", null.JSONFromPtr(nil)); err != nil {
-		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", curIdentity.ID)
-	}
-	return nil
-
 }

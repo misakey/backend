@@ -29,6 +29,7 @@ type Process struct {
 	ExpectedACR    oidc.ClassRef   `json:"eacr"`
 	CompleteAMRs   oidc.MethodRefs `json:"camr"`
 	IdentityID     string          `json:"mid"`
+	PasswordReset  bool            `json:"pwdr"`
 
 	AccessToken string `json:"tok"`
 	ExpiresAt   int64  `json:"exp"`
@@ -86,6 +87,27 @@ func (as *Service) GetProcess(
 	return process, nil
 }
 
+// UpdateProcess to change its state manually
+func (as *Service) UpdateProcess(
+	ctx context.Context, redConn *redis.Client,
+	challenge string, expectedACR oidc.ClassRef, passwordReset bool,
+) error {
+	process := Process{}
+	// retrieve the process
+	process, err := as.processes.Get(ctx, challenge)
+	if err != nil {
+		return merr.From(err).Desc("getting process")
+	}
+
+	process.PasswordReset = passwordReset
+	process.ExpectedACR = expectedACR
+	if err := as.processes.Update(ctx, process); err != nil {
+		return merr.From(err).Desc("updating process")
+	}
+
+	return nil
+}
+
 // UpgradeProcess by adding an amr on it
 // it inits the process if required,
 // it returns the upgraded Process, telling the login flow require more authn-step to be performed if a NextStep has been set.
@@ -93,7 +115,6 @@ func (as *Service) UpgradeProcess(
 	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	challenge string, identity identity.Identity, amr oidc.MethodRef,
 ) (Process, error) {
-	process := Process{}
 	// retrieve the process
 	process, err := as.processes.Get(ctx, challenge)
 	if err != nil {
@@ -116,6 +137,7 @@ func (as *Service) UpgradeProcess(
 	process.NextStep, err = as.PrepareNextStep(
 		ctx, exec, redConn,
 		identity, process.CompleteAMRs.ToACR(), process.ExpectedACR,
+		process.PasswordReset,
 	)
 	if err != nil {
 		return process, merr.From(err).Desc("getting next step")

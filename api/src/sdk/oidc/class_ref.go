@@ -107,3 +107,9 @@ func GetNextMethod(currentACR ClassRef, expectedACR ClassRef) *MethodRef {
 	}
 	return nil
 }
+
+// IsJustBefore returns true if the current ACR
+// is just one less than the expected ACR
+func (acr ClassRef) IsJustBefore(expected ClassRef) bool {
+	return (acrToInt[expected]-acrToInt[acr] == 1)
+}

@@ -46,23 +46,27 @@ func (amrs MethodRefs) Has(method MethodRef) bool {
 // ToACR ...
 // password + webauthn = acr 4
 // password + totp: acr 3
-// password, reset password, account creation: acr 2
+// password, account creation: acr 2
 // emailed code: acr 1
 func (amrs MethodRefs) ToACR() ClassRef {
 	// acr 4
-	if amrs.Has(AMRWebauthn) && amrs.Has(AMRPrehashedPassword) {
+	if amrs.Includes(AMRWebauthn, AMRPrehashedPassword) ||
+		amrs.Includes(AMRWebauthn, AMREmailedCode, AMRResetPassword) {
 		return ACR4
 	}
 
 	// acr 3
-	if amrs.Has(AMRTOTP) && amrs.Has(AMRPrehashedPassword) {
+	if amrs.Includes(AMRTOTP, AMRPrehashedPassword) ||
+		amrs.Includes(AMRTOTP, AMREmailedCode, AMRResetPassword) ||
+		amrs.Includes(AMRWebauthn, AMREmailedCode) {
 		return ACR3
 	}
 
 	// acr 2
 	if amrs.Has(AMRPrehashedPassword) ||
-		amrs.Has(AMRResetPassword) ||
-		amrs.Has(AMRAccountCreation) {
+		amrs.Has(AMRAccountCreation) ||
+		amrs.Includes(AMREmailedCode, AMRResetPassword) ||
+		amrs.Includes(AMREmailedCode, AMRTOTP) {
 		return ACR2
 	}
 
@@ -82,4 +86,14 @@ func (amrs MethodRefs) String() string {
 		tmp[i] = string(v)
 	}
 	return strings.Join(tmp, " ")
+}
+
+// Includes all methods passed as parameters
+func (amrs MethodRefs) Includes(methods ...MethodRef) bool {
+	for _, method := range methods {
+		if !amrs.Has(method) {
+			return false
+		}
+	}
+	return true
 }

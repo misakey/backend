@@ -25,11 +25,22 @@ func assertTOTPSecret(ctx context.Context, exec boil.ContextExecutor, curIdentit
 func prepareTOTP(
 	ctx context.Context, as *Service, exec boil.ContextExecutor, redConn *redis.Client,
 	curIdentity identity.Identity, currentACR oidc.ClassRef, step *Step,
+	passwordReset bool,
 ) (*Step, error) {
-	step.MethodName = oidc.AMRTOTP
-	// first ask for a password
-	if currentACR.LessThan(oidc.ACR2) {
-		return preparePassword(ctx, as, exec, redConn, curIdentity, currentACR, step)
+	if passwordReset {
+		// if in a password reset flow, ask for an email code
+		if currentACR.LessThan(oidc.ACR1) {
+			return prepareEmailedCode(ctx, as, exec, redConn, curIdentity, currentACR, step, false)
+		}
+		// if at the end of a password reset flow, ask for the new password
+		if currentACR == oidc.ACR2 {
+			return prepareResetPassword(step)
+		}
+	} else {
+		// first ask for a password
+		if currentACR.LessThan(oidc.ACR2) {
+			return preparePassword(ctx, as, exec, redConn, curIdentity, currentACR, step, false)
+		}
 	}
 
 	// then it is time for TOTP
