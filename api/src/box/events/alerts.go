@@ -66,7 +66,7 @@ func countActivity(ctx context.Context, e *Event, exec boil.ContextExecutor, red
 
 // invalidates all redis caches for the boxID & event.senderID
 func invalidateCaches(ctx context.Context, e *Event, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ files.FileStorageRepo, _ Metadata) error {
-	err := cache.CleanBoxByID(ctx, redConn, e.BoxID)
+	err := cache.CleanBoxMembersByID(ctx, redConn, e.BoxID)
 	if err != nil {
 		logger.FromCtx(ctx).Warn().Msgf("could not clean box cache for box %s: %v", e.BoxID, err)
 	}
@@ -103,19 +103,24 @@ func sendRealtimeUpdate(ctx context.Context, e *Event, exec boil.ContextExecutor
 		return merr.From(err).Desc("formatting event")
 	}
 
-	boxCreatorID, err := getBoxCreatorID(ctx, exec, e.BoxID)
+	createInfo, err := GetCreateInfo(ctx, exec, e.BoxID)
 	if err != nil {
 		return merr.From(err).Desc("getting creator")
 	}
 
 	for memberID := range uniqRecipientsIDs {
 		object := formattedEvent
-		if boxCreatorID == memberID {
+		if createInfo.CreatorID == memberID {
 			object = transparentFormattedEvent
 		}
 		bu := realtime.Update{
-			Type:   "event.new",
-			Object: object,
+			Type: "event.new",
+			Object: struct {
+				View
+				OwnerOrgID string `json:"owner_org_id"`
+			}{
+				object, createInfo.OwnerOrgID,
+			},
 		}
 		realtime.SendUpdate(ctx, redConn, memberID, &bu)
 	}

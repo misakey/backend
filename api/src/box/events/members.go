@@ -22,9 +22,9 @@ func ListBoxMemberIDs(
 ) ([]string, error) {
 	// 1. try to retrieve cache if it exists
 	cacheKey := cache.MemberIDsKeyByBox(boxID)
-	members, err := redConn.SMembers(cacheKey).Result()
-	if err == nil && len(members) != 0 {
-		return members, nil
+	memberIDs, err := redConn.SMembers(cacheKey).Result()
+	if err == nil && len(memberIDs) > 0 {
+		return memberIDs, nil
 	}
 
 	// 2. if cache couldn’t be retrieved
@@ -39,7 +39,7 @@ func ListBoxMemberIDs(
 	}
 	// start the member IDs list with it
 	uniqueMemberIDs := make(map[string]bool)
-	memberIDs := []string{createEvent.SenderID}
+	memberIDs = []string{createEvent.SenderID}
 	uniqueMemberIDs[createEvent.SenderID] = true
 
 	// 3. compute people that has joined the box

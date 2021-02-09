@@ -3,7 +3,7 @@ categories = ["Endpoints"]
 date = "2020-09-11"
 description = "Crypto Actions endpoints"
 tags = ["sso", "crypto", "actions", "api", "endpoints"]
-title = "SSO - Crypto Actions"
+title = "Crypto Actions"
 +++
 
 Crypto actions are encrypted messages sent automatically from account to account,

@@ -27,6 +27,11 @@ func (ih IntraprocessHelper) Get(ctx context.Context, identityID string) (Identi
 	return Get(ctx, ih.sqlDB, identityID)
 }
 
+// Get ...
+func (ih IntraprocessHelper) GetByIdentifierValue(ctx context.Context, identifierValue string) (Identity, error) {
+	return GetByIdentifierValue(ctx, ih.sqlDB, identifierValue)
+}
+
 // List ...
 func (ih IntraprocessHelper) List(ctx context.Context, filters Filters) ([]*Identity, error) {
 	return List(ctx, ih.sqlDB, filters)

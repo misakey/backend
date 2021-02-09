@@ -19,7 +19,7 @@ import (
 
 // assertPasswordExistence by checking the account id validity
 // return a conflict error is not valid
-func assertPasswordExistence(ctx context.Context, identity identity.Identity) error {
+func assertPasswordExistence(_ context.Context, identity identity.Identity) error {
 	if identity.AccountID.String == "" {
 		return merr.Conflict().Desc("identity has no linked account").
 			Add("identity_id", merr.DVConflict).

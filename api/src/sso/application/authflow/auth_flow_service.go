@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"strings"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/login"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/userinfo"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/domain/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 

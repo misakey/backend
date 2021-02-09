@@ -11,7 +11,7 @@ services:
     environment:
       - DSN_SSO=postgres://misakey:secret@sso_db:5432/sso-migration-test?sslmode=disable
       - ENV=development
-    command: "sso-migrate"
+    command: "sso-migrate --goose=up"
 
   sso_db:
     image: postgres:11.4

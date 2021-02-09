@@ -2,8 +2,8 @@
 categories = ["Endpoints"]
 date = "2020-09-11"
 description = "Accounts endpoints"
-tags = ["sso", "accounts", "api", "endpoints"]
-title = "SSO - Accounts"
+tags = ["sso", "accounts", "api", "endpoints", "account"]
+title = "Accounts"
 +++
 
 ## 1. Introduction

@@ -84,11 +84,13 @@ func notifyKick(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *red
 
 	// notify the kicked identity they have been kicked.
 	kickDetails := struct {
-		BoxID    string `json:"id"`
-		BoxTitle string `json:"title"`
+		BoxID      string `json:"id"`
+		BoxTitle   string `json:"title"`
+		OwnerOrgID string `json:"owner_org_id"`
 	}{
-		BoxID:    box.ID,
-		BoxTitle: box.Title,
+		BoxID:      box.ID,
+		BoxTitle:   box.Title,
+		OwnerOrgID: box.OwnerOrgID,
 	}
 	bytes, err := json.Marshal(kickDetails)
 	if err != nil {

@@ -3,20 +3,19 @@ package application
 import (
 	"context"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/domain/consent"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
-
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn"
-
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/consent"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
 // ConsentInitCmd ...

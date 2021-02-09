@@ -3,7 +3,7 @@ categories = ["Endpoints"]
 date = "2020-09-11"
 description = "Backup Archives endpoints"
 tags = ["sso", "backup", "archives", "api", "endpoints"]
-title = "SSO - Backup Archives"
+title = "Backup Archives"
 +++
 
 

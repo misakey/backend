@@ -90,16 +90,20 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 	if err != nil {
 		return nil, merr.From(err).Desc("decoding json")
 	}
-	if err := cryptoRepo.CreateInvitationActionsForIdentity(ctx, contact.IdentityID, event.BoxID, contact.Title, contact.ContactedIdentityID, null.JSONFrom(decodedInvitationDataJSON)); err != nil {
-		return nil, merr.From(err).Desc("creating invitation action")
+	guest, err := identityMapper.Get(ctx, contact.ContactedIdentityID, true)
+	if err != nil {
+		return nil, merr.From(err).Desc("getting contacted identity")
 	}
-
-	// compute box to return it
+	// compute box for invitation and return
 	box, err := Compute(ctx, event.BoxID, exec, identityMapper, &event)
 	if err != nil {
 		return nil, merr.From(err).Desc("computing box")
 	}
+	if err := createInvitationActions(ctx, cryptoRepo, identityMapper, box, guest, event.SenderID, null.JSONFrom(decodedInvitationDataJSON), true); err != nil {
+		return nil, merr.From(err).Desc("creating invitation action")
+	}
 
+	// return the box
 	return &box, nil
 
 }

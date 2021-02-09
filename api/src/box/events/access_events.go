@@ -42,15 +42,18 @@ func (c accessAddContent) Validate() error {
 	)
 }
 
-func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoRepo external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
+func doAddAccess(
+	ctx context.Context, e *Event, extraJSON null.JSON,
+	exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, cryptoRepo external.CryptoRepo, _ files.FileStorageRepo,
+) (Metadata, error) {
 	// the user must be an admin
 	if err := MustBeAdmin(ctx, exec, e.BoxID, e.SenderID); err != nil {
 		return nil, merr.From(err).Desc("checking admin")
 	}
 
 	// check content format
-	var c accessAddContent
-	if err := e.JSONContent.Unmarshal(&c); err != nil {
+	var access accessAddContent
+	if err := e.JSONContent.Unmarshal(&access); err != nil {
 		return nil, merr.From(err).Desc("unmarshalling access content")
 	}
 
@@ -59,8 +62,8 @@ func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.C
 		eType:           null.StringFrom(etype.Accessadd),
 		unreferred:      true,
 		boxID:           null.StringFrom(e.BoxID),
-		restrictionType: null.StringFrom(c.RestrictionType),
-		accessValue:     null.StringFrom(c.Value),
+		restrictionType: null.StringFrom(access.RestrictionType),
+		accessValue:     null.StringFrom(access.Value),
 	})
 	// no error means the access already exists
 	if err == nil {
@@ -80,17 +83,21 @@ func doAddAccess(ctx context.Context, e *Event, extraJSON null.JSON, exec boil.C
 		return nil, err
 	}
 
-	if c.RestrictionType == "identifier" {
+	if access.RestrictionType == "identifier" {
 		// potential side effects of an "identifier" access
 		// (auto invitation)
-		if c.AutoInvite {
+		if access.AutoInvite {
 			if extraJSON.Valid {
 				box, err := Compute(ctx, e.BoxID, exec, identityMapper, nil)
 				if err != nil {
 					return nil, merr.From(err).Desc("computing the box (to get title for notif)")
 				}
+				guest, err := identityMapper.GetByIdentifier(ctx, access.Value)
+				if err != nil {
+					return nil, merr.From(err).Desc("getting guest by identifier value")
+				}
 				// creates a crypto action AND the notification
-				err = cryptoRepo.CreateInvitationActionsForIdentifier(ctx, e.SenderID, e.BoxID, box.Title, c.Value, extraJSON)
+				err = createInvitationActions(ctx, cryptoRepo, identityMapper, box, guest, e.SenderID, extraJSON, false)
 				if err != nil {
 					return nil, merr.From(err).Desc("creating crypto actions")
 				}

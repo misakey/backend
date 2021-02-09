@@ -115,7 +115,7 @@ func ListLastestForEachBoxID(ctx context.Context, exec boil.ContextExecutor, box
 	// build the final last events list
 	lastEvents := make([]Event, len(records))
 	for idx, event := range records {
-		lastEvents[idx] = FromSQLBoiler(event)
+		lastEvents[idx] = fromSQLBoiler(event)
 	}
 	sort.Slice(lastEvents, func(i, j int) bool { return lastEvents[i].CreatedAt.Unix() > lastEvents[j].CreatedAt.Unix() })
 	return lastEvents, nil
@@ -156,7 +156,7 @@ func ListByTypeAndBoxIDAndSenderID(ctx context.Context, exec boil.ContextExecuto
 
 	events := make([]Event, len(dbEvents))
 	for i, record := range dbEvents {
-		events[i] = FromSQLBoiler(record)
+		events[i] = fromSQLBoiler(record)
 	}
 
 	if len(events) == 0 {
@@ -213,7 +213,7 @@ func get(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) (
 	if err != nil {
 		return e, merr.From(err).Desc("getting event")
 	}
-	return FromSQLBoiler(dbEvent), nil
+	return fromSQLBoiler(dbEvent), nil
 }
 
 func listEventAndReferrers(ctx context.Context, exec boil.ContextExecutor, id string) ([]Event, error) {
@@ -233,7 +233,7 @@ func listEventAndReferrers(ctx context.Context, exec boil.ContextExecutor, id st
 
 	events := make([]Event, len(dbEvents))
 	for i, record := range dbEvents {
-		events[i] = FromSQLBoiler(record)
+		events[i] = fromSQLBoiler(record)
 	}
 
 	return events, nil
@@ -252,7 +252,7 @@ func list(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) 
 
 	events := make([]Event, len(dbEvents))
 	for i, record := range dbEvents {
-		events[i] = FromSQLBoiler(record)
+		events[i] = fromSQLBoiler(record)
 	}
 	return events, nil
 }

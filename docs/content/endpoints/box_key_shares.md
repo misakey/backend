@@ -3,7 +3,7 @@ categories = ["Endpoints"]
 date = "2020-09-11"
 description = "Key Shares (key splitting) endpoints"
 tags = ["box", "keyshares", "key", "splitting", "api", "endpoints"]
-title = "Box - Key Shares"
+title = "Box Key Shares"
 +++
 
 ## 1. Introduction

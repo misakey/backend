@@ -57,6 +57,11 @@ func (app *BoxApplication) UpdateBoxSettings(ctx context.Context, genReq request
 		Muted:      req.Muted,
 	}
 
+	createInfo, err := events.GetCreateInfo(ctx, app.DB, req.boxID)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := events.UpdateBoxSetting(ctx, app.DB, boxSetting); err != nil {
 		return nil, err
 	}
@@ -70,8 +75,13 @@ func (app *BoxApplication) UpdateBoxSettings(ctx context.Context, genReq request
 
 	// send the update to websockets
 	realtime.SendUpdate(ctx, app.RedConn, acc.IdentityID, &realtime.Update{
-		Type:   "box.settings",
-		Object: boxSetting,
+		Type: "box.settings",
+		Object: struct {
+			events.BoxSetting
+			OwnerOrgID string `json:"owner_org_id"`
+		}{
+			boxSetting, createInfo.OwnerOrgID,
+		},
 	})
 
 	return boxSetting, nil

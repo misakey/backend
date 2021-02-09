@@ -55,7 +55,7 @@ type totpAssertion struct {
 }
 
 func (as *Service) assertTOTP(
-	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
+	ctx context.Context, exec boil.ContextExecutor, _ *redis.Client,
 	curIdentity identity.Identity, assertion Step) error {
 
 	mods := []qm.QueryMod{

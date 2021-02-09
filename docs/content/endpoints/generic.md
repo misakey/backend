@@ -12,7 +12,7 @@ Here are some public endpoints.
 
 They are not specific to the API but can serve multiple purposes: security, information, ...
 
-## 1.1. Version
+## 1.1. Get the version of the running instance
 
 ### 1.2.1. request
 
@@ -36,7 +36,7 @@ _JSON Body_:
 
 - `version` (string): The API Version.
 
-## 1.1. CSRF Token
+## 1.1. Get the current CSRF Token
 
 This endpoint allow to retrieve the CSRF Token that must be sent in the header
 `X-CSRF-Token` with all HTTP verbs that can write data.

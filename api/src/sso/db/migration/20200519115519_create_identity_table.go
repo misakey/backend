@@ -12,7 +12,7 @@ func initCreateIdentityTable() {
 
 func upCreateIdentityTable(tx *sql.Tx) error {
 	_, err := tx.Exec(`CREATE TABLE identity(
-		  id UUID PRIMARY KEY,
+		  	id UUID PRIMARY KEY,
 			account_id UUID REFERENCES account,
 			identifier_id UUID NOT NULL REFERENCES identifier,
 			is_authable BOOLEAN NOT NULL,
@@ -26,7 +26,7 @@ func upCreateIdentityTable(tx *sql.Tx) error {
 	}
 
 	_, err = tx.Exec(`CREATE INDEX identity_account_id_idx
-          ON identity (account_id);`)
+		ON identity (account_id);`)
 	if err != nil {
 		return err
 	}

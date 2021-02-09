@@ -1,9 +1,9 @@
 +++
 categories = ["Endpoints"]
-date = "2021-02-04"
-description = "TOTP endpoints"
+date = "2020-02-04"
+description = "TOTP Configuration endpoints"
 tags = ["sso", "totp", "secret", "api", "endpoints"]
-title = "SSO - TOTP"
+title = "TOTP Configuration"
 +++
 
 ## 1. Introduction
@@ -16,39 +16,11 @@ It must register on a external TOTP App via a QR Code.
 
 ## 2. TOTP
 
-### 2.1 Delete TOTP Secret
+### 2.1. Configure TOTP
 
-This route deletes the unique identity secret.
+This initiates a TOTP Enrollment to attach TOTP secret to an identity
 
-The identity **must not** have `mfa_method` configured to `totp`.
-
-#### 2.1.1 request
-
-```bash
-DELETE https://api.misakey.com/identities/:id/totp
-```
-_Cookies:_
-- `accesstoken` (opaque token) (ACR >= 2): `mid` claim as the identity id owning the credential.
-- `tokentype`: must be `bearer`
-
-_Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks
-
-_Path Parameters:_
-- `id` (string) (uuid): The identity id.
-
-#### 2.1.2. success response
-
-_Code:_
-```bash
-HTTP 204 No Content
-```
-
-### 2.2. Configure TOTP
-
-This initiates a TOTP Enrollment.
-
-#### 2.2.1. request
+#### 2.1.1. request
 
 ```bash
 GET https://api.misakey.com/identities/:id/totp/enroll
@@ -64,7 +36,7 @@ _Headers:_
 _Path Parameters:_
 - `id` (uuid string): the identity unique id.
 
-#### 2.2.2. success response
+#### 2.1.2. success response
 
 _Code:_
 ```bash
@@ -82,11 +54,11 @@ _JSON Body:_
 - `id`: an uuid to identify the enrollment flow
 - `base64_image`: the QR code image encoded in base64
 
-### 2.3. Finish TOTP enrollment
+### 2.2. Finish TOTP enrollment
 
 This completes a TOTP Enrollment flow.
 
-#### 2.3.1. request
+#### 2.2.1. request
 
 ```bash
 POST https://api.misakey.com/identities/:id/totp/enroll
@@ -113,7 +85,7 @@ _JSON Body:_
 - `id`: the unique id identifying the enrollment flow
 - `code`: the code returned by the external app when registering via the QR code
 
-#### 2.3.2. success response
+#### 2.2.2. success response
 
 _Code:_
 ```bash
@@ -131,14 +103,13 @@ _JSON Body:_
 ```
 
 - `recovery_codes`: a set of one time use codes that can be used instead of the code during auth flow
-
-### 2.4. Regenerate recovery codes
+### 2.3. Regenerate recovery codes
 
 This allows a user to regenerate their set of recovery codes.
 
 It erases the old set.
 
-#### 2.4.1. request
+#### 2.3.1. request
 
 ```bash
 POST https://api.misakey.com/identities/:id/totp/recovery-codes
@@ -174,3 +145,30 @@ _JSON Body:_
 - `recovery_codes`: a set of one time use codes that can be used instead of the code during auth flow
 
 
+### 2.4. Delete TOTP Secret
+
+This route deletes the unique identity secret.
+
+The identity **must not** have `mfa_method` configured to `totp`.
+
+#### 2.4.1. request
+
+```bash
+DELETE https://api.misakey.com/identities/:id/totp
+```
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): `mid` claim as the identity id owning the credential.
+- `tokentype`: must be `bearer`
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks
+
+_Path Parameters:_
+- `id` (string) (uuid): The identity id.
+
+#### 2.4.2. success response
+
+_Code:_
+```bash
+HTTP 204 No Content
+```

@@ -3,10 +3,8 @@ package crypto
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"time"
 
-	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -81,111 +79,6 @@ func CreateActions(
 
 	return nil
 
-}
-
-// CreateInvitationActionsForIdentity ...
-func CreateInvitationActionsForIdentity(
-	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
-	senderID, boxID, boxTitle, identityID string, actionsDataJSON null.JSON,
-) error {
-	identityObj, err := identity.Get(ctx, exec, identityID)
-	if err != nil {
-		return merr.From(err).Desc("getting identity by id")
-	}
-	return createInvitationAction(
-		ctx, exec, redConn,
-		identityObj, actionsDataJSON, senderID, boxID, boxTitle, true,
-	)
-}
-
-// CreateInvitationActionsForIdentifier ...
-func CreateInvitationActionsForIdentifier(
-	ctx context.Context,
-	exec boil.ContextExecutor, redConn *redis.Client,
-	senderID, boxID, boxTitle, identifierValue string, actionsDataJSON null.JSON,
-) error {
-
-	identityObj, err := identity.GetByIdentifierValue(ctx, exec, identifierValue)
-	if err != nil {
-		return merr.From(err).Desc("retrieving identity by value")
-	}
-	return createInvitationAction(
-		ctx, exec, redConn,
-		identityObj, actionsDataJSON, senderID, boxID, boxTitle, false,
-	)
-}
-
-// createInvitationAction for the given identity
-// using the identity Pubkey (if nonIdentified is false)
-// or the identity NonIdentifiedPubkey (if nonIdentified is true)
-func createInvitationAction(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, guest identity.Identity, actionsDataJSON null.JSON, senderID, boxID, boxTitle string, nonIdentified bool) error {
-	// verify actions metadata
-	var actionsData map[string]string
-	err := actionsDataJSON.Unmarshal(&actionsData)
-	if err != nil {
-		return merr.From(err).Desc("unmarshalling actions data")
-	}
-	if len(actionsData) != 1 {
-		return merr.BadRequest().Desc("required one entry per identity public key in extra")
-	}
-
-	// check and assign pubkeys
-	var pubkey string
-	if !nonIdentified && guest.Pubkey.Valid {
-		pubkey = guest.Pubkey.String
-	} else if nonIdentified && guest.NonIdentifiedPubkey.Valid {
-		pubkey = guest.NonIdentifiedPubkey.String
-	} else {
-		return merr.Conflict().Desc("guest does not have a public key")
-	}
-
-	// cryptoaction
-	encryptedCryptoAction, present := actionsData[pubkey]
-	if !present {
-		return merr.BadRequest().Descf("missing encrypted crypto action for pubkey \"%s\"", pubkey)
-	}
-
-	// prepare action
-	actionID, err := uuid.NewString()
-	if err != nil {
-		return merr.From(err).Desc("generating action UUID")
-	}
-	action := Action{
-		ID:                  actionID,
-		AccountID:           guest.AccountID.String,
-		Type:                "invitation",
-		SenderIdentityID:    null.StringFrom(senderID),
-		BoxID:               null.StringFrom(boxID),
-		Encrypted:           encryptedCryptoAction,
-		EncryptionPublicKey: pubkey,
-		CreatedAt:           time.Now(),
-	}
-
-	// prepare notification
-	notifDetailsBytes, err := json.Marshal(struct {
-		BoxID          string `json:"box_id"`
-		BoxTitle       string `json:"box_title"`
-		CryptoActionID string `json:"cryptoaction_id"`
-	}{
-		BoxID:          boxID,
-		BoxTitle:       boxTitle,
-		CryptoActionID: action.ID,
-	})
-	if err != nil {
-		return merr.From(err).Descf("marshalling notif details for pubkey \"%s\"", pubkey)
-	}
-
-	// create the prepared action
-	if err := CreateActions(ctx, exec, []Action{action}); err != nil {
-		return err
-	}
-
-	// create the prepared notification
-	err = identity.NotificationCreate(
-		ctx, exec, redConn,
-		guest.ID, "box.auto_invite", null.JSONFrom(notifDetailsBytes),
-	)
-	return err
 }
 
 // GetAction ...

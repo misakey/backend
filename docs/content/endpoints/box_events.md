@@ -1,9 +1,9 @@
 +++
 categories = ["Endpoints"]
 date = "2020-09-11"
-description = "Events endpoints"
+description = "Box Events endpoints"
 tags = ["box", "events", "api", "endpoints"]
-title = "Box - Events"
+title = "Box Events"
 +++
 
 # 1. Introduction

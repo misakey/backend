@@ -73,17 +73,26 @@ func CleanUserBoxByUserOrg(
 
 // MemberIDsKeyByBox ...
 func MemberIDsKeyByBox(boxID string) string {
-	return fmt.Sprintf("cache:box_%s:membersIDs", boxID)
+	return fmt.Sprintf("cache:box_%s:memberIDs", boxID)
 }
 
 // CleanBoxByID ...
 func CleanBoxByID(ctx context.Context, redConn *redis.Client, boxID string) error {
-	keys, err := redConn.Keys(fmt.Sprintf("*box_%s", boxID)).Result()
+	keys, err := redConn.Keys(fmt.Sprintf("*box_%s:*", boxID)).Result()
 	if err != nil {
 		return err
 	}
 
 	if _, err := redConn.Del(keys...).Result(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CleanBoxMembersByID ...
+func CleanBoxMembersByID(ctx context.Context, redConn *redis.Client, boxID string) error {
+	if _, err := redConn.Del(fmt.Sprintf("cache:box_%s:memberIDs", boxID)).Result(); err != nil {
 		return err
 	}
 

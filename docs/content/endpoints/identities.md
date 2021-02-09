@@ -2,8 +2,8 @@
 categories = ["Endpoints"]
 date = "2020-10-27"
 description = "Identities endpoints"
-tags = ["sso", "identities", "api", "endpoints", "notifications"]
-title = "SSO - Identities"
+tags = ["sso", "identities", "api", "endpoints", "notifications", "identity", "user"]
+title = "Identities"
 +++
 
 # 1. Introduction
@@ -419,6 +419,7 @@ _JSON Body:_
    "details": {
      "id": "e5d889de-6be1-4201-bb7e-0772fbbf41e2", // id of the concerned box
      "title": "Dossier client 33129" // title of the box
+     "owner_org_id": "91ec8274-2b6d-40ff-afad-83e8ba5808e5", // owner org id of the box
    },
    "created_at": "2038-11-05T00:00:00.000Z",
    "acknowledged_at": "2038-11-05T00:00:05.000Z",
@@ -436,6 +437,7 @@ _JSON Body:_
     "details": {
       "box_id": "50d03bf1-3515-43af-a3d9-d553d5b71dbc",
       "box_title": "Test Box",
+      "owner_org_id": "91ec8274-2b6d-40ff-afad-83e8ba5808e5", // owner org id of the box
       "cryptoaction_id": "84cfa967-8cff-4ebc-ba0e-ce70ca700a79",
       "used": true, // if not used, attribute will not be present
     },

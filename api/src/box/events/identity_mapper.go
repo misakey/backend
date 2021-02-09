@@ -19,14 +19,16 @@ type IdentityMapper struct {
 
 	querier external.IdentityRepo
 
-	mem map[string]SenderView
+	mem             map[string]SenderView
+	byIdentifierMem map[string]SenderView
 }
 
 // NewIdentityMapper ...
 func NewIdentityMapper(querier external.IdentityRepo) *IdentityMapper {
 	return &IdentityMapper{
-		querier: querier,
-		mem:     make(map[string]SenderView),
+		querier:         querier,
+		mem:             make(map[string]SenderView),
+		byIdentifierMem: make(map[string]SenderView),
 	}
 }
 
@@ -37,6 +39,7 @@ func NewIdentityMapper(querier external.IdentityRepo) *IdentityMapper {
 func (mapper *IdentityMapper) Get(ctx context.Context, identityID string, transparent bool) (SenderView, error) {
 	var sender SenderView
 	var ok bool
+	// try to get from cache
 	sender, ok = mapper.mem[identityID]
 	if !ok {
 		// get unknown identity and save it
@@ -52,13 +55,44 @@ func (mapper *IdentityMapper) Get(ctx context.Context, identityID string, transp
 			sender = anonymousSenderView()
 		}
 
+		// update the cache
 		mapper.Lock()
 		mapper.mem[existingIdentity.ID] = sender
+		mapper.byIdentifierMem[existingIdentity.IdentifierValue] = sender
 		mapper.Unlock()
 	}
 
 	if !transparent {
 		return sender.copyOpaque(), nil
+	}
+	return sender, nil
+}
+
+// GetByIdentifier the identity considering the IdentifierValue
+func (mapper *IdentityMapper) GetByIdentifier(ctx context.Context, identifierValue string) (SenderView, error) {
+	var sender SenderView
+	var ok bool
+	// try to get from cache
+	sender, ok = mapper.byIdentifierMem[identifierValue]
+	if !ok {
+		// get unknown identity and save it
+		existingIdentity, err := mapper.querier.GetByIdentifierValue(ctx, identifierValue)
+		// NOTE: on not found, the system still fills the SenderView with anonymous information
+		if err != nil && !merr.IsANotFound(err) {
+			return sender, merr.From(err).Desc("getting identity")
+		}
+
+		if err == nil {
+			sender = senderViewFrom(existingIdentity)
+		} else { // it is a not found identity
+			sender = anonymousSenderView()
+		}
+
+		// update the cache
+		mapper.Lock()
+		mapper.mem[existingIdentity.ID] = sender
+		mapper.byIdentifierMem[existingIdentity.IdentifierValue] = sender
+		mapper.Unlock()
 	}
 	return sender, nil
 }
@@ -87,7 +121,10 @@ func (mapper *IdentityMapper) List(ctx context.Context, identityIDs []string, tr
 		// put them in memory
 		mapper.Lock()
 		for _, identity := range identities {
-			mapper.mem[identity.ID] = senderViewFrom(*identity)
+			sender := senderViewFrom(*identity)
+			mapper.mem[identity.ID] = sender
+			mapper.byIdentifierMem[identity.IdentifierValue] = senderViewFrom(*identity)
+
 		}
 		// if any identities has not been found, set an anonymous view
 		for _, unknownID := range unknownIDs {
@@ -141,6 +178,10 @@ func senderViewFrom(identity identity.Identity) SenderView {
 		ID:          identity.ID,
 		DisplayName: identity.DisplayName,
 		AvatarURL:   identity.AvatarURL,
+
+		accountID:           identity.AccountID,
+		pubkey:              identity.Pubkey,
+		nonIdentifiedPubkey: identity.NonIdentifiedPubkey,
 	}
 	sender.IdentifierValue = identity.IdentifierValue
 	sender.IdentifierKind = string(identity.IdentifierKind)

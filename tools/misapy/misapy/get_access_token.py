@@ -88,7 +88,6 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
     # Account creation is required
 
     assert r.json()['next'] == 'authn_step'
-    print(r.json())
     assert r.json()['authn_step']['method_name'] == 'account_creation'
 
     # temporary access token
@@ -183,7 +182,7 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
     r = s.get(
         'https://auth.misakey.com.local/_/oauth2/auth',
         params={
-            'client_id': '00000000-0000-0000-0000-000000000000',
+            'client_id': 'cc411b8f-28bf-4d4e-abd9-99226b41da27',
             'redirect_uri': 'https://api.misakey.com.local/auth/callback',
             'response_type': 'code',
             'scope': 'openid tos privacy_policy',

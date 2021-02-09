@@ -19,6 +19,7 @@ type SSOService struct {
 	AuthenticationService      authn.Service
 	backupKeyShareService      crypto.BackupKeyShareService
 	rootKeyShareExpirationTime time.Duration
+	selfOrgID                  string
 
 	// NOTE: start to remove repositories components by having storer here (cf box modules)
 	sqlDB   *sql.DB
@@ -32,6 +33,7 @@ func NewSSOService(
 	authns authn.Service,
 	bks crypto.BackupKeyShareService,
 	rootKeyShareExpirationTime time.Duration,
+	selfOrgID string,
 
 	ssoDB *sql.DB,
 	redConn *redis.Client,
@@ -42,6 +44,7 @@ func NewSSOService(
 		AuthenticationService:      authns,
 		backupKeyShareService:      bks,
 		rootKeyShareExpirationTime: rootKeyShareExpirationTime,
+		selfOrgID:                  selfOrgID,
 
 		sqlDB:   ssoDB,
 		redConn: redConn,

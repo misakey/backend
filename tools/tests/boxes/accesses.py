@@ -11,6 +11,38 @@ from misapy.container_access import list_encrypted_files
 from misapy.get_access_token import get_authenticated_session
 from misapy.pretty_error import prettyErrorContext
 
+
+
+with prettyErrorContext():
+    s1 = get_authenticated_session(acr_values=2)
+    s2 = get_authenticated_session(acr_values=2)
+
+    print('- identity 2 can list 2 members but cannot see identifier.value')
+    box_id, _ = create_box_and_post_some_events_to_it(session=s1, public=False)
+    s1.post(
+        f'{URL_PREFIX}/boxes/{box_id}/events',
+        json={
+            'type': 'state.access_mode',
+            'content': {
+                'value': 'public'
+            }
+        },
+        expected_status_code=201
+    )
+    join_box(s2, box_id)
+    r = s2.get(
+        f'{URL_PREFIX}/boxes/{box_id}/members',
+        expected_status_code=200
+    )
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(len(r.json()) == 2),
+        ]
+    )
+    for member in r.json():
+        assert member['identifier_value'] == ""
+
 with prettyErrorContext():
     s1 = get_authenticated_session(acr_values=2)
     s2 = get_authenticated_session(acr_values=2)
@@ -257,8 +289,15 @@ with prettyErrorContext():
         f'{URL_PREFIX}/boxes/{box_id}/members',
         expected_status_code=200
     )
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(len(r.json()) == 2),
+        ]
+    )
     for member in r.json():
         assert member['identifier_value'] == ""
+
 
     print('- batch events removes accesses and add email_domain')
     access_email_domain = {

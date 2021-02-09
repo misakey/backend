@@ -43,6 +43,6 @@ func NewBoxApplication(
 }
 
 // NewIM constructor
-func (ba BoxApplication) NewIM() *events.IdentityMapper {
-	return events.NewIdentityMapper(ba.identityRepo)
+func (app BoxApplication) NewIM() *events.IdentityMapper {
+	return events.NewIdentityMapper(app.identityRepo)
 }

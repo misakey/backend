@@ -122,7 +122,7 @@ ID Token example:
   "sco": "openid",
   "at_hash": "z-N-JLaW6RbtqWfqTABIrw",
   "aud": [
-    "00000000-0000-0000-0000-000000000000"
+    "cc411b8f-28bf-4d4e-abd9-99226b41da27"
   ],
   "auth_time": 1568883569,
   "exp": 1568887169,

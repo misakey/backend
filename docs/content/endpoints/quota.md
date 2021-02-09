@@ -1,7 +1,7 @@
 +++
 categories = ["Endpoints"]
 date = "2020-09-29"
-description = "Quota endpoints"
+description = "Storage quota endpoints"
 tags = ["quota", "storage", "used space", "vault", "box", "api", "endpoints"]
 title = "Storage quota"
 +++

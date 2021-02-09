@@ -1,9 +1,9 @@
 +++
 categories = ["Endpoints"]
 date = "2020-09-11"
-description = "Root Key Shares (key splitting) endpoints"
-tags = ["sso", "root", "secret", "storage", "keyshares", "key", "splitting", "api", "endpoints"]
-title = "SSO - Root Key Shares"
+description = "Backup Key Shares (key splitting) endpoints"
+tags = ["sso", "backup", "keyshares", "shares", "key", "splitting", "api", "endpoints"]
+title = "Backup Key Shares"
 +++
 
 ## 1. Introduction

@@ -1,9 +1,9 @@
 +++
 categories = ["Endpoints"]
 date = "2020-09-28"
-description = "Users endpoints"
-tags = ["box", "users", "api", "endpoints"]
-title = "Box - Users"
+description = "Realtime endpoints for boxes"
+tags = ["box", "users", "api", "endpoints", "realtime", "notifications", "notification"]
+title = "Box Realtime"
 +++
 
 # 1. Realtime endpoints

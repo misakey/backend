@@ -24,8 +24,8 @@ func (e *Event) ToSQLBoiler() *sqlboiler.Event {
 	return &result
 }
 
-// FromSQLBoiler ...
-func FromSQLBoiler(src *sqlboiler.Event) Event {
+// fromSQLBoiler ...
+func fromSQLBoiler(src *sqlboiler.Event) Event {
 	dst := Event{
 		ID:          src.ID,
 		CreatedAt:   src.CreatedAt,

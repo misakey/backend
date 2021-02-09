@@ -2,13 +2,13 @@
 categories = ["Endpoints"]
 date = "2020-09-11"
 description = "Boxes endpoints"
-tags = ["box", "api", "endpoints"]
-title = "Box"
+tags = ["box", "api", "endpoints", "boxes"]
+title = "Boxes"
 +++
 
 # 1. Introduction
 
-A box is a space where the end-user can share securely the data with some other user or themself.
+A box is a space where the end-identity can share securely the data with some other identity or themself.
 
 It is the base for data exchange, data access management...
 
@@ -100,7 +100,7 @@ _JSON Body:_
 
 ### 2.2.3. notable error reponses
 
-**I - The user has no access to the box
+**I - The identity has no access to the box
 
 The reason of the forbidden is explained is a reason field that have only 2 possible fixed values.
 Only the get box endpoint is ensured to return this error in the current state of the API.
@@ -184,7 +184,7 @@ _JSON Body:_
 }
 ```
 
-- `user_confirmation` (string) (one of: _delete_, _supprimer_): the input the end-user has entered to confirm the deletion. The server will check if the value corresponds to some expected strings (cf one of).
+- `user_confirmation` (string) (one of: _delete_, _supprimer_): the input the end-identity has entered to confirm the deletion. The server will check if the value corresponds to some expected strings (cf one of).
 
 ### 2.4.2. response
 
@@ -199,7 +199,7 @@ The list of boxes return many information for each boxes, including a numerical 
 
 This endpoint allows to reset the new events count of a box for a given identity.
 
-It is a kind of an acknowledgement and it must be used when the user want to mark the box as "read".
+It is a kind of an acknowledgement and it must be used when the identity want to mark the box as "read".
 
 ### 2.5.1. request
 
@@ -245,7 +245,7 @@ To add or remove accesses in a given box, please refer to:
 * the [sending an event to a box endpoint](../box_events/#21-single-creation-of-an-event-for-a-box).
 * the [access type events documentation](/concepts/box-events/#15-access-type-events).
 
-## 3.2. List accesses for a given box
+## 3.2. Listing accesses for a given box
 
 Listing accesses allows admins to see the current state of the box reachability.
 
@@ -301,7 +301,7 @@ To add or remove membership for a couple <box, identity>, please refer to:
 * the [sending an event to a box endpoint](../box_events/#21-single-creation-of-an-event-for-a-box).
 * the [member type events documentation](/concepts/box-events/#12-member-type-events).
 
-## 4.2. List joined boxes for the current user
+## 4.2. List boxes for the current identity
 
 ### 4.2.1. request
 
@@ -335,11 +335,11 @@ HTTP 200 OK
 A list of event is returned.
 ```json
 [
-  {{% include "include/box-read.json" %}}
+  {{% include "include/box-read.json" 2 %}}
 ]
 ```
 
-## 4.3. Count joined boxes for the current user
+## 4.3. Count boxes for the current identity
 
 ### 4.3.1. request
 
@@ -369,9 +369,9 @@ HTTP 204 NO CONTENT
 ```
 
 _Headers:_
-- `X-Total-Count` (integer): the total count of boxes that the user can access.
+- `X-Total-Count` (integer): the total count of boxes that the identity can access.
 
-## 4.4. Listing active members of a box.
+## 4.4. Listing active members of a box
 
 This endpoint return all identities that have an active membership to the box.
 

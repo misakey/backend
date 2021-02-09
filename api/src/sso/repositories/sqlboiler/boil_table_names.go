@@ -11,6 +11,7 @@ var TableNames = struct {
 	Identity                      string
 	IdentityNotification          string
 	IdentityProfileSharingConsent string
+	Organization                  string
 	TotpSecret                    string
 	SecretStorageAccountRootKey   string
 	SecretStorageAsymKey          string
@@ -26,6 +27,7 @@ var TableNames = struct {
 	Identity:                      "identity",
 	IdentityNotification:          "identity_notification",
 	IdentityProfileSharingConsent: "identity_profile_sharing_consent",
+	Organization:                  "organization",
 	TotpSecret:                    "totp_secret",
 	SecretStorageAccountRootKey:   "secret_storage_account_root_key",
 	SecretStorageAsymKey:          "secret_storage_asym_key",

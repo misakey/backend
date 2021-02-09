@@ -10,7 +10,8 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/domain/consent"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 

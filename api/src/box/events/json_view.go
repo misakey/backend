@@ -21,6 +21,10 @@ type SenderView struct {
 	AvatarURL       null.String `json:"avatar_url"`
 	IdentifierValue string      `json:"identifier_value"`
 	IdentifierKind  string      `json:"identifier_kind"`
+
+	accountID           null.String
+	pubkey              null.String
+	nonIdentifiedPubkey null.String
 }
 
 func (sender SenderView) copyOpaque() SenderView {

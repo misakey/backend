@@ -9,12 +9,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/box"
-	"gitlab.misakey.dev/misakey/backend/api/src/generic"
-	"gitlab.misakey.dev/misakey/backend/api/src/generic/pprof"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/bubble"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/echorouter"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
+
+	"gitlab.misakey.dev/misakey/backend/api/src/box"
+	"gitlab.misakey.dev/misakey/backend/api/src/generic"
+	"gitlab.misakey.dev/misakey/backend/api/src/generic/pprof"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso"
 )
 

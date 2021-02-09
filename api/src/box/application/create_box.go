@@ -73,6 +73,11 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 		req.OwnerOrgID = &app.selfOrgID
 	}
 
+	// NOTE: for now, nobody can create any boxes on other org than the self org.
+	if *req.OwnerOrgID != app.selfOrgID {
+		return nil, merr.Forbidden().Desc("for now, nobody can create any boxes on other org than the self org.")
+	}
+
 	event, err := events.CreateCreateEvent(
 		ctx,
 		app.DB, app.RedConn, identityMapper,

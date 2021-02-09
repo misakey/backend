@@ -2,8 +2,8 @@
 categories = ["Endpoints"]
 date = "2020-09-11"
 description = "Auth Flow endpoints"
-tags = ["sso", "authflow", "api", "endpoints"]
-title = "SSO - Auth Flow"
+tags = ["sso", "authflow", "api", "endpoints", "auth flow", "authorization", "authz", "authn", "authentication", "open", "connect", "id", "token", "access"]
+title = "Auth Flow"
 +++
 
 # 1. Introduction
@@ -123,7 +123,7 @@ _JSON Body_:
 ```json
 {
   "client": {
-    "id": "00000000-0000-0000-0000-000000000000",
+    "id": "cc411b8f-28bf-4d4e-abd9-99226b41da27",
     "name": "Misakey App",
     "logo_uri": "https://media.glassdoor.com/sqll/2449676/misakey-squarelogo-1549446114307.png",
     "tos_uri": "https://about.misakey.com/#/fr/legals/tos/",
@@ -742,7 +742,7 @@ _JSON Body_:
     "amr": "emailed_code"
   },
   "client": {
-    "id": "00000000-0000-0000-0000-000000000000",
+    "id": "cc411b8f-28bf-4d4e-abd9-99226b41da27",
     "name": "Misakey App",
     "logo_uri": "https://media.glassdoor.com/sqll/2449676/misakey-squarelogo-1549446114307.png"
   }

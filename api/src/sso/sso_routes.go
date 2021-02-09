@@ -169,6 +169,12 @@ func bindRoutes(
 		ss.AckIdentityNotification,
 		request.ResponseNoContent,
 	))
+	identityPath.GET(oidcHandlers.NewACR1(
+		"/:id/organizations",
+		func() request.Request { return &application.OrgListQuery{} },
+		ss.ListIdentityOrgs,
+		request.ResponseOK,
+	))
 	identityPath.GET(oidcHandlers.NewPublic(
 		"/:id/profile",
 		func() request.Request { return &application.ProfileQuery{} },
@@ -230,6 +236,15 @@ func bindRoutes(
 		request.ResponseNoContent,
 	))
 
+	// ORGANIZATIONS
+	orgPath := router.Group("/organizations")
+	orgPath.POST(oidcHandlers.NewACR2(
+		"",
+		func() request.Request { return &application.OrgCreateCmd{} },
+		ss.CreateOrg,
+		request.ResponseCreated,
+	))
+
 	// WEBAUTHN CREDENTIALS
 	webauthnCredentialPath := router.Group("/webauthn-credentials")
 	webauthnCredentialPath.GET(oidcHandlers.NewACR2(
@@ -253,6 +268,8 @@ func bindRoutes(
 		ss.InitAuthnStep,
 		request.ResponseNoContent,
 	))
+
+	// AUTH
 	authPath := router.Group("/auth")
 	// login flow
 	authPath.GET(authnProcessHandlers.NewPublic(

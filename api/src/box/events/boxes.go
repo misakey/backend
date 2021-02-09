@@ -167,22 +167,13 @@ func (c *computer) playCreate(ctx context.Context, e Event) error {
 	return nil
 }
 
-func (c *computer) playStateAccessMode(ctx context.Context, e Event) error {
+func (c *computer) playStateAccessMode(_ context.Context, e Event) error {
 	accessModeContent := AccessModeContent{}
 	if err := accessModeContent.Unmarshal(e.JSONContent); err != nil {
 		return err
 	}
 	c.box.AccessMode = accessModeContent.Value
 	return nil
-}
-
-// GetBoxPublicKey ...
-func GetBoxPublicKey(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
-	createContent, err := GetCreationContent(ctx, exec, boxID)
-	if err != nil {
-		return "", merr.From(err).Descf("getting creation event")
-	}
-	return createContent.PublicKey, nil
 }
 
 // ClearBox ...

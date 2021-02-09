@@ -103,7 +103,7 @@ with prettyErrorContext():
 
     print('- pagination')
     r = s1.get(
-        f'{URL_PREFIX}/boxes/joined',
+        f'{URL_PREFIX}/boxes/joined?owner_org_id=cc411b8f-28bf-4d4e-abd9-99226b41da27',
         params={
             'offset': 1,
             'limit': 2,

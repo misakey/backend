@@ -3,7 +3,7 @@ categories = ["Endpoints"]
 date = "2020-09-11"
 description = "Saved Files endpoints"
 tags = ["box", "saved", "files", "api", "endpoints"]
-title = "Box - Saved Files"
+title = "Saved Files"
 +++
 
 ## 1. Introduction

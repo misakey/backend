@@ -79,23 +79,36 @@ func CreateCreateEvent(
 	return event, nil
 }
 
-// GetCreationEvent retrieves the create event of the box and marshal its content into a CreationContent structure
-func GetCreationContent(
+type createInfo struct {
+	OwnerOrgID string
+	Pubkey     string
+	Title      string
+	CreatorID  string
+}
+
+// GetCreateInfo retrieves the create event of the box and marshal its content into a CreationContent structure aside its creator id
+func GetCreateInfo(
 	ctx context.Context,
 	exec boil.ContextExecutor,
 	boxID string,
-) (c CreationContent, err error) {
+) (info createInfo, err error) {
+	content := CreationContent{}
 	e, err := get(ctx, exec, eventFilters{
 		boxID: null.StringFrom(boxID),
 		eType: null.StringFrom(etype.Create),
 	})
 	if err != nil {
-		return c, merr.From(err).Desc("getting create event")
+		return info, merr.From(err).Desc("getting create event")
 	}
-	if err := e.JSONContent.Unmarshal(&c); err != nil {
-		return c, merr.From(err).Descf("unmarshaling creation event content")
+	if err := e.JSONContent.Unmarshal(&content); err != nil {
+		return info, merr.From(err).Descf("unmarshaling creation event content")
 	}
-	return c, nil
+	// fill info
+	info.OwnerOrgID = content.OwnerOrgID
+	info.Pubkey = content.PublicKey
+	info.Title = content.Title
+	info.CreatorID = e.SenderID
+	return info, nil
 }
 
 // ListCreateEventsByCreatorID ...
@@ -149,17 +162,4 @@ func isCreator(ctx context.Context, exec boil.ContextExecutor, boxID, senderID s
 	}
 	// return the error if unexpected
 	return false, err
-}
-
-func getBoxCreatorID(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
-	e, err := get(ctx, exec, eventFilters{
-		eType: null.StringFrom(etype.Create),
-		boxID: null.StringFrom(boxID),
-	})
-
-	if err != nil {
-		return "", err
-	}
-
-	return e.SenderID, nil
 }

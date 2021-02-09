@@ -10,9 +10,9 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/rester"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/consent"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/login"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application/authflow/userinfo"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/domain/consent"
 )
 
 // HydraHTTP implements Hydra repository interface using HTTP REST

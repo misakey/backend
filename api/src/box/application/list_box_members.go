@@ -41,7 +41,7 @@ func (app *BoxApplication) ListBoxMembers(ctx context.Context, genReq request.Re
 		return nil, err
 	}
 
-	membersIDs, err := events.ListBoxMemberIDs(ctx, app.DB, app.RedConn, req.boxID)
+	memberIDs, err := events.ListBoxMemberIDs(ctx, app.DB, app.RedConn, req.boxID)
 	if err != nil {
 		return nil, merr.From(err).Desc("listing box members")
 	}
@@ -50,5 +50,5 @@ func (app *BoxApplication) ListBoxMembers(ctx context.Context, genReq request.Re
 	if err != nil {
 		return nil, merr.From(err).Desc("checking admin")
 	}
-	return identityMapper.List(ctx, membersIDs, isAdmin)
+	return identityMapper.List(ctx, memberIDs, isAdmin)
 }

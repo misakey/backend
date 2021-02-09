@@ -59,12 +59,12 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 	}
 
 	// get creation content before deleting events because both public key and owner org id are required
-	creationContent, err := events.GetCreationContent(ctx, app.DB, req.boxID)
+	createInfo, err := events.GetCreateInfo(ctx, app.DB, req.boxID)
 	if err != nil {
 		logger.FromCtx(ctx).Warn().Err(err).Msgf("could not get creation content for %s", req.boxID)
 	}
-	boxPublicKey := creationContent.PublicKey
-	ownerOrgID := creationContent.OwnerOrgID
+	boxPublicKey := createInfo.Pubkey
+	ownerOrgID := createInfo.OwnerOrgID
 
 	// get box members (to notify them)
 	memberIDs, err := events.ListBoxMemberIDs(ctx, app.DB, app.RedConn, req.boxID)
@@ -96,13 +96,15 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 	bu := realtime.Update{
 		Type: "box.delete",
 		Object: struct {
-			BoxID     string `json:"id"`
-			SenderID  string `json:"sender_id"`
-			PublicKey string `json:"public_key"`
+			BoxID      string `json:"id"`
+			OwnerOrgID string `json:"owner_org_id"`
+			SenderID   string `json:"sender_id"`
+			PublicKey  string `json:"public_key"`
 		}{
-			BoxID:     req.boxID,
-			SenderID:  acc.IdentityID,
-			PublicKey: boxPublicKey,
+			BoxID:      req.boxID,
+			OwnerOrgID: ownerOrgID,
+			SenderID:   acc.IdentityID,
+			PublicKey:  boxPublicKey,
 		},
 	}
 	for _, memberID := range memberIDs {

@@ -64,19 +64,19 @@ func doStateKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec bo
 	// instead of an identity key like in auto-invitations
 	// (users being invited to box don't have the box secret key yet).
 
-	boxPublicKey, err := GetBoxPublicKey(ctx, exec, e.BoxID)
+	createInfo, err := GetCreateInfo(ctx, exec, e.BoxID)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting box public key")
 	}
 
-	membersIdentityID, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
+	memberIdentityIDs, err := ListBoxMemberIDs(ctx, exec, redConn, e.BoxID)
 	if err != nil {
 		return nil, merr.From(err).Desc("listing box members IDs")
 	}
 
 	// note that identities that don't have an account (ACR1 identities)
 	// will not be present in the "accountIDs" mapping
-	accountIDsByIdentityID, err := identityMapper.MapToAccountID(ctx, membersIdentityID)
+	accountIDsByIdentityID, err := identityMapper.MapToAccountID(ctx, memberIdentityIDs)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting members identities")
 	}
@@ -99,7 +99,7 @@ func doStateKeyShare(ctx context.Context, e *Event, extraJSON null.JSON, exec bo
 				SenderIdentityID:    null.StringFrom(e.SenderID),
 				BoxID:               null.StringFrom(e.BoxID),
 				Encrypted:           extra.EncryptedInvitationKeyShare,
-				EncryptionPublicKey: boxPublicKey,
+				EncryptionPublicKey: createInfo.Pubkey,
 				CreatedAt:           time.Now(),
 			}
 			cryptoActions = append(cryptoActions, action)
