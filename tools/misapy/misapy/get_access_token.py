@@ -25,7 +25,8 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
         'https://api.misakey.com.local/auth/identities',
         json={
             'login_challenge': login_challenge,
-            'identifier_value': email
+            'identifier_value': email,
+            'password_reset': reset_password
         }
     )
     identity_id = r.json()['authn_step']['identity_id']
@@ -57,15 +58,28 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
             }
         }
     }
-    if reset_password:
-        confirmation_payload['password_reset'] = {
-            'prehashed_password': new_password_hash('password'),
-            'secret_storage': random_secret_storage_reset_data(),
-        }
     r = s.post(
         'https://api.misakey.com.local/auth/login/authn-step',
         json=confirmation_payload
     )
+
+    # In case of a password reset, we need another step here
+    if reset_password:
+        reset_payload = {
+        'login_challenge': login_challenge,
+        'authn_step': {
+            'identity_id': identity_id,
+            'method_name': 'reset_password',
+            'metadata': {
+                'prehashed_password': new_password_hash('password'),
+                'secret_storage': random_secret_storage_reset_data(),
+                }
+            }
+        }
+        r = s.post(
+            'https://api.misakey.com.local/auth/login/authn-step',
+            json=reset_payload
+        )
 
     if r.json()['next'] == 'redirect':
         manual_redirection = r.json()['redirect_to']
@@ -74,6 +88,7 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
     # Account creation is required
 
     assert r.json()['next'] == 'authn_step'
+    print(r.json())
     assert r.json()['authn_step']['method_name'] == 'account_creation'
 
     # temporary access token

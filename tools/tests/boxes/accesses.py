@@ -147,15 +147,14 @@ with prettyErrorContext():
     assert len(r.json()) == 1
     s2_access_event_id = r.json()[0]['id']
 
-    # TODO expected number of events is off, fix this
-    # print('- identity 2 (non-creator) can list all events on box')
-    # r = s2.get(f'{URL_PREFIX}/boxes/{box_id}/events')
-    # check_response(
-        # r,
-        # [
-            # lambda r: assert_fn(len(r.json()) == 6)
-        # ]
-    # )
+    print('- identity 2 (non-creator) can list all events on box')
+    r = s2.get(f'{URL_PREFIX}/boxes/{box_id}/events')
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(len(r.json()) == 8)
+        ]
+    )
 
     print('- identity 2 (non-creator) posts to box a legit event')
     r = s2.post(

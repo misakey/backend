@@ -1,5 +1,6 @@
 import subprocess
 import json
+import re
 
 def get_emailed_code(identity_id):
     proc = subprocess.run(
@@ -26,8 +27,10 @@ def list_encrypted_files():
             + ["ls /etc/encrypted-files"]
         ),
         capture_output=True,
+        text=True,
     )
     proc.check_returncode()
-    output = proc.stdout.decode()
-    file_ids = output.split()
+    ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+    result = ansi_escape.sub('', proc.stdout)
+    file_ids = result.split()
     return file_ids
