@@ -19,7 +19,7 @@ import (
 // BackupKeyShareCreateCmd ...
 type BackupKeyShareCreateCmd struct {
 	AccountID      string `json:"account_id"`
-	SaltBase64     string `json:"salt_base64"`
+	SaltBase64     string `json:"salt_base_64"`
 	Share          string `json:"share"`
 	OtherShareHash string `json:"other_share_hash"`
 }

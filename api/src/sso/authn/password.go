@@ -2,6 +2,7 @@ package authn
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
@@ -123,12 +124,12 @@ func prepareResetPassword(
 }
 
 type resetPasswordMetadata struct {
-	Password   argon2.HashedPassword `json:"prehashed_password"`
-	BackupData string                `json:"backup_data"`
+	Password      argon2.HashedPassword         `json:"prehashed_password"`
+	SecretStorage crypto.SecretStorageSetupData `json:"secret_storage"`
 }
 
 func (as *Service) resetPassword(
-	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
+	ctx context.Context, tr *sql.Tx, redConn *redis.Client,
 	challenge string, curIdentity identity.Identity, assertion Step,
 ) error {
 
@@ -150,7 +151,7 @@ func (as *Service) resetPassword(
 	}
 
 	// get account
-	account, err := identity.GetAccount(ctx, exec, curIdentity.AccountID.String)
+	account, err := identity.GetAccount(ctx, tr, curIdentity.AccountID.String)
 	if err != nil {
 		return err
 	}
@@ -160,31 +161,37 @@ func (as *Service) resetPassword(
 		return err
 	}
 
-	backupArchive := crypto.BackupArchive{
-		AccountID: account.ID,
-		Data:      null.StringFrom(account.BackupData),
-	}
-	err = crypto.CreateBackupArchive(ctx, exec, backupArchive)
-	if err != nil {
-		return err
-	}
-
 	// update password
 	account.Password, err = metadata.Password.Hash()
 	if err != nil {
 		return err
 	}
 
-	account.BackupData = metadata.BackupData
-	account.BackupVersion++
-
 	// save account
-	if err := identity.UpdateAccount(ctx, exec, &account); err != nil {
+	if err := identity.UpdateAccount(ctx, tr, &account); err != nil {
 		return err
 	}
 
+	err = crypto.ResetAccountSecretStorage(ctx, tr, account.ID, &metadata.SecretStorage)
+	if err != nil {
+		return err
+	}
+
+	err = curIdentity.SetIdentityKeys(
+		metadata.SecretStorage.IdentityPublicKey,
+		metadata.SecretStorage.IdentityNonIdentifiedPublicKey,
+	)
+	if err != nil {
+		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
+	}
+
+	err = identity.Update(ctx, tr, &curIdentity)
+	if err != nil {
+		return merr.From(err).Desc("updating identity")
+	}
+
 	// create identity notification about password reset
-	if err := identity.NotificationCreate(ctx, exec, redConn, curIdentity.ID, "user.reset_password", null.JSONFromPtr(nil)); err != nil {
+	if err := identity.NotificationCreate(ctx, tr, redConn, curIdentity.ID, "user.reset_password", null.JSONFromPtr(nil)); err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", curIdentity.ID)
 	}
 	return nil

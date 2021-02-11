@@ -2,6 +2,7 @@ package application
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/go-redis/redis/v7"
 
@@ -13,10 +14,11 @@ import (
 
 // SSOService ...
 type SSOService struct {
-	identityService       identity.Service
-	authFlowService       authflow.Service
-	AuthenticationService authn.Service
-	backupKeyShareService crypto.BackupKeyShareService
+	identityService            identity.Service
+	authFlowService            authflow.Service
+	AuthenticationService      authn.Service
+	backupKeyShareService      crypto.BackupKeyShareService
+	rootKeyShareExpirationTime time.Duration
 
 	// NOTE: start to remove repositories components by having storer here (cf box modules)
 	sqlDB   *sql.DB
@@ -29,15 +31,17 @@ func NewSSOService(
 	afs authflow.Service,
 	authns authn.Service,
 	bks crypto.BackupKeyShareService,
+	rootKeyShareExpirationTime time.Duration,
 
 	ssoDB *sql.DB,
 	redConn *redis.Client,
 ) SSOService {
 	return SSOService{
-		identityService:       ids,
-		authFlowService:       afs,
-		AuthenticationService: authns,
-		backupKeyShareService: bks,
+		identityService:            ids,
+		authFlowService:            afs,
+		AuthenticationService:      authns,
+		backupKeyShareService:      bks,
+		rootKeyShareExpirationTime: rootKeyShareExpirationTime,
 
 		sqlDB:   ssoDB,
 		redConn: redConn,

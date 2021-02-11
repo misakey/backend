@@ -20,7 +20,7 @@ type Params struct {
 	// should always be "1" in JS
 	// but we still include the param for the sake of rigor
 	Parallelism int    `json:"parallelism"`
-	SaltBase64  string `json:"salt_base64"`
+	SaltBase64  string `json:"salt_base_64"`
 }
 
 // HashedPassword represents a password hashed with Argon2.
@@ -31,7 +31,7 @@ type Params struct {
 type HashedPassword struct {
 	// argon2 parameters the client used to hash the password
 	Params     Params `json:"params"`
-	HashBase64 string `json:"hash_base64"`
+	HashBase64 string `json:"hash_base_64"`
 }
 
 // Hash generates a new random salt
@@ -97,7 +97,9 @@ func DecodeParams(encodedHash string) (params Params, err error) {
 
 // Validate the password format
 func (p HashedPassword) Validate() error {
-	if err := v.Validate(&p.HashBase64, v.Required); err != nil {
+	if err := v.ValidateStruct(&p,
+		v.Field(&p.HashBase64, v.Required),
+	); err != nil {
 		return err
 	}
 
@@ -105,6 +107,6 @@ func (p HashedPassword) Validate() error {
 		v.Field(&p.Params.Memory, v.Required),
 		v.Field(&p.Params.Iterations, v.Required),
 		v.Field(&p.Params.Parallelism, v.Required),
-		v.Field(&p.Params.SaltBase64, v.Required, is.Base64.Error("salt_base64 must be base64 encoded")),
+		v.Field(&p.Params.SaltBase64, v.Required, is.Base64.Error("salt_base_64 must be base64 encoded")),
 	)
 }

@@ -8,6 +8,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oauth"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/application"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 )
 
 func bindRoutes(
@@ -27,7 +28,7 @@ func bindRoutes(
 		request.ResponseOK,
 	))
 	accountPath.PUT(oidcHandlers.NewACR2(
-		"/:id/backup",
+		"/:id/deprecated/backup",
 		func() request.Request { return &application.BackupUpdateCmd{} },
 		ss.UpdateBackup,
 		request.ResponseOK,
@@ -61,6 +62,58 @@ func bindRoutes(
 		func() request.Request { return &application.DeleteCryptoActionQuery{} },
 		ss.DeleteCryptoAction,
 		request.ResponseNoContent,
+	))
+	// CRYPTO ROUTES
+	cryptoPath := router.Group("/crypto")
+	cryptoPath.POST(oidcHandlers.NewACR2(
+		"/migration/v2",
+		func() request.Request { return &application.MigrateToSecretStorageQuery{} },
+		ss.MigrateToSecretStorage,
+		request.ResponseNoContent,
+	))
+	secretStoragePath := cryptoPath.Group("/secret-storage")
+	secretStoragePath.GET(oidcHandlers.NewACR2(
+		"",
+		func() request.Request { return &request.EmptyQuery{} },
+		ss.GetSecretStorage,
+		request.ResponseOK,
+	))
+	secretStoragePath.POST(oidcHandlers.NewACR2(
+		"/asym-keys",
+		func() request.Request { return &crypto.SecretStorageAsymKey{} },
+		ss.CreateSecretStorageAsymKey,
+		request.ResponseOK,
+	))
+	secretStoragePath.DELETE(oidcHandlers.NewACR2(
+		"/asym-keys",
+		func() request.Request { return &application.DeleteAsymKeysCmd{} },
+		ss.DeleteAsymKeys,
+		request.ResponseNoContent,
+	))
+	secretStoragePath.PUT(oidcHandlers.NewACR2(
+		"/box-key-shares/:box-id",
+		func() request.Request { return &crypto.SecretStorageBoxKeyShare{} },
+		ss.CreateSecretStorageBoxKeyShare,
+		request.ResponseOK,
+	))
+	secretStoragePath.DELETE(oidcHandlers.NewACR2(
+		"/box-key-shares",
+		func() request.Request { return &application.DeleteBoxKeySharesCmd{} },
+		ss.DeleteBoxKeyShares,
+		request.ResponseNoContent,
+	))
+	rootKeySharePath := cryptoPath.Group("/root-key-shares")
+	rootKeySharePath.POST(oidcHandlers.NewACR2(
+		"",
+		func() request.Request { return &application.RootKeyShareCreateCmd{} },
+		ss.CreateRootKeyShare,
+		request.ResponseCreated,
+	))
+	rootKeySharePath.GET(oidcHandlers.NewACR2(
+		"/:other-share-hash",
+		func() request.Request { return &application.RootKeyShareQuery{} },
+		ss.GetRootKeyShare,
+		request.ResponseOK,
 	))
 	// IDENTITIES ROUTES
 	identityPath := router.Group("/identities")
@@ -192,42 +245,6 @@ func bindRoutes(
 		request.ResponseNoContent,
 	))
 
-	// BACKUP KEY SHARES ROUTES
-	backupKeySharePath := router.Group("/backup-key-shares")
-	backupKeySharePath.POST(oidcHandlers.NewACR2(
-		"",
-		func() request.Request { return &application.BackupKeyShareCreateCmd{} },
-		ss.CreateBackupKeyShare,
-		request.ResponseCreated,
-	))
-	backupKeySharePath.GET(oidcHandlers.NewACR2(
-		"/:other-share-hash",
-		func() request.Request { return &application.BackupKeyShareQuery{} },
-		ss.GetBackupKeyShare,
-		request.ResponseOK,
-	))
-
-	// BACKUP KEY ARCHIVES ROUTES
-	backupArchivePath := router.Group("/backup-archives")
-	backupArchivePath.GET(oidcHandlers.NewACR2(
-		"",
-		nil,
-		ss.ListBackupArchives,
-		request.ResponseOK,
-	))
-	backupArchivePath.GET(oidcHandlers.NewACR2(
-		"/:id/data",
-		func() request.Request { return &application.BackupArchiveDataQuery{} },
-		ss.GetBackupArchiveData,
-		request.ResponseOK,
-	))
-	backupArchivePath.DELETE(oidcHandlers.NewACR2(
-		"/:id",
-		func() request.Request { return &application.BackupArchiveDeleteCmd{} },
-		ss.DeleteBackupArchive,
-		request.ResponseNoContent,
-	))
-
 	// authn-steps creation
 	// NOTE: /auth/authn-steps would be better
 	router.POST(authnProcessHandlers.NewPublic(
@@ -289,16 +306,31 @@ func bindRoutes(
 		return nil
 	})
 	// backup routes during the auth flow
+	// (required for migration)
 	authPath.GET(authnProcessHandlers.NewACR2(
 		"/backup",
 		func() request.Request { return &application.GetBackupQuery{} },
 		ss.GetBackupDuringAuth,
 		request.ResponseOK,
 	))
+
+	// secret storage routes during the auth flow
+	authPath.GET(authnProcessHandlers.NewACR2(
+		"/secret-storage",
+		func() request.Request { return &application.GetSecretStorageQuery{} },
+		ss.GetSecretStorageDuringAuth,
+		request.ResponseOK,
+	))
 	authPath.POST(authnProcessHandlers.NewACR2(
-		"/backup-key-shares",
-		func() request.Request { return &application.BackupKeyShareCreateCmd{} },
-		ss.CreateBackupKeyShare,
+		"/crypto/migration/v2",
+		func() request.Request { return &application.MigrateToSecretStorageQuery{} },
+		ss.MigrateToSecretStorage,
+		request.ResponseNoContent,
+	))
+	authPath.POST(authnProcessHandlers.NewACR2(
+		"/account-root-key-shares",
+		func() request.Request { return &application.RootKeyShareCreateCmd{} },
+		ss.CreateRootKeyShare,
 		request.ResponseCreated,
 	))
 	// following routes allows audience of non-misakey oidc tokens

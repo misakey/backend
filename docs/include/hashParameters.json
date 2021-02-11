@@ -1,5 +1,5 @@
 {
-  "salt_base64": "Yydlc3QgdmFjaGVtZW50IHNhbMOpZSBjb21tZSBwaHJhc2UgZW5jb2TDqWUgZW4gYmFzZSA2NA==",
+  "salt_base_64": "Yydlc3QgdmFjaGVtZW50IHNhbMOpZSBjb21tZSBwaHJhc2UgZW5jb2TDqWUgZW4gYmFzZSA2NA==",
   "memory": 1024,
   "iterations": 1,
   "parallelism": 1

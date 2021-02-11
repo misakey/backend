@@ -10,7 +10,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
-	//	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 )
 
 // AuthBackupView ...

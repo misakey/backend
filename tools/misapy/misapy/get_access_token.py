@@ -8,17 +8,19 @@ from urllib.parse import urlparse
 from urllib.parse import parse_qs as parse_query_string
 
 import requests
-from . import http
+from . import URL_PREFIX, http
 from .sessions import Session
 from .check_response import check_response, assert_fn
 from .password_hashing import hash_password
 from .container_access import get_emailed_code
+from .utils.base64 import urlsafe_b64encode
+from .secret_storage import random_secret_storage_reset_data, random_secret_storage_full_data
 
 def new_password_hash(password):
-    salt_base64 = b64encode(os.urandom(8)).decode()
-    return hash_password('password', salt_base64)
+    salt_base_64 = b64encode(os.urandom(8)).decode()
+    return hash_password('password', salt_base_64)
 
-def login_flow(s, login_challenge, email, reset_password=False):
+def login_flow(s, login_challenge, email, reset_password=False, use_secret_backup=False, get_secret_storage=False):
     r = s.put(
         'https://api.misakey.com.local/auth/identities',
         json={
@@ -58,7 +60,7 @@ def login_flow(s, login_challenge, email, reset_password=False):
     if reset_password:
         confirmation_payload['password_reset'] = {
             'prehashed_password': new_password_hash('password'),
-            'backup_data': b64encode(b'other fake backup data').decode(),
+            'secret_storage': random_secret_storage_reset_data(),
         }
     r = s.post(
         'https://api.misakey.com.local/auth/login/authn-step',
@@ -77,6 +79,16 @@ def login_flow(s, login_challenge, email, reset_password=False):
     # temporary access token
     auth_access_token = r.json()['access_token']
 
+    if use_secret_backup:
+        metadata_secrets = {
+            'backup_data': b64encode(b'fake backup data').decode(),
+        }
+    else:
+        metadata_secrets = {
+            'secret_storage': random_secret_storage_reset_data(),
+        }
+
+
     r = s.post(
         'https://api.misakey.com.local/auth/login/authn-step',
         headers={
@@ -89,13 +101,32 @@ def login_flow(s, login_challenge, email, reset_password=False):
                 'method_name': 'account_creation',
                 'metadata': {
                     'prehashed_password': new_password_hash('password'),
-                    'backup_data': b64encode(b'fake backup data').decode(),
+                    **metadata_secrets,
                 }
             }
         }
     )
-
+    
     manual_redirection = r.json()['redirect_to']
+
+    if get_secret_storage:
+        r = s.get(
+            f'{URL_PREFIX}/auth/secret-storage',
+            params={
+                'login_challenge': login_challenge,
+                'identity_id': identity_id,
+            },
+            headers={
+                'Authorization': f'Bearer {auth_access_token}'
+            },
+        )
+        check_response(
+            r,
+            [
+                lambda r: assert_fn(set(r.json().keys()) == {'secrets', 'account_id'}),
+            ]
+        )
+
     return identity_id, manual_redirection
 
 def consent_flow(s, consent_challenge, identity_id):
@@ -114,7 +145,7 @@ def consent_flow(s, consent_challenge, identity_id):
     return manual_redirection
 
 
-def get_credentials(email=None, require_account=False, acr_values=None, reset_password=False):
+def get_credentials(email=None, require_account=False, acr_values=None, reset_password=False, use_secret_backup=False, get_secret_storage=False):
     '''if no email is passed, a random one will be used.'''
 
     if require_account:
@@ -150,14 +181,13 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
     check_response(
         r,
         [
-            lambda r: assert_fn(
-                'error=' not in r.history[0].headers['location'])
+            lambda r: assert_fn('error=' not in r.history[0].headers['location'])
         ]
     )
 
     login_url_query = urlparse(r.request.url).query
     login_challenge = parse_query_string(login_url_query)['login_challenge'][0]
-    identity_id, manual_redirection = login_flow(s, login_challenge, email, reset_password)
+    identity_id, manual_redirection = login_flow(s, login_challenge, email, reset_password, use_secret_backup, get_secret_storage)
     r = s.get(manual_redirection, raise_for_status=False)
 
     # detect if the consent flow is required
@@ -197,7 +227,7 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
     )(email, access_token, identity_id, id_token, consent_done, account_id, display_name, s)
 
 
-def get_authenticated_session(email=None, require_account=False, acr_values=None, reset_password=False):
-    creds = get_credentials(email, require_account, acr_values, reset_password)
+def get_authenticated_session(email=None, require_account=False, acr_values=None, reset_password=False, use_secret_backup=False, get_secret_storage=False):
+    creds = get_credentials(email, require_account, acr_values, reset_password, use_secret_backup, get_secret_storage)
     print(f'Tok - {creds.identity_id}: {creds.access_token}')
     return creds.session

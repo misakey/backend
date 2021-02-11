@@ -52,8 +52,7 @@ _JSON Body:_
 {
 	"old_prehashed_password": {{% include "include/passwordHash.json" 4 %}},
 	"new_prehashed_password": {{% include "include/passwordHash.json" 4 %}},
-	"backup_data": "[STRINGIFIED JSON]",
-    "backup_version": 3
+	"encrypted_account_root_key": "(URL-safe base64)",
 }
 ```
 
@@ -62,17 +61,16 @@ _JSON Body:_
     - `memory` (integer).
     - `parallelism` (integer).
     - `iterations` (integer).
-    - `salt_base64` (base64 string).
-  - `hash_base64` (base64 string): the prehashed password.
+    - `salt_base_64` (base64 string).
+  - `hash_base_64` (base64 string): the prehashed password.
 - `new_prehashed_password` (object): prehashed password using argon2:
   - `params` (object): argon2 parameters:
     - `memory` (integer).
     - `parallelism` (integer).
     - `iterations` (integer).
-    - `salt_base64` (base64 string).
-  - `hash_base64` (base64 string): the prehashed password.
-- `backup_data` (string): the new user backup data.
-- `backup_version` (integer): the new backup data version (must be current version + 1).
+    - `salt_base_64` (base64 string).
+  - `hash_base_64` (base64 string): the prehashed password.
+- `encrypted_account_root_key` (URL-safe base64): the account root key encrypted with the new password
 
 ### 3.2. success response
 
@@ -112,11 +110,14 @@ HTTP 200 OK
 - `memory` (integer).
 - `parallelism` (integer).
 - `iterations` (integer).
-- `salt_base64` (base64 string).
+- `salt_base_64` (base64 string).
 
 ## 6. Get the account backup
 
 This route allows the retrieval of the account backup using the unique account id.
+
+*Note that “account secret backup” mechanism is now read-only
+since the deployment of the new “secret storage” mechanism.*
 
 ### 6.1. request
 
@@ -150,69 +151,3 @@ _JSON Body:_
 
 - `data` (string): the user backup data.
 - `version` (integer): the current backup version.
-
-## 7. Update the account backup
-
-This route allows the update of the account backup using the unique account id.
-
-### 7.1. request
-
-```bash
-PUT https://api.misakey.com/accounts/:id/backup
-```
-_Cookies:_
-- `accesstoken` (opaque token) (ACR >= 2): `mid` claim as an identity id linked to the account.
-- `tokentype`: must be `bearer`
-
-_Headers:_
-- `X-CSRF-Token`: a token to prevent from CSRF attacks.
-
-_Path Parameters:_
-- `id` (uuid string): the unique account id.
-
-_JSON Body:_
-```json
-{
-    "data": "[STRINGIFIED JSON]",
-    "version": 3
-}
-```
-
-- `data` (string): the user backup data.
-- `version` (integer): this value is expected to be equal to 1 + the version of the backup currently stored.
-The client informs the server it increase the version number by updating the backup data.
-
-### 7.2. success response
-
-_Code:_
-```bash
-HTTP 204 NO CONTENT
-```
-
-### 7.3. notable error responses
-
-On errors, some information should be displayed to the end-user.
-
-**1. Received version invalid:**
-
-This error occurs when the received new version is refused by the server.
-Either the received version is too low or too high.
-
-An "expected_version" field is present in details to inform which version number
-is expected from the server considering the current backup version.
-
-_Code:_
-```bash
-HTTP 409 CONFLICT
-```
-
-_JSON Body:_
-```json
-{
-    "code": "conflict",
-    "origin": "body",
-    "details": {
-        "version": "conflict",
-        "expected_version": "5"
-    }
-}

@@ -8,6 +8,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 
 	"github.com/go-redis/redis/v7"
+	"github.com/volatiletech/null/v8"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories"
 )
@@ -95,7 +96,8 @@ func (prr ProcessRedisRepo) GetClaims(ctx context.Context, tok string) (oidc.Acc
 
 		Subject:    process.LoginChallenge,
 		ACR:        process.CompleteAMRs.ToACR(),
-		IdentityID: process.IdentityID, // potentially empty
+		IdentityID: process.IdentityID,                 // potentially empty
+		AccountID:  null.StringFrom(process.AccountID), // potentially empty
 
 		Token: tok,
 	}

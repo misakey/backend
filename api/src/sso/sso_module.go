@@ -138,6 +138,7 @@ func InitModule(router *echo.Echo) Process {
 		authFlowService,
 		authenticationService,
 		backupKeyShareService,
+		viper.GetDuration("root_key_share.expiration"),
 
 		dbConn,
 		redConn,

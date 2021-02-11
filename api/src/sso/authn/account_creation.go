@@ -2,15 +2,16 @@ package authn
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn/argon2"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
@@ -19,24 +20,32 @@ import (
 )
 
 type accountMetadata struct {
-	Password   argon2.HashedPassword `json:"prehashed_password"`
-	BackupData string                `json:"backup_data"`
+	Password      argon2.HashedPassword         `json:"prehashed_password"`
+	BackupData    string                        `json:"backup_data"`
+	SecretStorage crypto.SecretStorageSetupData `json:"secret_storage"`
 }
 
 // Validate ...
 func (am accountMetadata) Validate() error {
 	if err := v.ValidateStruct(&am,
 		v.Field(&am.Password),
-		v.Field(&am.BackupData, v.Required),
 	); err != nil {
 		return merr.From(err).Desc("validating account metadata")
 	}
+
+	// TODO IN TRAIL OF FLOWERS stop accepting backup data at all
+	if am.BackupData == "" {
+		if err := am.SecretStorage.Validate(); err != nil {
+			return merr.From(err).Desc("validating account secret storage")
+		}
+	}
+
 	return nil
 }
 
 // assertAccountCreation
 func (as *Service) assertAccountCreation(
-	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
+	ctx context.Context, tr *sql.Tx, redConn *redis.Client,
 	challenge string, curIdentity *identity.Identity, step Step,
 ) error {
 	acc := oidc.GetAccesses(ctx)
@@ -70,10 +79,14 @@ func (as *Service) assertAccountCreation(
 		return merr.Forbidden().Desc("identity has already an account")
 	}
 
-	// prepare the account to be created
-	account := identity.Account{
-		BackupData:    accountMetadata.BackupData,
-		BackupVersion: 1,
+	account := identity.Account{}
+
+	if accountMetadata.BackupData != "" {
+		// should not happen in production,
+		// only useful for testing the migration of old accounts to the new system
+		// TODO IN TRAIL OF FLOWERS remove this
+		account.BackupData = accountMetadata.BackupData
+		account.BackupVersion = 1
 	}
 
 	// hash the password before storing it
@@ -81,19 +94,33 @@ func (as *Service) assertAccountCreation(
 	if err != nil {
 		return merr.From(err).Desc("could not hash the password")
 	}
-	if err := identity.CreateAccount(ctx, exec, &account); err != nil {
+	if err := identity.CreateAccount(ctx, tr, &account); err != nil {
 		return err
+	}
+
+	if accountMetadata.BackupData == "" {
+		err = crypto.ResetAccountSecretStorage(ctx, tr, account.ID, &accountMetadata.SecretStorage)
+		if err != nil {
+			return merr.From(err).Desc("setting up secret storage")
+		}
+		err = curIdentity.SetIdentityKeys(
+			accountMetadata.SecretStorage.IdentityPublicKey,
+			accountMetadata.SecretStorage.IdentityNonIdentifiedPublicKey,
+		)
+		if err != nil {
+			return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
+		}
 	}
 
 	// update the identity's account id column
 	curIdentity.AccountID = null.StringFrom(account.ID)
-	if err := identity.Update(ctx, exec, curIdentity); err != nil {
+	if err := identity.Update(ctx, tr, curIdentity); err != nil {
 		return err
 	}
 
 	// create identity notification about account creation
 	if err := identity.NotificationCreate(
-		ctx, exec, redConn,
+		ctx, tr, redConn,
 		curIdentity.ID, "user.create_account", null.JSONFromPtr(nil),
 	); err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", curIdentity.ID)

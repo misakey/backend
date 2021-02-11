@@ -9,7 +9,7 @@ with prettyErrorContext():
     s1 = get_authenticated_session(acr_values=2)
     s2 = get_authenticated_session(acr_values=2)
     # s3 will **not** have an identity pubkey
-    s3 = get_authenticated_session(acr_values=2)
+    s3 = get_authenticated_session(acr_values=2, use_secret_backup=True)
 
     r = s1.post(
         f'{URL_PREFIX}/boxes',

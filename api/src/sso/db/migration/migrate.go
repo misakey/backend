@@ -29,6 +29,10 @@ func Launch() {
 	initAddMFAMethodToIdentity()
 	initAddWebauthnCredentialTable()
 	initAddTOTPSecretTable()
+	initCreateSecretStorageAccountRootKeyTable()
+	initCreateSecretStorageVaultKeyTable()
+	initCreateSecretStorageAsymKeyTable()
+	initCreateSecretStorageBoxKeyShareTable()
 
 	db.StartMigration(os.Getenv("DSN_SSO"), os.Getenv("MIGRATION_DIR_SSO"))
 }

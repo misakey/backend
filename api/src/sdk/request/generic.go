@@ -17,6 +17,13 @@ type Request interface {
 	BindAndValidate(echo.Context) error
 }
 
+type EmptyQuery struct{}
+
+// BindAndValidate implements Request.BindAndValidate
+func (query *EmptyQuery) BindAndValidate(eCtx echo.Context) error {
+	return nil
+}
+
 // ResponseNoContent ...
 func ResponseNoContent(eCtx echo.Context, _ interface{}) error {
 	return eCtx.NoContent(http.StatusNoContent)

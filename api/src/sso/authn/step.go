@@ -2,6 +2,7 @@ package authn
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -50,24 +51,24 @@ func (as *Service) InitStep(
 // It takes a pointer on the identity since the identity might be atlered by the authn step
 // Return a nil error in case of success
 func (as *Service) AssertStep(
-	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
+	ctx context.Context, tr *sql.Tx, redConn *redis.Client,
 	challenge string, identity *identity.Identity, assertion Step,
 ) error {
 	// check the metadata
 	var metadataErr error
 	switch assertion.MethodName {
 	case oidc.AMREmailedCode:
-		metadataErr = as.assertEmailedCode(ctx, exec, assertion)
+		metadataErr = as.assertEmailedCode(ctx, tr, assertion)
 	case oidc.AMRPrehashedPassword:
-		metadataErr = as.assertPassword(ctx, exec, *identity, assertion)
+		metadataErr = as.assertPassword(ctx, tr, *identity, assertion)
 	case oidc.AMRAccountCreation:
-		metadataErr = as.assertAccountCreation(ctx, exec, redConn, challenge, identity, assertion)
+		metadataErr = as.assertAccountCreation(ctx, tr, redConn, challenge, identity, assertion)
 	case oidc.AMRWebauthn:
-		metadataErr = as.assertWebauthn(ctx, exec, redConn, *identity, assertion)
+		metadataErr = as.assertWebauthn(ctx, tr, redConn, *identity, assertion)
 	case oidc.AMRTOTP:
-		metadataErr = as.assertTOTP(ctx, exec, redConn, *identity, assertion)
+		metadataErr = as.assertTOTP(ctx, tr, redConn, *identity, assertion)
 	case oidc.AMRResetPassword:
-		metadataErr = as.resetPassword(ctx, exec, redConn, challenge, *identity, assertion)
+		metadataErr = as.resetPassword(ctx, tr, redConn, challenge, *identity, assertion)
 	default:
 		metadataErr = merr.BadRequest().Add("method_name", merr.DVMalformed)
 	}

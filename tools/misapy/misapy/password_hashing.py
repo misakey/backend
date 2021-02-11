@@ -7,10 +7,10 @@ try:
 except ImportError:
     sys.exit('cannot import argon2 (pip install argon2-cffi)')
 
-def hash_password(password, salt_base64, iterations=1, memory=1024, parallelism=1):
+def hash_password(password, salt_base_64, iterations=1, memory=1024, parallelism=1):
     hash = argon2_cffi.low_level.hash_secret_raw(
         'password'.encode(),
-        salt=salt_base64.encode(),
+        salt=salt_base_64.encode(),
         time_cost=iterations,
         memory_cost=memory,
         parallelism=parallelism,
@@ -23,8 +23,8 @@ def hash_password(password, salt_base64, iterations=1, memory=1024, parallelism=
             'memory': 1024,
             'iterations': 1,
             'parallelism': 1,
-            'salt_base64': salt_base64,
+            'salt_base_64': salt_base_64,
         },
-        'hash_base64': b64encode(hash).decode(),
+        'hash_base_64': b64encode(hash).decode(),
     }
 

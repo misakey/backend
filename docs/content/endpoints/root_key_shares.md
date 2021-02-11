@@ -1,9 +1,9 @@
 +++
 categories = ["Endpoints"]
 date = "2020-09-11"
-description = "Backup Key Shares (key splitting) endpoints"
-tags = ["sso", "backup", "keyshares", "key", "splitting", "api", "endpoints"]
-title = "SSO - Backup Key Shares"
+description = "Root Key Shares (key splitting) endpoints"
+tags = ["sso", "root", "secret", "storage", "keyshares", "key", "splitting", "api", "endpoints"]
+title = "SSO - Root Key Shares"
 +++
 
 ## 1. Introduction
@@ -15,12 +15,12 @@ A key share has another attribute than its value,
 it has an `other_share_hash` which is used for the guest frontend to identify which share it wants to retrieve.
 Technically speaking, the hash is the SHA-512 hash of the other share.
 
-## 2. Creating a backup key share
+## 2. Creating a root key share
 
 ### 2.1. request
 
 ```bash
-POST https://api.misakey.com/backup-key-shares
+POST https://api.misakey.com/root-key-shares
 ```
 
 _Cookies:_
@@ -32,13 +32,12 @@ _Headers:_
 
 _JSON Body:_
 ```json
-{{% include "include/backup-key-share.json" %}}
+{{% include "include/root-key-share-posted.json" %}}
 ```
 
 - `account_id` (string) (uuid): the account for which the shares has been created.
 - `share` (string) (base64): one of the shares.
 - `other_share_hash` (string) (unpadded url-safe base64): a hash of the other share.
-- `salt_base64` (string) (base64): the salt corresponding to the backup encryption.
 
 ### 2.2. response
 
@@ -49,15 +48,15 @@ HTTP 201 CREATED
 
 _JSON Body:_
 ```json
-{{% include "include/backup-key-share.json" %}}
+{{% include "include/root-key-share-response.json" %}}
 ```
 
-## 3. Getting a Backup Key Share
+## 3. Getting a Root Key Share
 
 ### 3.1. request
 
 ```bash
-GET https://api.misakey.com/backup-key-shares/:other-share-hash
+GET https://api.misakey.com/root-key-shares/:other-share-hash
 ```
 
 _Cookies:_
@@ -80,10 +79,9 @@ HTTP 200 OK
 
 _JSON Body:_
 ```json
-{{% include "include/backup-key-share.json" %}}
+{{% include "include/root-key-share-response.json" %}}
 ```
 
 - `account_id` (string) (uuid): the account for which the shares has been created.
 - `share` (string) (base64): one of the shares.
 - `other-share-hash` (string) (unpadded url-safe base64): a hash of the other share.
-- `salt_base64` (string) (base64): the salt corresponding to the backup encryption.

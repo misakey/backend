@@ -30,6 +30,7 @@ type Process struct {
 	CompleteAMRs   oidc.MethodRefs `json:"camr"`
 	IdentityID     string          `json:"mid"`
 	PasswordReset  bool            `json:"pwdr"`
+	AccountID      string          `json:"aid"`
 
 	AccessToken string `json:"tok"`
 	ExpiresAt   int64  `json:"exp"`
@@ -126,9 +127,15 @@ func (as *Service) UpgradeProcess(
 		return process, merr.Forbidden().Desc("cannot change identity id during a process")
 	}
 
+	// if the process already has an account ID bound to it, check its consistency
+	if process.AccountID != "" && identity.AccountID.String != process.AccountID {
+		return process, merr.Forbidden().Desc("cannot change account id during a process")
+	}
+
 	// update the process
 	process.CompleteAMRs.Add(amr)
 	process.IdentityID = identity.ID
+	process.AccountID = identity.AccountID.String
 	if err := as.processes.Update(ctx, process); err != nil {
 		return process, merr.From(err).Desc("updating process")
 	}

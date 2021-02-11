@@ -3,6 +3,7 @@ package identity
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/google/uuid"
@@ -80,6 +81,19 @@ func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 	i.NonIdentifiedPubkey = src.NonIdentifiedPubkey
 	i.MFAMethod = src.MfaMethod
 	return i
+}
+
+var ErrMissingIdentityKeys = errors.New("at least one identity public key is missing")
+
+func (i *Identity) SetIdentityKeys(pubkey string, nonIdentifiedPubkey string) error {
+	if pubkey == "" || nonIdentifiedPubkey == "" {
+		return ErrMissingIdentityKeys
+	}
+
+	i.Pubkey = null.StringFrom(pubkey)
+	i.NonIdentifiedPubkey = null.StringFrom(nonIdentifiedPubkey)
+
+	return nil
 }
 
 // Create ...

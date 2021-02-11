@@ -49,6 +49,9 @@
 [backup_key_share]
   expiration = "24h"
 
+[root_key_share]
+  expiration = "24h"
+
 [websockets]
   allowed_origins = ["https://app.misakey.com.local"]
 

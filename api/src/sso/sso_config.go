@@ -30,6 +30,7 @@ func initConfig() {
 		"redis.address",
 		"redis.port",
 		"backup_key_share.expiration",
+		"root_key_share.expiration",
 	}
 	switch os.Getenv("ENV") {
 	case "production":

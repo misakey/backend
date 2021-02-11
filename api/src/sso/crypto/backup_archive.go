@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -33,27 +32,6 @@ func (b *BackupArchive) fromSQLBoiler(boilModel sqlboiler.BackupArchive) *Backup
 	b.RecoveredAt = boilModel.RecoveredAt
 	b.DeletedAt = boilModel.DeletedAt
 	return b
-}
-
-func (b BackupArchive) toSQLBoiler() *sqlboiler.BackupArchive {
-	return &sqlboiler.BackupArchive{
-		ID:          b.ID,
-		AccountID:   b.AccountID,
-		Data:        b.Data,
-		CreatedAt:   b.CreatedAt,
-		RecoveredAt: b.RecoveredAt,
-		DeletedAt:   b.DeletedAt,
-	}
-}
-
-// CreateBackupArchive ...
-func CreateBackupArchive(ctx context.Context, exec boil.ContextExecutor, archive BackupArchive) error {
-	id, err := uuid.NewRandom()
-	if err != nil {
-		return merr.From(err).Desc("generating UUID")
-	}
-	archive.ID = id.String()
-	return archive.toSQLBoiler().Insert(ctx, exec, boil.Infer())
 }
 
 // GetBackupArchive ...

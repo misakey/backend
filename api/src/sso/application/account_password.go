@@ -2,18 +2,19 @@ package application
 
 import (
 	"context"
-	"fmt"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/authn/argon2"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
@@ -57,10 +58,9 @@ func (sso *SSOService) GetAccountPwdParams(ctx context.Context, gen request.Requ
 type ChangePasswordCmd struct {
 	accountID string
 
-	OldPassword   argon2.HashedPassword `json:"old_prehashed_password"`
-	NewPassword   argon2.HashedPassword `json:"new_prehashed_password"`
-	BackupData    string                `json:"backup_data"`
-	BackupVersion int                   `json:"backup_version"`
+	OldPassword             argon2.HashedPassword `json:"old_prehashed_password"`
+	NewPassword             argon2.HashedPassword `json:"new_prehashed_password"`
+	EncryptedAccountRootKey string                `json:"encrypted_account_root_key"`
 }
 
 // BindAndValidate ...
@@ -73,12 +73,12 @@ func (cmd *ChangePasswordCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := v.ValidateStruct(cmd,
 		v.Field(&cmd.OldPassword),
 		v.Field(&cmd.NewPassword),
-		v.Field(&cmd.BackupData, v.Required),
-		v.Field(&cmd.BackupVersion, v.Required),
+		v.Field(&cmd.EncryptedAccountRootKey, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 		v.Field(&cmd.accountID, v.Required, is.UUIDv4),
 	); err != nil {
 		return merr.From(err).Desc("validating change password command")
 	}
+
 	return nil
 }
 
@@ -126,17 +126,10 @@ func (sso *SSOService) ChangePassword(ctx context.Context, gen request.Request) 
 		return nil, err
 	}
 
-	// check and update backup data
-	if cmd.BackupVersion != account.BackupVersion+1 {
-		err = merr.Conflict().
-			Desc("bad backup version number").
-			Add("version", "invalid").
-			Add("expected_version", fmt.Sprintf("%d", account.BackupVersion+1))
+	err = crypto.UpdateRootKey(ctx, tr, cmd.accountID, cmd.EncryptedAccountRootKey)
+	if err != nil {
 		return nil, err
 	}
-
-	account.BackupData = cmd.BackupData
-	account.BackupVersion = cmd.BackupVersion
 
 	// save account
 	err = identity.UpdateAccount(ctx, tr, &account)

@@ -405,8 +405,8 @@ an identity](./#possible-formats-for-the-metadata-field) with the `prehashed_pas
   "method_name": "account_creation",
   "metadata": {
     "prehashed_password": {{% include "include/passwordHash.json" 4 %}},
-    "backup_data": "[STRINGIFIED JSON]"
-    },
+    "secret_storage": {{% include "include/secretStorageSetupData.json" 4 %}},
+  },
   [...]
 }
 ```
@@ -464,7 +464,7 @@ _JSON Body:_
     "method_name": "reset_password",
     "metadata": {
       "prehashed_password": {{% include "include/passwordHash.json" 6 %}},
-      "backup_data": "[STRINGIFIED JSON]"
+      "secret_storage": {{% include "include/secretStorageSetupData.json" 6 %}},
     }
   [...]
   }
@@ -651,7 +651,7 @@ _JSON Body:_
   - `identity_id` (uuid string): the identity ID for which the authentication step will be initialized.
   - `method_name` (string) (one of: _emailed_code_, _prehashed_password_): the method used by the authentication step.
 
-### 2.4.2. success response
+### 2.4.3. success response
 
 This route does not return any content.
 
@@ -660,7 +660,7 @@ _Code:_
 HTTP 204 NO CONTENT
 ```
 
-### 2.4.3. notable error responses
+### 2.4.4. notable error responses
 
 On errors, some information should be displayed to the end-user.
 
@@ -894,9 +894,10 @@ _Code:_
 HTTP 204 NO CONTENT
 ```
 
-## 4.2. Get Backup
 
-This endpoint allows to get the account backup
+## 4.2. Get Secret Storage
+
+This endpoint allows to get the account secret storage
 during the auth flow.
 
 This endpoint needs a valid process token.
@@ -904,7 +905,7 @@ This endpoint needs a valid process token.
 ### 4.2.1. Request
 
 ```bash
-GET https://api.misakey.com.local/auth/backup
+GET https://api.misakey.com.local/auth/secret-storage
 ```
 
 _Query Parameters:_
@@ -924,6 +925,49 @@ HTTP 200 OK
 _JSON Body:_
 ```json
 {
+  "account_id": "d8aa7d0f-81fe-4e66-99d5-fe2b31360ae0",
+  "secrets": {{% include "include/secretStorageView-empty.json" 4 %}}
+}
+```
+
+- `account_id` (string) (uuid4): the id of the account related to the current auth flow.
+- `secrets` (object): the content of the account's secret storage.
+
+
+## 4.3. Get Backup
+
+This endpoint allows to get the account backup
+during the auth flow.
+
+*(Note that secret backup system is not used anymore,
+but this endpoint is needed for the frontend to migrate account still using it
+to the new secret storage system)*
+
+This endpoint needs a valid process token.
+
+### 4.3.1. Request
+
+```bash
+GET https://api.misakey.com.local/auth/backup
+```
+
+_Query Parameters:_
+- `login_challenge` (string): the login challenge corresponding to the current auth flow.
+- `identity_id` (string) (uuid4): the id of the identity corresponding to the current auth flow.
+
+_Headers_:
+- `Authorization`: should be `Bearer {opaque_token}` with opaque token being the `login_challenge` of the auth flow.
+
+### 4.3.2. Success Response
+
+_Code:_
+```bash
+HTTP 200 OK
+```
+
+_JSON Body:_
+```json
+{
     "data": "[STRINGIFIED JSON]",
     "version": 3,
     "account_id": "d8aa7d0f-81fe-4e66-99d5-fe2b31360ae0"
@@ -934,29 +978,28 @@ _JSON Body:_
 - `version` (integer): the current backup version.
 - `account_id` (string) (uuid4): the id of the account owning the backup.
 
-## 4.3. Creating a Backup Key Share
+## 4.4. Creating a Root Key Share
 
-This endpoint allows to create a backup key share in the auth flow.
+This endpoint allows to create a root key share in the auth flow.
 
-### 4.3.1. Request
+### 4.4.1. Request
 
 ```bash
-  POST https://api.misakey.com/auth/backup-key-shares
+  POST https://api.misakey.com/auth/root-key-shares
 ```
 
 _Headers_:
-- `Authorization`: should be `Bearer {opaque_token}` with opaque token being the access token given during the auth flow. the backup-key-shares must be generated for an identity id linked to the account id bound to the token.
+- `Authorization`: should be `Bearer {opaque_token}` with opaque token being the access token given during the auth flow.
 
 _JSON Body:_
 ```json
-{{% include "include/backup-key-share.json" %}}
+{{% include "include/root-key-share-posted.json" %}}
 ```
 
-- `account_id` (string) (uuid): the account for which the shares has been created.
 - `share` (string) (base64): one of the shares.
 - `other_share_hash` (string) (unpadded url-safe base64): a hash of the other share.
 
-### 4.3.2. Response
+### 4.4.3. Response
 
 _Code:_
 ```bash
@@ -965,7 +1008,7 @@ HTTP 201 CREATED
 
 _JSON Body:_
 ```json
-{{% include "include/backup-key-share.json" %}}
+{{% include "include/root-key-share-response.json" %}}
 ```
 
 # 5. OIDC endpoints

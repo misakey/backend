@@ -19,6 +19,8 @@ which is good because these scripts are supposed to be *executed*, not *imported
 
 Scripts `all.py` will execute *“any Python script underneath them”* so you don't have to “add” your new script to any list for it to be executed by `all.py`.
 
+**Problem with `all.py`:** if you are using `all.py` and a test fail, the stack trace will miss some information (you will see things like `File "<string>", line 70, in <lambda>`). This bug is tracked in [this issue](https://gitlab.misakey.dev/misakey/backend/-/issues/219). In the meantime, the workaround is the following: re-run the test file that failed directly (by calling it like `tools/tests/root-key-shares.py`) instead of through `all.py`. Remember that `all.py` prints markdown headers based on the file names; you can use this to find the name of the failing test file.
+
 ## Making HTTP Requests
 
 Use the methods from `misapy.http`,
