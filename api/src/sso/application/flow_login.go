@@ -101,6 +101,9 @@ func (cmd *RequireIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
+	// lowcase the email
+	cmd.IdentifierValue = strings.ToLower(cmd.IdentifierValue)
+
 	if err := v.ValidateStruct(cmd,
 		v.Field(&cmd.LoginChallenge, v.Required),
 		v.Field(&cmd.IdentifierValue, v.Required, is.EmailFormat),

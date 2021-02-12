@@ -141,7 +141,7 @@ func Get(ctx context.Context, exec boil.ContextExecutor, identityID string) (ret
 // GetByIdentifierValue...
 func GetByIdentifierValue(ctx context.Context, exec boil.ContextExecutor, identifierValue string) (ret Identity, err error) {
 	mods := []qm.QueryMod{
-		sqlboiler.IdentityWhere.IdentifierValue.EQ(identifierValue),
+		qm.Where("LOWER(identifier_value) = LOWER(?)", identifierValue),
 	}
 	record, err := sqlboiler.Identities(mods...).One(ctx, exec)
 	if err == sql.ErrNoRows {
