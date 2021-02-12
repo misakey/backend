@@ -75,7 +75,7 @@ func (sso *SSOService) BeginTOTPEnrollment(ctx context.Context, gen request.Requ
 
 	// encode image in base64
 	var buf bytes.Buffer
-	img, err := key.Image(100, 100)
+	img, err := key.Image(180, 180)
 	if err != nil {
 		return nil, merr.From(err).Desc("generating qr code")
 	}
