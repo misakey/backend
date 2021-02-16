@@ -78,16 +78,23 @@ func GetIDsForIdentity(ctx context.Context, redConn *redis.Client, identityID st
 	if err != nil {
 		return nil, merr.From(err).Desc("listing user org cache keys")
 	}
-	// extract orgs ids from keys
+
+	// if cached keys have been found, use it
 	orgIDs := []string{}
 	for _, key := range keys {
-		// cache:user_id:org_id:...
+		// cache:user_id:org_{id}:...
 		//   0      1      2     x
-		split := strings.Split(key, ":")
-		if len(split) < 3 {
+		keySplit := strings.Split(key, ":")
+		if len(keySplit) < 3 {
 			continue
 		}
-		orgIDs = append(orgIDs, split[2])
+		// org_{id}...
+		//  0    1
+		keySplit = strings.Split(key, "_")
+		if len(keySplit) != 2 {
+			continue
+		}
+		orgIDs = append(orgIDs, keySplit[1])
 	}
 	return orgIDs, nil
 }

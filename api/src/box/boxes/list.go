@@ -139,7 +139,26 @@ func listBoxIDsForIdentity(
 		return cacheBoxIDs, nil
 	}
 
-	// otherwise, let's build the cache which is organized this way: per user -> per org -> box ids
+	// otherwise, let's build the cache and use its computation
+	boxIDsbyOrgID, err := buildIdentityOrgBoxCache(ctx, exec, redConn, identityID)
+	if err != nil {
+		return nil, err
+	}
+	boxIDs, ok := boxIDsbyOrgID[ownerOrgID]
+	if !ok {
+		return []string{}, nil
+	}
+	return boxIDs, nil
+}
+
+// compute the full cache for the given identity: org_*:boxIDs
+// return a map[orgID]boxIDs
+func buildIdentityOrgBoxCache(
+	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
+	identityID string,
+) (map[string][]string, error) {
+	boxIDsByOrgID := make(map[string][]string)
+	// let's build the cache which is organized this way: per user -> per org -> box ids
 	// 2. to build the cache means to build the list of user's boxes for all organizations
 	// the user's boxes are defined by:
 	// - what they have joined (a)
@@ -147,12 +166,12 @@ func listBoxIDsForIdentity(
 	// a.
 	joins, err := events.ListMemberBoxLatestEvents(ctx, exec, identityID)
 	if err != nil {
-		return nil, merr.From(err).Desc("listing joined box ids")
+		return boxIDsByOrgID, merr.From(err).Desc("listing joined box ids")
 	}
 	// b.
 	creates, err := events.ListCreateByCreatorID(ctx, exec, identityID)
 	if err != nil {
-		return nil, merr.From(err).Desc("listing creator box ids")
+		return boxIDsByOrgID, merr.From(err).Desc("listing creator box ids")
 	}
 
 	// need to retrieve all create events of the boxes in order to class by org ids
@@ -167,33 +186,26 @@ func listBoxIDsForIdentity(
 
 	// if the identity has access to no box, return directly
 	if len(boxIDs) == 0 {
-		return []string{}, nil
+		return boxIDsByOrgID, nil
 	}
 
 	contentByBoxID, err := events.MapCreationContentByBoxID(ctx, exec, boxIDs)
 	if err != nil {
-		return nil, merr.From(err).Desc("listing creation contents")
+		return boxIDsByOrgID, merr.From(err).Desc("listing creation contents")
 	}
 	// 1.b. sort the boxIDs by orgID
-	boxIDsByOrgID := make(map[string][]string)
 	for boxID, createContent := range contentByBoxID {
 		boxIDsByOrgID[createContent.OwnerOrgID] = append(boxIDsByOrgID[createContent.OwnerOrgID], boxID)
 	}
 
-	// 3. if no box correspond to the org id:
-	// return directly an empty list - don't update the cache
-	// return the just computed box by org id
-	finalBoxIDs, ok := boxIDsByOrgID[ownerOrgID]
-	if !ok {
-		return []string{}, nil
-	}
-
-	// 4. update cache
+	// 2. update the cache
 	for ownerOrgID, boxIDs := range boxIDsByOrgID {
 		key := cache.BoxIDsKeyByUserOrg(identityID, ownerOrgID)
 		if _, err := redConn.SAdd(key, slice.StringSliceToInterfaceSlice(boxIDs)...).Result(); err != nil {
 			logger.FromCtx(ctx).Warn().Err(err).Msgf("could not add boxes cache for identity=%s org=%s", identityID, ownerOrgID)
 		}
 	}
-	return finalBoxIDs, nil
+
+	// return the cache
+	return boxIDsByOrgID, nil
 }
