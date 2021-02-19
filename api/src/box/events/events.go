@@ -102,6 +102,7 @@ func ListLastestForEachBoxID(ctx context.Context, exec boil.ContextExecutor, box
 	mods := []qm.QueryMod{
 		qm.Select("DISTINCT ON (box_id) box_id, event.*"),
 		sqlboiler.EventWhere.BoxID.IN(boxIDs),
+		sqlboiler.EventWhere.Type.IN(etype.MembersCanSee),
 		qm.OrderBy(sqlboiler.EventColumns.BoxID),
 		qm.OrderBy(sqlboiler.EventColumns.CreatedAt + " DESC"),
 	}
