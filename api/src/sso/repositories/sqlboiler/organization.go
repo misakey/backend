@@ -71,14 +71,17 @@ var OrganizationWhere = struct {
 
 // OrganizationRels is where relationship names are stored.
 var OrganizationRels = struct {
-	Creator string
+	Creator  string
+	Datatags string
 }{
-	Creator: "Creator",
+	Creator:  "Creator",
+	Datatags: "Datatags",
 }
 
 // organizationR is where relationships are stored.
 type organizationR struct {
-	Creator *Identity `boil:"Creator" json:"Creator" toml:"Creator" yaml:"Creator"`
+	Creator  *Identity    `boil:"Creator" json:"Creator" toml:"Creator" yaml:"Creator"`
+	Datatags DatatagSlice `boil:"Datatags" json:"Datatags" toml:"Datatags" yaml:"Datatags"`
 }
 
 // NewStruct creates a new relationship struct
@@ -201,6 +204,27 @@ func (o *Organization) Creator(mods ...qm.QueryMod) identityQuery {
 	return query
 }
 
+// Datatags retrieves all the datatag's Datatags with an executor.
+func (o *Organization) Datatags(mods ...qm.QueryMod) datatagQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"datatag\".\"organization_id\"=?", o.ID),
+	)
+
+	query := Datatags(queryMods...)
+	queries.SetFrom(query.Query, "\"datatag\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"datatag\".*"})
+	}
+
+	return query
+}
+
 // LoadCreator allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (organizationL) LoadCreator(ctx context.Context, e boil.ContextExecutor, singular bool, maybeOrganization interface{}, mods queries.Applicator) error {
@@ -297,6 +321,97 @@ func (organizationL) LoadCreator(ctx context.Context, e boil.ContextExecutor, si
 	return nil
 }
 
+// LoadDatatags allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (organizationL) LoadDatatags(ctx context.Context, e boil.ContextExecutor, singular bool, maybeOrganization interface{}, mods queries.Applicator) error {
+	var slice []*Organization
+	var object *Organization
+
+	if singular {
+		object = maybeOrganization.(*Organization)
+	} else {
+		slice = *maybeOrganization.(*[]*Organization)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &organizationR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &organizationR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`datatag`),
+		qm.WhereIn(`datatag.organization_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load datatag")
+	}
+
+	var resultSlice []*Datatag
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice datatag")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on datatag")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for datatag")
+	}
+
+	if singular {
+		object.R.Datatags = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &datatagR{}
+			}
+			foreign.R.Organization = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.OrganizationID {
+				local.R.Datatags = append(local.R.Datatags, foreign)
+				if foreign.R == nil {
+					foreign.R = &datatagR{}
+				}
+				foreign.R.Organization = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetCreator of the organization to the related item.
 // Sets o.R.Creator to related.
 // Adds o to related.R.CreatorOrganizations.
@@ -341,6 +456,59 @@ func (o *Organization) SetCreator(ctx context.Context, exec boil.ContextExecutor
 		related.R.CreatorOrganizations = append(related.R.CreatorOrganizations, o)
 	}
 
+	return nil
+}
+
+// AddDatatags adds the given related objects to the existing relationships
+// of the organization, optionally inserting them as new records.
+// Appends related to o.R.Datatags.
+// Sets related.R.Organization appropriately.
+func (o *Organization) AddDatatags(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Datatag) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.OrganizationID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"datatag\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"organization_id"}),
+				strmangle.WhereClause("\"", "\"", 2, datatagPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.OrganizationID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &organizationR{
+			Datatags: related,
+		}
+	} else {
+		o.R.Datatags = append(o.R.Datatags, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &datatagR{
+				Organization: o,
+			}
+		} else {
+			rel.R.Organization = o
+		}
+	}
 	return nil
 }
 

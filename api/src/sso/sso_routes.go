@@ -245,6 +245,26 @@ func bindRoutes(
 		request.ResponseCreated,
 	))
 
+	// DATATAGS
+	orgPath.POST(oidcHandlers.NewACR2(
+		"/:id/datatags",
+		func() request.Request { return &application.CreateDatatagCmd{} },
+		ss.CreateDatatag,
+		request.ResponseCreated,
+	))
+	orgPath.GET(oidcHandlers.NewACR2(
+		"/:id/datatags",
+		func() request.Request { return &application.ListDatatagsCmd{} },
+		ss.ListDatatags,
+		request.ResponseOK,
+	))
+	orgPath.PUT(oidcHandlers.NewACR2(
+		"/:id/datatags/:did",
+		func() request.Request { return &application.EditDatatagCmd{} },
+		ss.EditDatatag,
+		request.ResponseOK,
+	))
+
 	// WEBAUTHN CREDENTIALS
 	webauthnCredentialPath := router.Group("/webauthn-credentials")
 	webauthnCredentialPath.GET(oidcHandlers.NewACR2(

@@ -99,6 +99,15 @@ func GetIDsForIdentity(ctx context.Context, redConn *redis.Client, identityID st
 	return orgIDs, nil
 }
 
+func GetOrg(ctx context.Context, exec boil.ContextExecutor, id string) (*Org, error) {
+	record, err := sqlboiler.FindOrganization(ctx, exec, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return newOrg().fromSQLBoiler(*record), nil
+}
+
 func ListByIDsOrCreatorID(ctx context.Context, exec boil.ContextExecutor, orgIDs []string, creatorID string) ([]Org, error) {
 	mods := []qm.QueryMod{}
 

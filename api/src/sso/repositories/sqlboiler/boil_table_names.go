@@ -8,15 +8,16 @@ var TableNames = struct {
 	AuthenticationStep            string
 	BackupArchive                 string
 	CryptoAction                  string
+	Datatag                       string
 	Identity                      string
 	IdentityNotification          string
 	IdentityProfileSharingConsent string
 	Organization                  string
-	TotpSecret                    string
 	SecretStorageAccountRootKey   string
 	SecretStorageAsymKey          string
 	SecretStorageBoxKeyShare      string
 	SecretStorageVaultKey         string
+	TotpSecret                    string
 	UsedCoupon                    string
 	WebauthnCredential            string
 }{
@@ -24,15 +25,16 @@ var TableNames = struct {
 	AuthenticationStep:            "authentication_step",
 	BackupArchive:                 "backup_archive",
 	CryptoAction:                  "crypto_action",
+	Datatag:                       "datatag",
 	Identity:                      "identity",
 	IdentityNotification:          "identity_notification",
 	IdentityProfileSharingConsent: "identity_profile_sharing_consent",
 	Organization:                  "organization",
-	TotpSecret:                    "totp_secret",
 	SecretStorageAccountRootKey:   "secret_storage_account_root_key",
 	SecretStorageAsymKey:          "secret_storage_asym_key",
 	SecretStorageBoxKeyShare:      "secret_storage_box_key_share",
 	SecretStorageVaultKey:         "secret_storage_vault_key",
+	TotpSecret:                    "totp_secret",
 	UsedCoupon:                    "used_coupon",
 	WebauthnCredential:            "webauthn_credential",
 }
