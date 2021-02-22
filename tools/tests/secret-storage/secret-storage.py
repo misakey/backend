@@ -127,25 +127,30 @@ with prettyErrorContext():
         ]
     )
 
+
     print('- cannot delete someone else\'s asym key')
     s2 = get_authenticated_session(acr_values=2)
     r = s1.get(f'{URL_PREFIX}/crypto/secret-storage')
     pubkeys = set(r.json()['asym_keys'].keys())
     to_delete = random.choice(list(pubkeys))
-    
     s2.delete(
         f'{URL_PREFIX}/crypto/secret-storage/asym-keys',
         json={
             'public_keys': [to_delete],
         },
-        expected_status_code=http.STATUS_NOT_FOUND,
+        # For now backend does not return errors any more for this case
+        # TODO re-enable when the following issue is implemented:
+        # https://gitlab.misakey.dev/misakey/backend/-/issues/289
+        # expected_status_code=http.STATUS_NOT_FOUND,
     )
+    r = s1.get(f'{URL_PREFIX}/crypto/secret-storage')
+    assert set(r.json()['asym_keys'].keys()) == pubkeys # pubkeys should not have changed
+
 
     print('- deletion of asym keys')
     r = s1.get(f'{URL_PREFIX}/crypto/secret-storage')
     pubkeys = set(r.json()['asym_keys'].keys())
     to_delete = random.choice(list(pubkeys))
-    
     s1.delete(
         f'{URL_PREFIX}/crypto/secret-storage/asym-keys',
         json={
@@ -153,29 +158,42 @@ with prettyErrorContext():
         },
         expected_status_code=http.STATUS_NO_CONTENT,
     )
-
     r = s1.get(f'{URL_PREFIX}/crypto/secret-storage')
     assert pubkeys - {to_delete} == set(r.json()['asym_keys'].keys())
+
+
+    print('- no error when deleting asym key twice')
+    s1.delete(
+        f'{URL_PREFIX}/crypto/secret-storage/asym-keys',
+        json={
+            'public_keys': [to_delete],
+        },
+        expected_status_code=http.STATUS_NO_CONTENT,
+    )
 
 
     print('- cannot delete someone else\'s box key shares')
     r = s1.get(f'{URL_PREFIX}/crypto/secret-storage')
     box_ids = set(r.json()['box_key_shares'].keys())
     to_delete = random.choice(list(box_ids))
-    
     s2.delete(
         f'{URL_PREFIX}/crypto/secret-storage/box-key-shares',
         json={
             'box_ids': [to_delete],
         },
-        expected_status_code=http.STATUS_NOT_FOUND,
+        # For now backend does not return errors any more for this case
+        # TODO re-enable when the following issue is implemented:
+        # https://gitlab.misakey.dev/misakey/backend/-/issues/289
+        # expected_status_code=http.STATUS_NOT_FOUND,
     )
+    r = s1.get(f'{URL_PREFIX}/crypto/secret-storage')
+    assert set(r.json()['box_key_shares'].keys()) == box_ids # box key shares should not have changed
+
 
     print('- deletion of box key shares')
     r = s1.get(f'{URL_PREFIX}/crypto/secret-storage')
     box_ids = set(r.json()['box_key_shares'].keys())
     to_delete = random.choice(list(box_ids))
-    
     s1.delete(
         f'{URL_PREFIX}/crypto/secret-storage/box-key-shares',
         json={
@@ -183,6 +201,15 @@ with prettyErrorContext():
         },
         expected_status_code=http.STATUS_NO_CONTENT,
     )
-
     r = s1.get(f'{URL_PREFIX}/crypto/secret-storage')
     assert box_ids - {to_delete} == set(r.json()['box_key_shares'].keys())
+
+
+    print('- no erro when deleting box key share twice')
+    s1.delete(
+        f'{URL_PREFIX}/crypto/secret-storage/box-key-shares',
+        json={
+            'box_ids': [to_delete],
+        },
+        expected_status_code=http.STATUS_NO_CONTENT,
+    )

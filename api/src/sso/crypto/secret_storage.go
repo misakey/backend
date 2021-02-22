@@ -496,7 +496,9 @@ func DeleteAsymKeys(ctx context.Context, tr *sql.Tx, accountID string, pubkeys [
 		return err
 	}
 	if nbRowsAffected < int64(len(pubkeys)) {
-		return merr.NotFound().Descf("only %d rows deleted (expected %d)", nbRowsAffected, len(pubkeys))
+		// disabled until we can detect rows that were already deleted
+		// (see https://gitlab.misakey.dev/misakey/backend/-/issues/289)
+		// return merr.NotFound().Descf("only %d rows deleted (expected %d)", nbRowsAffected, len(pubkeys))
 	} else if nbRowsAffected > int64(len(pubkeys)) {
 		return merr.Conflict().Descf("%d rows deleted (expected %d)", nbRowsAffected, len(pubkeys))
 	}
@@ -519,7 +521,9 @@ func DeleteBoxKeyShares(ctx context.Context, tr *sql.Tx, accountID string, boxID
 		return err
 	}
 	if nbRowsAffected < int64(len(boxIDs)) {
-		return merr.NotFound().Descf("only %d rows deleted (expected %d)", nbRowsAffected, len(boxIDs))
+		// disabled until we can detect rows that were already deleted
+		// (see https://gitlab.misakey.dev/misakey/backend/-/issues/289)
+		// return merr.NotFound().Descf("only %d rows deleted (expected %d)", nbRowsAffected, len(boxIDs))
 	} else if nbRowsAffected > int64(len(boxIDs)) {
 		return merr.Conflict().Descf("%d rows deleted (expected %d)", nbRowsAffected, len(boxIDs))
 	}
