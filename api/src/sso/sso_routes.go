@@ -245,6 +245,13 @@ func bindRoutes(
 		request.ResponseCreated,
 	))
 
+	orgPath.GET(oidcHandlers.NewPublic(
+		"/:id/public",
+		func() request.Request { return &application.GetOrgPublicRequest{} },
+		ss.GetOrgPublic,
+		request.ResponseOK,
+	))
+
 	// DATATAGS
 	orgPath.POST(oidcHandlers.NewACR2(
 		"/:id/datatags",

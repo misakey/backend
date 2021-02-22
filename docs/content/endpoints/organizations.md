@@ -89,3 +89,33 @@ _JSON Body:_
 ```
 
 {{% include "include/org.md"  %}}
+
+
+## 2.3. Getting public info about an organization
+
+This endpoint does not need any valid token.
+
+### 2.3.1. request
+
+```bash
+  GET https://api.misakey.com/organizations/:id/public
+```
+
+_Path Parameters:_
+- `id` (uuid string): the organization id wished to be retrieved.
+
+### 2.3.2. response
+
+_Code:_
+```bash
+HTTP 200 OK
+```
+
+_JSON Body:_
+```json
+{
+    "id": "<(uuid string): the organization id>",
+    "name": "<name of the organization>",
+    "logoUrl": "<logo of the organization>",
+}
+```

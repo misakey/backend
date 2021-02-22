@@ -128,3 +128,45 @@ func (sso *SSOService) ListIdentityOrgs(ctx context.Context, gen request.Request
 	}
 	return views, nil
 }
+
+// GetOrgPublicRequest ...
+type GetOrgPublicRequest struct {
+	orgID string
+}
+
+// BindAndValidate ...
+func (req *GetOrgPublicRequest) BindAndValidate(eCtx echo.Context) error {
+	req.orgID = eCtx.Param("id")
+	if err := eCtx.Bind(req); err != nil {
+		return merr.From(err).Ori(merr.OriBody)
+	}
+	return v.ValidateStruct(req,
+		v.Field(&req.orgID, v.Required, is.UUIDv4),
+	)
+}
+
+// PublicOrgView ...
+type PublicOrgView struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	LogoURL string `json:"logo_url"`
+}
+
+// GetOrgPublic returns public data.
+// No access check performed
+func (sso *SSOService) GetOrgPublic(ctx context.Context, genReq request.Request) (interface{}, error) {
+	req := genReq.(*GetOrgPublicRequest)
+
+	// get org title
+	organization, err := org.GetOrg(ctx, sso.sqlDB, req.orgID)
+	if err != nil {
+		return nil, err
+	}
+
+	view := PublicOrgView{
+		ID:      organization.ID,
+		Name:    organization.Name,
+		LogoURL: organization.LogoURL.String,
+	}
+	return view, nil
+}
