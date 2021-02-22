@@ -46,16 +46,11 @@ func (sso *SSOService) CreateDatatag(ctx context.Context, gen request.Request) (
 		return nil, merr.Forbidden()
 	}
 
-	// check that organization exists and that
-	// the requester is admin of the organization
-	organization, err := org.GetOrg(ctx, sso.sqlDB, query.organizationID)
-	if err != nil {
-		return nil, merr.From(err).Desc("getting organization")
+	// check the requester is admin of the organization
+	if err := org.MustBeAdmin(ctx, sso.sqlDB, query.organizationID, acc.IdentityID); err != nil {
+		return nil, merr.From(err).Desc("must be admin of the org")
 	}
 
-	if organization.CreatorID != acc.IdentityID {
-		return nil, merr.Forbidden()
-	}
 	// TODO: Check that a machine belonging to the orga can do this request
 
 	// create the datatag
@@ -99,14 +94,9 @@ func (sso *SSOService) ListDatatags(ctx context.Context, gen request.Request) (i
 		return nil, merr.Forbidden()
 	}
 
-	// check that organization exist
-	organization, err := org.GetOrg(ctx, sso.sqlDB, query.organizationID)
-	if err != nil {
-		return nil, merr.From(err).Desc("getting organization")
-	}
-
-	if organization.CreatorID != acc.IdentityID {
-		return nil, merr.Forbidden()
+	// check the requester is admin of the org
+	if err := org.MustBeAdmin(ctx, sso.sqlDB, query.organizationID, acc.IdentityID); err != nil {
+		return nil, merr.From(err).Desc("must be admin of the org")
 	}
 	// TODO: Check that a machine belonging to the orga can do this request
 
@@ -160,13 +150,9 @@ func (sso *SSOService) EditDatatag(ctx context.Context, gen request.Request) (in
 		return nil, merr.Forbidden()
 	}
 
-	// check that the user is the datatag admin
-	organization, err := org.GetOrg(ctx, sso.sqlDB, query.organizationID)
-	if err != nil {
-		return nil, merr.From(err).Desc("getting organisation")
-	}
-	if organization.CreatorID != acc.IdentityID {
-		return nil, merr.Forbidden()
+	// check that the user is an organization admin
+	if err := org.MustBeAdmin(ctx, sso.sqlDB, query.organizationID, acc.IdentityID); err != nil {
+		return nil, merr.From(err).Desc("must be admin of the org")
 	}
 	// TODO: Check that a machine belonging to the orga can do this request
 

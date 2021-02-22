@@ -99,7 +99,6 @@ func NotificationBulkCreate(ctx context.Context, exec boil.ContextExecutor, redC
 		}
 
 		realtime.SendUpdate(ctx, redConn, identityID, &notifWS)
-
 	}
 	return nil
 }

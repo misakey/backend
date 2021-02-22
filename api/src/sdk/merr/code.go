@@ -95,6 +95,10 @@ func ToCode(err error) Code {
 	return InternalCode
 }
 
+func IsUnauthorized(err error) bool {
+	return hasCode(err, UnauthorizedCode)
+}
+
 func IsANotFound(err error) bool {
 	return hasCode(err, NotFoundCode)
 }

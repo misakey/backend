@@ -59,7 +59,7 @@ with prettyErrorContext():
         assert member['identifier_value'] == ""
     
     print('- s1 list members: two members - identifier value')
-    r = s2.get(
+    r = s1.get(
         f'{URL_PREFIX}/boxes/{box_id}/members',
         expected_status_code=200
     )

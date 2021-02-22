@@ -68,8 +68,8 @@ func (mapper *IdentityMapper) Get(ctx context.Context, identityID string, transp
 	return sender, nil
 }
 
-// GetByIdentifier the identity considering the IdentifierValue
-func (mapper *IdentityMapper) GetByIdentifier(ctx context.Context, identifierValue string) (SenderView, error) {
+// GetByIdentifierValue the identity considering the IdentifierValue
+func (mapper *IdentityMapper) GetByIdentifierValue(ctx context.Context, identifierValue string) (SenderView, error) {
 	var sender SenderView
 	var ok bool
 	// try to get from cache

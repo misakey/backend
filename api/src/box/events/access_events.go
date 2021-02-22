@@ -92,7 +92,7 @@ func doAddAccess(
 				if err != nil {
 					return nil, merr.From(err).Desc("computing the box (to get title for notif)")
 				}
-				guest, err := identityMapper.GetByIdentifier(ctx, access.Value)
+				guest, err := identityMapper.GetByIdentifierValue(ctx, access.Value)
 				if err != nil {
 					return nil, merr.From(err).Desc("getting guest by identifier value")
 				}

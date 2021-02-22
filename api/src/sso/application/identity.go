@@ -105,7 +105,8 @@ func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen re
 		return nil, merr.Forbidden()
 	}
 
-	identity, err := identity.GetByIdentifierValue(ctx, sso.sqlDB, query.IdentifierValue)
+	// consider only email identities
+	identity, err := identity.GetByIdentifier(ctx, sso.sqlDB, query.IdentifierValue, identity.IdentifierKindEmail)
 	// return an empty list of not found to respect list route semantic
 	if merr.IsANotFound(err) {
 		return []string{}, nil

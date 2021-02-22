@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/null/v8"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mrand"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
@@ -52,6 +53,7 @@ func (sso *SSOService) CreateOrg(ctx context.Context, gen request.Request) (inte
 	if err != nil {
 		return nil, err
 	}
+
 	// since the org has just been created, the current identity is the admin
 	view.CurrentIdentityRole = null.StringFrom("admin")
 	return view, nil
@@ -169,4 +171,73 @@ func (sso *SSOService) GetOrgPublic(ctx context.Context, genReq request.Request)
 		LogoURL: organization.LogoURL.String,
 	}
 	return view, nil
+}
+
+type GenerateSecretCmd struct {
+	orgID string
+}
+
+func (cmd *GenerateSecretCmd) BindAndValidate(eCtx echo.Context) error {
+	cmd.orgID = eCtx.Param("id")
+	return v.ValidateStruct(cmd,
+		v.Field(&cmd.orgID, v.Required, is.UUIDv4),
+	)
+}
+
+type SecretView struct {
+	Secret string `json:"secret"`
+}
+
+// GenerateSecret for the received organization id. Requires admin accesses.
+// - create the hydra client if not existing yet
+// - create an identity corresponding to the org if not existing yet
+// - update the hydra secret and return it in json
+func (sso *SSOService) GenerateSecret(ctx context.Context, genReq request.Request) (interface{}, error) {
+	cmd := genReq.(*GenerateSecretCmd)
+
+	// 1. check accesses
+	acc := oidc.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merr.Forbidden()
+	}
+	if err := org.MustBeAdmin(ctx, sso.sqlDB, cmd.orgID, acc.IdentityID); err != nil {
+		return nil, merr.From(err).Desc("must be admin of the org")
+	}
+
+	// generate the new secret - size 32 for no concrete reason
+	secret, err := mrand.Base64String(32)
+	if err != nil {
+		return nil, merr.From(err).Desc("generating new secret")
+	}
+
+	err = sso.authFlowService.UpdateClientSecret(ctx, cmd.orgID, secret)
+	if err != nil {
+		return "", err
+	}
+
+	// since organization might perform some api requests after generating a secret,
+	// ensure there is a identity corresponding to the org
+	_, err = identity.GetByIdentifier(ctx, sso.sqlDB, cmd.orgID, identity.IdentifierKindOrgID)
+	if err != nil {
+		// create the identity on not found
+		if merr.IsANotFound(err) {
+			orga, err := org.GetOrg(ctx, sso.sqlDB, cmd.orgID)
+			if err != nil {
+				return nil, merr.From(err).Desc("getting org")
+			}
+			orgIdentity := identity.Identity{
+				ID:              cmd.orgID,
+				IdentifierValue: cmd.orgID,
+				IdentifierKind:  identity.IdentifierKindOrgID,
+				DisplayName:     orga.Name,
+			}
+			if err := identity.Create(ctx, sso.sqlDB, sso.redConn, &orgIdentity); err != nil {
+				return nil, merr.From(err).Desc("creating org identity")
+			}
+		} else { // otherwise return the err
+			return nil, merr.From(err).Desc("getting org identity")
+		}
+	}
+	// bind and return view
+	return SecretView{secret}, nil
 }

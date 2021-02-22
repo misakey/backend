@@ -71,26 +71,19 @@ func InitModule(router *echo.Echo) Process {
 		log.Fatal().Err(err).Msg("could not init webauthn handler")
 	}
 
-	// init resters
-	publicHydraJSON := http.NewClient(viper.GetString("hydra.public_endpoint"), viper.GetBool("hydra.secure"), http.SetAuthenticator(&oidc.BearerTokenAuthenticator{}))
-	adminHydraJSON := http.NewClient(viper.GetString("hydra.admin_endpoint"), viper.GetBool("hydra.secure"), http.SetAuthenticator(&oidc.BearerTokenAuthenticator{}))
-	publicHydraFORM := http.NewClient(
-		viper.GetString("hydra.public_endpoint"),
-		viper.GetBool("hydra.secure"),
-		http.SetFormat(http.MimeTypeURLEncodedForm),
-		http.SetAuthenticator(oidc.NewPrivateKeyJWTAuthenticator(selfAuth)),
-	)
-	adminHydraFORM := http.NewClient(
-		viper.GetString("hydra.admin_endpoint"),
-		viper.GetBool("hydra.secure"),
-		http.SetFormat(http.MimeTypeURLEncodedForm),
-		http.SetAuthenticator(&oidc.BearerTokenAuthenticator{}),
-	)
+	// init hydra resters
+	publicURL, adminURL := viper.GetString("hydra.public_endpoint"), viper.GetString("hydra.admin_endpoint")
+	secure := viper.GetBool("hydra.secure")
+
+	publicHydraJSON := http.NewClient(publicURL, secure)
+	adminHydraJSON := http.NewClient(adminURL, secure)
+	adminHydraFORM := http.NewClient(adminURL, secure, http.SetFormat(http.MimeTypeURLEncodedForm))
+	protectedPublicHydraFORM := http.NewClient(publicURL, secure, http.SetFormat(http.MimeTypeURLEncodedForm), http.SetAuthenticator(oidc.NewPrivateKeyJWTAuthenticator(selfAuth)))
 
 	// init repositories
 	authnSessionRepo := authn.NewAuthnSessionRedis(redConn)
 	authnProcessRepo := authn.NewAuthnProcessRedis(viper.GetString("authflow.self_client_id"), redConn)
-	hydraRepo := authflow.NewHydraHTTP(publicHydraJSON, publicHydraFORM, adminHydraJSON, adminHydraFORM)
+	hydraRepo := authflow.NewHydraHTTP(publicHydraJSON, adminHydraJSON, adminHydraFORM, protectedPublicHydraFORM)
 	templateRepo := email.NewTemplateFileSystem(viper.GetString("mail.templates"))
 	var emailRepo email.Sender
 	var avatarRepo identity.AvatarRepo
@@ -149,7 +142,7 @@ func InitModule(router *echo.Echo) Process {
 		redConn,
 		viper.GetString("authflow.auth_url"),
 		viper.GetString("authflow.code_redirect_url"),
-		publicHydraFORM,
+		protectedPublicHydraFORM,
 		viper.GetString("authflow.hydra_token_url"),
 		viper.GetString("authflow.token_redirect_url"),
 	)

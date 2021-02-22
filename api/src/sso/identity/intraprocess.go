@@ -24,20 +24,38 @@ func NewIntraprocessHelper(ssoDB *sql.DB, redConn *redis.Client) *IntraprocessHe
 
 // Get ...
 func (ih IntraprocessHelper) Get(ctx context.Context, identityID string) (Identity, error) {
-	return Get(ctx, ih.sqlDB, identityID)
+	identity, err := Get(ctx, ih.sqlDB, identityID)
+	sanitize(&identity)
+	return identity, err
+
 }
 
 // Get ...
 func (ih IntraprocessHelper) GetByIdentifierValue(ctx context.Context, identifierValue string) (Identity, error) {
-	return GetByIdentifierValue(ctx, ih.sqlDB, identifierValue)
+	identity, err := GetByIdentifier(ctx, ih.sqlDB, identifierValue, AnyIdentifierKind)
+	sanitize(&identity)
+	return identity, err
 }
 
 // List ...
 func (ih IntraprocessHelper) List(ctx context.Context, filters Filters) ([]*Identity, error) {
-	return List(ctx, ih.sqlDB, filters)
+	identities, err := List(ctx, ih.sqlDB, filters)
+	for _, identity := range identities {
+		sanitize(identity)
+	}
+	return identities, err
 }
 
 // NotificationBulkCreate ...
 func (ih IntraprocessHelper) NotificationBulkCreate(ctx context.Context, identityIDs []string, nType string, details null.JSON) error {
 	return NotificationBulkCreate(ctx, ih.sqlDB, ih.redConn, identityIDs, nType, details)
+}
+
+// remove identity information that are never used by external modules
+func sanitize(identity *Identity) {
+	// Organizations have no identifier to display to other modules
+	if identity.IdentifierKind == IdentifierKindOrgID {
+		identity.IdentifierValue = ""
+		identity.IdentifierKind = ""
+	}
 }

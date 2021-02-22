@@ -244,6 +244,12 @@ func bindRoutes(
 		ss.CreateOrg,
 		request.ResponseCreated,
 	))
+	orgPath.PUT(oidcHandlers.NewACR2(
+		"/:id/secret",
+		func() request.Request { return &application.GenerateSecretCmd{} },
+		ss.GenerateSecret,
+		request.ResponseOK,
+	))
 
 	orgPath.GET(oidcHandlers.NewPublic(
 		"/:id/public",

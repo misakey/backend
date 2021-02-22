@@ -106,6 +106,9 @@ func (cmd *RequireIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 
 	if err := v.ValidateStruct(cmd,
 		v.Field(&cmd.LoginChallenge, v.Required),
+		// NOTE: format of the identifier value is really important to keep in control
+		// otherwise malicious people might try to authenticate using other kind of identifier
+		// they are not supposed to init a flow with
 		v.Field(&cmd.IdentifierValue, v.Required, is.EmailFormat),
 	); err != nil {
 		return err
@@ -151,9 +154,8 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 		return nil, err
 	}
 
-	// 1. check if an identity exist for the identifier
-	// NOTE: to_change_on_more_identifier_kind
-	curIdentity, err := identity.GetByIdentifierValue(ctx, tr, cmd.IdentifierValue)
+	// 1. check if an identity exist for the identifier (considering only emails)
+	curIdentity, err := identity.GetByIdentifier(ctx, tr, cmd.IdentifierValue, identity.IdentifierKindEmail)
 	if err != nil && !merr.IsANotFound(err) {
 		return nil, err
 	}
@@ -164,7 +166,7 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 		curIdentity = identity.Identity{
 			DisplayName:     strings.Title(strings.Replace(strings.Split(cmd.IdentifierValue, "@")[0], ".", " ", -1)),
 			IdentifierValue: cmd.IdentifierValue,
-			IdentifierKind:  identity.EmailIdentifier,
+			IdentifierKind:  identity.IdentifierKindEmail,
 			MFAMethod:       "disabled",
 		}
 		err = identity.Create(ctx, tr, sso.redConn, &curIdentity)

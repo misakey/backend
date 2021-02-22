@@ -67,6 +67,10 @@ type authFlowRepo interface {
 	RevokeToken(ctx context.Context, token string) error
 
 	GetUserInfo(ctx context.Context, token string) (*userinfo.UserInfo, error)
+
+	CreateClient(ctx context.Context, cli *Client) error
+	GetClient(ctx context.Context, id string) (Client, error)
+	UpdateClient(ctx context.Context, cli *Client) error
 }
 
 // HasNonePrompt returns true if the received string contains `promt=none` string

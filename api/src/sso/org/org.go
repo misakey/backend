@@ -71,6 +71,26 @@ func Create(ctx context.Context, exec boil.ContextExecutor, creatorID, name stri
 	return o, err
 }
 
+func GetOrg(ctx context.Context, exec boil.ContextExecutor, id string) (*Org, error) {
+	record, err := sqlboiler.FindOrganization(ctx, exec, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return newOrg().fromSQLBoiler(*record), nil
+}
+
+func MustBeAdmin(ctx context.Context, exec boil.ContextExecutor, orgID string, identityID string) error {
+	org, err := GetOrg(ctx, exec, orgID)
+	if err != nil {
+		return merr.From(err).Desc("getting organization")
+	}
+	if org.CreatorID != identityID {
+		return merr.Forbidden()
+	}
+	return nil
+}
+
 // TODO (structure): the cache should be refactored into a cross-module package (inside sdk eventually)
 func GetIDsForIdentity(ctx context.Context, redConn *redis.Client, identityID string) ([]string, error) {
 	pattern := fmt.Sprintf("cache:user_%s:*", identityID)
@@ -97,15 +117,6 @@ func GetIDsForIdentity(ctx context.Context, redConn *redis.Client, identityID st
 		orgIDs = append(orgIDs, keySplit[1])
 	}
 	return orgIDs, nil
-}
-
-func GetOrg(ctx context.Context, exec boil.ContextExecutor, id string) (*Org, error) {
-	record, err := sqlboiler.FindOrganization(ctx, exec, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return newOrg().fromSQLBoiler(*record), nil
 }
 
 func ListByIDsOrCreatorID(ctx context.Context, exec boil.ContextExecutor, orgIDs []string, creatorID string) ([]Org, error) {

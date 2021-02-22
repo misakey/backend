@@ -38,12 +38,15 @@ type IdentifierKind string
 
 const (
 	// EmailIdentifier ...
-	EmailIdentifier IdentifierKind = "email"
+	AnyIdentifierKind   IdentifierKind = "any"
+	IdentifierKindEmail IdentifierKind = "email"
+	IdentifierKindOrgID IdentifierKind = "org_id"
 )
 
 // Filters ...
 type Filters struct {
 	IdentifierValue null.String
+	IdentifierKind  null.String
 	IDs             []string
 	AccountID       null.String
 }
@@ -98,13 +101,15 @@ func (i *Identity) SetIdentityKeys(pubkey string, nonIdentifiedPubkey string) er
 
 // Create ...
 func Create(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identity *Identity) error {
-	// generate new UUID
-	id, err := uuid.NewRandom()
-	if err != nil {
-		return merr.From(err).Desc("could not generate uuid v4")
+	// generate new UUID if not set
+	if identity.ID == "" {
+		id, err := uuid.NewRandom()
+		if err != nil {
+			return merr.From(err).Desc("could not generate uuid v4")
+		}
+		identity.ID = id.String()
 	}
 
-	identity.ID = id.String()
 	// default value is minimal
 	if identity.Notifications == "" {
 		identity.Notifications = "minimal"
@@ -115,10 +120,11 @@ func Create(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Clien
 		return err
 	}
 
-	// send notification message
-	// for onboarding purpose
-	if err := NotificationCreate(ctx, exec, redConn, identity.ID, "user.create_identity", null.JSONFromPtr(nil)); err != nil {
-		logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", identity.ID)
+	// send notification message to humans for onboarding purpose
+	if identity.IdentifierKind == IdentifierKindEmail {
+		if err := NotificationCreate(ctx, exec, redConn, identity.ID, "user.create_identity", null.JSONFromPtr(nil)); err != nil {
+			logger.FromCtx(ctx).Error().Err(err).Msgf("notifying identity %s", identity.ID)
+		}
 	}
 	return nil
 }
@@ -138,11 +144,17 @@ func Get(ctx context.Context, exec boil.ContextExecutor, identityID string) (ret
 	return *ret.fromSQLBoiler(*record), nil
 }
 
-// GetByIdentifierValue...
-func GetByIdentifierValue(ctx context.Context, exec boil.ContextExecutor, identifierValue string) (ret Identity, err error) {
+// GetByIdentifier using value and kind...
+// received AnyIdentifierKind will set no filter on identifier kind
+func GetByIdentifier(ctx context.Context, exec boil.ContextExecutor, value string, kind IdentifierKind) (ret Identity, err error) {
 	mods := []qm.QueryMod{
-		qm.Where("LOWER(identifier_value) = LOWER(?)", identifierValue),
+		qm.Where("LOWER(identifier_value) = LOWER(?)", value),
 	}
+	// AnyIdentifierKind means to not mind the identifier_kind
+	if kind != AnyIdentifierKind {
+		mods = append(mods, sqlboiler.IdentityWhere.IdentifierKind.EQ(string(kind)))
+	}
+
 	record, err := sqlboiler.Identities(mods...).One(ctx, exec)
 	if err == sql.ErrNoRows {
 		return ret, merr.NotFound().Desc(err.Error()).Add("identifier_value", merr.DVNotFound)
@@ -161,6 +173,13 @@ func List(ctx context.Context, exec boil.ContextExecutor, filters Filters) ([]*I
 	}
 	if filters.AccountID.Valid {
 		mods = append(mods, sqlboiler.IdentityWhere.AccountID.EQ(filters.AccountID))
+	}
+	// AnyIdentifierKind means to not mind the identifier_kind
+	if filters.IdentifierKind.Valid && filters.IdentifierKind.String != string(AnyIdentifierKind) {
+		mods = append(mods, sqlboiler.IdentityWhere.IdentifierKind.EQ(filters.IdentifierKind.String))
+	}
+	if filters.IdentifierValue.Valid {
+		mods = append(mods, sqlboiler.IdentityWhere.IdentifierValue.EQ(filters.IdentifierValue.String))
 	}
 
 	identityRecords, err := sqlboiler.Identities(mods...).All(ctx, exec)

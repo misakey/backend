@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v7"
+	"github.com/volatiletech/null/v8"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
@@ -46,7 +47,11 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 
 	// check eligibility
 	// get first identities for the notification configuration linked to it
-	identities, err := identity.List(ctx, dj.ssoDB, identity.Filters{IDs: identityIDs})
+	filters := identity.Filters{
+		IDs:            identityIDs,
+		IdentifierKind: null.StringFrom(string(identity.IdentifierKindEmail)),
+	}
+	identities, err := identity.List(ctx, dj.ssoDB, filters)
 	if err != nil {
 		return err
 	}

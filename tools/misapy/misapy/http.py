@@ -142,10 +142,10 @@ class Session(requests.Session):
 
 def pretty_string_of_response(response: requests.Response):
     try:
-        body = json.dumps(response.json(), indent=4)
+        response_body = json.dumps(response.json(), indent=4)
     except ValueError:
         # response body is not JSON
-        body = (
+        response_body = (
             response.text[:20]
             + '...' if len(response.text) > 20 else ''
         )
@@ -161,7 +161,11 @@ def pretty_string_of_response(response: requests.Response):
             indent=4
         )
     elif request.body:
-        req_payload = request.body[:20].decode() + '...'
+        try:
+            req_payload = request.body[:20].decode() + '...'
+        except AttributeError:
+            # request body is not JSON
+            req_payload = request.body[:20] + '...' if len(request.body) > 20 else ''
     else:
         req_payload = None
 
@@ -184,6 +188,6 @@ def pretty_string_of_response(response: requests.Response):
     parts.append(f'\nHTTP {response.status_code} {response.reason}')
     for (name, value) in response.headers.items():
         parts.append(f'{name}: {value}')    
-    parts.append(body)
+    parts.append(response_body)
 
     return '\n'.join(parts)

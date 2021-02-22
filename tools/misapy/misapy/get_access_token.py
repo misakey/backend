@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 from urllib.parse import parse_qs as parse_query_string
 
 import requests
-from . import URL_PREFIX, http
+from . import URL_PREFIX, AUTH_URL_PREFIX, http
 from .sessions import Session
 from .check_response import check_response, assert_fn
 from .password_hashing import hash_password
@@ -22,7 +22,7 @@ def new_password_hash(password):
 
 def login_flow(s, login_challenge, email, reset_password=False, use_secret_backup=False, get_secret_storage=False):
     r = s.put(
-        'https://api.misakey.com.local/auth/identities',
+        f'{URL_PREFIX}/auth/identities',
         json={
             'login_challenge': login_challenge,
             'identifier_value': email,
@@ -36,7 +36,7 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
     # if the preferred method is not emailed code by default
     if preferred_method != "emailed_code":
         s.post(
-            'https://api.misakey.com.local/authn-steps',
+            f'{URL_PREFIX}/authn-steps',
             json={
                 'login_challenge': login_challenge,
                 'authn_step': {
@@ -59,7 +59,7 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
         }
     }
     r = s.post(
-        'https://api.misakey.com.local/auth/login/authn-step',
+        f'{URL_PREFIX}/auth/login/authn-step',
         json=confirmation_payload
     )
 
@@ -77,7 +77,7 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
             }
         }
         r = s.post(
-            'https://api.misakey.com.local/auth/login/authn-step',
+            f'{URL_PREFIX}/auth/login/authn-step',
             json=reset_payload
         )
 
@@ -104,7 +104,7 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
 
 
     r = s.post(
-        'https://api.misakey.com.local/auth/login/authn-step',
+        f'{URL_PREFIX}/auth/login/authn-step',
         headers={
             'Authorization': f'Bearer {auth_access_token}'
         },
@@ -145,7 +145,7 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
 
 def consent_flow(s, consent_challenge, identity_id):
     r = s.post(
-        'https://api.misakey.com.local/auth/consent',
+        f'{URL_PREFIX}/auth/consent',
         json={
             'consent_challenge': consent_challenge,
             'identity_id': identity_id,
@@ -180,7 +180,7 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
     # We expect to get a HTTP 502 Bad Gateway in case the frontend is not up,
     # but we don't care because all we need is the login challenge in the redirection URL
     r = s.get(
-        'https://auth.misakey.com.local/_/oauth2/auth',
+        f'{AUTH_URL_PREFIX}/_/oauth2/auth',
         params={
             'client_id': 'cc411b8f-28bf-4d4e-abd9-99226b41da27',
             'redirect_uri': 'https://api.misakey.com.local/auth/callback',
@@ -221,7 +221,7 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
     access_token = s.cookies['accesstoken']
 
     r = http.get(
-        f'https://api.misakey.com.local/identities/{identity_id}',
+        f'{URL_PREFIX}/identities/{identity_id}',
         cookies={"accesstoken": access_token, "tokentype": "bearer"},
     )
     account_id = r.json()['account_id']

@@ -193,7 +193,9 @@ func (r *Client) Perform(
 	}
 
 	// set authentication layer
-	r.authenticator.Set(ctx, req)
+	if r.authenticator != nil {
+		r.authenticator.Set(ctx, req)
+	}
 
 	// set potential headers
 	val := ctx.Value(rester.HeadersContextKey)

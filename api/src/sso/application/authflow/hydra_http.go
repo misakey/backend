@@ -17,24 +17,27 @@ import (
 
 // HydraHTTP implements Hydra repository interface using HTTP REST
 type HydraHTTP struct {
-	publicJSONRester rester.Client
-	publicFormRester rester.Client
-	adminJSONRester  rester.Client
-	adminFormRester  rester.Client
+	publicJSONRester rester.Client // public port and no authorization required
+	adminJSONRester  rester.Client // admin port but no authorization required
+	adminFormRester  rester.Client // admin port but no authorization required
+
+	protectedPublicFormRester rester.Client // public port but authorization protected endpoints
 }
 
 // NewHydraHTTP is HTTP hydra structure constructor
 func NewHydraHTTP(
 	publicJSONRester rester.Client,
-	publicFormRester rester.Client,
 	adminJSONRester rester.Client,
 	adminFormRester rester.Client,
+
+	protectedPublicFormRester rester.Client,
 ) *HydraHTTP {
 	return &HydraHTTP{
 		publicJSONRester: publicJSONRester,
-		publicFormRester: publicFormRester,
 		adminJSONRester:  adminJSONRester,
 		adminFormRester:  adminFormRester,
+
+		protectedPublicFormRester: protectedPublicFormRester,
 	}
 }
 
@@ -155,7 +158,7 @@ func (h *HydraHTTP) DeleteSession(ctx context.Context, subject string) error {
 func (h *HydraHTTP) RevokeToken(ctx context.Context, accessToken string) error {
 	params := url.Values{}
 	params.Add("token", accessToken)
-	return h.publicFormRester.Post(ctx, "/oauth2/revoke", nil, params, nil)
+	return h.protectedPublicFormRester.Post(ctx, "/oauth2/revoke", nil, params, nil)
 }
 
 // GetConsentSessions for a given Identity
@@ -181,18 +184,26 @@ func (h *HydraHTTP) GetUserInfo(ctx context.Context, token string) (*userinfo.Us
 	return &userInfo, nil
 }
 
-//
-// // CreateClient: create a new Hydra Client in hydra
-// func (h *HydraHTTP) CreateClient(ctx context.Context, hydraClient *model.HydraClient) error {
-// 	route := fmt.Sprintf("/clients")
-//
-// 	return afs.adminJSONRester.Post(ctx, route, nil, hydraClient, nil)
-// }
+// CreateClient on hydra service
+func (h *HydraHTTP) CreateClient(ctx context.Context, cli *Client) error {
+	route := "/clients"
+	return h.adminJSONRester.Post(ctx, route, nil, cli, nil)
+}
 
-//
-// // UpdateClient: update Hydra Client in hydra
-// func (h *HydraHTTP) UpdateClient(ctx context.Context, hydraClient *model.HydraClient) error {
-// 	route := fmt.Sprintf("/clients/%s", hydraClient.ID)
-//
-// 	return afs.adminJSONRester.Put(ctx, route, nil, hydraClient, hydraClient)
-// }
+// GetClient from hydra service using its id
+func (h *HydraHTTP) GetClient(ctx context.Context, id string) (Client, error) {
+	route := fmt.Sprintf("/clients/%s", id)
+	cli := Client{}
+	err := h.adminJSONRester.Get(ctx, route, nil, &cli)
+	// Unauthorized are NotFound for this endpoint... https://www.ory.sh/hydra/docs/reference/api/#responses-10
+	if merr.IsUnauthorized(err) {
+		return cli, merr.NotFound().Desc(err.Error())
+	}
+	return cli, err
+}
+
+// UpdateClient on hydra service
+func (h *HydraHTTP) UpdateClient(ctx context.Context, cli *Client) error {
+	route := fmt.Sprintf("/clients/%s", cli.ID)
+	return h.adminJSONRester.Put(ctx, route, nil, cli, cli)
+}

@@ -48,9 +48,9 @@ func ProfileGet(ctx context.Context, exec boil.ContextExecutor, identityID strin
 	// for now only the email can be shared
 	// NOTE: the shape/logic of the profile might change later with more information to hide/share
 	for _, consent := range consents {
-		if consent.informationType == string(identity.IdentifierKind) {
+		if consent.informationType == "email" {
 			p.IdentifierValue = identity.IdentifierValue
-			p.IdentifierKind = string(identity.IdentifierKind)
+			p.IdentifierKind = "email"
 			break
 		}
 	}
@@ -96,7 +96,7 @@ func ProfileConfigGet(ctx context.Context, exec boil.ContextExecutor, identityID
 	// NOTE: the shape/logic of the profile might change later with more information to hide/share
 	for _, consent := range consents {
 		switch consent.informationType {
-		case string(EmailIdentifier):
+		case "email":
 			c.Email = true
 		}
 	}
