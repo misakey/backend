@@ -14,6 +14,7 @@ import (
 // to interact with all box module services
 type BoxApplication struct {
 	DB        *sql.DB
+	SSODB     *sql.DB
 	RedConn   *redis.Client
 	filesRepo files.FileStorageRepo
 	selfOrgID string
@@ -24,7 +25,7 @@ type BoxApplication struct {
 
 // NewBoxApplication constructor
 func NewBoxApplication(
-	db *sql.DB, redConn *redis.Client,
+	boxDB *sql.DB, ssoDB *sql.DB, redConn *redis.Client,
 	filesRepo files.FileStorageRepo,
 	selfOrgID string,
 
@@ -32,7 +33,8 @@ func NewBoxApplication(
 	cryptoRepo external.CryptoRepo,
 ) BoxApplication {
 	return BoxApplication{
-		DB:        db,
+		DB:        boxDB,
+		SSODB:     ssoDB,
 		RedConn:   redConn,
 		filesRepo: filesRepo,
 		selfOrgID: selfOrgID,

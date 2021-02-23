@@ -34,6 +34,8 @@ _JSON Body:_
     {
       "title": "Requête RGPD",
       "owner_org_id": "d1e9bfa6-e931-46b1-b73c-77cb3530aadb",
+      "datatag_id": "b7073bc5-b2e8-4a22-9717-8418de13bfa5",
+      "data_subject": "michel@misakey.com",
       "public_key": "SXvalkvhuhcj2UiaS4d0Q3OeuHOhMVeQT7ZGfCH2YCw",
       "key_share": {
         "misakey_share": "lBHT1vfwFAIBig5Nj+sD+w==",
@@ -45,6 +47,8 @@ _JSON Body:_
 
 - `title` is a free text required that is meant to describe the box purpose.
 - `owner_org_id` is an optional uuid corresponding to the organization owning the box (default is self org).
+- `datatag_id` is an **optional** uuid corresponding to a datatag representing the data type shipped through this box. `owner_org_id` must also bit set.
+- `datatag_subject` is an **optional** identifier to define the data subject of this box.
 - `public_key` and `other_share_hash` must be in **unpadded url-safe base64**.
 - `key_share` is **optional** but will be soon mandatory.
 

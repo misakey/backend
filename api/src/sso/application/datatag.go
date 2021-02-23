@@ -14,6 +14,7 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/datatag"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/org"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
@@ -108,6 +109,9 @@ func (sso *SSOService) ListDatatags(ctx context.Context, gen request.Request) (i
 	if err != nil {
 		return nil, merr.From(err).Desc("list datatags")
 	}
+	if err == nil && datatags == nil {
+		return []sqlboiler.Datatag{}, nil
+	}
 
 	return datatags, nil
 }
@@ -142,7 +146,7 @@ func (sso *SSOService) EditDatatag(ctx context.Context, gen request.Request) (in
 	}
 
 	// check that the datatag exist
-	datatag, err := sqlboiler.FindDatatag(ctx, sso.sqlDB, query.datatagID)
+	datatag, err := datatag.Get(ctx, sso.sqlDB, query.datatagID)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting datatag")
 	}

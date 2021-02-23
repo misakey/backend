@@ -31,7 +31,7 @@ func InitModule(
 	initConfig()
 
 	// init db connections
-	dbConn, err := db.NewPSQLConn(
+	boxDBConn, err := db.NewPSQLConn(
 		os.Getenv("DSN_BOX"),
 		viper.GetInt("sql.max_open_connections"),
 		viper.GetInt("sql.max_idle_connections"),
@@ -41,6 +41,15 @@ func InitModule(
 		log.Fatal().Err(err).Msg("could not connect to db")
 	}
 
+	ssoDBConn, err := db.NewPSQLConn(
+		os.Getenv("DSN_SSO"),
+		viper.GetInt("sql.max_open_connections"),
+		viper.GetInt("sql.max_idle_connections"),
+		viper.GetDuration("sql.conn_max_lifetime"),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not connect to db")
+	}
 	// init redis connection
 	redConn := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", viper.GetString("redis.address"), viper.GetString("redis.port")),
@@ -64,7 +73,7 @@ func InitModule(
 		log.Fatal().Msg("unknown ENV value (should be production|development)")
 	}
 
-	boxService := application.NewBoxApplication(dbConn, redConn, filesRepo, viper.GetString("authflow.self_client_id"), identityRepo, cryptoRepo)
+	boxService := application.NewBoxApplication(boxDBConn, ssoDBConn, redConn, filesRepo, viper.GetString("authflow.self_client_id"), identityRepo, cryptoRepo)
 	wsHandler := bentrypoints.NewWebsocketHandler(viper.GetStringSlice("websockets.allowed_origins"), &boxService)
 
 	adminHydraFORM := http.NewClient(

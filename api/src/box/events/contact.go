@@ -51,7 +51,9 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 	event, err := CreateCreateEvent(
 		ctx,
 		exec, redConn, identityMapper,
-		contact.Title, contact.PublicKey, contact.OwnerOrgID, contact.IdentityID,
+		contact.Title, contact.PublicKey, contact.OwnerOrgID,
+		nil, nil,
+		contact.IdentityID,
 	)
 	if err != nil {
 		return nil, merr.From(err).Desc("creating create event")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/google/uuid"
@@ -207,4 +208,34 @@ func Update(ctx context.Context, exec boil.ContextExecutor, identity *Identity) 
 		return merr.NotFound().Desc("no rows affected").Add("id", merr.DVNotFound)
 	}
 	return nil
+}
+
+// Require identity, create it if not existing
+func Require(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identifierValue string) (*Identity, error) {
+	// lowcase the email
+	identifierValue = strings.ToLower(identifierValue)
+
+	// 1. check if an identity exist for the identifier
+	// NOTE: to_change_on_more_identifier_kind
+	curIdentity, err := GetByIdentifier(ctx, exec, identifierValue, IdentifierKindEmail)
+	if err != nil && !merr.IsANotFound(err) {
+		return nil, err
+	}
+
+	// 2. create an identity if nothing was found
+	if merr.IsANotFound(err) {
+		// a. create the Identity without account
+		curIdentity = Identity{
+			DisplayName:     strings.Title(strings.Replace(strings.Split(identifierValue, "@")[0], ".", " ", -1)),
+			IdentifierValue: identifierValue,
+			IdentifierKind:  IdentifierKindEmail,
+			MFAMethod:       "disabled",
+		}
+		err = Create(ctx, exec, redConn, &curIdentity)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &curIdentity, nil
 }

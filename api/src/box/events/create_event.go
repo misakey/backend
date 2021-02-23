@@ -6,6 +6,7 @@ import (
 	"github.com/volatiletech/null/v8"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
@@ -19,9 +20,11 @@ import (
 
 // CreationContent ...
 type CreationContent struct {
-	OwnerOrgID string `json:"owner_org_id"`
-	PublicKey  string `json:"public_key"`
-	Title      string `json:"title"`
+	OwnerOrgID        string  `json:"owner_org_id"`
+	DatatagID         *string `json:"datatag_id,omitempty"`
+	SubjectIdentityID *string `json:"subject_identity_id,omitempty"`
+	PublicKey         string  `json:"public_key"`
+	Title             string  `json:"title"`
 }
 
 // Unmarshal ...
@@ -33,6 +36,8 @@ func (c *CreationContent) Unmarshal(json types.JSON) error {
 func (c CreationContent) Validate() error {
 	return v.ValidateStruct(&c,
 		v.Field(&c.OwnerOrgID, v.Required),
+		v.Field(&c.DatatagID, is.UUIDv4),
+		v.Field(&c.SubjectIdentityID, is.UUIDv4),
 		v.Field(&c.PublicKey, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 		v.Field(&c.Title, v.Required, v.Length(1, 50)),
 	)
@@ -42,7 +47,9 @@ func (c CreationContent) Validate() error {
 func CreateCreateEvent(
 	ctx context.Context,
 	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
-	title, publicKey, ownerOrgID, senderID string,
+	title, publicKey, ownerOrgID string,
+	datatagID, subjectIdentityID *string,
+	senderID string,
 ) (Event, error) {
 	// generate an id for the created box
 	boxID, err := uuid.NewString()
@@ -51,9 +58,11 @@ func CreateCreateEvent(
 	}
 
 	c := CreationContent{
-		OwnerOrgID: ownerOrgID,
-		PublicKey:  publicKey,
-		Title:      title,
+		OwnerOrgID:        ownerOrgID,
+		PublicKey:         publicKey,
+		Title:             title,
+		DatatagID:         datatagID,
+		SubjectIdentityID: subjectIdentityID,
 	}
 	event, err := newWithAnyContent(etype.Create, &c, boxID, senderID, nil)
 	if err != nil {

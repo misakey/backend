@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"strings"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -101,9 +100,6 @@ func (cmd *RequireIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
 
-	// lowcase the email
-	cmd.IdentifierValue = strings.ToLower(cmd.IdentifierValue)
-
 	if err := v.ValidateStruct(cmd,
 		v.Field(&cmd.LoginChallenge, v.Required),
 		// NOTE: format of the identifier value is really important to keep in control
@@ -154,25 +150,9 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 		return nil, err
 	}
 
-	// 1. check if an identity exist for the identifier (considering only emails)
-	curIdentity, err := identity.GetByIdentifier(ctx, tr, cmd.IdentifierValue, identity.IdentifierKindEmail)
-	if err != nil && !merr.IsANotFound(err) {
+	curIdentity, err := identity.Require(ctx, tr, sso.redConn, cmd.IdentifierValue)
+	if err != nil {
 		return nil, err
-	}
-
-	// 2. create an identity if nothing was found
-	if merr.IsANotFound(err) {
-		// a. create the Identity without account
-		curIdentity = identity.Identity{
-			DisplayName:     strings.Title(strings.Replace(strings.Split(cmd.IdentifierValue, "@")[0], ".", " ", -1)),
-			IdentifierValue: cmd.IdentifierValue,
-			IdentifierKind:  identity.IdentifierKindEmail,
-			MFAMethod:       "disabled",
-		}
-		err = identity.Create(ctx, tr, sso.redConn, &curIdentity)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// 3. compute the expected ACR
@@ -193,7 +173,7 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 	currentACR := oidc.ACR0
 	step, err := sso.AuthenticationService.PrepareNextStep(
 		ctx, tr, sso.redConn,
-		curIdentity, currentACR, expectedACR,
+		*curIdentity, currentACR, expectedACR,
 		cmd.PasswordReset,
 	)
 	if err != nil {

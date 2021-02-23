@@ -63,6 +63,9 @@ An event of type `create` has the following content fields:
   "content": {
     "public_key": "(string): the public key that must be used to encrypt messages for this box",
     "title": "(string): the title of the box"
+    "owner_org_id": "(uuid string) the organization id",
+    "datatag_id": "(uuid string) (optional) the datatag id",
+    "subject_identity_id": "(uuid string) (optional) the subject identity id",
   },
   "referrer_id": null
 }

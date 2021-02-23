@@ -12,6 +12,9 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/datatag"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/org"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
@@ -22,6 +25,8 @@ type CreateBoxRequest struct {
 	PublicKey    string  `json:"public_key"`
 	Title        string  `json:"title"`
 	OwnerOrgID   *string `json:"owner_org_id"`
+	DataSubject  *string `json:"data_subject"`
+	DatatagID    *string `json:"datatag_id"`
 	KeyShareData *struct {
 		OtherShareHash              string      `json:"other_share_hash"`
 		Share                       string      `json:"misakey_share"`
@@ -38,6 +43,9 @@ func (req *CreateBoxRequest) BindAndValidate(eCtx echo.Context) error {
 	err := v.ValidateStruct(req,
 		v.Field(&req.PublicKey, v.Required),
 		v.Field(&req.Title, v.Required, v.Length(1, 50)),
+		v.Field(&req.OwnerOrgID, is.UUIDv4),
+		v.Field(&req.DatatagID, is.UUIDv4),
+		v.Field(&req.DataSubject, is.UUIDv4, is.EmailFormat),
 	)
 	if err != nil {
 		return err
@@ -73,15 +81,39 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 		req.OwnerOrgID = &app.selfOrgID
 	}
 
-	// NOTE: for now, nobody can create any boxes on other org than the self org.
 	if *req.OwnerOrgID != app.selfOrgID {
-		return nil, merr.Forbidden().Desc("for now, nobody can create any boxes on other org than the self org.")
+		if err := org.MustBeAdmin(ctx, app.SSODB, *req.OwnerOrgID, acc.IdentityID); err != nil {
+			return nil, merr.Forbidden()
+		}
+		// TODO: check that a machine belonging to org is also allowed
+	}
+
+	if req.DatatagID != nil {
+		// check that the datatag belongs to the organization
+		datatag, err := datatag.Get(ctx, app.SSODB, *req.DatatagID)
+		if err != nil {
+			return nil, merr.From(err).Desc("getting datatag")
+		}
+
+		if *req.OwnerOrgID != datatag.OrganizationID {
+			return nil, merr.Forbidden()
+		}
+	}
+
+	var subjectID *string
+	if req.DataSubject != nil {
+		subject, err := identity.Require(ctx, app.SSODB, app.RedConn, *req.DataSubject)
+		if err != nil {
+			return nil, merr.From(err).Desc("requiring identity")
+		}
+		*subjectID = subject.ID
 	}
 
 	event, err := events.CreateCreateEvent(
 		ctx,
 		app.DB, app.RedConn, identityMapper,
 		req.Title, req.PublicKey, *req.OwnerOrgID,
+		req.DatatagID, subjectID,
 		acc.IdentityID,
 	)
 	if err != nil {
