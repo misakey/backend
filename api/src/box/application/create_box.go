@@ -32,6 +32,7 @@ type CreateBoxRequest struct {
 		Share                       string      `json:"misakey_share"`
 		EncryptedInvitationKeyShare null.String `json:"encrypted_invitation_key_share"`
 	} `json:"key_share"`
+	InvitationData null.JSON `json:"invitation_data"`
 }
 
 // BindAndValidate ...
@@ -45,7 +46,7 @@ func (req *CreateBoxRequest) BindAndValidate(eCtx echo.Context) error {
 		v.Field(&req.Title, v.Required, v.Length(1, 50)),
 		v.Field(&req.OwnerOrgID, is.UUIDv4),
 		v.Field(&req.DatatagID, is.UUIDv4),
-		v.Field(&req.DataSubject, is.UUIDv4, is.EmailFormat),
+		v.Field(&req.DataSubject, is.EmailFormat),
 	)
 	if err != nil {
 		return err
@@ -100,13 +101,19 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 		}
 	}
 
+	var subject *identity.Identity
 	var subjectID *string
 	if req.DataSubject != nil {
-		subject, err := identity.Require(ctx, app.SSODB, app.RedConn, *req.DataSubject)
+		var err error
+		subject, err = identity.Require(ctx, app.SSODB, app.RedConn, *req.DataSubject)
 		if err != nil {
 			return nil, merr.From(err).Desc("requiring identity")
 		}
-		*subjectID = subject.ID
+		subjectID = &subject.ID
+		// if data subject has an account, invitation data is required for auto-invitation
+		if subject.AccountID.Valid && req.InvitationData.IsZero() {
+			return nil, merr.BadRequest().Add("invitation_data", merr.DVRequired)
+		}
 	}
 
 	event, err := events.CreateCreateEvent(
@@ -137,6 +144,14 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 		)
 		if err != nil {
 			return nil, merr.From(err).Desc("creating key share")
+		}
+	}
+
+	// auto invite sender ID if linked to an account
+	if subject != nil {
+		err = events.InviteIdentityIfPossible(ctx, app.cryptoRepo, identityMapper, box, *subject, acc.IdentityID, req.InvitationData)
+		if err != nil {
+			return nil, merr.From(err).Desc("creating crypto actions")
 		}
 	}
 	return box, nil

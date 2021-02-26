@@ -12,6 +12,33 @@ from .container_access import list_encrypted_files
 from .check_response import check_response, assert_fn
 from .boxes.key_shares import new_key_share_event
 
+def create_box_with_data_subject_and_datatag(session, org_id=None, data_subject=None, public_key=None, datatag_id=None, expected_status_code=201):
+    s = session
+
+    request = {
+        'public_key': 'ShouldBeUnpaddedUrlSafeBase64',
+        'title': 'Test Box',
+    }
+    if org_id is not None:
+        request['owner_org_id'] = org_id
+    if data_subject is not None:
+        request['data_subject'] = data_subject
+    if datatag_id is not None:
+        request['datatag_id'] = datatag_id
+    if public_key is not None:
+        request['invitation_data'] = {
+            public_key: 'fakeCryptoAction',
+        }
+
+    r = s.post(
+        f'{URL_PREFIX}/boxes',
+        json=request,
+        expected_status_code=expected_status_code,
+    )
+
+    return r.json().get('id', None)
+
+
 def create_box_and_post_some_events_to_it(session, public=True):
     s = session
 

@@ -172,3 +172,24 @@ func isCreator(ctx context.Context, exec boil.ContextExecutor, boxID, senderID s
 	// return the error if unexpected
 	return false, err
 }
+
+func isDataSubject(ctx context.Context, exec boil.ContextExecutor, boxID, senderID string) (bool, error) {
+	event, err := get(ctx, exec, eventFilters{
+		eType: null.StringFrom(etype.Create),
+		boxID: null.StringFrom(boxID),
+	})
+	if err != nil {
+		return false, err
+	}
+
+	var content CreationContent
+	if err := event.JSONContent.Unmarshal(&content); err != nil {
+		return false, err
+	}
+
+	if content.SubjectIdentityID != nil && *content.SubjectIdentityID == senderID {
+		return true, nil
+	}
+
+	return false, nil
+}

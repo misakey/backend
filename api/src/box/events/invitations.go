@@ -10,12 +10,27 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/crypto"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 )
 
-// createInvitationAction for the given identity
+// InviteIdentityIfPossible and do not return any error if not
+func InviteIdentityIfPossible(
+	ctx context.Context, cryptoRepo external.CryptoRepo, identityMapper *IdentityMapper,
+	box Box, guest identity.Identity, senderID string, actionsDataJSON null.JSON,
+) error {
+	if guest.AccountID.IsZero() {
+		return nil
+	}
+
+	guestView := senderViewFrom(guest)
+
+	return CreateInvitationActions(ctx, cryptoRepo, identityMapper, box, guestView, senderID, actionsDataJSON, false)
+}
+
+// CreateInvitationAction for the given identity
 // using the identity Pubkey (if nonIdentified is false)
 // or the identity NonIdentifiedPubkey (if nonIdentified is true)
-func createInvitationActions(
+func CreateInvitationActions(
 	ctx context.Context, cryptoRepo external.CryptoRepo, identityMapper *IdentityMapper,
 	box Box, guest SenderView, senderID string, actionsDataJSON null.JSON,
 	nonIdentified bool,

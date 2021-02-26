@@ -42,6 +42,9 @@ _JSON Body:_
         "other_share_hash": "Nz4nJMj5DOd4UGXXOlH8Ww",
         "encrypted_invitation_key_share": "cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
       }
+      "invitation_data": {
+        "<public key>": "encrypted crypto action"
+       }
     }
 ```
 
@@ -51,6 +54,7 @@ _JSON Body:_
 - `datatag_subject` is an **optional** identifier to define the data subject of this box.
 - `public_key` and `other_share_hash` must be in **unpadded url-safe base64**.
 - `key_share` is **optional** but will be soon mandatory.
+- `invitation_data` is **optional** but must be used if the `datatag_subject` has an account. It contains the encrypted crypto action to directly invite the user (see the `extra` field in the [access events section](../../concepts/box-events/#2511-to-a-specific-identifier-value))
 
 When a box is created, it already contains a first event
 of type `create` that contains most of the information about the creation of the box.

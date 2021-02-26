@@ -101,7 +101,7 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 	if err != nil {
 		return nil, merr.From(err).Desc("computing box")
 	}
-	if err := createInvitationActions(ctx, cryptoRepo, identityMapper, box, guest, event.SenderID, null.JSONFrom(decodedInvitationDataJSON), true); err != nil {
+	if err := CreateInvitationActions(ctx, cryptoRepo, identityMapper, box, guest, event.SenderID, null.JSONFrom(decodedInvitationDataJSON), true); err != nil {
 		return nil, merr.From(err).Desc("creating invitation action")
 	}
 

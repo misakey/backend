@@ -17,14 +17,14 @@ import (
 
 // Box is a volatile object built based on events linked to its ID
 type Box struct {
-	ID                string      `json:"id"`
-	CreatedAt         time.Time   `json:"server_created_at"`
-	OwnerOrgID        string      `json:"owner_org_id"`
-	DatatagID         null.String `json:"datatag_id"`
-	SubjectIdentityID null.String `json:"subject_identity_id"`
-	PublicKey         string      `json:"public_key"`
-	Title             string      `json:"title"`
-	AccessMode        string      `json:"access_mode"`
+	ID         string      `json:"id"`
+	CreatedAt  time.Time   `json:"server_created_at"`
+	OwnerOrgID string      `json:"owner_org_id"`
+	DatatagID  null.String `json:"datatag_id"`
+	Subject    *SenderView `json:"subject"`
+	PublicKey  string      `json:"public_key"`
+	Title      string      `json:"title"`
+	AccessMode string      `json:"access_mode"`
 
 	// aggregated data
 	EventsCount null.Int    `json:"events_count,omitempty"`
@@ -144,6 +144,7 @@ func (c *computer) handleLast(ctx context.Context) error {
 }
 
 func (c *computer) playCreate(ctx context.Context, e Event) error {
+	acc := oidc.GetAccesses(ctx)
 	c.box.CreatedAt = e.CreatedAt
 	creationContent := CreationContent{}
 	if err := creationContent.Unmarshal(e.JSONContent); err != nil {
@@ -151,7 +152,6 @@ func (c *computer) playCreate(ctx context.Context, e Event) error {
 	}
 	c.box.OwnerOrgID = creationContent.OwnerOrgID
 	c.box.DatatagID = null.StringFromPtr(creationContent.DatatagID)
-	c.box.SubjectIdentityID = null.StringFromPtr(creationContent.SubjectIdentityID)
 	c.box.PublicKey = creationContent.PublicKey
 	c.box.Title = creationContent.Title
 
@@ -163,11 +163,20 @@ func (c *computer) playCreate(ctx context.Context, e Event) error {
 	// need transparency on creator email if the connected user is the creator
 	// so the client can attest either the user is creator or
 	// NOTE: must change implementing advanced admin role
-	acc := oidc.GetAccesses(ctx)
 	c.box.Creator, err = c.identities.Get(ctx, e.SenderID, (acc != nil && acc.IdentityID == e.SenderID))
 	if err != nil {
 		return merr.From(err).Desc("retrieving creator")
 	}
+
+	// set the subject information if there is any
+	if creationContent.SubjectIdentityID != nil {
+		subject, err := c.identities.Get(ctx, *creationContent.SubjectIdentityID, (acc != nil && acc.IdentityID == e.SenderID))
+		if err != nil {
+			return merr.From(err).Desc("retrieving subject")
+		}
+		c.box.Subject = &subject
+	}
+
 	return nil
 }
 

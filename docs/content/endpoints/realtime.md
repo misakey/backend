@@ -70,7 +70,7 @@ _JSON Body:_
             "other_share_hash": "<string> Nz4nJMj5DOd4UGXXOlH8Ww",
             "encrypted_invitation_key_share": "<string> cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
         },
-        "extra": {
+        "invitation_data": {
             "<string> non identified public key": "<string> encrypted crypto action"
         }
     }

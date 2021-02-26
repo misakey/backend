@@ -97,7 +97,7 @@ func doAddAccess(
 					return nil, merr.From(err).Desc("getting guest by identifier value")
 				}
 				// creates a crypto action AND the notification
-				err = createInvitationActions(ctx, cryptoRepo, identityMapper, box, guest, e.SenderID, extraJSON, false)
+				err = CreateInvitationActions(ctx, cryptoRepo, identityMapper, box, guest, e.SenderID, extraJSON, false)
 				if err != nil {
 					return nil, merr.From(err).Desc("creating crypto actions")
 				}
@@ -206,18 +206,27 @@ func HasAccess(ctx context.Context,
 	boxID, identityID string,
 	identifierOnly bool,
 ) error {
-	// 1. list existing active accesses for the box
+	// 1. check if data subjet
+	hasAccess, err := isDataSubject(ctx, exec, boxID, identityID)
+	if err != nil {
+		return err
+	}
+	if hasAccess {
+		return nil
+	}
+
+	// 2. list existing active accesses for the box
 	accesses, err := FindActiveAccesses(ctx, exec, boxID)
 	if err != nil {
 		return err
 	}
 
-	// 2. if no access exists, no-one can join it
+	// 3. if no access exists, no-one can join it
 	if len(accesses) == 0 {
 		return merr.Forbidden().Desc("must be an admin").Add("reason", "no_access")
 	}
 
-	// 2. get the identity to check whitelist rules
+	// 4. get the identity to check whitelist rules
 	identity, err := identities.Get(ctx, identityID, true)
 	if err != nil {
 		return merr.From(err).Desc("getting identity for access check")
