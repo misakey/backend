@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 )
 
@@ -134,27 +135,8 @@ func (acf *AuthorizationCodeFlow) getURLWithAccessToken(c echo.Context, tokenReq
 	urlParams.Add("state", tokenRequest.State)
 
 	// set auth cookies
-	// access token
-	c.SetCookie(&http.Cookie{
-		Name:     "accesstoken",
-		Value:    tokenResp.AccessToken,
-		Expires:  expirationTime,
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
-	})
-
-	// token type
-	c.SetCookie(&http.Cookie{
-		Name:     "tokentype",
-		Value:    tokenResp.TokenType,
-		Expires:  expirationTime,
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
-	})
+	authz.SetCookie(c, "accesstoken", tokenResp.AccessToken, expirationTime)
+	authz.SetCookie(c, "tokentype", tokenResp.TokenType, expirationTime)
 
 	return url.Parse(fmt.Sprintf("%s#%s", acf.redirectTokenURL, urlParams.Encode()))
 }

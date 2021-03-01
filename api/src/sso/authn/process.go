@@ -40,11 +40,12 @@ type Process struct {
 	NextStep *Step `json:"-"`
 }
 
+var processLifetime = time.Hour
+
 type processRepo interface {
 	Create(context.Context, *Process) error
 	Update(context.Context, Process) error
 	Get(context.Context, string) (Process, error)
-	GetClaims(ctx context.Context, token string) (oidc.AccessClaims, error)
 }
 
 // InitProcess and store it
@@ -66,7 +67,7 @@ func (as *Service) InitProcess(
 		ExpectedACR:    expectedACR,
 
 		AccessToken: tok,
-		ExpiresAt:   time.Now().Add(time.Hour).Unix(),
+		ExpiresAt:   time.Now().Add(processLifetime).Unix(),
 		IssuedAt:    time.Now().Unix(),
 	}
 	if sessionACR != oidc.ACR0 {

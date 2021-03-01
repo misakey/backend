@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"time"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -289,10 +290,15 @@ func (cmd *LoginAuthnStepCmd) BindAndValidate(eCtx echo.Context) error {
 
 // LoginAuthnStepView ...
 type LoginAuthnStepView struct {
-	Next        string        `json:"next"`
-	AccessToken string        `json:"access_token"`
-	NextStep    *nextStepView `json:"authn_step,omitempty"`
-	RedirectTo  *string       `json:"redirect_to,omitempty"`
+	Next       string        `json:"next"`
+	NextStep   *nextStepView `json:"authn_step,omitempty"`
+	RedirectTo *string       `json:"redirect_to,omitempty"`
+
+	// used to set session authorization cookies
+	ForCookies struct {
+		AccessToken    string    `json:"-"`
+		ExpirationDate time.Time `json:"-"`
+	} `json:"-"`
 }
 
 // AssertAuthnStep in a multi-factor authentication process
@@ -335,7 +341,9 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 		return nil, merr.From(cErr).Desc("committing transaction")
 	}
 
-	view.AccessToken = process.AccessToken
+	// bind authorization value that are set in cookies by the upper layer
+	view.ForCookies.AccessToken = process.AccessToken
+	view.ForCookies.ExpirationDate = time.Unix(process.ExpiresAt, 0)
 
 	// if an new authn step was returned - the login flow requires more authn steps
 	if process.NextStep != nil {

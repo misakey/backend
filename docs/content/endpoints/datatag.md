@@ -69,7 +69,7 @@ _JSON Body:_
 #### 2.2.1. request
 
 ```bash
-PUT https://api.misakey.com/organizations/:id/datatags/:did
+PATCH https://api.misakey.com/organizations/:id/datatags/:did
 ```
 
 _Cookies:_
@@ -95,24 +95,8 @@ _JSON Body:_
 
 _Code:_
 ```bash
-HTTP 200 OK
+HTTP 204 NO CONTENXT
 ```
-
-_JSON Body:_
-```json
-{
-    "id": "<uuid string>",
-    "organization_id": "<uuid string>",
-    "name": "<string>",
-    "created_at": "<date string>"
-}
-```
-
-- `id`: an uuid to identify the datatag
-- `organization_id`: an uuid to identify the organization
-- `name`: the datatag name
-- `created_at`: date of creation
-
 ### 2.3. List datatags
 
 #### 2.3.1. request

@@ -15,7 +15,7 @@ func bindRoutes(
 	app *application.BoxApplication,
 	wsh entrypoints.WebsocketHandler,
 	oidcHandlerFactory request.HandlerFactory,
-	authzMidlwWithoutCSRF echo.MiddlewareFunc,
+	anyCliAuthzMidlw echo.MiddlewareFunc,
 ) {
 	// ----------------------
 	// Boxes related routes
@@ -142,7 +142,7 @@ func bindRoutes(
 	// ----------------------
 	// Box Users related routes
 	boxUsersPath := router.Group("/box-users")
-	boxUsersPath.GET("/:id/ws", wsh.BoxUsersWS, authzMidlwWithoutCSRF)
+	boxUsersPath.GET("/:id/ws", wsh.BoxUsersWS, anyCliAuthzMidlw)
 	boxUsersPath.PUT(oidcHandlerFactory.NewACR1(
 		"/:id/boxes/:bid/settings",
 		func() request.Request { return &application.UpdateBoxSettingsRequest{} },

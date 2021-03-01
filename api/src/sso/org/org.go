@@ -85,10 +85,16 @@ func MustBeAdmin(ctx context.Context, exec boil.ContextExecutor, orgID string, i
 	if err != nil {
 		return merr.From(err).Desc("getting organization")
 	}
-	if org.CreatorID != identityID {
-		return merr.Forbidden()
+	// identity is admin if it is the creator of the org
+	if identityID == org.CreatorID {
+		return nil
 	}
-	return nil
+	// identity is admin if it is an org machine
+	if identityID == org.ID {
+		return nil
+	}
+	// otherwise, it is not an admin
+	return merr.Forbidden()
 }
 
 // TODO (structure): the cache should be refactored into a cross-module package (inside sdk eventually)

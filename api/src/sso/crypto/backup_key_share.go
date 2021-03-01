@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/go-redis/redis/v7"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mredis"
 )
 
 // BackupKeyShare ...
@@ -20,14 +19,14 @@ type BackupKeyShare struct {
 
 // BackupKeyShareService ...
 type BackupKeyShareService struct {
-	repositories.SimpleKeyRedis
+	mredis.SimpleKeyRedis
 
 	keyExpiration time.Duration
 }
 
 // NewBackupKeyShareService ...
-func NewBackupKeyShareService(redConn *redis.Client, keyExpiration time.Duration) BackupKeyShareService {
-	return BackupKeyShareService{repositories.NewSimpleKeyRedis(redConn), keyExpiration}
+func NewBackupKeyShareService(skr mredis.SimpleKeyRedis, keyExpiration time.Duration) BackupKeyShareService {
+	return BackupKeyShareService{skr, keyExpiration}
 }
 
 func (bkr BackupKeyShareService) storageKey(otherShareHash string) string {

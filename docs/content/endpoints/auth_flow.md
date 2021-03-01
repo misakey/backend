@@ -536,16 +536,18 @@ _JSON Body:_
     "identity_id": "53515d02-642a-4043-a943-bb11c0bdc6a5",
     "method_name": "...",
     "metadata": "..."
-  },
-  "access_token": "NaEOLikFLklPERz1Cq-umthWAXKBgwWQ-S3cmWqWt8Q.fPAN_Hxyp8eFRQ0zPT5_lNcFANXENcYGlgLiUrS2xY4"
+  }
 }
 ```
 
 - `next` (oneof: _redirect_, _authn_step_): the next action the authentication server is waiting for.
-- `access_token` (string): an access token allowing more advanced requests while being still in the login flow. Should be used as `Authorization` header.
 - `authn_step` (object): the next expected authn step to end the login flow.
 
 :mag: `method_name` and `metadata` possibilities are defined in [the require identity section](#possible-formats-for-the-metadata-field).
+
+_Cookies_:
+- `authnaccesstoken`: (string) an access token allowing more advanced requests while being still in the login flow.
+- `authntokentype`: (string) the token type.
 
 ### 2.3.3. notable error responses
 

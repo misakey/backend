@@ -12,6 +12,7 @@ import (
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/db"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mredis"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oauth"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -50,9 +51,15 @@ func InitModule(router *echo.Echo) Process {
 		log.Fatal().Err(err).Msg("could not connect to redis")
 	}
 
+	// assign self client id to a variable since used many times
+	selfCliID := viper.GetString("authflow.self_client_id")
+
+	// init simple key redis components
+	simpleKeyRedis := mredis.NewSimpleKeyRedis(redConn)
+
 	// init self authenticator for hydra rester
 	selfAuth, err := oidc.NewClient(
-		viper.GetString("authflow.self_client_id"),
+		selfCliID,
 		viper.GetString("authflow.hydra_token_url"),
 		viper.GetString("authflow.self_encoded_jwk"),
 	)
@@ -81,8 +88,8 @@ func InitModule(router *echo.Echo) Process {
 	protectedPublicHydraFORM := http.NewClient(publicURL, secure, http.SetFormat(http.MimeTypeURLEncodedForm), http.SetAuthenticator(oidc.NewPrivateKeyJWTAuthenticator(selfAuth)))
 
 	// init repositories
-	authnSessionRepo := authn.NewAuthnSessionRedis(redConn)
-	authnProcessRepo := authn.NewAuthnProcessRedis(viper.GetString("authflow.self_client_id"), redConn)
+	authnSessionRepo := authn.NewAuthnSessionRedis(simpleKeyRedis)
+	authnProcessRepo := authn.NewAuthnProcessRedis(simpleKeyRedis)
 	hydraRepo := authflow.NewHydraHTTP(publicHydraJSON, adminHydraJSON, adminHydraFORM, protectedPublicHydraFORM)
 	templateRepo := email.NewTemplateFileSystem(viper.GetString("mail.templates"))
 	var emailRepo email.Sender
@@ -118,27 +125,27 @@ func InitModule(router *echo.Echo) Process {
 		viper.GetString("authflow.home_page_url"),
 		viper.GetString("authflow.login_page_url"),
 		viper.GetString("authflow.consent_page_url"),
-		viper.GetString("authflow.self_client_id"),
+		selfCliID,
 	)
 	authenticationService := authn.NewService(
 		authnSessionRepo, authnProcessRepo,
 		emailRenderer, emailRepo,
 		webauthnHandler, viper.GetString("authflow.app_name"),
 	)
-	backupKeyShareService := crypto.NewBackupKeyShareService(redConn, viper.GetDuration("backup_key_share.expiration"))
+	backupKeyShareService := crypto.NewBackupKeyShareService(simpleKeyRedis, viper.GetDuration("backup_key_share.expiration"))
 	ssoService := application.NewSSOService(
 		identityService,
 		authFlowService,
 		authenticationService,
 		backupKeyShareService,
 		viper.GetDuration("root_key_share.expiration"),
-		viper.GetString("authflow.self_client_id"),
+		selfCliID,
 
 		dbConn,
 		redConn,
 	)
 	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(
-		viper.GetString("authflow.self_client_id"),
+		selfCliID,
 		redConn,
 		viper.GetString("authflow.auth_url"),
 		viper.GetString("authflow.code_redirect_url"),
@@ -150,43 +157,34 @@ func InitModule(router *echo.Echo) Process {
 		log.Fatal().Err(err).Msg("oauth authorization code flow")
 	}
 
-	// init authorization middleware
-	oidcAuthzMidlw := authz.NewOIDCIntrospector(
-		viper.GetString("authflow.self_client_id"),
-		true,
-		adminHydraFORM,
-		redConn,
-		true,
-	)
+	// init authorization middlewares
+	selfOnly := true
+	selfOIDCAuthzMidlw := authz.NewTokenIntrospector("hydra", selfCliID, selfOnly, adminHydraFORM, redConn)
+	selfOIDCHandlerFactory := request.NewHandlerFactory(selfOIDCAuthzMidlw)
 
-	extOIDCAuthzMidlw := authz.NewOIDCIntrospector(
-		viper.GetString("authflow.self_client_id"),
-		false,
-		adminHydraFORM,
-		redConn,
-		false,
-	)
+	anyOIDCAuthzMidlw := authz.NewTokenIntrospector("hydra", selfCliID, !selfOnly, adminHydraFORM, redConn)
+	anyOIDCHandlerFactory := request.NewHandlerFactory(anyOIDCAuthzMidlw)
 
-	authnProcessAuthzMidlw := authz.NewAuthnProcessIntrospector(viper.GetString("authflow.self_client_id"), authnProcessRepo)
-
-	oidcHandlerFactory := request.NewHandlerFactory(oidcAuthzMidlw)
+	// NOTE: authnProcessIntrospector is by-design a self client id introspector
+	authnProcessAuthzMidlw := authz.NewTokenIntrospector("authn_process", selfCliID, !selfOnly, simpleKeyRedis, redConn)
 	authnProcessHandlerFactory := request.NewHandlerFactory(authnProcessAuthzMidlw)
-	extOIDCHandlerFactory := request.NewHandlerFactory(extOIDCAuthzMidlw)
 
 	// bind all routes to the router
 	bindRoutes(
 		router,
-		oidcHandlerFactory,
+		selfOIDCHandlerFactory,
+		anyOIDCHandlerFactory,
 		authnProcessHandlerFactory,
-		extOIDCHandlerFactory,
 		&ssoService,
 		*oauthCodeFlow,
 	)
+
 	// bind static assets for avatars only if configuration has been set up
 	avatarLocation := viper.GetString("server.avatars")
 	if len(avatarLocation) > 0 {
 		router.Static("/avatars", avatarLocation)
 	}
+
 	return Process{
 		IdentityIntraProcess:     identity.NewIntraprocessHelper(dbConn, redConn),
 		CryptoActionIntraProcess: crypto.NewIntraprocessHelper(dbConn, redConn),

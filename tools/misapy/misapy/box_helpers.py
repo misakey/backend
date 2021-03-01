@@ -5,12 +5,13 @@ import os
 import sys
 from time import sleep
 
-from . import http, URL_PREFIX, SELF_CLIENT_ID
-from .utils.base64 import b64encode, urlsafe_b64encode
-from .get_access_token import get_authenticated_session
-from .container_access import list_encrypted_files
-from .check_response import check_response, assert_fn
+from . import SELF_CLIENT_ID, URL_PREFIX, http
 from .boxes.key_shares import new_key_share_event
+from .check_response import assert_fn, check_response
+from .container_access import list_encrypted_files
+from .get_access_token import get_authenticated_session
+from .utils.base64 import b64encode, urlsafe_b64encode
+
 
 def create_box_with_data_subject_and_datatag(session, org_id=None, data_subject=None, public_key=None, datatag_id=None, expected_status_code=201):
     s = session

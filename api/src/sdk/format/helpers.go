@@ -6,7 +6,8 @@ import (
 )
 
 // UnpaddedURLSafeBase64 ...
-var UnpaddedURLSafeBase64 = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
+var UnpaddedURLSafeBase64 = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+var BearerToken = regexp.MustCompile(`^Bearer ([\S]+)`)
 
 // AddQueryParam to the originalURL using the net/url
 // paramKey as query parameter key and paramVal as query parameter value

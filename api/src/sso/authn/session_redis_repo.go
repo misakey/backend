@@ -5,20 +5,18 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/go-redis/redis/v7"
-
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
-	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mredis"
 )
 
 // SessionRedisRepo ...
 type SessionRedisRepo struct {
-	repositories.SimpleKeyRedis
+	mredis.SimpleKeyRedis
 }
 
 // NewAuthnSessionRedis ...
-func NewAuthnSessionRedis(redConn *redis.Client) SessionRedisRepo {
-	return SessionRedisRepo{repositories.NewSimpleKeyRedis(redConn)}
+func NewAuthnSessionRedis(skr mredis.SimpleKeyRedis) SessionRedisRepo {
+	return SessionRedisRepo{skr}
 }
 
 func (srr SessionRedisRepo) key(sessionID string) string {

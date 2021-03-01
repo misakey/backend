@@ -52,8 +52,6 @@ func (sso *SSOService) CreateDatatag(ctx context.Context, gen request.Request) (
 		return nil, merr.From(err).Desc("must be admin of the org")
 	}
 
-	// TODO: Check that a machine belonging to the orga can do this request
-
 	// create the datatag
 	id, err := uuid.NewString()
 	if err != nil {
@@ -99,7 +97,6 @@ func (sso *SSOService) ListDatatags(ctx context.Context, gen request.Request) (i
 	if err := org.MustBeAdmin(ctx, sso.sqlDB, query.organizationID, acc.IdentityID); err != nil {
 		return nil, merr.From(err).Desc("must be admin of the org")
 	}
-	// TODO: Check that a machine belonging to the orga can do this request
 
 	// list the datatags
 	mods := []qm.QueryMod{
@@ -109,22 +106,22 @@ func (sso *SSOService) ListDatatags(ctx context.Context, gen request.Request) (i
 	if err != nil {
 		return nil, merr.From(err).Desc("list datatags")
 	}
-	if err == nil && datatags == nil {
-		return []sqlboiler.Datatag{}, nil
+	if datatags == nil {
+		return []*sqlboiler.Datatag{}, nil
 	}
 
 	return datatags, nil
 }
 
-// EditDatatagCmd ...
-type EditDatatagCmd struct {
+// PatchDatatagCmd ...
+type PatchDatatagCmd struct {
 	organizationID string
 	datatagID      string
 	Name           string `json:"name"`
 }
 
 // BindAndValidate ...
-func (cmd *EditDatatagCmd) BindAndValidate(eCtx echo.Context) error {
+func (cmd *PatchDatatagCmd) BindAndValidate(eCtx echo.Context) error {
 	if err := eCtx.Bind(cmd); err != nil {
 		return merr.From(err).Ori(merr.OriBody)
 	}
@@ -136,9 +133,9 @@ func (cmd *EditDatatagCmd) BindAndValidate(eCtx echo.Context) error {
 	)
 }
 
-// EditDatatag ...
-func (sso *SSOService) EditDatatag(ctx context.Context, gen request.Request) (interface{}, error) {
-	query := gen.(*EditDatatagCmd)
+// PatchDatatag ...
+func (sso *SSOService) PatchDatatag(ctx context.Context, gen request.Request) (interface{}, error) {
+	query := gen.(*PatchDatatagCmd)
 
 	acc := oidc.GetAccesses(ctx)
 	if acc == nil {
@@ -158,7 +155,6 @@ func (sso *SSOService) EditDatatag(ctx context.Context, gen request.Request) (in
 	if err := org.MustBeAdmin(ctx, sso.sqlDB, query.organizationID, acc.IdentityID); err != nil {
 		return nil, merr.From(err).Desc("must be admin of the org")
 	}
-	// TODO: Check that a machine belonging to the orga can do this request
 
 	// edit the datatag
 	datatag.Name = query.Name
@@ -167,5 +163,5 @@ func (sso *SSOService) EditDatatag(ctx context.Context, gen request.Request) (in
 		return nil, merr.From(err).Desc("editing datatag")
 	}
 
-	return datatag, nil
+	return nil, nil
 }

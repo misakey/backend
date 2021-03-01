@@ -2,12 +2,11 @@ package application
 
 import (
 	"context"
-	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -40,29 +39,14 @@ func (sso *SSOService) Logout(ctx context.Context, _ request.Request) (interface
 	return nil, tr.Commit()
 }
 
-// CleanCookie for authentication
-func (sso *SSOService) CleanCookie(eCtx echo.Context, _ interface{}) error {
-	// access token
-	eCtx.SetCookie(&http.Cookie{
-		Name:     "accesstoken",
-		Value:    "",
-		Expires:  time.Now(),
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
-	})
+// CleanOIDCCookie
+func (sso *SSOService) CleanOIDCCookie(eCtx echo.Context, _ interface{}) error {
+	authz.DelCookies(eCtx, "accesstoken", "tokentype")
+	return nil
+}
 
-	// token type
-	eCtx.SetCookie(&http.Cookie{
-		Name:     "tokentype",
-		Value:    "",
-		Expires:  time.Now(),
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
-	})
-
+// CleanAuthnCookie
+func (sso *SSOService) CleanAuthnCookie(eCtx echo.Context, _ interface{}) error {
+	authz.DelCookies(eCtx, "authnaccesstoken", "authntokentype")
 	return nil
 }

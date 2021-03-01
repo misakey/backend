@@ -73,7 +73,10 @@ func InitModule(
 		log.Fatal().Msg("unknown ENV value (should be production|development)")
 	}
 
-	boxService := application.NewBoxApplication(boxDBConn, ssoDBConn, redConn, filesRepo, viper.GetString("authflow.self_client_id"), identityRepo, cryptoRepo)
+	// assign self client id to a variable since used many times
+	selfCliID := viper.GetString("authflow.self_client_id")
+
+	boxService := application.NewBoxApplication(boxDBConn, ssoDBConn, redConn, filesRepo, selfCliID, identityRepo, cryptoRepo)
 	wsHandler := bentrypoints.NewWebsocketHandler(viper.GetStringSlice("websockets.allowed_origins"), &boxService)
 
 	adminHydraFORM := http.NewClient(
@@ -84,29 +87,21 @@ func InitModule(
 	)
 
 	// init authorization middleware
-	authzMidlw := authz.NewOIDCIntrospector(
-		viper.GetString("authflow.self_client_id"),
-		true,
-		adminHydraFORM,
-		redConn,
-		true,
-	)
+	selfOnly := true
+	selfOIDCAuthzMidlw := authz.NewTokenIntrospector("hydra", selfCliID, selfOnly, adminHydraFORM, redConn)
+	selfOIDCHandlerFactory := request.NewHandlerFactory(selfOIDCAuthzMidlw)
 
-	authzMidlwWithoutCSRF := authz.NewOIDCIntrospector(
-		viper.GetString("authflow.self_client_id"),
-		true,
-		adminHydraFORM,
-		redConn,
-		false,
-	)
+	anyOIDCAuthzMidlw := authz.NewTokenIntrospector("hydra", selfCliID, !selfOnly, adminHydraFORM, redConn)
 
+	// bind all routes to the router
 	bindRoutes(
 		router,
 		&boxService,
 		wsHandler,
-		request.NewHandlerFactory(authzMidlw),
-		authzMidlwWithoutCSRF,
+		selfOIDCHandlerFactory,
+		anyOIDCAuthzMidlw,
 	)
+
 	return Process{
 		BoxService: &boxService,
 	}

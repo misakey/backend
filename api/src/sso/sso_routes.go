@@ -4,6 +4,8 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oauth"
@@ -13,51 +15,51 @@ import (
 
 func bindRoutes(
 	router *echo.Echo,
-	oidcHandlers request.HandlerFactory,
+	selfOIDCHandlers request.HandlerFactory,
+	anyOIDCHandlers request.HandlerFactory,
 	authnProcessHandlers request.HandlerFactory,
-	extOIDCHandlers request.HandlerFactory,
 	ss *application.SSOService,
 	oauthCodeFlow oauth.AuthorizationCodeFlow,
 ) {
 	// ACCOUNT ROUTES
 	accountPath := router.Group("/accounts")
-	accountPath.GET(oidcHandlers.NewACR2(
+	accountPath.GET(selfOIDCHandlers.NewACR2(
 		"/:id/backup",
 		func() request.Request { return &application.BackupQuery{} },
 		ss.GetBackup,
 		request.ResponseOK,
 	))
-	accountPath.PUT(oidcHandlers.NewACR2(
+	accountPath.PUT(selfOIDCHandlers.NewACR2(
 		"/:id/deprecated/backup",
 		func() request.Request { return &application.BackupUpdateCmd{} },
 		ss.UpdateBackup,
 		request.ResponseOK,
 	))
-	accountPath.GET(oidcHandlers.NewPublic(
+	accountPath.GET(selfOIDCHandlers.NewPublic(
 		"/:id/pwd-params",
 		func() request.Request { return &application.PwdParamsQuery{} },
 		ss.GetAccountPwdParams,
 		request.ResponseOK,
 	))
-	accountPath.PUT(oidcHandlers.NewACR2(
+	accountPath.PUT(selfOIDCHandlers.NewACR2(
 		"/:id/password",
 		func() request.Request { return &application.ChangePasswordCmd{} },
 		ss.ChangePassword,
 		request.ResponseNoContent,
 	))
-	accountPath.GET(oidcHandlers.NewACR2(
+	accountPath.GET(selfOIDCHandlers.NewACR2(
 		"/:id/crypto/actions",
 		func() request.Request { return &application.ListCryptoActionsQuery{} },
 		ss.ListCryptoActions,
 		request.ResponseOK,
 	))
-	accountPath.GET(oidcHandlers.NewACR2(
+	accountPath.GET(selfOIDCHandlers.NewACR2(
 		"/:account-id/crypto/actions/:action-id",
 		func() request.Request { return &application.GetCryptoActionQuery{} },
 		ss.GetCryptoAction,
 		request.ResponseOK,
 	))
-	accountPath.DELETE(oidcHandlers.NewACR2(
+	accountPath.DELETE(selfOIDCHandlers.NewACR2(
 		"/:account-id/crypto/actions/:action-id",
 		func() request.Request { return &application.DeleteCryptoActionQuery{} },
 		ss.DeleteCryptoAction,
@@ -65,51 +67,51 @@ func bindRoutes(
 	))
 	// CRYPTO ROUTES
 	cryptoPath := router.Group("/crypto")
-	cryptoPath.POST(oidcHandlers.NewACR2(
+	cryptoPath.POST(selfOIDCHandlers.NewACR2(
 		"/migration/v2",
 		func() request.Request { return &application.MigrateToSecretStorageQuery{} },
 		ss.MigrateToSecretStorage,
 		request.ResponseNoContent,
 	))
 	secretStoragePath := cryptoPath.Group("/secret-storage")
-	secretStoragePath.GET(oidcHandlers.NewACR2(
+	secretStoragePath.GET(selfOIDCHandlers.NewACR2(
 		"",
 		func() request.Request { return &request.EmptyQuery{} },
 		ss.GetSecretStorage,
 		request.ResponseOK,
 	))
-	secretStoragePath.POST(oidcHandlers.NewACR2(
+	secretStoragePath.POST(selfOIDCHandlers.NewACR2(
 		"/asym-keys",
 		func() request.Request { return &crypto.SecretStorageAsymKey{} },
 		ss.CreateSecretStorageAsymKey,
 		request.ResponseOK,
 	))
-	secretStoragePath.DELETE(oidcHandlers.NewACR2(
+	secretStoragePath.DELETE(selfOIDCHandlers.NewACR2(
 		"/asym-keys",
 		func() request.Request { return &application.DeleteAsymKeysCmd{} },
 		ss.DeleteAsymKeys,
 		request.ResponseNoContent,
 	))
-	secretStoragePath.PUT(oidcHandlers.NewACR2(
+	secretStoragePath.PUT(selfOIDCHandlers.NewACR2(
 		"/box-key-shares/:box-id",
 		func() request.Request { return &crypto.SecretStorageBoxKeyShare{} },
 		ss.CreateSecretStorageBoxKeyShare,
 		request.ResponseOK,
 	))
-	secretStoragePath.DELETE(oidcHandlers.NewACR2(
+	secretStoragePath.DELETE(selfOIDCHandlers.NewACR2(
 		"/box-key-shares",
 		func() request.Request { return &application.DeleteBoxKeySharesCmd{} },
 		ss.DeleteBoxKeyShares,
 		request.ResponseNoContent,
 	))
 	rootKeySharePath := cryptoPath.Group("/root-key-shares")
-	rootKeySharePath.POST(oidcHandlers.NewACR2(
+	rootKeySharePath.POST(selfOIDCHandlers.NewACR2(
 		"",
 		func() request.Request { return &application.RootKeyShareCreateCmd{} },
 		ss.CreateRootKeyShare,
 		request.ResponseCreated,
 	))
-	rootKeySharePath.GET(oidcHandlers.NewACR2(
+	rootKeySharePath.GET(selfOIDCHandlers.NewACR2(
 		"/:other-share-hash",
 		func() request.Request { return &application.RootKeyShareQuery{} },
 		ss.GetRootKeyShare,
@@ -117,37 +119,37 @@ func bindRoutes(
 	))
 	// IDENTITIES ROUTES
 	identityPath := router.Group("/identities")
-	identityPath.GET(oidcHandlers.NewACR1(
+	identityPath.GET(selfOIDCHandlers.NewACR1(
 		"/:id",
 		func() request.Request { return &application.IdentityQuery{} },
 		ss.GetIdentity,
 		request.ResponseOK,
 	))
-	identityPath.PATCH(oidcHandlers.NewACR1(
+	identityPath.PATCH(selfOIDCHandlers.NewACR1(
 		"/:id",
 		func() request.Request { return &application.PartialUpdateIdentityCmd{} },
 		ss.PartialUpdateIdentity,
 		request.ResponseNoContent,
 	))
-	identityPath.PUT(oidcHandlers.NewACR1(
+	identityPath.PUT(selfOIDCHandlers.NewACR1(
 		"/:id/avatar",
 		func() request.Request { return &application.UploadAvatarCmd{} },
 		ss.UploadAvatar,
 		request.ResponseNoContent,
 	))
-	identityPath.DELETE(oidcHandlers.NewACR1(
+	identityPath.DELETE(selfOIDCHandlers.NewACR1(
 		"/:id/avatar",
 		func() request.Request { return &application.DeleteAvatarCmd{} },
 		ss.DeleteAvatar,
 		request.ResponseNoContent,
 	))
-	identityPath.POST(oidcHandlers.NewACR2(
+	identityPath.POST(selfOIDCHandlers.NewACR2(
 		"/:id/coupons",
 		func() request.Request { return &application.AttachCouponCmd{} },
 		ss.AttachCoupon,
 		request.ResponseNoContent,
 	))
-	identityPath.HEAD(oidcHandlers.NewACR1(
+	identityPath.HEAD(selfOIDCHandlers.NewACR1(
 		"/:id/notifications",
 		func() request.Request { return &application.IdentityNotifCountQuery{} },
 		ss.CountIdentityNotification,
@@ -157,79 +159,79 @@ func bindRoutes(
 			return nil
 		},
 	))
-	identityPath.GET(oidcHandlers.NewACR1(
+	identityPath.GET(selfOIDCHandlers.NewACR1(
 		"/:id/notifications",
 		func() request.Request { return &application.IdentityNotifListQuery{} },
 		ss.ListIdentityNotification,
 		request.ResponseOK,
 	))
-	identityPath.PUT(oidcHandlers.NewACR1(
+	identityPath.PUT(selfOIDCHandlers.NewACR1(
 		"/:id/notifications/acknowledgement",
 		func() request.Request { return &application.IdentityNotifAckCmd{} },
 		ss.AckIdentityNotification,
 		request.ResponseNoContent,
 	))
-	identityPath.GET(oidcHandlers.NewACR1(
+	identityPath.GET(selfOIDCHandlers.NewACR1(
 		"/:id/organizations",
 		func() request.Request { return &application.OrgListQuery{} },
 		ss.ListIdentityOrgs,
 		request.ResponseOK,
 	))
-	identityPath.GET(oidcHandlers.NewPublic(
+	identityPath.GET(selfOIDCHandlers.NewPublic(
 		"/:id/profile",
 		func() request.Request { return &application.ProfileQuery{} },
 		ss.GetProfile,
 		request.ResponseOK,
 	))
-	identityPath.PATCH(oidcHandlers.NewACR1(
+	identityPath.PATCH(selfOIDCHandlers.NewACR1(
 		"/:id/profile/config",
 		func() request.Request { return &application.ConfigProfileCmd{} },
 		ss.SetProfileConfig,
 		request.ResponseNoContent,
 	))
-	identityPath.GET(oidcHandlers.NewACR1(
+	identityPath.GET(selfOIDCHandlers.NewACR1(
 		"/:id/profile/config",
 		func() request.Request { return &application.ConfigProfileQuery{} },
 		ss.GetProfileConfig,
 		request.ResponseOK,
 	))
-	identityPath.GET(oidcHandlers.NewACR2(
+	identityPath.GET(selfOIDCHandlers.NewACR2(
 		"/pubkey",
 		func() request.Request { return &application.IdentityPubkeyByIdentifierQuery{} },
 		ss.GetIdentityPubkeyByIdentifier,
 		request.ResponseOK,
 	))
-	identityPath.GET(oidcHandlers.NewACR2(
+	identityPath.GET(selfOIDCHandlers.NewACR2(
 		"/:id/webauthn-credentials/create",
 		func() request.Request { return &application.BeginWebAuthnRegistrationQuery{} },
 		ss.BeginWebAuthnRegistration,
 		request.ResponseOK,
 	))
-	identityPath.POST(oidcHandlers.NewACR2(
+	identityPath.POST(selfOIDCHandlers.NewACR2(
 		"/:id/webauthn-credentials/create",
 		func() request.Request { return &application.FinishWebAuthnRegistrationQuery{} },
 		ss.FinishWebAuthnRegistration,
 		request.ResponseOK,
 	))
-	identityPath.GET(oidcHandlers.NewACR2(
+	identityPath.GET(selfOIDCHandlers.NewACR2(
 		"/:id/totp/enroll",
 		func() request.Request { return &application.BeginTOTPEnrollmentQuery{} },
 		ss.BeginTOTPEnrollment,
 		request.ResponseOK,
 	))
-	identityPath.POST(oidcHandlers.NewACR2(
+	identityPath.POST(selfOIDCHandlers.NewACR2(
 		"/:id/totp/enroll",
 		func() request.Request { return &application.FinishTOTPEnrollmentQuery{} },
 		ss.FinishTOTPEnrollment,
 		request.ResponseOK,
 	))
-	identityPath.POST(oidcHandlers.NewACR3(
+	identityPath.POST(selfOIDCHandlers.NewACR3(
 		"/:id/totp/recovery-codes",
 		func() request.Request { return &application.RegenerateRecoveryCodesQuery{} },
 		ss.RegenerateRecoveryCodes,
 		request.ResponseOK,
 	))
-	identityPath.DELETE(oidcHandlers.NewACR2(
+	identityPath.DELETE(selfOIDCHandlers.NewACR2(
 		"/:id/totp",
 		func() request.Request { return &application.DeleteSecretQuery{} },
 		ss.DeleteSecret,
@@ -238,20 +240,20 @@ func bindRoutes(
 
 	// ORGANIZATIONS
 	orgPath := router.Group("/organizations")
-	orgPath.POST(oidcHandlers.NewACR2(
+	orgPath.POST(selfOIDCHandlers.NewACR2(
 		"",
 		func() request.Request { return &application.OrgCreateCmd{} },
 		ss.CreateOrg,
 		request.ResponseCreated,
 	))
-	orgPath.PUT(oidcHandlers.NewACR2(
+	orgPath.PUT(selfOIDCHandlers.NewACR2(
 		"/:id/secret",
 		func() request.Request { return &application.GenerateSecretCmd{} },
 		ss.GenerateSecret,
 		request.ResponseOK,
 	))
 
-	orgPath.GET(oidcHandlers.NewPublic(
+	orgPath.GET(selfOIDCHandlers.NewPublic(
 		"/:id/public",
 		func() request.Request { return &application.GetOrgPublicRequest{} },
 		ss.GetOrgPublic,
@@ -259,34 +261,34 @@ func bindRoutes(
 	))
 
 	// DATATAGS
-	orgPath.POST(oidcHandlers.NewACR2(
+	orgPath.POST(anyOIDCHandlers.NewACR2(
 		"/:id/datatags",
 		func() request.Request { return &application.CreateDatatagCmd{} },
 		ss.CreateDatatag,
 		request.ResponseCreated,
 	))
-	orgPath.GET(oidcHandlers.NewACR2(
+	orgPath.GET(anyOIDCHandlers.NewACR2(
 		"/:id/datatags",
 		func() request.Request { return &application.ListDatatagsCmd{} },
 		ss.ListDatatags,
 		request.ResponseOK,
 	))
-	orgPath.PUT(oidcHandlers.NewACR2(
+	orgPath.PATCH(anyOIDCHandlers.NewACR2(
 		"/:id/datatags/:did",
-		func() request.Request { return &application.EditDatatagCmd{} },
-		ss.EditDatatag,
-		request.ResponseOK,
+		func() request.Request { return &application.PatchDatatagCmd{} },
+		ss.PatchDatatag,
+		request.ResponseNoContent,
 	))
 
 	// WEBAUTHN CREDENTIALS
 	webauthnCredentialPath := router.Group("/webauthn-credentials")
-	webauthnCredentialPath.GET(oidcHandlers.NewACR2(
+	webauthnCredentialPath.GET(selfOIDCHandlers.NewACR2(
 		"",
 		func() request.Request { return &application.ListCredentialsQuery{} },
 		ss.ListCredentials,
 		request.ResponseOK,
 	))
-	webauthnCredentialPath.DELETE(oidcHandlers.NewACR2(
+	webauthnCredentialPath.DELETE(selfOIDCHandlers.NewACR2(
 		"/:id",
 		func() request.Request { return &application.DeleteCredentialQuery{} },
 		ss.DeleteCredential,
@@ -322,6 +324,18 @@ func bindRoutes(
 		func() request.Request { return &application.LoginAuthnStepCmd{} },
 		ss.AssertAuthnStep,
 		request.ResponseOK,
+		ss.CleanAuthnCookie,
+		func(c echo.Context, stepViewInt interface{}) error {
+			stepView, ok := stepViewInt.(application.LoginAuthnStepView)
+			if !ok {
+				return merr.Internal().Desc("expect application.LoginAuthnStepView type")
+			}
+			// set process access token info into the cookies
+			// first make obsolete previous cookies
+			authz.SetCookie(c, "authnaccesstoken", stepView.ForCookies.AccessToken, stepView.ForCookies.ExpirationDate)
+			authz.SetCookie(c, "authntokentype", "bearer", stepView.ForCookies.ExpirationDate)
+			return nil
+		},
 	))
 	// identity in auth
 	authPath.PUT(authnProcessHandlers.NewOptional(
@@ -352,6 +366,8 @@ func bindRoutes(
 	))
 	// exchange token
 	authPath.GET("/callback", func(ctx echo.Context) error {
+		// remove cookie related to login flow/authn process authorization since it is the end
+		_ = ss.CleanAuthnCookie(ctx, nil)
 		oauthCodeFlow.ExchangeToken(ctx)
 		return nil
 	})
@@ -384,12 +400,12 @@ func bindRoutes(
 		request.ResponseCreated,
 	))
 	// following routes allows audience of non-misakey oidc tokens
-	authPath.POST(extOIDCHandlers.NewACR1(
+	authPath.POST(anyOIDCHandlers.NewACR1(
 		"/logout",
 		nil, // no request data required
 		ss.Logout,
 		request.ResponseNoContent,
-		ss.CleanCookie,
+		ss.CleanOIDCCookie,
 	))
 	// reset the auth flow using the login_challenge
 	authPath.GET(authnProcessHandlers.NewPublic(
@@ -397,10 +413,10 @@ func bindRoutes(
 		func() request.Request { return &application.FlowResetCmd{} },
 		ss.ResetFlow,
 		request.ResponseRedirectFound,
-		ss.CleanCookie,
+		ss.CleanOIDCCookie,
 	))
 	// user info
-	authPath.GET(oidcHandlers.NewOptional(
+	authPath.GET(selfOIDCHandlers.NewOptional(
 		"/userinfo",
 		func() request.Request { return &application.GetUserInfoCmd{} },
 		ss.GetUserInfo,

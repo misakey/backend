@@ -90,9 +90,6 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
     assert r.json()['next'] == 'authn_step'
     assert r.json()['authn_step']['method_name'] == 'account_creation'
 
-    # temporary access token
-    auth_access_token = r.json()['access_token']
-
     if use_secret_backup:
         metadata_secrets = {
             'backup_data': b64encode(b'fake backup data').decode(),
@@ -105,9 +102,7 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
 
     r = s.post(
         f'{URL_PREFIX}/auth/login/authn-step',
-        headers={
-            'Authorization': f'Bearer {auth_access_token}'
-        },
+        cookies={"authnaccesstoken": s.cookies['authnaccesstoken'], "authntokentype": "bearer"},
         json={
             'login_challenge': login_challenge,
             'authn_step': {
@@ -130,10 +125,7 @@ def login_flow(s, login_challenge, email, reset_password=False, use_secret_backu
                 'login_challenge': login_challenge,
                 'identity_id': identity_id,
             },
-            headers={
-                'Authorization': f'Bearer {auth_access_token}'
-            },
-        )
+        cookies={"authnaccesstoken": s.cookies['authnaccesstoken'], "authntokentype": "bearer"},        )
         check_response(
             r,
             [
@@ -159,7 +151,7 @@ def consent_flow(s, consent_challenge, identity_id):
     return manual_redirection
 
 
-def get_credentials(email=None, require_account=False, acr_values=None, reset_password=False, use_secret_backup=False, get_secret_storage=False):
+def get_user_credentials(email=None, require_account=False, acr_values=None, reset_password=False, use_secret_backup=False, get_secret_storage=False):
     '''if no email is passed, a random one will be used.'''
 
     if require_account:
@@ -242,6 +234,53 @@ def get_credentials(email=None, require_account=False, acr_values=None, reset_pa
 
 
 def get_authenticated_session(email=None, require_account=False, acr_values=None, reset_password=False, use_secret_backup=False, get_secret_storage=False):
-    creds = get_credentials(email, require_account, acr_values, reset_password, use_secret_backup, get_secret_storage)
+    creds = get_user_credentials(email, require_account, acr_values, reset_password, use_secret_backup, get_secret_storage)
     print(f'Tok - {creds.identity_id}: {creds.access_token}')
     return creds.session
+
+
+def perform_org_auth_flow(org_id, org_secret):
+    s = Session()
+    r = s.post(
+        f'{AUTH_URL_PREFIX}/_/oauth2/token',
+        data={
+            'grant_type': 'client_credentials',
+            'scope': '',
+            'client_id': org_id,
+            'client_secret': org_secret,
+        },
+    )
+
+    s.access_token=r.json()['access_token']
+    s.org_id = org_id
+    return s
+
+
+def get_org_session(user_session):
+    print('- user creates an organization')
+    name = hexlify(os.urandom(3)).decode() + '-org'
+    r = user_session.post(
+        f'{URL_PREFIX}/organizations',
+        json={'name': name},
+        expected_status_code=http.STATUS_CREATED
+    )
+    check_response(r,
+        [
+            lambda r: assert_fn(r.json()['name'] == name),
+            lambda r: assert_fn(r.json()['creator_id'] == user_session.identity_id),
+            lambda r: assert_fn(r.json()['current_identity_role'] == 'admin'),
+        ]
+    )
+    org_id = r.json()['id']
+
+    print(f'- user generates secret for the org {org_id}')
+    r = user_session.put(
+        f'{URL_PREFIX}/organizations/{org_id}/secret',
+        expected_status_code=http.STATUS_OK
+    )
+
+    print(f'- generate the auth session for the org {org_id}')
+    s = perform_org_auth_flow(org_id, r.json()['secret'])
+    print(f'Org Tok - {s.org_id}: {s.access_token}')
+    s.org_name = name
+    return s
