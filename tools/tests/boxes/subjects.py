@@ -90,7 +90,7 @@ with prettyErrorContext():
     )
     assert r.json()['title'] != ''
     assert r.json()['access_mode'] == 'limited'
-    assert r.json()['subject_identity_id'] == s2.identity_id
+    assert r.json()['subject']['id'] == s2.identity_id
 
     # check box members
     r = s1.get(
