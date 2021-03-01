@@ -72,17 +72,24 @@ HTTP 200 CREATED
 _JSON Body:_
 ```json
   {
-    "id": "89a27dec-c0bb-40ed-bfc8-dc74a1b99dc9",
-    "account_id": null,
-    "has_account": false,
-    "display_name": "iamagreat@dpo.com",
+    "id": "601611f3-5735-4039-8f64-8692aab68209",
+    "account_id": "cbf5fd34-a4e0-4b69-8994-60eff9c1ada4",
+    "identifier_value": "d9bdaa-test@misakey.com",
+    "identifier_kind": "email",
+    "display_name": "D9bdaa-Test",
     "notifications": "minimal",
     "avatar_url": null,
-    "pubkey": "(null or url-safe base64)",
-    "identifier_value": "iamagreat@dpo.com",
-    "identifier_kind": "email",
-    "mfa_method": "disabled"
+    "color": null,
+    "level": 10,
+    "mfa_method": "disabled",
+    "pubkey": "6QvaldZMMtJdi1LUg4N0Ag",
+    "non_identified_pubkey": "MUah4EnFPmyy6XA58WoG9A",
+    "pubkey_aes_rsa": "com.misakey.aes-rsa-enc:dDLJjuwdcsTZIMJXsa6STg",
+    "non_identified_pubkey_aes_rsa": "com.misakey.aes-rsa-enc:sCbt8_cgIxShuPHcKmRYrQ",
+    "has_account": true,
+    "has_totp_secret": false
   }
+
 ```
 
 - `id` (uuid string): the unique identity id.
@@ -97,7 +104,7 @@ _JSON Body:_
 
 ## 2.4. Update an identity
 
-For the moment, only the Display Name and Notifications can be updated.
+Not all attributes can be updated (see below).
 
 The request must be authenticated with a token corresponding to the updated identity.
 
@@ -119,8 +126,7 @@ _Path Parameters:_
 The fiels that can be patched are:
 - `display_name` (string): the identity display name.
 - `notifications` (string) (oneof: _minimal_, _moderate_, _frequent_): notification setting.
-- `pubkey`
-- `non_identified_pubkey`
+- `pubkey`, `non_identified_pubkey`, `pubkey_aes_rsa` and `non_identified_pubkey_aes_rsa`
 - `mfa_method` (string) (oneof: _disabled_, _totp_, _webauthn_): configured mfa method of the user.
 
 ### 2.4.2. success response

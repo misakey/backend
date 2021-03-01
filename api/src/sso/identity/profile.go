@@ -10,13 +10,14 @@ import (
 
 // ProfileView ...
 type ProfileView struct {
-	ID                  string      `json:"id"`
-	DisplayName         string      `json:"display_name"`
-	AvatarURL           null.String `json:"avatar_url"`
-	IdentifierValue     string      `json:"identifier_value"`
-	IdentifierKind      string      `json:"identifier_kind"`
-	Contactable         bool        `json:"contactable"`
-	NonIdentifiedPubkey null.String `json:"non_identified_pubkey"`
+	ID                        string      `json:"id"`
+	DisplayName               string      `json:"display_name"`
+	AvatarURL                 null.String `json:"avatar_url"`
+	IdentifierValue           string      `json:"identifier_value"`
+	IdentifierKind            string      `json:"identifier_kind"`
+	Contactable               bool        `json:"contactable"`
+	NonIdentifiedPubkey       null.String `json:"non_identified_pubkey"`
+	NonIdentifiedPubkeyAesRsa null.String `json:"non_identified_pubkey_aes_rsa"`
 }
 
 // ConfigProfileView ...
@@ -45,6 +46,7 @@ func ProfileGet(ctx context.Context, exec boil.ContextExecutor, identityID strin
 	p.DisplayName = identity.DisplayName
 	p.AvatarURL = identity.AvatarURL
 	p.NonIdentifiedPubkey = identity.NonIdentifiedPubkey
+	p.NonIdentifiedPubkeyAesRsa = identity.NonIdentifiedPubkeyAesRsa
 	// for now only the email can be shared
 	// NOTE: the shape/logic of the profile might change later with more information to hide/share
 	for _, consent := range consents {

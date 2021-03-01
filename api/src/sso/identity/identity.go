@@ -18,20 +18,26 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
+type IdentityPublicKeys struct {
+	Pubkey                    null.String `json:"pubkey"`
+	NonIdentifiedPubkey       null.String `json:"non_identified_pubkey"`
+	PubkeyAesRsa              null.String `json:"pubkey_aes_rsa,omitempty"`
+	NonIdentifiedPubkeyAesRsa null.String `json:"non_identified_pubkey_aes_rsa,omitempty"`
+}
+
 // Identity ...
 type Identity struct {
-	ID                  string         `json:"id"`
-	AccountID           null.String    `json:"account_id"`
-	IdentifierValue     string         `json:"identifier_value"`
-	IdentifierKind      IdentifierKind `json:"identifier_kind"`
-	DisplayName         string         `json:"display_name"`
-	Notifications       string         `json:"notifications"`
-	AvatarURL           null.String    `json:"avatar_url"`
-	Color               null.String    `json:"color"`
-	Level               int            `json:"level"`
-	Pubkey              null.String    `json:"pubkey"`
-	NonIdentifiedPubkey null.String    `json:"non_identified_pubkey"`
-	MFAMethod           string         `json:"mfa_method"`
+	ID              string         `json:"id"`
+	AccountID       null.String    `json:"account_id"`
+	IdentifierValue string         `json:"identifier_value"`
+	IdentifierKind  IdentifierKind `json:"identifier_kind"`
+	DisplayName     string         `json:"display_name"`
+	Notifications   string         `json:"notifications"`
+	AvatarURL       null.String    `json:"avatar_url"`
+	Color           null.String    `json:"color"`
+	Level           int            `json:"level"`
+	MFAMethod       string         `json:"mfa_method"`
+	IdentityPublicKeys
 }
 
 // IdentifierKind ...
@@ -56,18 +62,20 @@ func newIdentity() *Identity { return &Identity{} }
 
 func (i Identity) toSQLBoiler() *sqlboiler.Identity {
 	return &sqlboiler.Identity{
-		ID:                  i.ID,
-		AccountID:           i.AccountID,
-		IdentifierValue:     i.IdentifierValue,
-		IdentifierKind:      string(i.IdentifierKind),
-		DisplayName:         i.DisplayName,
-		Notifications:       i.Notifications,
-		AvatarURL:           i.AvatarURL,
-		Color:               i.Color,
-		Level:               i.Level,
-		Pubkey:              i.Pubkey,
-		NonIdentifiedPubkey: i.NonIdentifiedPubkey,
-		MfaMethod:           i.MFAMethod,
+		ID:                        i.ID,
+		AccountID:                 i.AccountID,
+		IdentifierValue:           i.IdentifierValue,
+		IdentifierKind:            string(i.IdentifierKind),
+		DisplayName:               i.DisplayName,
+		Notifications:             i.Notifications,
+		AvatarURL:                 i.AvatarURL,
+		Color:                     i.Color,
+		Level:                     i.Level,
+		Pubkey:                    i.Pubkey,
+		NonIdentifiedPubkey:       i.NonIdentifiedPubkey,
+		PubkeyAesRsa:              i.PubkeyAesRsa,
+		NonIdentifiedPubkeyAesRsa: i.NonIdentifiedPubkeyAesRsa,
+		MfaMethod:                 i.MFAMethod,
 	}
 }
 
@@ -83,19 +91,24 @@ func (i *Identity) fromSQLBoiler(src sqlboiler.Identity) *Identity {
 	i.Level = src.Level
 	i.Pubkey = src.Pubkey
 	i.NonIdentifiedPubkey = src.NonIdentifiedPubkey
+	i.PubkeyAesRsa = src.PubkeyAesRsa
+	i.NonIdentifiedPubkeyAesRsa = src.NonIdentifiedPubkeyAesRsa
 	i.MFAMethod = src.MfaMethod
 	return i
 }
 
 var ErrMissingIdentityKeys = errors.New("at least one identity public key is missing")
 
-func (i *Identity) SetIdentityKeys(pubkey string, nonIdentifiedPubkey string) error {
-	if pubkey == "" || nonIdentifiedPubkey == "" {
+// SetAllIdentityKeys is a shorthand for setting **all 4 identity keys** of the account.
+// For now it will only fail if NaCl keys are missing,
+// since AES-RSA keys are still optional to avoid breaking changes
+func (i *Identity) SetAllIdentityKeys(pubkeys IdentityPublicKeys) error {
+	if pubkeys.Pubkey.String == "" ||
+		pubkeys.NonIdentifiedPubkey.String == "" {
 		return ErrMissingIdentityKeys
 	}
 
-	i.Pubkey = null.StringFrom(pubkey)
-	i.NonIdentifiedPubkey = null.StringFrom(nonIdentifiedPubkey)
+	i.IdentityPublicKeys = pubkeys
 
 	return nil
 }

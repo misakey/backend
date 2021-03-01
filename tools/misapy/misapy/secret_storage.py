@@ -29,8 +29,15 @@ def random_secret_storage_reset_data():
         'asym_keys': asym_keys,
         # TODO check that backend returns an error if we don't provide this
         # on either account creation or password reset
-        'identity_public_key': urlsafe_b64encode(os.urandom(16)),
-        'identity_non_identified_public_key': urlsafe_b64encode(os.urandom(16)),
+        # (see https://gitlab.misakey.dev/misakey/backend/-/issues/294)
+        'pubkey': urlsafe_b64encode(os.urandom(16)),
+        'non_identified_pubkey': urlsafe_b64encode(os.urandom(16)),
+        'pubkey_aes_rsa': (
+            'com.misakey.aes-rsa-enc:' + urlsafe_b64encode(os.urandom(16))
+        ),
+        'non_identified_pubkey_aes_rsa': (
+            'com.misakey.aes-rsa-enc:' + urlsafe_b64encode(os.urandom(16))
+        ),
     }
 
 def random_secret_storage_full_data():

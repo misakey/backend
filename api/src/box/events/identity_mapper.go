@@ -179,10 +179,9 @@ func senderViewFrom(identity identity.Identity) SenderView {
 		DisplayName: identity.DisplayName,
 		AvatarURL:   identity.AvatarURL,
 
-		accountID:           identity.AccountID,
-		pubkey:              identity.Pubkey,
-		nonIdentifiedPubkey: identity.NonIdentifiedPubkey,
+		accountID: identity.AccountID,
 	}
+	sender.identityPubkeys = identity.IdentityPublicKeys
 	sender.IdentifierValue = identity.IdentifierValue
 	sender.IdentifierKind = string(identity.IdentifierKind)
 	return sender

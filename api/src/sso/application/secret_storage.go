@@ -7,7 +7,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mcrypto"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -61,11 +61,14 @@ func (sso *SSOService) MigrateToSecretStorage(ctx context.Context, gen request.R
 		return nil, merr.From(err).Desc("retrieving identity")
 	}
 
+	// NaCl identity keys were introduced before the “secret storage” mechanism
+	// so NaCl identity keys must only be provided
+	// if the identity still does not have them.
+	// AES-RSA keys are optional so it's always OK not to provide them,
+	// and there is no risk that the identity we are migrating already has AES-RSA pubkeys.
+
 	if curIdentity.Pubkey.String == "" || curIdentity.NonIdentifiedPubkey.String == "" {
-		err = curIdentity.SetIdentityKeys(
-			query.IdentityPublicKey,
-			query.IdentityNonIdentifiedPublicKey,
-		)
+		err = curIdentity.SetAllIdentityKeys(query.IdentityPublicKeys)
 		if err != nil {
 			return nil, merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 		}
@@ -75,10 +78,14 @@ func (sso *SSOService) MigrateToSecretStorage(ctx context.Context, gen request.R
 			return nil, merr.From(err).Desc("updating identity")
 		}
 	} else {
-		if query.IdentityPublicKey != "" || query.IdentityNonIdentifiedPublicKey != "" {
+		// identity already had public keys for NaCl-based encryption
+		if query.IdentityPublicKeys.Pubkey.String != "" || query.IdentityPublicKeys.NonIdentifiedPubkey.String != "" {
 			return nil, merr.BadRequest().Ori(merr.OriBody).
-				Desc("unexpected identity keys: identity already has identity keys")
+				Desc("unexpected identity keys (for algo \"com.misakey.nacl-enc\"): identity already has identity keys")
 		}
+
+		curIdentity.PubkeyAesRsa = query.PubkeyAesRsa
+		curIdentity.NonIdentifiedPubkeyAesRsa = query.NonIdentifiedPubkeyAesRsa
 	}
 
 	if cErr := tr.Commit(); cErr != nil {
@@ -140,7 +147,7 @@ func (cmd *DeleteAsymKeysCmd) BindAndValidate(eCtx echo.Context) error {
 	}
 
 	if err := v.ValidateStruct(cmd,
-		v.Field(&cmd.Pubkeys, v.Required, v.Each(v.Match(format.UnpaddedURLSafeBase64))),
+		v.Field(&cmd.Pubkeys, v.Required, v.Each(v.By(mcrypto.ValidatePublicKey))),
 	); err != nil {
 		return err
 	}

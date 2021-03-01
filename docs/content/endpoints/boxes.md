@@ -52,7 +52,7 @@ _JSON Body:_
 - `owner_org_id` is an optional uuid corresponding to the organization owning the box (default is self org).
 - `datatag_id` is an **optional** uuid corresponding to a datatag representing the data type shipped through this box. `owner_org_id` must also bit set.
 - `datatag_subject` is an **optional** identifier to define the data subject of this box.
-- `public_key` and `other_share_hash` must be in **unpadded url-safe base64**.
+- `public_key` and `other_share_hash` must be in **unpadded url-safe base64**. If the public key is for `com.misakey.aes-rsa-enc` algorithm, it must be prefixed with `com.misakey.aes-rsa-enc:`.
 - `key_share` is **optional** but will be soon mandatory.
 - `invitation_data` is **optional** but must be used if the `datatag_subject` has an account. It contains the encrypted crypto action to directly invite the user (see the `extra` field in the [access events section](../../concepts/box-events/#2511-to-a-specific-identifier-value))
 

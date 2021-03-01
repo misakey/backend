@@ -24,84 +24,94 @@ import (
 
 // Identity is an object representing the database table.
 type Identity struct {
-	ID                  string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	AccountID           null.String `boil:"account_id" json:"account_id,omitempty" toml:"account_id" yaml:"account_id,omitempty"`
-	DisplayName         string      `boil:"display_name" json:"display_name" toml:"display_name" yaml:"display_name"`
-	Notifications       string      `boil:"notifications" json:"notifications" toml:"notifications" yaml:"notifications"`
-	AvatarURL           null.String `boil:"avatar_url" json:"avatar_url,omitempty" toml:"avatar_url" yaml:"avatar_url,omitempty"`
-	CreatedAt           time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	Color               null.String `boil:"color" json:"color,omitempty" toml:"color" yaml:"color,omitempty"`
-	Level               int         `boil:"level" json:"level" toml:"level" yaml:"level"`
-	Pubkey              null.String `boil:"pubkey" json:"pubkey,omitempty" toml:"pubkey" yaml:"pubkey,omitempty"`
-	NonIdentifiedPubkey null.String `boil:"non_identified_pubkey" json:"non_identified_pubkey,omitempty" toml:"non_identified_pubkey" yaml:"non_identified_pubkey,omitempty"`
-	IdentifierKind      string      `boil:"identifier_kind" json:"identifier_kind" toml:"identifier_kind" yaml:"identifier_kind"`
-	IdentifierValue     string      `boil:"identifier_value" json:"identifier_value" toml:"identifier_value" yaml:"identifier_value"`
-	MfaMethod           string      `boil:"mfa_method" json:"mfa_method" toml:"mfa_method" yaml:"mfa_method"`
+	ID                        string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	AccountID                 null.String `boil:"account_id" json:"account_id,omitempty" toml:"account_id" yaml:"account_id,omitempty"`
+	DisplayName               string      `boil:"display_name" json:"display_name" toml:"display_name" yaml:"display_name"`
+	Notifications             string      `boil:"notifications" json:"notifications" toml:"notifications" yaml:"notifications"`
+	AvatarURL                 null.String `boil:"avatar_url" json:"avatar_url,omitempty" toml:"avatar_url" yaml:"avatar_url,omitempty"`
+	CreatedAt                 time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	Color                     null.String `boil:"color" json:"color,omitempty" toml:"color" yaml:"color,omitempty"`
+	Level                     int         `boil:"level" json:"level" toml:"level" yaml:"level"`
+	Pubkey                    null.String `boil:"pubkey" json:"pubkey,omitempty" toml:"pubkey" yaml:"pubkey,omitempty"`
+	NonIdentifiedPubkey       null.String `boil:"non_identified_pubkey" json:"non_identified_pubkey,omitempty" toml:"non_identified_pubkey" yaml:"non_identified_pubkey,omitempty"`
+	IdentifierKind            string      `boil:"identifier_kind" json:"identifier_kind" toml:"identifier_kind" yaml:"identifier_kind"`
+	IdentifierValue           string      `boil:"identifier_value" json:"identifier_value" toml:"identifier_value" yaml:"identifier_value"`
+	MfaMethod                 string      `boil:"mfa_method" json:"mfa_method" toml:"mfa_method" yaml:"mfa_method"`
+	PubkeyAesRsa              null.String `boil:"pubkey_aes_rsa" json:"pubkey_aes_rsa,omitempty" toml:"pubkey_aes_rsa" yaml:"pubkey_aes_rsa,omitempty"`
+	NonIdentifiedPubkeyAesRsa null.String `boil:"non_identified_pubkey_aes_rsa" json:"non_identified_pubkey_aes_rsa,omitempty" toml:"non_identified_pubkey_aes_rsa" yaml:"non_identified_pubkey_aes_rsa,omitempty"`
 
 	R *identityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L identityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var IdentityColumns = struct {
-	ID                  string
-	AccountID           string
-	DisplayName         string
-	Notifications       string
-	AvatarURL           string
-	CreatedAt           string
-	Color               string
-	Level               string
-	Pubkey              string
-	NonIdentifiedPubkey string
-	IdentifierKind      string
-	IdentifierValue     string
-	MfaMethod           string
+	ID                        string
+	AccountID                 string
+	DisplayName               string
+	Notifications             string
+	AvatarURL                 string
+	CreatedAt                 string
+	Color                     string
+	Level                     string
+	Pubkey                    string
+	NonIdentifiedPubkey       string
+	IdentifierKind            string
+	IdentifierValue           string
+	MfaMethod                 string
+	PubkeyAesRsa              string
+	NonIdentifiedPubkeyAesRsa string
 }{
-	ID:                  "id",
-	AccountID:           "account_id",
-	DisplayName:         "display_name",
-	Notifications:       "notifications",
-	AvatarURL:           "avatar_url",
-	CreatedAt:           "created_at",
-	Color:               "color",
-	Level:               "level",
-	Pubkey:              "pubkey",
-	NonIdentifiedPubkey: "non_identified_pubkey",
-	IdentifierKind:      "identifier_kind",
-	IdentifierValue:     "identifier_value",
-	MfaMethod:           "mfa_method",
+	ID:                        "id",
+	AccountID:                 "account_id",
+	DisplayName:               "display_name",
+	Notifications:             "notifications",
+	AvatarURL:                 "avatar_url",
+	CreatedAt:                 "created_at",
+	Color:                     "color",
+	Level:                     "level",
+	Pubkey:                    "pubkey",
+	NonIdentifiedPubkey:       "non_identified_pubkey",
+	IdentifierKind:            "identifier_kind",
+	IdentifierValue:           "identifier_value",
+	MfaMethod:                 "mfa_method",
+	PubkeyAesRsa:              "pubkey_aes_rsa",
+	NonIdentifiedPubkeyAesRsa: "non_identified_pubkey_aes_rsa",
 }
 
 // Generated where
 
 var IdentityWhere = struct {
-	ID                  whereHelperstring
-	AccountID           whereHelpernull_String
-	DisplayName         whereHelperstring
-	Notifications       whereHelperstring
-	AvatarURL           whereHelpernull_String
-	CreatedAt           whereHelpertime_Time
-	Color               whereHelpernull_String
-	Level               whereHelperint
-	Pubkey              whereHelpernull_String
-	NonIdentifiedPubkey whereHelpernull_String
-	IdentifierKind      whereHelperstring
-	IdentifierValue     whereHelperstring
-	MfaMethod           whereHelperstring
+	ID                        whereHelperstring
+	AccountID                 whereHelpernull_String
+	DisplayName               whereHelperstring
+	Notifications             whereHelperstring
+	AvatarURL                 whereHelpernull_String
+	CreatedAt                 whereHelpertime_Time
+	Color                     whereHelpernull_String
+	Level                     whereHelperint
+	Pubkey                    whereHelpernull_String
+	NonIdentifiedPubkey       whereHelpernull_String
+	IdentifierKind            whereHelperstring
+	IdentifierValue           whereHelperstring
+	MfaMethod                 whereHelperstring
+	PubkeyAesRsa              whereHelpernull_String
+	NonIdentifiedPubkeyAesRsa whereHelpernull_String
 }{
-	ID:                  whereHelperstring{field: "\"identity\".\"id\""},
-	AccountID:           whereHelpernull_String{field: "\"identity\".\"account_id\""},
-	DisplayName:         whereHelperstring{field: "\"identity\".\"display_name\""},
-	Notifications:       whereHelperstring{field: "\"identity\".\"notifications\""},
-	AvatarURL:           whereHelpernull_String{field: "\"identity\".\"avatar_url\""},
-	CreatedAt:           whereHelpertime_Time{field: "\"identity\".\"created_at\""},
-	Color:               whereHelpernull_String{field: "\"identity\".\"color\""},
-	Level:               whereHelperint{field: "\"identity\".\"level\""},
-	Pubkey:              whereHelpernull_String{field: "\"identity\".\"pubkey\""},
-	NonIdentifiedPubkey: whereHelpernull_String{field: "\"identity\".\"non_identified_pubkey\""},
-	IdentifierKind:      whereHelperstring{field: "\"identity\".\"identifier_kind\""},
-	IdentifierValue:     whereHelperstring{field: "\"identity\".\"identifier_value\""},
-	MfaMethod:           whereHelperstring{field: "\"identity\".\"mfa_method\""},
+	ID:                        whereHelperstring{field: "\"identity\".\"id\""},
+	AccountID:                 whereHelpernull_String{field: "\"identity\".\"account_id\""},
+	DisplayName:               whereHelperstring{field: "\"identity\".\"display_name\""},
+	Notifications:             whereHelperstring{field: "\"identity\".\"notifications\""},
+	AvatarURL:                 whereHelpernull_String{field: "\"identity\".\"avatar_url\""},
+	CreatedAt:                 whereHelpertime_Time{field: "\"identity\".\"created_at\""},
+	Color:                     whereHelpernull_String{field: "\"identity\".\"color\""},
+	Level:                     whereHelperint{field: "\"identity\".\"level\""},
+	Pubkey:                    whereHelpernull_String{field: "\"identity\".\"pubkey\""},
+	NonIdentifiedPubkey:       whereHelpernull_String{field: "\"identity\".\"non_identified_pubkey\""},
+	IdentifierKind:            whereHelperstring{field: "\"identity\".\"identifier_kind\""},
+	IdentifierValue:           whereHelperstring{field: "\"identity\".\"identifier_value\""},
+	MfaMethod:                 whereHelperstring{field: "\"identity\".\"mfa_method\""},
+	PubkeyAesRsa:              whereHelpernull_String{field: "\"identity\".\"pubkey_aes_rsa\""},
+	NonIdentifiedPubkeyAesRsa: whereHelpernull_String{field: "\"identity\".\"non_identified_pubkey_aes_rsa\""},
 }
 
 // IdentityRels is where relationship names are stored.
@@ -149,8 +159,8 @@ func (*identityR) NewStruct() *identityR {
 type identityL struct{}
 
 var (
-	identityAllColumns            = []string{"id", "account_id", "display_name", "notifications", "avatar_url", "created_at", "color", "level", "pubkey", "non_identified_pubkey", "identifier_kind", "identifier_value", "mfa_method"}
-	identityColumnsWithoutDefault = []string{"id", "account_id", "display_name", "avatar_url", "color", "pubkey", "non_identified_pubkey", "identifier_kind", "identifier_value"}
+	identityAllColumns            = []string{"id", "account_id", "display_name", "notifications", "avatar_url", "created_at", "color", "level", "pubkey", "non_identified_pubkey", "identifier_kind", "identifier_value", "mfa_method", "pubkey_aes_rsa", "non_identified_pubkey_aes_rsa"}
+	identityColumnsWithoutDefault = []string{"id", "account_id", "display_name", "avatar_url", "color", "pubkey", "non_identified_pubkey", "identifier_kind", "identifier_value", "pubkey_aes_rsa", "non_identified_pubkey_aes_rsa"}
 	identityColumnsWithDefault    = []string{"notifications", "created_at", "level", "mfa_method"}
 	identityPrimaryKeyColumns     = []string{"id"}
 )

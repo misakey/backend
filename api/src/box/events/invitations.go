@@ -28,6 +28,54 @@ func InviteIdentityIfPossible(
 }
 
 // CreateInvitationAction for the given identity
+func selectCryptoActionData(actionsData map[string]string, guestPubkeys identity.IdentityPublicKeys, nonIdentified bool) (action string, pubkey string, err error) {
+	var encryptedCryptoAction string
+	var present bool // just so that we don't have to use ":="
+	var triedPubkeys = make([]string, 0)
+
+	tryPubkey := func(actionsData map[string]string, pubkey string) *string {
+		if pubkey == "" {
+			return nil
+		}
+
+		triedPubkeys = append(triedPubkeys, pubkey)
+		encryptedCryptoAction, present = actionsData[pubkey]
+		if !present {
+			return nil
+		}
+
+		return &encryptedCryptoAction
+	}
+
+	if nonIdentified {
+		pubkey := guestPubkeys.NonIdentifiedPubkey.String
+		if a := tryPubkey(actionsData, pubkey); a != nil {
+			return *a, pubkey, nil
+		}
+		pubkey = guestPubkeys.NonIdentifiedPubkeyAesRsa.String
+		if a := tryPubkey(actionsData, pubkey); a != nil {
+			return *a, pubkey, nil
+		}
+	} else {
+		pubkey = guestPubkeys.Pubkey.String
+		if a := tryPubkey(actionsData, pubkey); a != nil {
+			return *a, pubkey, nil
+		}
+		pubkey = guestPubkeys.PubkeyAesRsa.String
+		if a := tryPubkey(actionsData, pubkey); a != nil {
+			return *a, pubkey, nil
+		}
+	}
+
+	if len(triedPubkeys) == 0 {
+		return "", "", merr.Conflict().Desc("guest does not have a suitable public key")
+	} else {
+		return "", "", merr.BadRequest().
+			Descf("missing encrypted crypto action for pubkey (tried %v)", triedPubkeys)
+	}
+}
+
+// createInvitationAction for the given identity
 // using the identity Pubkey (if nonIdentified is false)
 // or the identity NonIdentifiedPubkey (if nonIdentified is true)
 func CreateInvitationActions(
@@ -45,20 +93,10 @@ func CreateInvitationActions(
 		return merr.BadRequest().Desc("required one entry per identity public key in extra")
 	}
 
-	// check and assign pubkeys
-	var pubkey string
-	if !nonIdentified && guest.pubkey.Valid {
-		pubkey = guest.pubkey.String
-	} else if nonIdentified && guest.nonIdentifiedPubkey.Valid {
-		pubkey = guest.nonIdentifiedPubkey.String
-	} else {
-		return merr.Conflict().Desc("guest does not have a public key")
-	}
-
 	// cryptoaction
-	encryptedCryptoAction, present := actionsData[pubkey]
-	if !present {
-		return merr.BadRequest().Descf("missing encrypted crypto action for pubkey \"%s\"", pubkey)
+	encryptedCryptoAction, pubkey, err := selectCryptoActionData(actionsData, guest.identityPubkeys, nonIdentified)
+	if err != nil {
+		return err
 	}
 
 	// prepare action

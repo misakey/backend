@@ -6,6 +6,7 @@ from uuid import uuid4
 from misapy.pretty_error import prettyErrorContext
 from misapy.get_access_token import get_authenticated_session
 from misapy import http, URL_PREFIX
+from misapy.secret_storage import random_secret_storage_full_data
 from misapy.utils import struct_x_included_in_y
 from misapy.utils.base64 import urlsafe_b64encode
 from misapy.check_response import check_response, assert_fn
@@ -22,56 +23,22 @@ with prettyErrorContext():
     )
 
     print('- account migration')
-    root_key = {
-        "key_hash": urlsafe_b64encode(os.urandom(16)),
-        "encrypted_key": urlsafe_b64encode(os.urandom(16))
-    }
-    vault_key = {
-        "key_hash": urlsafe_b64encode(os.urandom(16)),
-        "encrypted_key": urlsafe_b64encode(os.urandom(16))
-    }
-    asym_keys = { 
-        urlsafe_b64encode(os.urandom(16)): {
-            'encrypted_secret_key': urlsafe_b64encode(os.urandom(32)),
-        },
-        urlsafe_b64encode(os.urandom(16)): {
-            'encrypted_secret_key': urlsafe_b64encode(os.urandom(32)),
-        },
-
-    }
-    box_key_shares = { 
-        str(uuid4()): {
-            'encrypted_invitation_share': urlsafe_b64encode(os.urandom(32)),
-            'invitation_share_hash': urlsafe_b64encode(os.urandom(16)),
-        },
-        str(uuid4()): {
-            'encrypted_invitation_share': urlsafe_b64encode(os.urandom(32)),
-            'invitation_share_hash': urlsafe_b64encode(os.urandom(16)),
-        },
-    }
-    identity_public_key = urlsafe_b64encode(os.urandom(16))
-    identity_non_identified_public_key = urlsafe_b64encode(os.urandom(16))
+    payload = random_secret_storage_full_data()
     s1.post(
         f'{URL_PREFIX}/crypto/migration/v2',
-        json={
-            "account_root_key": root_key,
-            'vault_key': vault_key,
-            'asym_keys': asym_keys,
-            'box_key_shares': box_key_shares,
-            # backend doesn't check that these public keys are present in the "asym_keys" part
-            'identity_public_key': identity_public_key,
-            'identity_non_identified_public_key': identity_non_identified_public_key,
-        },
+        json=payload,
         expected_status_code=http.STATUS_NO_CONTENT
     )
+    payload_without_id_keys = { **payload }
+    del payload_without_id_keys['pubkey']
+    del payload_without_id_keys['non_identified_pubkey']
+    del payload_without_id_keys['pubkey_aes_rsa']
+    del payload_without_id_keys['non_identified_pubkey_aes_rsa']
     r = s1.get(f'{URL_PREFIX}/crypto/secret-storage')
     check_response(
         r,
         [
-            lambda r: assert_fn(r.json()['account_root_key'] == root_key),
-            lambda r: assert_fn(r.json()['vault_key'] == vault_key),
-            lambda r: assert_fn(r.json()['asym_keys'] == asym_keys),
-            lambda r: assert_fn(struct_x_included_in_y(box_key_shares, r.json()['box_key_shares'])),
+            lambda r: assert_fn(struct_x_included_in_y(payload_without_id_keys, r.json())),
         ]
     )
 
@@ -79,8 +46,8 @@ with prettyErrorContext():
     check_response(
         r,
         [
-            lambda r: assert_fn(r.json()['pubkey'] == identity_public_key),
-            lambda r: assert_fn(r.json()['non_identified_pubkey'] == identity_non_identified_public_key),
+            lambda r: assert_fn(r.json()['pubkey'] == payload['pubkey']),
+            lambda r: assert_fn(r.json()['non_identified_pubkey'] == payload['non_identified_pubkey']),
         ]
     )
 

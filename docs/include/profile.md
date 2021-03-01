@@ -4,9 +4,10 @@
   "display_name": "Jean-Michel User",
   "avatar_url": null,
   "identifier_value": "jean-michel@misakey.com",
-  "identifier_kind": "email"
+  "identifier_kind": "email",
   "non_identified_pubkey": "FYofPprIPU6qaHDtCNCETYtmmQQqdKvtJqYBF2pPXzc",
-  "contactable": true,
+  "non_identified_pubkey_aes_rsa": "com.misakey.aes-rsa-enc:sCbt8_cgIxShuPHcKmRYrQ",
+  "contactable": true
 }
 ```
 

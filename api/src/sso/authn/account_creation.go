@@ -103,10 +103,7 @@ func (as *Service) assertAccountCreation(
 		if err != nil {
 			return merr.From(err).Desc("setting up secret storage")
 		}
-		err = curIdentity.SetIdentityKeys(
-			accountMetadata.SecretStorage.IdentityPublicKey,
-			accountMetadata.SecretStorage.IdentityNonIdentifiedPublicKey,
-		)
+		err = curIdentity.SetAllIdentityKeys(accountMetadata.SecretStorage.IdentityPublicKeys)
 		if err != nil {
 			return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 		}

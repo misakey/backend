@@ -12,12 +12,16 @@ class Session(http.Session):
     def get_identity(self, id :str=None):
         return self.get(f'{URL_PREFIX}/identities/{id or self.identity_id}')
 
-    def set_identity_pubkey(self, pubkey: str):
+    def set_identity_pubkey(self, pubkey=None, pubkey_aes_rsa=None):
+        payload = dict()
+        if pubkey:
+            payload['pubkey'] = pubkey
+        if pubkey_aes_rsa:
+            payload['pubkey_aes_rsa'] = pubkey_aes_rsa
+
         return self.patch(
             f'{URL_PREFIX}/identities/{self.identity_id}',
-            json={
-                'pubkey': pubkey,
-            },
+            json=payload,
         )
 
     def get_identity_pubkeys(self, identifier: str):

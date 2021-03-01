@@ -151,6 +151,38 @@ with prettyErrorContext():
         ]
     )
 
+    print('- auto invitation with AES-RSA encryption')
+    s4 = get_authenticated_session(acr_values=2)
+    s4.set_identity_pubkey(pubkey_aes_rsa='com.misakey.aes-rsa-enc:s4AesRsaPubkey')
+    s1.post(
+        f'{URL_PREFIX}/boxes/{box_id}/batch-events',
+        json={
+            'batch_type': 'accesses',
+            'events' : [
+                {
+                    'type': 'access.add',
+                    'content': {
+                        'restriction_type': 'identifier',
+                        'value': s4.email,
+                        'auto_invite': True,
+                    },
+                    'extra': {
+                        'com.misakey.aes-rsa-enc:s4AesRsaPubkey': 'FakeAesRsaEncryptedCryptoAction',
+                    }
+                }
+            ]
+        },
+        expected_status_code=http.STATUS_CREATED,
+    )
+    r = s4.get(f'{URL_PREFIX}/accounts/{s4.account_id}/crypto/actions')
+    check_response(
+        r,
+        [
+            lambda r: assert_fn(len(r.json()) == 1),
+            lambda r: assert_fn(any(x for x in r.json() if x['encryption_public_key'].startswith('com.misakey.aes-rsa-enc'))),
+        ]
+    )
+
     print('- "Conflict" if an identity does not have a public key')
     s1.post(
         f'{URL_PREFIX}/boxes/{box_id}/batch-events',

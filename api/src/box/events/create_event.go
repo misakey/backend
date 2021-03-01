@@ -12,8 +12,8 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/cache"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mcrypto"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
 )
@@ -38,7 +38,7 @@ func (c CreationContent) Validate() error {
 		v.Field(&c.OwnerOrgID, v.Required),
 		v.Field(&c.DatatagID, is.UUIDv4),
 		v.Field(&c.SubjectIdentityID, is.UUIDv4),
-		v.Field(&c.PublicKey, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
+		v.Field(&c.PublicKey, v.Required, v.By(mcrypto.ValidatePublicKey)),
 		v.Field(&c.Title, v.Required, v.Length(1, 50)),
 	)
 }

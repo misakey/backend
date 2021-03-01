@@ -9,6 +9,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 )
@@ -22,9 +23,8 @@ type SenderView struct {
 	IdentifierValue string      `json:"identifier_value"`
 	IdentifierKind  string      `json:"identifier_kind"`
 
-	accountID           null.String
-	pubkey              null.String
-	nonIdentifiedPubkey null.String
+	accountID       null.String
+	identityPubkeys identity.IdentityPublicKeys
 }
 
 func (sender SenderView) copyOpaque() SenderView {

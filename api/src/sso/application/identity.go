@@ -12,6 +12,7 @@ import (
 	"github.com/volatiletech/null/v8"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/atomic"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mcrypto"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -123,13 +124,12 @@ func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen re
 
 // PartialUpdateIdentityCmd ...
 type PartialUpdateIdentityCmd struct {
-	identityID          string
-	DisplayName         string      `json:"display_name"`
-	Notifications       string      `json:"notifications"`
-	Color               null.String `json:"color"`
-	Pubkey              null.String `json:"pubkey"`
-	NonIdentifiedPubkey null.String `json:"non_identified_pubkey"`
-	MFAMethod           null.String `json:"mfa_method"`
+	identityID    string
+	DisplayName   string      `json:"display_name"`
+	Notifications string      `json:"notifications"`
+	Color         null.String `json:"color"`
+	identity.IdentityPublicKeys
+	MFAMethod null.String `json:"mfa_method"`
 }
 
 // BindAndValidate the PartialUpdateIdentityCmd
@@ -148,6 +148,16 @@ func (cmd *PartialUpdateIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 	); err != nil {
 		return merr.From(err).Desc("validating identity patch")
 	}
+
+	// cannot do "v.Field(&cmd.Pubkey.String, ...)"
+	// because this returns error "field #5 cannot be found in the struct"
+	if err := v.Validate(cmd.Pubkey.String, v.By(mcrypto.ValidateNaClPublicKey)); err != nil {
+		return merr.From(err).Desc("validating field \"pubkey\"")
+	}
+	if err := v.Validate(cmd.NonIdentifiedPubkey.String, v.By(mcrypto.ValidateNaClPublicKey)); err != nil {
+		return merr.From(err).Desc("validating field \"pubkey\"")
+	}
+
 	return nil
 }
 
@@ -191,6 +201,14 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 
 	if cmd.NonIdentifiedPubkey.Valid {
 		curIdentity.NonIdentifiedPubkey = cmd.NonIdentifiedPubkey
+	}
+
+	if cmd.PubkeyAesRsa.Valid {
+		curIdentity.PubkeyAesRsa = cmd.PubkeyAesRsa
+	}
+
+	if cmd.NonIdentifiedPubkeyAesRsa.Valid {
+		curIdentity.NonIdentifiedPubkeyAesRsa = cmd.NonIdentifiedPubkeyAesRsa
 	}
 
 	if cmd.MFAMethod.Valid {

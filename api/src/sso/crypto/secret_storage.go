@@ -15,8 +15,10 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/mcrypto"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/uuid"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/identity"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
 
@@ -226,12 +228,11 @@ func UpdateRootKey(ctx context.Context, exec boil.ContextExecutor, accountID str
 
 // SecretStorageSetupData ...
 type SecretStorageSetupData struct {
-	AccountRootKey                 AccountRootKey                      `json:"account_root_key"`
-	VaultKey                       VaultKey                            `json:"vault_key"`
-	AsymKeys                       map[string]SecretStorageAsymKey     `json:"asym_keys"`
-	BoxKeyShares                   map[string]SecretStorageBoxKeyShare `json:"box_key_shares"`
-	IdentityPublicKey              string                              `json:"identity_public_key"`
-	IdentityNonIdentifiedPublicKey string                              `json:"identity_non_identified_public_key"`
+	AccountRootKey AccountRootKey                      `json:"account_root_key"`
+	VaultKey       VaultKey                            `json:"vault_key"`
+	AsymKeys       map[string]SecretStorageAsymKey     `json:"asym_keys"`
+	BoxKeyShares   map[string]SecretStorageBoxKeyShare `json:"box_key_shares"`
+	identity.IdentityPublicKeys
 }
 
 // BindAndValidate implements request.Request.BindAndValidate
@@ -257,7 +258,7 @@ func (query *SecretStorageSetupData) Validate() error {
 	}
 
 	for publicKey, asymKey := range query.AsymKeys {
-		if err := v.Validate(publicKey, v.Required, v.Match(format.UnpaddedURLSafeBase64)); err != nil {
+		if err := v.Validate(publicKey, v.Required, v.By(mcrypto.ValidatePublicKey)); err != nil {
 			return err
 		}
 
@@ -280,8 +281,10 @@ func (query *SecretStorageSetupData) Validate() error {
 	// identity keys are required
 	// *unless* we are migrating an account which already has some
 	err := v.ValidateStruct(query,
-		v.Field(&query.IdentityPublicKey, v.Match(format.UnpaddedURLSafeBase64)),
-		v.Field(&query.IdentityNonIdentifiedPublicKey, v.Match(format.UnpaddedURLSafeBase64)),
+		v.Field(&query.Pubkey, v.By(mcrypto.ValidateNaClPublicKey)),
+		v.Field(&query.NonIdentifiedPubkey, v.By(mcrypto.ValidateNaClPublicKey)),
+		v.Field(&query.PubkeyAesRsa, v.By(mcrypto.ValidatePublicKey)),
+		v.Field(&query.NonIdentifiedPubkeyAesRsa, v.By(mcrypto.ValidatePublicKey)),
 	)
 	if err != nil {
 		return err

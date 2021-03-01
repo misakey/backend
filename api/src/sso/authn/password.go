@@ -177,10 +177,7 @@ func (as *Service) resetPassword(
 		return err
 	}
 
-	err = curIdentity.SetIdentityKeys(
-		metadata.SecretStorage.IdentityPublicKey,
-		metadata.SecretStorage.IdentityNonIdentifiedPublicKey,
-	)
+	err = curIdentity.SetAllIdentityKeys(metadata.SecretStorage.IdentityPublicKeys)
 	if err != nil {
 		return merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
 	}
