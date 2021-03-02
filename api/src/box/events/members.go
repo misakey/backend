@@ -6,10 +6,8 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
-	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/cache"
@@ -65,35 +63,6 @@ func ListBoxMemberIDs(
 	}
 
 	return memberIDs, nil
-}
-
-func MustBeMemberOrOrg(
-	ctx context.Context,
-	exec boil.ContextExecutor, redConn *redis.Client,
-	boxID, identityID string,
-) error {
-	ok, err := isMember(ctx, exec, redConn, boxID, identityID)
-	if err != nil {
-		return merr.From(err).Desc("checking membership")
-	}
-	if ok { // if a member, return
-		return nil
-	}
-	// check machine-org case
-	acc := oidc.GetAccesses(ctx)
-	if acc == nil || authz.IsNotAMachine(*acc) {
-		return merr.Forbidden().Desc("nor a member or org")
-	}
-
-	// check the connected machine is the org of the box
-	createInfo, err := GetCreateInfo(ctx, exec, boxID)
-	if err != nil {
-		return merr.From(err).Desc("getting create info")
-	}
-	if identityID != createInfo.OwnerOrgID {
-		return merr.Forbidden().Desc("nor a member or org")
-	}
-	return nil
 }
 
 // MustBeMember ...
