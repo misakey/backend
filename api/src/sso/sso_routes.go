@@ -324,14 +324,13 @@ func bindRoutes(
 		func() request.Request { return &application.LoginAuthnStepCmd{} },
 		ss.AssertAuthnStep,
 		request.ResponseOK,
-		ss.CleanAuthnCookie,
+		ss.CleanAuthnCookie, // make obsolete previous cookie
 		func(c echo.Context, stepViewInt interface{}) error {
 			stepView, ok := stepViewInt.(application.LoginAuthnStepView)
 			if !ok {
 				return merr.Internal().Desc("expect application.LoginAuthnStepView type")
 			}
 			// set process access token info into the cookies
-			// first make obsolete previous cookies
 			authz.SetCookie(c, "authnaccesstoken", stepView.ForCookies.AccessToken, stepView.ForCookies.ExpirationDate)
 			authz.SetCookie(c, "authntokentype", "bearer", stepView.ForCookies.ExpirationDate)
 			return nil

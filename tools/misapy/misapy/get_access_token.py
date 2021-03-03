@@ -183,7 +183,6 @@ def get_user_credentials(email=None, require_account=False, acr_values=None, res
         },
         raise_for_status=False,
     )
-
     check_response(
         r,
         [
@@ -251,7 +250,7 @@ def perform_org_auth_flow(org_id, org_secret):
         },
     )
 
-    s.access_token=r.json()['access_token']
+    s.org_access_token=r.json()['access_token']
     s.org_id = org_id
     return s
 
@@ -281,6 +280,6 @@ def get_org_session(user_session):
 
     print(f'- generate the auth session for the org {org_id}')
     s = perform_org_auth_flow(org_id, r.json()['secret'])
-    print(f'Org Tok - {s.org_id}: {s.access_token}')
+    print(f'Org Tok - {s.org_id}: {s.org_access_token}')
     s.org_name = name
     return s

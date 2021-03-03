@@ -37,10 +37,14 @@ func doJoin(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecuto
 	// if the sender joins, they must be in the access.add list as identifier so let's verify it is there
 	_, err = get(ctx, exec, eventFilters{
 		eType:           null.StringFrom(etype.Accessadd),
-		unreferred:      true,
 		boxID:           null.StringFrom(e.BoxID),
 		restrictionType: null.StringFrom("identifier"),
 		accessValue:     null.StringFrom(identity.IdentifierValue),
+		// exclude removed access.add events for that box
+		excludeOnRef: &referentsFilters{
+			eTypes: []string{etype.Accessrm},
+			boxID:  null.StringFrom(e.BoxID),
+		},
 	})
 	// NOTE: if the access.add event corresponding to the identifier value is not found, create it
 	if merr.IsANotFound(err) {
@@ -67,9 +71,13 @@ func listBoxActiveJoinEvents(ctx context.Context, exec boil.ContextExecutor, box
 	// get all the join linked to the box and unreferred
 	// referred join event means a leave or kick event has occurred. it invalidates them
 	activeJoinEvents, err := list(ctx, exec, eventFilters{
-		eType:      null.StringFrom(etype.Memberjoin),
-		unreferred: true,
-		boxID:      null.StringFrom(boxID),
+		eType: null.StringFrom(etype.Memberjoin),
+		boxID: null.StringFrom(boxID),
+		// exclude removed member.join events for that box
+		excludeOnRef: &referentsFilters{
+			eTypes: []string{etype.Memberleave, etype.Memberkick},
+			boxID:  null.StringFrom(boxID),
+		},
 	})
 	if err != nil {
 		return nil, merr.From(err).Desc("listing join events")
@@ -77,12 +85,15 @@ func listBoxActiveJoinEvents(ctx context.Context, exec boil.ContextExecutor, box
 	return activeJoinEvents, nil
 }
 
-// ListMemberBoxLatestEvents ...
-func ListMemberBoxLatestEvents(ctx context.Context, exec boil.ContextExecutor, senderID string) ([]Event, error) {
+func ListIdentityActiveJoins(ctx context.Context, exec boil.ContextExecutor, identityID string) ([]Event, error) {
 	joins, err := list(ctx, exec, eventFilters{
-		eType:      null.StringFrom(etype.Memberjoin),
-		unreferred: true,
-		senderID:   null.StringFrom(senderID),
+		eType:    null.StringFrom(etype.Memberjoin),
+		senderID: null.StringFrom(identityID),
+		// exclude removed member.join referred events
+		excludeOnRef: &referentsFilters{
+			eTypes:   []string{etype.Memberleave, etype.Memberkick},
+			senderID: null.StringFrom(identityID),
+		},
 	})
 	return joins, err
 }

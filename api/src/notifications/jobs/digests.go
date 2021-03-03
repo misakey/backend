@@ -75,11 +75,12 @@ func (dj *DigestJob) SendDigests(ctx context.Context) error {
 			boxID := boxInfo.ID
 			_, ok := boxTitleCache[boxID]
 			if !ok {
-				boxTitleCache[boxID], err = events.GetBoxTitle(ctx, dj.boxDB, boxID)
+				boxInfo, err := events.GetCreateInfo(ctx, dj.boxDB, boxID)
 				if err != nil {
 					logger.FromCtx(ctx).Error().Err(err).Msgf("could not get box %s title", boxID)
 					continue
 				}
+				boxTitleCache[boxID] = boxInfo.Title
 			}
 			newMsgCount, err := dj.redConn.Get(cache.DigestCountKeyByUserBox(userID, boxID)).Int()
 			if err != nil {

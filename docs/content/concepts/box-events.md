@@ -109,7 +109,7 @@ when an `access.rm` removes the last access rules allowing some members to acces
 
 If any other rules allows the members to access the box, the event is not triggered.
 
-The event refers the previous `member.join` event of the user, the `sender_id` is set to the person who has changed access rules and has then triggered this event.
+The event refers the previous `member.join` event of the user, the `sender_id` is set to the kicked member id.
 
 Messages of type `member.kick` have no content.
 
@@ -117,15 +117,16 @@ Messages of type `member.kick` have no content.
 {
   "type": "member.kick",
   "referrer_id": "(string) (uuid): member.join id",
+  "sender_id": "(string) (uuid): the kicked identity",
   "content": {
-      "kicked_member_id": "(string) (uuid): identity id that has been kicked"
+      "kicker_id": "(string) (uuid): the person who has triggered the kick event"
   },
 }
 ```
 
 Once the event has been created for a user, the user cannot get/list the box anymore.
 
-On read, the `kicked_member_id` is transformed into a `kicked_member` field containing sender information. This `kicked_member` attribute is nullable.
+On read, the `kicker_id` is transformed into a `kicker` field containing sender information. This `kicker` attribute is nullable.
 
 ## 2.3. `Message` type events
 

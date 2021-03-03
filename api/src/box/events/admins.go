@@ -45,21 +45,3 @@ func GetAdminID(ctx context.Context, exec boil.ContextExecutor, boxID string) (s
 
 	return createEvent.SenderID, nil
 }
-
-// GetBoxTitle ...
-func GetBoxTitle(ctx context.Context, exec boil.ContextExecutor, boxID string) (string, error) {
-	createEvent, err := get(ctx, exec, eventFilters{
-		eType: null.StringFrom(etype.Create),
-		boxID: null.StringFrom(boxID),
-	})
-	if err != nil {
-		return "", err
-	}
-
-	creationContent := CreationContent{}
-	if err := creationContent.Unmarshal(createEvent.JSONContent); err != nil {
-		return "", err
-	}
-
-	return creationContent.Title, nil
-}

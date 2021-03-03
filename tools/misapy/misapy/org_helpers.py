@@ -2,7 +2,7 @@
 
 import json
 
-from . import URL_PREFIX
+from . import URL_PREFIX, http
 from .check_response import check_response,assert_fn
 
 def create_org(session):
@@ -13,6 +13,7 @@ def create_org(session):
         json={
             'name': 'AwesomeOrg',
         },
+        expected_status_code=http.STATUS_CREATED,
     )
     check_response(
         r,
@@ -33,6 +34,7 @@ def create_datatag(session, org_id):
         json={
             'name': 'AwesomeDatatag',
         },
+        expected_status_code=http.STATUS_CREATED,
     )
     check_response(
         r,

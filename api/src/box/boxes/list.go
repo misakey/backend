@@ -164,7 +164,7 @@ func buildIdentityOrgBoxCache(
 	// - what they have joined (a)
 	// - what they have created (b)
 	// a.
-	joins, err := events.ListMemberBoxLatestEvents(ctx, exec, identityID)
+	activeJoins, err := events.ListIdentityActiveJoins(ctx, exec, identityID)
 	if err != nil {
 		return boxIDsByOrgID, merr.From(err).Desc("listing joined box ids")
 	}
@@ -177,9 +177,9 @@ func buildIdentityOrgBoxCache(
 	// need to retrieve all create events of the boxes in order to class by org ids
 	// 1.a. list the create contents for all the box ids identified for the user
 	// it contains org id information that is used to sort the boxes
-	boxIDs := make([]string, len(joins)+len(creates))
+	boxIDs := make([]string, len(activeJoins)+len(creates))
 	idx := 0
-	for _, event := range append(joins, creates...) {
+	for _, event := range append(activeJoins, creates...) {
 		boxIDs[idx] = event.BoxID
 		idx++
 	}

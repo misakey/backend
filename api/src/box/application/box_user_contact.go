@@ -69,10 +69,7 @@ func (req *BoxUserContactRequest) BindAndValidate(eCtx echo.Context) error {
 func (app *BoxApplication) BoxUserContact(ctx context.Context, genReq request.Request) (interface{}, error) {
 	req := genReq.(*BoxUserContactRequest)
 	acc := oidc.GetAccesses(ctx)
-	if acc == nil {
-		return nil, merr.Unauthorized()
-	}
-	if acc.IdentityID != req.identityID {
+	if acc == nil || acc.IdentityID != req.identityID {
 		return nil, merr.Forbidden()
 	}
 

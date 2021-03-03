@@ -38,7 +38,7 @@ func (app *BoxApplication) GetBoxSettings(ctx context.Context, genReq request.Re
 	req := genReq.(*GetBoxSettingsRequest)
 
 	acc := oidc.GetAccesses(ctx)
-	if acc.IdentityID != req.identityID {
+	if acc == nil || acc.IdentityID != req.identityID {
 		return nil, merr.Forbidden()
 	}
 

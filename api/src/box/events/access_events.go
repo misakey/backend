@@ -57,13 +57,17 @@ func doAddAccess(
 		return nil, merr.From(err).Desc("unmarshalling access content")
 	}
 
-	// check the access doesn't exist yet
+	// check the access.add doesn't exist yet
 	_, err := get(ctx, exec, eventFilters{
 		eType:           null.StringFrom(etype.Accessadd),
-		unreferred:      true,
 		boxID:           null.StringFrom(e.BoxID),
 		restrictionType: null.StringFrom(access.RestrictionType),
 		accessValue:     null.StringFrom(access.Value),
+		// exclude removed access.add events for that box
+		excludeOnRef: &referentsFilters{
+			eTypes: []string{etype.Accessrm},
+			boxID:  null.StringFrom(e.BoxID),
+		},
 	})
 	// no error means the access already exists
 	if err == nil {
@@ -128,14 +132,18 @@ func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExe
 		return nil, merr.BadRequest().Desc("content should be empty").Add("content", merr.DVForbidden)
 	}
 
-	// the referrer must exist and not been referred yet or it is already removed
-	// access.add referred means an access.rm already exist for it
+	// the referred access.add event must exist and...
 	_, err := get(ctx, exec, eventFilters{
-		eType:      null.StringFrom(etype.Accessadd),
-		unreferred: true,
-		boxID:      null.StringFrom(e.BoxID),
-		id:         e.ReferrerID,
+		eType: null.StringFrom(etype.Accessadd),
+		boxID: null.StringFrom(e.BoxID),
+		id:    e.ReferrerID,
+		// exclude removed access.add events for that box
+		excludeOnRef: &referentsFilters{
+			eTypes: []string{etype.Accessrm},
+			boxID:  null.StringFrom(e.BoxID),
+		},
 	})
+	// access.add referred means an access.rm already exists for it
 	if err != nil {
 		return nil, merr.From(err).Descf("checking %s referrer_id consistency", etype.Accessadd)
 	}
@@ -146,9 +154,13 @@ func doRmAccess(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExe
 // FindActiveAccesses ...
 func FindActiveAccesses(ctx context.Context, exec boil.ContextExecutor, boxID string) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
-		boxID:      null.StringFrom(boxID),
-		eType:      null.StringFrom(etype.Accessadd),
-		unreferred: true,
+		boxID: null.StringFrom(boxID),
+		eType: null.StringFrom(etype.Accessadd),
+		// exclude removed access.add events for that box
+		excludeOnRef: &referentsFilters{
+			eTypes: []string{etype.Accessrm},
+			boxID:  null.StringFrom(boxID),
+		},
 	})
 }
 

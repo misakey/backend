@@ -18,12 +18,10 @@ with prettyErrorContext():
     user_session = get_authenticated_session(acr_values=2)
     org_session = get_org_session(user_session)
     org_id = org_session.org_id
-    token = org_session.access_token
 
     print(f'- the access token can be used as bearer to list org datatags')
     r = org_session.get(
         f'{URL_PREFIX}/organizations/{org_id}/datatags',
-        headers={'Authorization': f'Bearer {token}'},
         expected_status_code=http.STATUS_OK
     )
     check_response(r, [lambda r: assert_fn(len(r.json())==0)])  
@@ -32,7 +30,6 @@ with prettyErrorContext():
     print(f'- machine-org can create datatags')
     r = org_session.post(
         f'{URL_PREFIX}/organizations/{org_id}/datatags',
-        headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'contract'
         },
@@ -46,7 +43,6 @@ with prettyErrorContext():
     datatag_id = r.json()['id']
     r = org_session.get(
         f'{URL_PREFIX}/organizations/{org_id}/datatags',
-        headers={'Authorization': f'Bearer {token}'},
         expected_status_code=http.STATUS_OK
     )
     check_response(r, [
@@ -57,7 +53,6 @@ with prettyErrorContext():
     print(f'- machine-org can edit an existing datatag')
     r = org_session.patch(
         f'{URL_PREFIX}/organizations/{org_id}/datatags/{datatag_id}',
-        headers={'Authorization': f'Bearer {token}'},
         json={
             'name': 'pact'
         },
@@ -65,7 +60,6 @@ with prettyErrorContext():
     )
     r = org_session.get(
         f'{URL_PREFIX}/organizations/{org_id}/datatags',
-        headers={'Authorization': f'Bearer {token}'},
         expected_status_code=http.STATUS_OK
     )
     check_response(r, [
@@ -87,7 +81,7 @@ with prettyErrorContext():
         json={
             'name': 'salary'
         },
-        expected_status_code=http.STATUS_CREATED
+        expected_status_code=http.STATUS_OK
     )
     check_response(r, [
         lambda r: assert_fn(r.json()['id'] != ""),

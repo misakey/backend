@@ -71,8 +71,12 @@ func NewHandlerFactory(authzMdlw echo.MiddlewareFunc) HandlerFactory {
 	return HandlerFactory{authzMdlw: authzMdlw}
 }
 
+func (f HandlerFactory) GetAuthzMdlw() echo.MiddlewareFunc {
+	return f.authzMdlw
+}
+
 // NewPublic ...
-func (f *HandlerFactory) NewPublic(
+func (f HandlerFactory) NewPublic(
 	subPath string,
 	initReq func() Request,
 	appFunc func(context.Context, Request) (interface{}, error),

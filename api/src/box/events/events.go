@@ -125,11 +125,15 @@ func ListLastestForEachBoxID(ctx context.Context, exec boil.ContextExecutor, box
 // ListFilesForMembersByBoxID ...
 func ListFilesForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string, offset, limit *int) ([]Event, error) {
 	return list(ctx, exec, eventFilters{
-		boxID:      null.StringFrom(boxID),
-		offset:     offset,
-		limit:      limit,
-		eTypes:     []string{etype.Msgfile},
-		unreferred: true,
+		eType:  null.StringFrom(etype.Msgfile),
+		boxID:  null.StringFrom(boxID),
+		offset: offset,
+		limit:  limit,
+		// exclude removed msg.file events for that box
+		excludeOnRef: &referentsFilters{
+			eTypes: []string{etype.Accessrm},
+			boxID:  null.StringFrom(boxID),
+		},
 	})
 }
 
@@ -190,12 +194,19 @@ type eventFilters struct {
 	restrictionTypes []string
 	accessValue      null.String
 
-	// ensure the event is not referred by another one
-	unreferred bool
+	// optional additionnal filters to ensure the event is not referred by another one
+	excludeOnRef *referentsFilters
 
 	// pagination
 	offset *int
 	limit  *int
+}
+
+type referentsFilters struct {
+	eTypes     []string
+	boxID      null.String
+	referrerID null.String
+	senderID   null.String
 }
 
 func get(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) (Event, error) {
@@ -279,12 +290,11 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 	if filters.senderID.Valid {
 		mods = append(mods, sqlboiler.EventWhere.SenderID.EQ(filters.senderID.String))
 	}
-	// add type
+	// add types
 	// NOTE: must be handled before filters.eTypes
 	if filters.eType.Valid {
 		filters.eTypes = append(filters.eTypes, filters.eType.String)
 	}
-	// add types
 	// NOTE: must be handled after filters.eType
 	if len(filters.eTypes) > 0 {
 		mods = append(mods, sqlboiler.EventWhere.Type.IN(filters.eTypes))
@@ -341,12 +351,12 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 		mods = append(mods, qm.Limit(*filters.limit))
 	}
 
-	// add unreferred query
-	// TODO: merge this query into the main one as a sub query
-	if filters.unreferred {
-		notInIDs, err := referentIDs(ctx, exec, filters)
+	// excludeOnRefferedFilters being set: perform a sub query to identify event that are referred and that must not be returned
+	if filters.excludeOnRef != nil {
+		// inherit optional boxIDs context from the base query
+		notInIDs, err := referredEventIDs(ctx, exec, *filters.excludeOnRef)
 		if err != nil {
-			return mods, merr.From(err).Desc("sub selecting referents")
+			return mods, merr.From(err).Desc("sub selecting referred events")
 		}
 		if len(notInIDs) > 0 {
 			mods = append(mods, qm.WhereIn(sqlboiler.EventColumns.ID+" NOT IN ?", slice.StringSliceToInterfaceSlice(notInIDs)...))
@@ -355,40 +365,43 @@ func buildMods(ctx context.Context, exec boil.ContextExecutor, filters eventFilt
 	return mods, nil
 }
 
-func referentIDs(ctx context.Context, exec boil.ContextExecutor, filters eventFilters) ([]string, error) {
+// referredIDs returns the list of event ID that are referred by any other event, according to filters
+// NOTE: today eTypes is mandatory to be at least of length 1 in order to filter more precisely
+func referredEventIDs(ctx context.Context, exec boil.ContextExecutor, filters referentsFilters) ([]string, error) {
 	// first we get events that refers other event: the referents
-	subMods := []qm.QueryMod{
+	mods := []qm.QueryMod{
 		qm.Select(sqlboiler.EventColumns.ReferrerID),
+		sqlboiler.EventWhere.ReferrerID.IsNotNull(), // all events must be set
 	}
-	// either it selects event referring another specific event
-	if filters.id.Valid {
-		subMods = append(subMods, sqlboiler.EventWhere.ReferrerID.EQ(filters.id))
-	} else {
-		subMods = append(subMods, sqlboiler.EventWhere.ReferrerID.IsNotNull())
 
-		// check we don't face the cases we should never use
-		if filters.boxID.IsZero() && filters.senderID.IsZero() {
-			return nil, merr.Internal().Desc("wrong unreferred use")
-		}
-
-		// NOTE: boxID must be checked before senderID - both cannot be used at the same time
-		// TODO (usage): need to improve this query to be more natural to build
-		if filters.boxID.Valid {
-			subMods = append(subMods, sqlboiler.EventWhere.BoxID.EQ(filters.boxID.String))
-		} else if filters.senderID.Valid {
-			subMods = append(subMods, sqlboiler.EventWhere.SenderID.EQ(filters.senderID.String))
-		}
+	// boxID filters
+	if filters.boxID.Valid {
+		mods = append(mods, sqlboiler.EventWhere.BoxID.EQ(filters.boxID.String))
 	}
-	referents, err := sqlboiler.Events(subMods...).All(ctx, exec)
+	// a specific event ID has been sent to check if it's referre
+	if filters.referrerID.Valid {
+		mods = append(mods, sqlboiler.EventWhere.ReferrerID.EQ(filters.referrerID))
+	}
+	// sender ID filters
+	if filters.senderID.Valid {
+		mods = append(mods, sqlboiler.EventWhere.SenderID.EQ(filters.senderID.String))
+	}
+	// eTypes filters
+	if len(filters.eTypes) > 0 {
+		mods = append(mods, sqlboiler.EventWhere.Type.IN(filters.eTypes))
+	}
+
+	referents, err := sqlboiler.Events(mods...).All(ctx, exec)
 	if err != nil {
 		return nil, merr.From(err).Desc("listing referents")
 	}
-	// compute the list of event that are referred according to retrieved referents
-	notInIDs := make([]string, len(referents))
+
+	// referentIDs the list of event ID that refers according to retrieved referents
+	referredIDs := make([]string, len(referents))
 	for i, referent := range referents {
-		notInIDs[i] = referent.ReferrerID.String
+		referredIDs[i] = referent.ReferrerID.String
 	}
-	return notInIDs, nil
+	return referredIDs, nil
 }
 
 // ListFilesID ...
@@ -428,20 +441,20 @@ func CountByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) 
 	return int(count), nil
 }
 
-// CountFilesByBoxID ...
-func CountFilesByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (int, error) {
+// CountActiveFilesByBoxID ...
+func CountActiveFilesByBoxID(ctx context.Context, exec boil.ContextExecutor, boxID string) (int, error) {
 	// by default, count only the events a member can see
 	mods := []qm.QueryMod{
 		sqlboiler.EventWhere.BoxID.EQ(boxID),
 		sqlboiler.EventWhere.Type.IN([]string{etype.Msgfile}),
 	}
-	filters := eventFilters{
-		boxID: null.StringFrom(boxID),
-		eType: null.StringFrom(etype.Msgfile),
-	}
-	notInIDs, err := referentIDs(ctx, exec, filters)
+	// exclude removes files
+	notInIDs, err := referredEventIDs(ctx, exec, referentsFilters{
+		eTypes: []string{etype.Msgdelete},
+		boxID:  null.StringFrom(boxID),
+	})
 	if err != nil {
-		return 0, merr.From(err).Desc("sub selecting referents")
+		return 0, merr.From(err).Desc("sub selecting referred event ids")
 	}
 	if len(notInIDs) > 0 {
 		mods = append(mods, qm.WhereIn(sqlboiler.EventColumns.ID+" NOT IN ?", slice.StringSliceToInterfaceSlice(notInIDs)...))

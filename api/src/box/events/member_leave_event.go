@@ -8,6 +8,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/external"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/files"
 )
@@ -28,10 +29,15 @@ func doLeave(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecut
 
 	// get the last join event to set the referrer id
 	joinEvent, err := get(ctx, exec, eventFilters{
-		eType:      null.StringFrom("member.join"),
-		unreferred: true,
-		senderID:   null.StringFrom(e.SenderID),
-		boxID:      null.StringFrom(e.BoxID),
+		eType:    null.StringFrom(etype.Memberjoin),
+		senderID: null.StringFrom(e.SenderID),
+		boxID:    null.StringFrom(e.BoxID),
+		// exclude referred joins
+		excludeOnRef: &referentsFilters{
+			eTypes:   []string{etype.Memberleave, etype.Memberkick},
+			senderID: null.StringFrom(e.SenderID),
+			boxID:    null.StringFrom(e.BoxID),
+		},
 	})
 	if err != nil {
 		return nil, merr.From(err).Desc("getting last join event")

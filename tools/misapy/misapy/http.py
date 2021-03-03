@@ -88,11 +88,23 @@ patch = lambda *args, **kwargs: call_request_fn_decorated(requests.patch, *args,
 put = lambda *args, **kwargs: call_request_fn_decorated(requests.put, *args, **kwargs)
 delete = lambda *args, **kwargs: call_request_fn_decorated(requests.delete, *args, **kwargs)
 
+# decorator for session class
+def init_default_headers(f):
+    def wrapper(self, *args, **kw):
+        # potentially set authorization header if org_token is here
+        if self.org_access_token:
+            if 'headers' not in kw:
+                kw['headers'] = {}
+            kw['headers']['Authorization'] = f'Bearer {self.org_access_token}'
+        return f(self, *args, **kw)
+    return wrapper
+
 class Session(requests.Session):
     '''requests.Session but with decorated HTTP methods (get, post, etc ...)'''
     def __init__(self):
         super().__init__()
         self.csrf_token = None
+        self.org_access_token = None
 
     def update_csrf(self, response: requests.Response):
         for redir in response.history:
@@ -103,36 +115,42 @@ class Session(requests.Session):
             self.csrf_token = response.cookies['_csrf']
         return response
         
+    @init_default_headers
     def post(self, *args, **kwargs):
         kwargs['csrf_token'] = self.csrf_token
         return self.update_csrf(
             call_request_fn_decorated(super().post, *args, **kwargs)
         )
 
+    @init_default_headers
     def head(self, *args, **kwargs):
         kwargs['csrf_token'] = self.csrf_token
         return self.update_csrf(
             call_request_fn_decorated(super().head, *args, **kwargs)
         )
 
+    @init_default_headers
     def get(self, *args, **kwargs):
         kwargs['csrf_token'] = self.csrf_token
         return self.update_csrf(
             call_request_fn_decorated(super().get, *args, **kwargs)
         )
 
+    # @init_default_headers
     def patch(self, *args, **kwargs):
         kwargs['csrf_token'] = self.csrf_token
         return self.update_csrf(
             call_request_fn_decorated(super().patch, *args, **kwargs)
         )
 
+    @init_default_headers
     def put(self, *args, **kwargs):
         kwargs['csrf_token'] = self.csrf_token
         return self.update_csrf(
             call_request_fn_decorated(super().put, *args, **kwargs)
         )
 
+    @init_default_headers
     def delete(self, *args, **kwargs):
         kwargs['csrf_token'] = self.csrf_token
         return self.update_csrf(

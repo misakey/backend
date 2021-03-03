@@ -92,6 +92,7 @@ func InitModule(
 	selfOIDCHandlerFactory := request.NewHandlerFactory(selfOIDCAuthzMidlw)
 
 	anyOIDCAuthzMidlw := authz.NewTokenIntrospector("hydra", selfCliID, !selfOnly, adminHydraFORM, redConn)
+	anyOIDCHandlerFactory := request.NewHandlerFactory(anyOIDCAuthzMidlw)
 
 	// bind all routes to the router
 	bindRoutes(
@@ -99,7 +100,7 @@ func InitModule(
 		&boxService,
 		wsHandler,
 		selfOIDCHandlerFactory,
-		anyOIDCAuthzMidlw,
+		anyOIDCHandlerFactory,
 	)
 
 	return Process{

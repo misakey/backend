@@ -18,7 +18,7 @@ import (
 
 // MemberKickContent ...
 type MemberKickContent struct {
-	// Stored but not in json
+	// Stored but not return in json view
 	KickerID string `json:"kicker_id,omitempty"`
 	// in json
 	Kicker *SenderView `json:"kicker,omitempty"`

@@ -38,7 +38,7 @@ func (app *BoxApplication) CountBoxFiles(ctx context.Context, genReq request.Req
 		return nil, err
 	}
 
-	count, err := events.CountFilesByBoxID(ctx, app.DB, req.boxID)
+	count, err := events.CountActiveFilesByBoxID(ctx, app.DB, req.boxID)
 	if err != nil {
 		return nil, merr.From(err).Desc("counting boxes files")
 	}

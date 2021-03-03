@@ -6,8 +6,10 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/authz"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/cache"
@@ -65,19 +67,47 @@ func ListBoxMemberIDs(
 	return memberIDs, nil
 }
 
+func MustBeMemberOrOrg(
+	ctx context.Context,
+	exec boil.ContextExecutor, redConn *redis.Client,
+	boxID, identityID string,
+) error {
+	ok, err := isMember(ctx, exec, redConn, boxID, identityID)
+	if err != nil {
+		return merr.From(err).Desc("checking membership")
+	}
+	if ok { // if a member, return
+		return nil
+	}
+	// check machine-org case
+	acc := oidc.GetAccesses(ctx)
+	if acc == nil || authz.IsNotAMachine(*acc) {
+		return merr.Forbidden().Desc("nor a member or org")
+	}
+
+	// check the connected machine is the org of the box
+	createInfo, err := GetCreateInfo(ctx, exec, boxID)
+	if err != nil {
+		return merr.From(err).Desc("getting create info")
+	}
+	if identityID != createInfo.OwnerOrgID {
+		return merr.Forbidden().Desc("nor a member or org")
+	}
+	return nil
+}
+
 // MustBeMember ...
 func MustBeMember(
 	ctx context.Context,
 	exec boil.ContextExecutor, redConn *redis.Client,
-	boxID, senderID string,
+	boxID, identityID string,
 ) error {
-
 	// check the membership in the cache if it exists
 	cacheKey := cache.MemberIDsKeyByBox(boxID)
 	exists, err := redConn.Exists(cacheKey).Result()
 	if err == nil && exists == 1 {
 		// if cache is valid
-		senderIsMember, err := redConn.SIsMember(cacheKey, senderID).Result()
+		senderIsMember, err := redConn.SIsMember(cacheKey, identityID).Result()
 		if err != nil {
 			if senderIsMember {
 				return nil
@@ -86,8 +116,25 @@ func MustBeMember(
 		}
 	}
 
-	// if the creator, returns immediately
-	isCreator, err := isCreator(ctx, exec, boxID, senderID)
+	// get member.join events that are not referred (kicks/leaves...)
+	_, err = get(ctx, exec, eventFilters{
+		eType:    null.StringFrom(etype.Memberjoin),
+		boxID:    null.StringFrom(boxID),
+		senderID: null.StringFrom(identityID),
+		// exclude referred member join events
+		excludeOnRef: &referentsFilters{
+			eTypes:   []string{etype.Memberleave, etype.Memberkick},
+			senderID: null.StringFrom(identityID),
+			boxID:    null.StringFrom(boxID),
+		},
+	})
+	// if found, the sender is a member of the box
+	if err == nil {
+		return nil
+	}
+
+	// if the creator, it is a member of the box
+	isCreator, err := isCreator(ctx, exec, boxID, identityID)
 	if err != nil {
 		return err
 	}
@@ -95,18 +142,6 @@ func MustBeMember(
 		return nil
 	}
 
-	_, err = get(ctx, exec, eventFilters{
-		eType:      null.StringFrom(etype.Memberjoin),
-		unreferred: true,
-		boxID:      null.StringFrom(boxID),
-		// NOTE: today senderID is not used to build unreferred filter since boxID is considered before.
-		// this is necessary since the sender of member.kick is not the sender of the member.join event.
-		senderID: null.StringFrom(senderID),
-	})
-	// if found, the sender is a member of the box
-	if err == nil {
-		return nil
-	}
 	return merr.Forbidden().Desc("must be a member").Add("reason", "not_member").Add("sender_id", merr.DVForbidden)
 }
 

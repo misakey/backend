@@ -14,32 +14,31 @@ func bindRoutes(
 	router *echo.Echo,
 	app *application.BoxApplication,
 	wsh entrypoints.WebsocketHandler,
-	oidcHandlerFactory request.HandlerFactory,
-	anyCliAuthzMidlw echo.MiddlewareFunc,
+	selfOIDCHandlerFactory request.HandlerFactory,
+	anyOIDCHandlerFactory request.HandlerFactory,
 ) {
 	// ----------------------
 	// Boxes related routes
 	boxPath := router.Group("/boxes")
-	boxPath.POST(oidcHandlerFactory.NewACR2(
+	boxPath.POST(anyOIDCHandlerFactory.NewACR2(
 		"",
 		func() request.Request { return &application.CreateBoxRequest{} },
 		app.CreateBox,
 		request.ResponseCreated,
 	))
-
-	boxPath.GET(oidcHandlerFactory.NewACR1(
+	boxPath.GET(anyOIDCHandlerFactory.NewACR1(
 		"/:id",
 		func() request.Request { return &application.GetBoxRequest{} },
 		app.GetBox,
 		request.ResponseOK,
 	))
-	boxPath.GET(oidcHandlerFactory.NewPublic(
+	boxPath.GET(selfOIDCHandlerFactory.NewPublic(
 		"/:id/public",
 		func() request.Request { return &application.GetBoxPublicRequest{} },
 		app.GetBoxPublic,
 		request.ResponseOK,
 	))
-	boxPath.HEAD(oidcHandlerFactory.NewACR2(
+	boxPath.HEAD(selfOIDCHandlerFactory.NewACR2(
 		"/joined",
 		func() request.Request { return &application.CountBoxesRequest{} },
 		app.CountBoxes,
@@ -49,19 +48,19 @@ func bindRoutes(
 			return nil
 		},
 	))
-	boxPath.GET(oidcHandlerFactory.NewACR2(
+	boxPath.GET(selfOIDCHandlerFactory.NewACR2(
 		"/joined",
 		func() request.Request { return &application.ListBoxesRequest{} },
 		app.ListBoxes,
 		request.ResponseOK,
 	))
-	boxPath.GET(oidcHandlerFactory.NewACR1(
+	boxPath.GET(selfOIDCHandlerFactory.NewACR1(
 		"/:id/members",
 		func() request.Request { return &application.ListBoxMembersRequest{} },
 		app.ListBoxMembers,
 		request.ResponseOK,
 	))
-	boxPath.DELETE(oidcHandlerFactory.NewACR2(
+	boxPath.DELETE(selfOIDCHandlerFactory.NewACR2(
 		"/:id",
 		func() request.Request { return &application.DeleteBoxRequest{} },
 		app.DeleteBox,
@@ -70,7 +69,7 @@ func bindRoutes(
 
 	// ----------------------
 	// Access related routes
-	boxPath.GET(oidcHandlerFactory.NewACR2(
+	boxPath.GET(selfOIDCHandlerFactory.NewACR2(
 		"/:id/accesses",
 		func() request.Request { return &application.ListAccessesRequest{} },
 		app.ListAccesses,
@@ -79,21 +78,21 @@ func bindRoutes(
 
 	// ----------------------
 	// Events related routes
-	boxPath.GET(oidcHandlerFactory.NewACR1(
+	boxPath.GET(selfOIDCHandlerFactory.NewACR1(
 		"/:id/events",
 		func() request.Request { return &application.ListEventsRequest{} },
 		app.ListEvents,
 		request.ResponseOK,
 	))
 
-	boxPath.GET(oidcHandlerFactory.NewACR1(
+	boxPath.GET(selfOIDCHandlerFactory.NewACR1(
 		"/:id/files",
 		func() request.Request { return &application.ListBoxFilesRequest{} },
 		app.ListBoxFiles,
 		request.ResponseOK,
 	))
 
-	boxPath.HEAD(oidcHandlerFactory.NewACR1(
+	boxPath.HEAD(selfOIDCHandlerFactory.NewACR1(
 		"/:id/files",
 		func() request.Request { return &application.CountBoxFilesRequest{} },
 		app.CountBoxFiles,
@@ -104,7 +103,7 @@ func bindRoutes(
 		},
 	))
 
-	boxPath.HEAD(oidcHandlerFactory.NewACR1(
+	boxPath.HEAD(selfOIDCHandlerFactory.NewACR1(
 		"/:id/events",
 		func() request.Request { return &application.CountEventsRequest{} },
 		app.CountEvents,
@@ -114,25 +113,25 @@ func bindRoutes(
 			return nil
 		},
 	))
-	boxPath.POST(oidcHandlerFactory.NewACR1(
+	boxPath.POST(anyOIDCHandlerFactory.NewACR1(
 		"/:id/events",
 		func() request.Request { return &application.CreateEventRequest{} },
 		app.CreateEvent,
 		request.ResponseCreated,
 	))
-	boxPath.POST(oidcHandlerFactory.NewACR2(
+	boxPath.POST(selfOIDCHandlerFactory.NewACR2(
 		"/:id/batch-events",
 		func() request.Request { return &application.BatchCreateEventRequest{} },
 		app.BatchCreateEvent,
 		request.ResponseCreated,
 	))
-	boxPath.POST(oidcHandlerFactory.NewACR1(
+	boxPath.POST(anyOIDCHandlerFactory.NewACR1(
 		"/:bid/encrypted-files",
 		func() request.Request { return &application.UploadEncryptedFileRequest{} },
 		app.UploadEncryptedFile,
 		request.ResponseCreated,
 	))
-	boxPath.PUT(oidcHandlerFactory.NewACR1(
+	boxPath.PUT(selfOIDCHandlerFactory.NewACR1(
 		"/:id/new-events-count/ack",
 		func() request.Request { return &application.AckNewEventsCountRequest{} },
 		app.AckNewEventsCount,
@@ -142,22 +141,22 @@ func bindRoutes(
 	// ----------------------
 	// Box Users related routes
 	boxUsersPath := router.Group("/box-users")
-	boxUsersPath.GET("/:id/ws", wsh.BoxUsersWS, anyCliAuthzMidlw)
-	boxUsersPath.PUT(oidcHandlerFactory.NewACR1(
+	boxUsersPath.GET("/:id/ws", wsh.BoxUsersWS, anyOIDCHandlerFactory.GetAuthzMdlw())
+	boxUsersPath.PUT(selfOIDCHandlerFactory.NewACR1(
 		"/:id/boxes/:bid/settings",
 		func() request.Request { return &application.UpdateBoxSettingsRequest{} },
 		app.UpdateBoxSettings,
 		request.ResponseNoContent,
 	))
 
-	boxUsersPath.GET(oidcHandlerFactory.NewACR1(
+	boxUsersPath.GET(selfOIDCHandlerFactory.NewACR1(
 		"/:id/boxes/:bid/settings",
 		func() request.Request { return &application.GetBoxSettingsRequest{} },
 		app.GetBoxSettings,
 		request.ResponseOK,
 	))
 
-	boxUsersPath.POST(oidcHandlerFactory.NewACR2(
+	boxUsersPath.POST(selfOIDCHandlerFactory.NewACR2(
 		"/:id/contact",
 		func() request.Request { return &application.BoxUserContactRequest{} },
 		app.BoxUserContact,
@@ -167,19 +166,19 @@ func bindRoutes(
 	// ----------------------
 	// Box Key Shares related routes
 	keySharePath := router.Group("/box-key-shares")
-	keySharePath.POST(oidcHandlerFactory.NewACR2(
+	keySharePath.POST(selfOIDCHandlerFactory.NewACR2(
 		"",
 		func() request.Request { return &application.CreateKeyShareRequest{} },
 		app.CreateKeyShare,
 		request.ResponseCreated,
 	))
-	keySharePath.GET(oidcHandlerFactory.NewACR2(
+	keySharePath.GET(selfOIDCHandlerFactory.NewACR2(
 		"/encrypted-invitation-key-share",
 		func() request.Request { return &application.GetEncryptedKeyShareRequest{} },
 		app.GetEncryptedKeyShare,
 		request.ResponseOK,
 	))
-	keySharePath.GET(oidcHandlerFactory.NewACR1(
+	keySharePath.GET(selfOIDCHandlerFactory.NewACR1(
 		"/:other-share-hash",
 		func() request.Request { return &application.GetKeyShareRequest{} },
 		app.GetKeyShare,
@@ -189,25 +188,25 @@ func bindRoutes(
 	// ----------------------
 	// Saved Files related routes
 	savedFilePath := router.Group("/saved-files")
-	savedFilePath.POST(oidcHandlerFactory.NewACR2(
+	savedFilePath.POST(selfOIDCHandlerFactory.NewACR2(
 		"",
 		func() request.Request { return &application.CreateSavedFileRequest{} },
 		app.CreateSavedFile,
 		request.ResponseCreated,
 	))
-	savedFilePath.DELETE(oidcHandlerFactory.NewACR2(
+	savedFilePath.DELETE(selfOIDCHandlerFactory.NewACR2(
 		"/:id",
 		func() request.Request { return &application.DeleteSavedFileRequest{} },
 		app.DeleteSavedFile,
 		request.ResponseNoContent,
 	))
-	savedFilePath.GET(oidcHandlerFactory.NewACR2(
+	savedFilePath.GET(selfOIDCHandlerFactory.NewACR2(
 		"",
 		func() request.Request { return &application.ListSavedFilesRequest{} },
 		app.ListSavedFiles,
 		request.ResponseOK,
 	))
-	savedFilePath.HEAD(oidcHandlerFactory.NewACR2(
+	savedFilePath.HEAD(selfOIDCHandlerFactory.NewACR2(
 		"",
 		func() request.Request { return &application.CountSavedFilesRequest{} },
 		app.CountSavedFiles,
@@ -221,7 +220,7 @@ func bindRoutes(
 	// ----------------------
 	// Encrypted Files related routes
 	encryptedFilePath := router.Group("/encrypted-files")
-	encryptedFilePath.GET(oidcHandlerFactory.NewACR1(
+	encryptedFilePath.GET(selfOIDCHandlerFactory.NewACR1(
 		"/:id",
 		func() request.Request { return &application.DownloadEncryptedFileRequest{} },
 		app.DownloadEncryptedFile,
@@ -231,19 +230,19 @@ func bindRoutes(
 	// ----------------------
 	// box-users related routes
 	boxUserPath := router.Group("/box-users")
-	boxUserPath.GET(oidcHandlerFactory.NewACR1(
+	boxUserPath.GET(selfOIDCHandlerFactory.NewACR1(
 		"/:id/storage-quota",
 		func() request.Request { return &application.ListUserStorageQuotaRequest{} },
 		app.ListUserStorageQuota,
 		request.ResponseOK,
 	))
-	boxUserPath.GET(oidcHandlerFactory.NewACR1(
+	boxUserPath.GET(selfOIDCHandlerFactory.NewACR1(
 		"/:id/vault-used-space",
 		func() request.Request { return &application.GetVaultUsedSpaceRequest{} },
 		app.GetVaultUsedSpace,
 		request.ResponseOK,
 	))
-	boxUserPath.POST(oidcHandlerFactory.NewACR2(
+	boxUserPath.POST(selfOIDCHandlerFactory.NewACR2(
 		"/:id/saved-files",
 		func() request.Request { return &application.UploadSavedFileRequest{} },
 		app.UploadSavedFile,
@@ -253,7 +252,7 @@ func bindRoutes(
 	// ----------------------
 	// box-used-space related routes
 	boxUsedSpacesPath := router.Group("/box-used-spaces")
-	boxUsedSpacesPath.GET(oidcHandlerFactory.NewACR1(
+	boxUsedSpacesPath.GET(selfOIDCHandlerFactory.NewACR1(
 		"",
 		func() request.Request { return &application.ListBoxUsedSpaceRequest{} },
 		app.ListBoxUsedSpace,

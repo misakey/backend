@@ -14,8 +14,8 @@ import (
 )
 
 func doMessage(ctx context.Context, e *Event, _ null.JSON, exec boil.ContextExecutor, redConn *redis.Client, _ *IdentityMapper, _ external.CryptoRepo, _ files.FileStorageRepo) (Metadata, error) {
-	// check that the current sender is a member of the box
-	if err := MustBeMember(ctx, exec, redConn, e.BoxID, e.SenderID); err != nil {
+	// check that the current sender is a member of the box or the org of the box
+	if err := MustBeMemberOrOrg(ctx, exec, redConn, e.BoxID, e.SenderID); err != nil {
 		return nil, err
 	}
 

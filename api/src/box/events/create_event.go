@@ -95,7 +95,8 @@ type createInfo struct {
 	CreatorID  string
 }
 
-// GetCreateInfo retrieves the create event of the box and marshal its content into a CreationContent structure aside its creator id
+// GetCreateInfo retrieves the create event of the box and
+// marshals its content into a CreationContent structure aside its creator id
 func GetCreateInfo(
 	ctx context.Context,
 	exec boil.ContextExecutor,
@@ -103,8 +104,8 @@ func GetCreateInfo(
 ) (info createInfo, err error) {
 	content := CreationContent{}
 	e, err := get(ctx, exec, eventFilters{
-		boxID: null.StringFrom(boxID),
 		eType: null.StringFrom(etype.Create),
+		boxID: null.StringFrom(boxID),
 	})
 	if err != nil {
 		return info, merr.From(err).Desc("getting create event")

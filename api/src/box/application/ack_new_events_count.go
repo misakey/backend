@@ -37,7 +37,7 @@ func (app *BoxApplication) AckNewEventsCount(ctx context.Context, genReq request
 	req := genReq.(*AckNewEventsCountRequest)
 
 	acc := oidc.GetAccesses(ctx)
-	if acc.IdentityID != req.IdentityID {
+	if acc == nil || acc.IdentityID != req.IdentityID {
 		return nil, merr.Forbidden()
 	}
 
