@@ -116,6 +116,7 @@ func (cmd *RequireIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 // RequireIdentityAView ...
 type RequireIdentityView struct {
 	Identity struct {
+		HasAccount  bool      `json:"has_account"`
 		DisplayName string      `json:"display_name"`
 		AvatarURL   null.String `json:"avatar_url"`
 	} `json:"identity"`
@@ -196,6 +197,7 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 
 	// 5. bind identity information on view
 	view := RequireIdentityView{}
+	view.Identity.HasAccount = curIdentity.AccountID.Valid
 	view.Identity.DisplayName = curIdentity.DisplayName
 	view.Identity.AvatarURL = curIdentity.AvatarURL
 	view.AuthnStep.IdentityID = curIdentity.ID
