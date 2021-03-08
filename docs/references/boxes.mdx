@@ -1,0 +1,30 @@
+---
+title: Boxes
+---
+
+:::tip
+Need some changes ? More endpoints ? Please open a [github issue](https://github.com/misakey/backend) or contact us at [love@misakey.com](mailto:love@misakey.com).
+:::
+
+### Creation of a box
+
+A box can be created using [the box creation endpoint](https://backend.docs.misakey.dev/endpoints/boxes/#21-creating-a-box).
+
+The box can be created with an optional datatag and an optional data subject.
+
+The data subject is supposed to be the email of the person concerned by the data.
+After being connected on Misakey using this email, data subjects can see boxes you have created and linked to their email. They have access to the box and its data.
+
+:::info
+Do not forget to save the id of the created box to later send data to it.
+:::
+
+### Send data as a plain text to the box
+
+The data should be sent using [the event creation endpoint][]. The event type is [msg.text](https://backend.docs.misakey.dev/concepts/box-events/#231-message-text).
+
+### Send data as a file to the box
+
+The data should be sent using [the event creation endpoint][]. The event type is [msg.text](https://backend.docs.misakey.dev/concepts/box-events/#232-message-file).
+
+[the event creation endpoint]: https://backend.docs.misakey.dev/endpoints/box_events/#21-single-creation-of-an-event-for-a-box

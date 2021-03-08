@@ -1,0 +1,179 @@
+---
+title: Datatags
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::tip
+Need some changes ? More endpoints ? Please open a [github issue](https://github.com/misakey/backend) or contact us at [love@misakey.com](mailto:love@misakey.com).
+:::
+
+## Introduction
+
+### Concept
+
+Datatags are used to identify data shipped through Misakey channels.
+
+They are simple strings defining a data type, and they depend on a single organization.
+
+## Datatags
+
+### Create datatag
+
+#### Request
+
+```html
+POST https://api.misakey.com/organizations/:id/datatags
+```
+
+##### Authorizations
+<Tabs groupId="requester-type" defaultValue="org" values={[{label: 'Organization', value: 'org'}, {label: 'User', value: 'user'}]}>
+  <TabItem value="org">    
+    Headers:<ul>
+      <li><code>Authorization</code>: a bearer access token for your organization. Example: <i>Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA</i></li>
+    </ul>
+  </TabItem>
+  <TabItem value="user">
+    Cookies:<ul>
+      <li><code>accesstoken</code> (opaque token) (ACR >= 2): mid claim as the organization admin.</li>
+      <li><code>tokentype</code> (string): must be <b>bearer</b>.</li>
+    </ul>
+    Headers:<ul>
+      <li><code>X-CSRF-Token</code>: a token to prevent from CSRF attacks.</li>
+    </ul>
+  </TabItem>
+</Tabs>
+
+##### Path parameter:
+- `id`: the unique id of your organization
+
+##### Response Body
+`Content-type: application/json`
+```json
+{
+    "name": "Orders"
+}
+```
+
+- `name`: (string) the datatag name
+
+#### Success response
+
+##### Code
+```bash
+HTTP 201 Created
+```
+
+##### Response Body
+`Content-type: application/json`
+```json
+{
+    "id": "64c68e09-bb33-4d48-9b2c-a4a40e5054ce",
+    "organization_id": "0b8f65bb-de6d-4e4a-be5d-93a6eaaf4840",
+    "name": "Orders",
+    "created_at": "2020-08-05T16:02:22.104236Z"
+}
+```
+
+- `id`: (string, uuid) an uuid to identify the datatag
+- `organization_id`: (string, uuid) an uuid to identify the organization
+- `name`: (string) the datatag name
+- `created_at`: ((RFC3339 time)) date of creation
+
+### Edit datatag
+
+#### Request
+
+```bash
+PATCH https://api.misakey.com/organizations/:id/datatags/:did
+```
+
+##### Authorizations
+<Tabs groupId="requester-type" defaultValue="org" values={[{label: 'Organization', value: 'org'}, {label: 'User', value: 'user'}]}>
+  <TabItem value="org">    
+    Headers:<ul>
+      <li><code>Authorization</code>: a bearer access token for your organization. Example: <i>Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA</i></li>
+    </ul>
+  </TabItem>
+  <TabItem value="user">
+    Cookies:<ul>
+      <li><code>accesstoken</code> (opaque token) (ACR >= 2): mid claim as the organization admin.</li>
+    </ul>
+    Headers:<ul>
+      <li><code>X-CSRF-Token</code>: a token to prevent from CSRF attacks.</li>
+    </ul>
+  </TabItem>
+</Tabs>
+
+##### Path parameter
+- `id`: the unique id of your organization
+- `did`: the unique id of the datatag
+
+##### Response Body
+`Content-type: application/json`
+```json
+{
+    "name": "The Orders"
+}
+```
+
+- `name`: (string) the new datatag name
+
+#### Success response
+
+##### Code
+```bash
+HTTP 204 NO CONTENT
+```
+
+### List datatags
+
+#### Request
+
+```bash
+GET https://api.misakey.com/organizations/:id/datatags
+```
+
+##### Authorizations
+<Tabs groupId="requester-type" defaultValue="org" values={[{label: 'Organization', value: 'org'}, {label: 'User', value: 'user'}]}>
+  <TabItem value="org">    
+    Headers:<ul>
+      <li><code>Authorization</code>: a bearer access token for your organization. Example: <i>Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA</i></li>
+    </ul>
+  </TabItem>
+  <TabItem value="user">
+    Cookies:<ul>
+      <li><code>accesstoken</code> (opaque token) (ACR >= 2): mid claim as the organization admin.</li>
+      <li><code>tokentype</code> (string): must be <b>bearer</b>.</li>
+    </ul>
+    Headers:<ul>
+      <li><code>X-CSRF-Token</code>: a token to prevent from CSRF attacks.</li>
+    </ul>
+  </TabItem>
+</Tabs>
+
+##### Path parameter
+- `id`: the unique id of your organization
+
+#### Success response
+
+##### Code
+```bash
+HTTP 200 OK
+```
+
+##### Response Body
+An array of datatags. An empty array is returned if nothing has been found.
+
+`Content-type: application/json`
+```json
+[
+    {
+        "id": "64c68e09-bb33-4d48-9b2c-a4a40e5054ce",
+        "organization_id": "0b8f65bb-de6d-4e4a-be5d-93a6eaaf4840",
+        "name": "Orders",
+        "created_at": "2020-08-05T16:02:22.104236Z"
+    }
+]
+```

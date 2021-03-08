@@ -1,20 +1,29 @@
 module.exports = {
   someSidebar: [
     {
+      type: 'doc',
+      id: 'home'
+    },
+    {
       type: 'category',
-      label: 'Overview',
-      items: ['overview/introduction', 'overview/components', 'overview/contributing'],
+      label: 'Concepts',
+      items: ['concepts/overview', 'concepts/organizations', 'concepts/datatags', 'concepts/boxes'],
       collapsed: false,
     },
     {
       type: 'category',
-      label: 'Getting Started',
-      items: ['getting-started/running-locally'],
+      label: 'Guides',
+      items: ['guides/overview', 'guides/your-org', 'guides/store-data-for-your-org', 'guides/self-hosting-misakey'],
     },
     {
       type: 'category',
-      label: 'Guides',
-      items: ['guides/authentication', 'guides/deploy-on-prod', 'guides/create-auth-clients', 'guides/sdk-integration', 'guides/cms-integration'],
+      label: 'References',
+      items: ['references/overview', 'references/boxes', 'references/datatags', 'references/authorizations', 'references/errors-format'],
     },
-  ],
+    {
+      type: 'category',
+      label: 'Integrations',
+      items: ['integrations/overview', 'integrations/sdk-integrations', 'integrations/cms-integrations'],
+    },
+  ]
 };

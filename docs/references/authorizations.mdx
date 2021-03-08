@@ -1,0 +1,59 @@
+---
+title: Authorizations
+---
+
+:::tip
+Need some changes ? More endpoints ? Please open a [github issue](https://github.com/misakey/backend) or contact us at [love@misakey.com](mailto:love@misakey.com).
+:::
+
+:::note
+Values used in the examples are fake and do not correspond to any real values.
+:::
+
+### Client Credentials Flow
+
+The endpoint follows the [OAuth2.0 protocol for Access Token Request](https://tools.ietf.org/html/rfc6749#section-4.4.2) and
+ [Access Token Response](https://tools.ietf.org/html/rfc6749#section-4.4.3).
+
+#### 3.1. Request
+
+_Endpoint_:
+```bash
+POST https://auth.misakey.com/_/oauth2/token
+Content-type: application/x-www-form-urlencoded
+```
+
+_Request Body_:
+```
+grant_type=client_credentials&scope=&client_id=14737581-2073-4413-8bcc-e7c6f614324d&client_secret=4m7xvY1EK3G5pEv+m5nMmGyrkWxyiWu/M78fFtD2Xl0=
+```
+with
+- `grant_type`: (string) _client_credentials_ must be set as it is the flow requested. Others would lead to a failure error.
+- `scope`: (string) should be empty. We don't handle special scope for organization as off today.
+- `client_id`: (string) (uuid) the unique id of your organization.
+- `client_secret`: (string) the secret of your organization.
+
+#### 3.2. Response
+
+_Response Headers_:
+```bash
+Content-Type: application/json;charset=UTF-8
+Cache-Control: no-store
+Pragma: no-cache
+```
+
+_Response Body_:
+```json
+{
+  "access_token":"2YotnFZFEjr1zCsicMWpAA",
+  "token_type":"bearer",
+  "expires_in":3600,
+  "scope": ""
+}
+```
+
+with:
+- `access_token`: (string) the bearer token owning your organization authorizations.
+- `token_type`: (string) the type of token delivered (always set to _bearer_).
+- `expires_in`: (integer) the number of seconds before the token will expire. A new token must be generated at this moment. Ideally you should renew it just before the last delivered is expired.
+- `scope`: (string) scopes contained in the token. An empty string today.

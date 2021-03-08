@@ -1,0 +1,83 @@
+---
+title: Welcome
+slug: /
+---
+
+### Introduction
+
+Welcome to the Misakey documentation ! :tada: :wave:
+
+We hope you will find all what you need to play with and understand the Misakey system.
+
+:::info
+If you have any question/feedback/demand, feel free to open a [Github issue](https://github.com/misakey/backend/issues/new) or contact us at [love@misakey.com](mailto:love@misakey.com).
+:::
+
+### Getting Started
+
+We suggest you to take note of the documentation structure.
+
+- [:file_folder: **Concepts**](concepts/overview.mdx): explanation of the basics of Misakey's system and its architecture.
+- [:file_folder: **Guides**](guides/overview.mdx): step-by-step tutorials to use Misakey for specific tasks.
+- [:file_folder: **References**](references/overview.mdx): all details on parameters, requests, and responses for Misakey's API endpoints.
+- [:file_folder: **Integrations**](integrations/overview.mdx): integrations possibilities with your tooling.
+
+:::tip
+:bulb: If you wish to plug your service to Misakey, here is the first guide you probably need: [Manage your organization](guides/your-org.mdx).
+::::
+
+# What does Misakey do?
+
+Misakey technology aims at building a standard for user management, personal data management and service interoperability for the modern Internet world.
+
+The goal is to make it easy and quick to create web services and applications with a fluid user experience, a user-centric consent management and a high degree of interoperability.
+
+Misakey tech is developed by the French company [Misakey](https://about.misakey.com). All the source code being developed is open source, and we are open to external contributions (see the [contribution guide](concepts/overview.mdx#contributing)).
+
+## HTTPs API as a Service
+
+Misakey backend is written in Golang and offers you user management and a secure data vault system through an HTTP API, accessible anytime and anywhere.
+
+It is an identity provider with encrypted data exchanges built together in order to keep a full control over authentication, authorizations strategies, and to make cryptographic concepts as smooth as possible to deal with, keeping security our main concern.
+
+What does Misakey backend offer you when deployed:
+
+- register/authenticate users using passwordless, password & MFA (TOTP/Webauthn).
+- store any kind of user data using end-to-end encryption in a dedicated vault.
+- manage organizations and roles within the system.
+- authorize organizations (humans and machines) and users to access encrypted vaults via user consent.
+
+The system implements [Open ID Connect](https://openid.net/specs/openid-connect-core-1_0.html) and [end-to-end encryption](https://about.misakey.com/cryptography/white-paper.html) protocols.
+
+The system also includes notifications using different channels (email, in-app...).
+
+## Frontend for User Authentication
+
+Misakey [frontend](https://app.misakey.com) provides multiple features for authentication, and new ones are added on a regular basis:
+- Passwordless auth (email confirmation)
+- Sign-up / Sign-in
+- Muti-Factor Authentication (MFA/2FA): [WebAuthn](https://webauthn.io/), [TOTP](https://tools.ietf.org/html/rfc6238)
+- Consent management (TOS/Privacy policy, data access consent)
+
+## SDKs and UI Kit for Building Apps
+
+We provide SDKs and a UI kit to integrate the Misakey technology in any existing or new application. They allow integration with all the features provided by the backend, described in the [corresponding section](concepts/overview.mdx#https-api-as-a-service).
+
+More information [here](/integrations/sdk-integrations.mdx).
+
+## CMS Plugins for One Click Integration
+
+We develop some plugins for popular CMS (Wordpress, Prestashop, ...) to for easy integration.
+We are looking for new software to integrate with, so feel free to suggest new integrations or to contribute to ongoing ones.
+
+More information [here](/integrations/cms-integrations.mdx).
+
+# Contributing
+
+## Contribution Model
+
+Misakey tech is mainly developed by the Misakey company. We decided to share all of our work under open source licenses, and we welcome external contributions. Typically:
+- Bug reports & fixes
+- Feature proposal & development
+- UI Kit & SDK
+- CMS Plugins
