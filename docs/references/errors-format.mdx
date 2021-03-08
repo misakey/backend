@@ -19,13 +19,13 @@ Backend errors follow these two conventions:
 }
 ```
 
-All "{things}" are described in the following sections...
+All terms inside brackets are described in the following sections...
 
 ## Code
 
 The code is a string used internally and by consumer for better error identifications & reactions.
 
-It is defined by an exhaustive list of values, and it corresponds for most of them to HTTP statuses found in the [Mozilla documentation][].
+It is defined by an exhaustive list of values. Most of codes correspond to HTTP statuses found in the [Mozilla documentation][].
 
 We use this link as general specifications for errors and not just for http request errors.
 
@@ -49,7 +49,7 @@ We use this link as general specifications for errors and not just for http requ
 * `...`
 
 **Special codes:** _special codes that should not be encountered externally_
-:warning: Thanks to contact the backend team if you receive one these codes.
+:warning: Please contact the backend team if you receive one these codes.
 * `unknown_code`: 500, something internal to the service has failed.
 * `no_code`: xxx, no specific code defined.
 
@@ -65,7 +65,7 @@ Origin is an information about where the error does come from.
 * `...`
 
 **Special origins:** _special origins that should not be encountered externally_
-:warning: Thanks to contact the backend team if you receive one of these origins.
+:warning: Please contact the backend team if you receive one of these origins.
 * `not_defined`: the error has no origin defined yet
 
 ## Details
@@ -74,7 +74,7 @@ An object containing a dynamical number of detail objects.
 
 Each detail object is built with a DetailKey and a DetailValue:
 
--> A DetailKey is an dynamical string representing fields name, query parameters name, resource ids...
+-> A DetailKey is a dynamical string representing a field name, a parameter value, a resource id...
 
 -> A DetailValue describes an error code as a string for clearer consumer error identification & reactions. It represents codes related to a detail key.
 
@@ -94,7 +94,7 @@ Each detail object is built with a DetailKey and a DetailValue:
 * `unauthorized`: authorization is missing
 
 **Special detail values:**
-:warning: Thanks to contact the backend team if you receive one of these detail values.
+:warning: Please contact the backend team if you receive one of these detail values.
 * `unknown`: unknown detail code
 * `no_code`: no specific code
 
