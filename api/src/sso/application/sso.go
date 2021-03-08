@@ -21,8 +21,9 @@ type SSOService struct {
 	rootKeyShareExpirationTime time.Duration
 	selfOrgID                  string
 
-	// NOTE: start to remove repositories components by having storer here (cf box modules)
-	sqlDB   *sql.DB
+	// storers
+	ssoDB   *sql.DB
+	boxDB   *sql.DB
 	redConn *redis.Client
 }
 
@@ -35,7 +36,7 @@ func NewSSOService(
 	rootKeyShareExpirationTime time.Duration,
 	selfOrgID string,
 
-	ssoDB *sql.DB,
+	boxDB *sql.DB, ssoDB *sql.DB,
 	redConn *redis.Client,
 ) SSOService {
 	return SSOService{
@@ -46,7 +47,8 @@ func NewSSOService(
 		rootKeyShareExpirationTime: rootKeyShareExpirationTime,
 		selfOrgID:                  selfOrgID,
 
-		sqlDB:   ssoDB,
+		ssoDB:   ssoDB,
+		boxDB:   boxDB,
 		redConn: redConn,
 	}
 }

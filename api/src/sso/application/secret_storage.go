@@ -22,7 +22,7 @@ func (sso *SSOService) GetSecretStorage(ctx context.Context, gen request.Request
 		return nil, merr.Forbidden()
 	}
 
-	secrets, err := crypto.GetAccountSecrets(ctx, sso.sqlDB, acc.AccountID.String)
+	secrets, err := crypto.GetAccountSecrets(ctx, sso.ssoDB, acc.AccountID.String)
 	if err != nil {
 		if err == crypto.ErrNoRootKey {
 			return nil, merr.Conflict().Desc("Account has no root key; it requires migration.")
@@ -45,7 +45,7 @@ func (sso *SSOService) MigrateToSecretStorage(ctx context.Context, gen request.R
 		return nil, merr.Forbidden()
 	}
 
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (sso *SSOService) CreateSecretStorageAsymKey(ctx context.Context, gen reque
 		return nil, merr.Forbidden()
 	}
 
-	response, err := crypto.CreateSecretStorageAsymKey(ctx, sso.sqlDB, acc.AccountID.String, *cmd)
+	response, err := crypto.CreateSecretStorageAsymKey(ctx, sso.ssoDB, acc.AccountID.String, *cmd)
 
 	return response, err
 }
@@ -118,7 +118,7 @@ func (sso *SSOService) CreateSecretStorageBoxKeyShare(ctx context.Context, gen r
 		return nil, merr.Forbidden()
 	}
 
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (sso *SSOService) DeleteAsymKeys(ctx context.Context, gen request.Request) 
 		return nil, merr.Forbidden()
 	}
 
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func (sso *SSOService) DeleteBoxKeyShares(ctx context.Context, gen request.Reque
 		return nil, merr.Forbidden()
 	}
 
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

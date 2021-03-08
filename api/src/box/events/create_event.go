@@ -75,7 +75,7 @@ func CreateCreateEvent(
 	}
 
 	// clean box cache for the creator
-	err = cache.CleanUserBoxByUserOrg(ctx, redConn, senderID, ownerOrgID)
+	err = cache.CleanIdentityBoxByIdentityOrg(ctx, redConn, senderID, ownerOrgID)
 	if err != nil {
 		logger.FromCtx(ctx).Warn().Msgf("clean user box cache %s: %v", senderID, err)
 	}

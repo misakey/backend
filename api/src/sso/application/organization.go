@@ -49,7 +49,7 @@ func (sso *SSOService) CreateOrg(ctx context.Context, gen request.Request) (inte
 		return view, merr.Forbidden()
 	}
 
-	view.Org, err = org.Create(ctx, sso.sqlDB, acc.IdentityID, query.Name)
+	view.Org, err = org.Create(ctx, sso.ssoDB, acc.IdentityID, query.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (sso *SSOService) ListIdentityOrgs(ctx context.Context, gen request.Request
 	// - organization where the user has a role
 
 	// 1. add the self-org
-	curIdentity, err := identity.Get(ctx, sso.sqlDB, acc.IdentityID)
+	curIdentity, err := identity.Get(ctx, sso.ssoDB, acc.IdentityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting identity")
 	}
@@ -108,7 +108,7 @@ func (sso *SSOService) ListIdentityOrgs(ctx context.Context, gen request.Request
 	views = append(views, selfOrg)
 
 	// 2. get org ids where the identity is a member
-	memberOrgIDs, err := org.GetIDsForIdentity(ctx, sso.redConn, acc.IdentityID)
+	memberOrgIDs, err := org.GetIDsForIdentity(ctx, sso.boxDB, sso.redConn, acc.IdentityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("listing member org ids")
 	}
@@ -116,7 +116,7 @@ func (sso *SSOService) ListIdentityOrgs(ctx context.Context, gen request.Request
 	// 3. get orgs where user has a role:
 	// - only orgs that they have created
 	// query both member orgs and created orgs
-	orgs, err := org.ListByIDsOrCreatorID(ctx, sso.sqlDB, memberOrgIDs, acc.IdentityID)
+	orgs, err := org.ListByIDsOrCreatorID(ctx, sso.ssoDB, memberOrgIDs, acc.IdentityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("listing created orgs")
 	}
@@ -160,7 +160,7 @@ func (sso *SSOService) GetOrgPublic(ctx context.Context, genReq request.Request)
 	req := genReq.(*GetOrgPublicRequest)
 
 	// get org title
-	organization, err := org.GetOrg(ctx, sso.sqlDB, req.orgID)
+	organization, err := org.GetOrg(ctx, sso.ssoDB, req.orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (sso *SSOService) GenerateSecret(ctx context.Context, genReq request.Reques
 	if acc == nil {
 		return nil, merr.Forbidden()
 	}
-	if err := org.MustBeAdmin(ctx, sso.sqlDB, cmd.orgID, acc.IdentityID); err != nil {
+	if err := org.MustBeAdmin(ctx, sso.ssoDB, cmd.orgID, acc.IdentityID); err != nil {
 		return nil, merr.From(err).Desc("must be admin of the org")
 	}
 
@@ -217,11 +217,11 @@ func (sso *SSOService) GenerateSecret(ctx context.Context, genReq request.Reques
 
 	// since organization might perform some api requests after generating a secret,
 	// ensure there is a identity corresponding to the org
-	_, err = identity.GetByIdentifier(ctx, sso.sqlDB, cmd.orgID, identity.IdentifierKindOrgID)
+	_, err = identity.GetByIdentifier(ctx, sso.ssoDB, cmd.orgID, identity.IdentifierKindOrgID)
 	if err != nil {
 		// create the identity on not found
 		if merr.IsANotFound(err) {
-			orga, err := org.GetOrg(ctx, sso.sqlDB, cmd.orgID)
+			orga, err := org.GetOrg(ctx, sso.ssoDB, cmd.orgID)
 			if err != nil {
 				return nil, merr.From(err).Desc("getting org")
 			}
@@ -231,7 +231,7 @@ func (sso *SSOService) GenerateSecret(ctx context.Context, genReq request.Reques
 				IdentifierKind:  identity.IdentifierKindOrgID,
 				DisplayName:     orga.Name,
 			}
-			if err := identity.Create(ctx, sso.sqlDB, sso.redConn, &orgIdentity); err != nil {
+			if err := identity.Create(ctx, sso.ssoDB, sso.redConn, &orgIdentity); err != nil {
 				return nil, merr.From(err).Desc("creating org identity")
 			}
 		} else { // otherwise return the err

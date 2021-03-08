@@ -46,7 +46,7 @@ func (sso *SSOService) CreateRootKeyShare(ctx context.Context, gen request.Reque
 	}
 
 	// the request must bear authorization for an account
-	identity, err := identity.Get(ctx, sso.sqlDB, acc.IdentityID)
+	identity, err := identity.Get(ctx, sso.ssoDB, acc.IdentityID)
 	if err != nil {
 		return nil, err
 	}

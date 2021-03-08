@@ -116,7 +116,7 @@ func (cmd *RequireIdentityCmd) BindAndValidate(eCtx echo.Context) error {
 // RequireIdentityAView ...
 type RequireIdentityView struct {
 	Identity struct {
-		HasAccount  bool      `json:"has_account"`
+		HasAccount  bool        `json:"has_account"`
 		DisplayName string      `json:"display_name"`
 		AvatarURL   null.String `json:"avatar_url"`
 	} `json:"identity"`
@@ -140,7 +140,7 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 	cmd := gen.(*RequireIdentityCmd)
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +312,7 @@ func (sso *SSOService) AssertAuthnStep(ctx context.Context, gen request.Request)
 	view := LoginAuthnStepView{}
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

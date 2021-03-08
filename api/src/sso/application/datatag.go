@@ -48,7 +48,7 @@ func (sso *SSOService) CreateDatatag(ctx context.Context, gen request.Request) (
 	}
 
 	// check the requester is admin of the organization
-	if err := org.MustBeAdmin(ctx, sso.sqlDB, query.organizationID, acc.IdentityID); err != nil {
+	if err := org.MustBeAdmin(ctx, sso.ssoDB, query.organizationID, acc.IdentityID); err != nil {
 		return nil, merr.From(err).Desc("must be admin of the org")
 	}
 
@@ -63,7 +63,7 @@ func (sso *SSOService) CreateDatatag(ctx context.Context, gen request.Request) (
 		OrganizationID: query.organizationID,
 	}
 
-	if err := datatag.Insert(ctx, sso.sqlDB, boil.Infer()); err != nil {
+	if err := datatag.Insert(ctx, sso.ssoDB, boil.Infer()); err != nil {
 		return nil, merr.From(err).Desc("inserting datatag")
 	}
 
@@ -94,7 +94,7 @@ func (sso *SSOService) ListDatatags(ctx context.Context, gen request.Request) (i
 	}
 
 	// check the requester is admin of the org
-	if err := org.MustBeAdmin(ctx, sso.sqlDB, query.organizationID, acc.IdentityID); err != nil {
+	if err := org.MustBeAdmin(ctx, sso.ssoDB, query.organizationID, acc.IdentityID); err != nil {
 		return nil, merr.From(err).Desc("must be admin of the org")
 	}
 
@@ -102,7 +102,7 @@ func (sso *SSOService) ListDatatags(ctx context.Context, gen request.Request) (i
 	mods := []qm.QueryMod{
 		sqlboiler.DatatagWhere.OrganizationID.EQ(query.organizationID),
 	}
-	datatags, err := sqlboiler.Datatags(mods...).All(ctx, sso.sqlDB)
+	datatags, err := sqlboiler.Datatags(mods...).All(ctx, sso.ssoDB)
 	if err != nil {
 		return nil, merr.From(err).Desc("list datatags")
 	}
@@ -143,7 +143,7 @@ func (sso *SSOService) PatchDatatag(ctx context.Context, gen request.Request) (i
 	}
 
 	// check that the datatag exist
-	datatag, err := datatag.Get(ctx, sso.sqlDB, query.datatagID)
+	datatag, err := datatag.Get(ctx, sso.ssoDB, query.datatagID)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting datatag")
 	}
@@ -152,14 +152,14 @@ func (sso *SSOService) PatchDatatag(ctx context.Context, gen request.Request) (i
 	}
 
 	// check that the user is an organization admin
-	if err := org.MustBeAdmin(ctx, sso.sqlDB, query.organizationID, acc.IdentityID); err != nil {
+	if err := org.MustBeAdmin(ctx, sso.ssoDB, query.organizationID, acc.IdentityID); err != nil {
 		return nil, merr.From(err).Desc("must be admin of the org")
 	}
 
 	// edit the datatag
 	datatag.Name = query.Name
 
-	if _, err := datatag.Update(ctx, sso.sqlDB, boil.Whitelist(sqlboiler.DatatagColumns.Name)); err != nil {
+	if _, err := datatag.Update(ctx, sso.ssoDB, boil.Whitelist(sqlboiler.DatatagColumns.Name)); err != nil {
 		return nil, merr.From(err).Desc("editing datatag")
 	}
 

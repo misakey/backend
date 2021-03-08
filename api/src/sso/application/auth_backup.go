@@ -59,7 +59,7 @@ func (sso *SSOService) GetBackupDuringAuth(ctx context.Context, gen request.Requ
 	}
 
 	// get identity
-	curIdentity, err := identity.Get(ctx, sso.sqlDB, query.IdentityID)
+	curIdentity, err := identity.Get(ctx, sso.ssoDB, query.IdentityID)
 	if err != nil {
 		return view, err
 	}
@@ -68,7 +68,7 @@ func (sso *SSOService) GetBackupDuringAuth(ctx context.Context, gen request.Requ
 		return view, merr.Conflict().Desc("identity has no account")
 	}
 
-	account, err := identity.GetAccount(ctx, sso.sqlDB, curIdentity.AccountID.String)
+	account, err := identity.GetAccount(ctx, sso.ssoDB, curIdentity.AccountID.String)
 	if err != nil {
 		return view, err
 	}

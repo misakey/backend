@@ -10,7 +10,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 )
 
@@ -56,5 +55,5 @@ func (app *BoxApplication) GetBox(ctx context.Context, genReq request.Request) (
 		return nil, err
 	}
 
-	return boxes.GetWithSenderInfo(ctx, app.DB, app.RedConn, identityMapper, req.boxID, acc.IdentityID)
+	return events.GetBoxWithSenderInfo(ctx, app.DB, app.RedConn, identityMapper, req.boxID, acc.IdentityID)
 }

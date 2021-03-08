@@ -45,7 +45,7 @@ func (sso *SSOService) InitAuthnStep(ctx context.Context, genReq request.Request
 	cmd := genReq.(*AuthenticationStepCmd)
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

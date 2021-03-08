@@ -77,7 +77,7 @@ func KickDeprecatedMembers(
 // notifyKick by creating identity notifications for kicked members
 func notifyKick(ctx context.Context, e *Event, exec boil.ContextExecutor, _ *redis.Client, identities *IdentityMapper, _ files.FileStorageRepo, _ Metadata) error {
 	// TODO (perf): use metadahandlers to bear already retrieved data across handlers ?
-	box, err := Compute(ctx, e.BoxID, exec, identities, e)
+	box, err := computeBox(ctx, e.BoxID, exec, identities, e)
 	if err != nil {
 		return merr.From(err).Desc("computing box")
 	}

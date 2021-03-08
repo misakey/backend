@@ -47,7 +47,7 @@ func (sso *SSOService) GetBackup(ctx context.Context, gen request.Request) (inte
 		return view, merr.Forbidden()
 	}
 
-	account, err := identity.GetAccount(ctx, sso.sqlDB, query.accountID)
+	account, err := identity.GetAccount(ctx, sso.ssoDB, query.accountID)
 	if err != nil {
 		return view, err
 	}
@@ -96,7 +96,7 @@ func (sso *SSOService) UpdateBackup(ctx context.Context, gen request.Request) (i
 	}
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

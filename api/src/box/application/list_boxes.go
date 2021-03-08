@@ -7,11 +7,10 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/box/boxes"
 )
 
 // ListBoxesRequest ...
@@ -55,7 +54,7 @@ func (app *BoxApplication) ListBoxes(ctx context.Context, genReq request.Request
 		req.OwnerOrgID = &app.selfOrgID
 	}
 
-	boxes, err := boxes.ListBoxesForIdentity(
+	boxes, err := events.ListBoxesForIdentity(
 		ctx,
 		app.DB, app.RedConn, identityMapper,
 		acc.IdentityID, *req.OwnerOrgID,

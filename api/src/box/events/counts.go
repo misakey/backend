@@ -20,8 +20,8 @@ func DelCounts(ctx context.Context, redConn *redis.Client, identityID, boxID str
 	return nil
 }
 
-// GetCountsForIdentity and return a map with box IDs and their corresponding new events count for the user
-func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID string) (map[string]int, error) {
+// GetEventCountsForIdentity and return a map with box IDs and their corresponding new events count for the user
+func GetEventCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID string) (map[string]int, error) {
 	result := make(map[string]int)
 	keys, err := redConn.Keys(cache.EventCountKeyByUser(identityID)).Result()
 	if err != nil {
@@ -45,8 +45,8 @@ func GetCountsForIdentity(ctx context.Context, redConn *redis.Client, identityID
 	return result, nil
 }
 
-// GetCountForIdentity and return an int for the asked box
-func GetCountForIdentity(ctx context.Context, redConn *redis.Client, identityID, boxID string) (int, error) {
+// CountEventBoxForIdentity for the asked box and identity and return it as an int
+func CountEventsBoxForIdentity(ctx context.Context, redConn *redis.Client, identityID, boxID string) (int, error) {
 	eventsCount, err := redConn.Get(cache.EventCountKeyByUserBox(identityID, boxID)).Int()
 	if err != nil && err == redis.Nil {
 		// if no result, then there is no new event
@@ -73,9 +73,8 @@ func IncrBoxCounts(ctx context.Context, redConn *redis.Client, identityIDs []str
 	return nil
 }
 
-// ComputeCount ...
-func ComputeCount(ctx context.Context, redConn *redis.Client, senderID, boxID string) int {
-	eventsCount, err := GetCountsForIdentity(ctx, redConn, senderID)
+func computeCount(ctx context.Context, redConn *redis.Client, senderID, boxID string) int {
+	eventsCount, err := GetEventCountsForIdentity(ctx, redConn, senderID)
 	if err != nil {
 		logger.FromCtx(ctx).Error().Err(err).Msgf("could not get events count for %s:%s", senderID, boxID)
 		return 0

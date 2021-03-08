@@ -58,7 +58,7 @@ func (sso *SSOService) BeginTOTPEnrollment(ctx context.Context, gen request.Requ
 		return nil, merr.Forbidden()
 	}
 
-	curIdentity, err := identity.Get(ctx, sso.sqlDB, query.identityID)
+	curIdentity, err := identity.Get(ctx, sso.ssoDB, query.identityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting identityID")
 	}
@@ -161,7 +161,7 @@ func (sso *SSOService) FinishTOTPEnrollment(ctx context.Context, gen request.Req
 		Secret:     secret,
 		Backup:     recoveryCodes,
 	}
-	if err := toStore.Insert(ctx, sso.sqlDB, boil.Infer()); err != nil {
+	if err := toStore.Insert(ctx, sso.ssoDB, boil.Infer()); err != nil {
 		return nil, merr.From(err).Desc("storing secret")
 	}
 	if _, err := sso.redConn.Del(fmt.Sprintf("totp:%s", query.ID)).Result(); err != nil {
@@ -199,7 +199,7 @@ func (sso *SSOService) RegenerateRecoveryCodes(ctx context.Context, gen request.
 		return nil, merr.Forbidden()
 	}
 
-	secret, err := sqlboiler.TotpSecrets(sqlboiler.TotpSecretWhere.IdentityID.EQ(query.identityID)).One(ctx, sso.sqlDB)
+	secret, err := sqlboiler.TotpSecrets(sqlboiler.TotpSecretWhere.IdentityID.EQ(query.identityID)).One(ctx, sso.ssoDB)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func (sso *SSOService) RegenerateRecoveryCodes(ctx context.Context, gen request.
 	if err != nil {
 		return nil, err
 	}
-	if _, err := secret.Update(ctx, sso.sqlDB, boil.Whitelist(sqlboiler.TotpSecretColumns.Backup)); err != nil {
+	if _, err := secret.Update(ctx, sso.ssoDB, boil.Whitelist(sqlboiler.TotpSecretColumns.Backup)); err != nil {
 		return []string{}, err
 	}
 
@@ -243,7 +243,7 @@ func (sso *SSOService) DeleteSecret(ctx context.Context, gen request.Request) (i
 	}
 
 	// check that the operation can be performed
-	curIdentity, err := identity.Get(ctx, sso.sqlDB, query.identityID)
+	curIdentity, err := identity.Get(ctx, sso.ssoDB, query.identityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting identityID")
 	}
@@ -253,7 +253,7 @@ func (sso *SSOService) DeleteSecret(ctx context.Context, gen request.Request) (i
 	}
 
 	// delete the secret
-	rowsAff, err := sqlboiler.TotpSecrets(sqlboiler.TotpSecretWhere.IdentityID.EQ(query.identityID)).DeleteAll(ctx, sso.sqlDB)
+	rowsAff, err := sqlboiler.TotpSecrets(sqlboiler.TotpSecretWhere.IdentityID.EQ(query.identityID)).DeleteAll(ctx, sso.ssoDB)
 	if err != nil {
 		return nil, err
 	}

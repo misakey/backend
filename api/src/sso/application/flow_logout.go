@@ -20,7 +20,7 @@ func (sso *SSOService) Logout(ctx context.Context, _ request.Request) (interface
 		return nil, merr.Forbidden()
 	}
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

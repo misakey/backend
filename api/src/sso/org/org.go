@@ -11,6 +11,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sso/repositories/sqlboiler"
 )
@@ -98,29 +99,41 @@ func MustBeAdmin(ctx context.Context, exec boil.ContextExecutor, orgID string, i
 }
 
 // TODO (structure): the cache should be refactored into a cross-module package (inside sdk eventually)
-func GetIDsForIdentity(ctx context.Context, redConn *redis.Client, identityID string) ([]string, error) {
+func GetIDsForIdentity(ctx context.Context, boxExec boil.ContextExecutor, redConn *redis.Client, identityID string) ([]string, error) {
 	pattern := fmt.Sprintf("cache:user_%s:*", identityID)
 	keys, err := redConn.Keys(pattern).Result()
 	if err != nil {
-		return nil, merr.From(err).Desc("listing user org cache keys")
+		return nil, merr.From(err).Desc("listing identity org cache keys")
 	}
 
-	// if cached keys have been found, use it
 	orgIDs := []string{}
-	for _, key := range keys {
-		// cache:user_id:org_{id}:...
-		//   0      1      2     x
-		keySplit := strings.Split(key, ":")
-		if len(keySplit) < 3 {
-			continue
+	// if no keys found, re-build the cache
+	if len(keys) == 0 {
+		orgMap, err := events.BuildIdentityOrgBoxCache(ctx, boxExec, redConn, identityID)
+		if err != nil {
+			return nil, merr.From(err).Desc("building identity org cache")
 		}
-		// org_{id}...
-		//  0    1
-		keySplit = strings.Split(key, "_")
-		if len(keySplit) != 2 {
-			continue
+		for orgID := range orgMap {
+			orgIDs = append(orgIDs, orgID)
 		}
-		orgIDs = append(orgIDs, keySplit[1])
+	} else {
+		// if cached keys have been found, use it
+		for _, key := range keys {
+			// cache:user_id:org_{id}:...
+			//   0      1      2     x
+			splitByColon := strings.Split(key, ":")
+			if len(splitByColon) < 3 {
+				continue
+			}
+			orgKey := splitByColon[2]
+			// org_{id}...
+			//  0    1
+			splitByUnderscore := strings.Split(orgKey, "_")
+			if len(splitByUnderscore) != 2 {
+				continue
+			}
+			orgIDs = append(orgIDs, splitByUnderscore[1])
+		}
 	}
 	return orgIDs, nil
 }

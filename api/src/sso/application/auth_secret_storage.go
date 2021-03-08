@@ -60,7 +60,7 @@ func (sso *SSOService) GetSecretStorageDuringAuth(ctx context.Context, gen reque
 	}
 
 	// get identity
-	curIdentity, err := identity.Get(ctx, sso.sqlDB, query.IdentityID)
+	curIdentity, err := identity.Get(ctx, sso.ssoDB, query.IdentityID)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (sso *SSOService) GetSecretStorageDuringAuth(ctx context.Context, gen reque
 		return nil, merr.Conflict().Desc("identity has no account")
 	}
 
-	secrets, err := crypto.GetAccountSecrets(ctx, sso.sqlDB, curIdentity.AccountID.String)
+	secrets, err := crypto.GetAccountSecrets(ctx, sso.ssoDB, curIdentity.AccountID.String)
 	if err != nil {
 		if err == crypto.ErrNoRootKey {
 			return nil, merr.Conflict().Desc("Account has no root key; it requires migration.")

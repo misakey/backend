@@ -52,12 +52,12 @@ func (sso *SSOService) BeginWebAuthnRegistration(ctx context.Context, gen reques
 		return nil, merr.Forbidden()
 	}
 
-	curIdentity, err := identity.Get(ctx, sso.sqlDB, query.identityID)
+	curIdentity, err := identity.Get(ctx, sso.ssoDB, query.identityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting identityID")
 	}
 
-	wid, err := identity.GetWebauthnIdentity(ctx, sso.sqlDB, curIdentity)
+	wid, err := identity.GetWebauthnIdentity(ctx, sso.ssoDB, curIdentity)
 	if err != nil {
 		return nil, merr.From(err).Desc("creating webauthn identity")
 	}
@@ -131,7 +131,7 @@ func (sso *SSOService) FinishWebAuthnRegistration(ctx context.Context, gen reque
 		return nil, merr.Forbidden()
 	}
 
-	curIdentity, err := identity.Get(ctx, sso.sqlDB, query.identityID)
+	curIdentity, err := identity.Get(ctx, sso.ssoDB, query.identityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting identityID")
 	}
@@ -141,7 +141,7 @@ func (sso *SSOService) FinishWebAuthnRegistration(ctx context.Context, gen reque
 		return nil, merr.From(err).Desc("getting session")
 	}
 
-	wid, err := identity.GetWebauthnIdentity(ctx, sso.sqlDB, curIdentity)
+	wid, err := identity.GetWebauthnIdentity(ctx, sso.ssoDB, curIdentity)
 	if err != nil {
 		return nil, merr.From(err).Desc("creating webauthn identity")
 	}
@@ -162,7 +162,7 @@ func (sso *SSOService) FinishWebAuthnRegistration(ctx context.Context, gen reque
 		SignCount:       int(cred.Authenticator.SignCount),
 		CloneWarning:    cred.Authenticator.CloneWarning,
 	}
-	if err := toStore.Insert(ctx, sso.sqlDB, boil.Infer()); err != nil {
+	if err := toStore.Insert(ctx, sso.ssoDB, boil.Infer()); err != nil {
 		return nil, merr.From(err).Desc("inserting credential")
 	}
 
@@ -206,7 +206,7 @@ func (sso *SSOService) ListCredentials(ctx context.Context, gen request.Request)
 		sqlboiler.WebauthnCredentialWhere.IdentityID.EQ(query.IdentityID),
 	}
 
-	credentials, err := sqlboiler.WebauthnCredentials(mods...).All(ctx, sso.sqlDB)
+	credentials, err := sqlboiler.WebauthnCredentials(mods...).All(ctx, sso.ssoDB)
 	if err == nil && credentials == nil {
 		return []sqlboiler.WebauthnCredential{}, nil
 	}
@@ -250,12 +250,12 @@ func (sso *SSOService) DeleteCredential(ctx context.Context, gen request.Request
 		return nil, merr.Forbidden()
 	}
 
-	curIdentity, err := identity.Get(ctx, sso.sqlDB, acc.IdentityID)
+	curIdentity, err := identity.Get(ctx, sso.ssoDB, acc.IdentityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting identity")
 	}
 
-	cred, err := sqlboiler.FindWebauthnCredential(ctx, sso.sqlDB, query.id)
+	cred, err := sqlboiler.FindWebauthnCredential(ctx, sso.ssoDB, query.id)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting credential")
 	}
@@ -264,7 +264,7 @@ func (sso *SSOService) DeleteCredential(ctx context.Context, gen request.Request
 		return nil, merr.Forbidden()
 	}
 
-	number, err := mwebauthn.CredentialsNumber(ctx, sso.sqlDB, acc.IdentityID)
+	number, err := mwebauthn.CredentialsNumber(ctx, sso.ssoDB, acc.IdentityID)
 	if err != nil {
 		return nil, merr.From(err).Desc("counting credentials")
 	}
@@ -273,7 +273,7 @@ func (sso *SSOService) DeleteCredential(ctx context.Context, gen request.Request
 		return nil, merr.Forbidden().Desc("2FA configured and last credential remaining")
 	}
 
-	if _, err := cred.Delete(ctx, sso.sqlDB); err != nil {
+	if _, err := cred.Delete(ctx, sso.ssoDB); err != nil {
 		return nil, merr.From(err).Desc("deleting credential")
 	}
 

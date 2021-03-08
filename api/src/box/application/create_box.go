@@ -86,7 +86,6 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 		if err := org.MustBeAdmin(ctx, app.SSODB, *req.OwnerOrgID, acc.IdentityID); err != nil {
 			return nil, merr.Forbidden()
 		}
-		// TODO: check that a machine belonging to org is also allowed
 	}
 
 	if req.DatatagID != nil {
@@ -128,7 +127,7 @@ func (app *BoxApplication) CreateBox(ctx context.Context, genReq request.Request
 	}
 
 	// build the box view and return it
-	box, err := events.Compute(ctx, event.BoxID, app.DB, identityMapper, &event)
+	box, err := events.GetBox(ctx, app.DB, identityMapper, event.BoxID, &event)
 	if err != nil {
 		return nil, merr.From(err).Desc("building box")
 	}

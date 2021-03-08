@@ -62,7 +62,7 @@ func (sso *SSOService) GetIdentity(ctx context.Context, gen request.Request) (in
 	}
 
 	// set the view on identity retrieval
-	view.Identity, err = identity.Get(ctx, sso.sqlDB, query.identityID)
+	view.Identity, err = identity.Get(ctx, sso.ssoDB, query.identityID)
 	if err != nil {
 		return view, err
 	}
@@ -75,7 +75,7 @@ func (sso *SSOService) GetIdentity(ctx context.Context, gen request.Request) (in
 	}
 
 	// add information about MFA configuration
-	view.HasTOTPSecret = mtotp.SecretExist(ctx, sso.sqlDB, query.identityID)
+	view.HasTOTPSecret = mtotp.SecretExist(ctx, sso.ssoDB, query.identityID)
 
 	return view, err
 }
@@ -107,7 +107,7 @@ func (sso *SSOService) GetIdentityPubkeyByIdentifier(ctx context.Context, gen re
 	}
 
 	// consider only email identities
-	identity, err := identity.GetByIdentifier(ctx, sso.sqlDB, query.IdentifierValue, identity.IdentifierKindEmail)
+	identity, err := identity.GetByIdentifier(ctx, sso.ssoDB, query.IdentifierValue, identity.IdentifierKindEmail)
 	// return an empty list of not found to respect list route semantic
 	if merr.IsANotFound(err) {
 		return []string{}, nil
@@ -172,7 +172,7 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 	}
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -214,8 +214,8 @@ func (sso *SSOService) PartialUpdateIdentity(ctx context.Context, gen request.Re
 	if cmd.MFAMethod.Valid {
 		curIdentity.MFAMethod = cmd.MFAMethod.String
 		// check if mfa is possible
-		if curIdentity.MFAMethod == "webauthn" && !mwebauthn.CredentialsExist(ctx, sso.sqlDB, curIdentity.ID) ||
-			curIdentity.MFAMethod == "totp" && !mtotp.SecretExist(ctx, sso.sqlDB, curIdentity.ID) {
+		if curIdentity.MFAMethod == "webauthn" && !mwebauthn.CredentialsExist(ctx, sso.ssoDB, curIdentity.ID) ||
+			curIdentity.MFAMethod == "totp" && !mtotp.SecretExist(ctx, sso.ssoDB, curIdentity.ID) {
 			return nil, merr.Conflict().Add("mfa_method", merr.DVConflict).Add("reason", "no credential")
 		}
 	}
@@ -272,7 +272,7 @@ func (sso *SSOService) UploadAvatar(ctx context.Context, gen request.Request) (i
 	}
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +346,7 @@ func (sso *SSOService) DeleteAvatar(ctx context.Context, gen request.Request) (i
 	}
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -410,7 +410,7 @@ func (sso *SSOService) AttachCoupon(ctx context.Context, gen request.Request) (i
 	}
 
 	// start transaction since write actions will be performed across entities
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

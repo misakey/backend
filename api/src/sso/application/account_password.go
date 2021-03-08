@@ -42,7 +42,7 @@ func (sso *SSOService) GetAccountPwdParams(ctx context.Context, gen request.Requ
 
 	view := PwdParamsView{}
 
-	account, err := identity.GetAccount(ctx, sso.sqlDB, query.accountID)
+	account, err := identity.GetAccount(ctx, sso.ssoDB, query.accountID)
 	if err != nil {
 		return view, err
 	}
@@ -98,7 +98,7 @@ func (sso *SSOService) ChangePassword(ctx context.Context, gen request.Request) 
 	}
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

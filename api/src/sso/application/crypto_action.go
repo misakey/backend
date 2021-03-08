@@ -48,7 +48,7 @@ func (sso *SSOService) ListCryptoActions(ctx context.Context, gen request.Reques
 		return nil, merr.Forbidden().Desc("can only list one's own crypto actions")
 	}
 
-	actions, err := crypto.ListActions(ctx, sso.sqlDB, query.accountID)
+	actions, err := crypto.ListActions(ctx, sso.ssoDB, query.accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (sso *SSOService) GetCryptoAction(ctx context.Context, gen request.Request)
 		return nil, merr.Forbidden().Desc("can only get one's own crypto actions")
 	}
 
-	action, err := crypto.GetAction(ctx, sso.sqlDB, query.actionID, query.accountID)
+	action, err := crypto.GetAction(ctx, sso.ssoDB, query.actionID, query.accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (sso *SSOService) DeleteCryptoAction(ctx context.Context, gen request.Reque
 	}
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

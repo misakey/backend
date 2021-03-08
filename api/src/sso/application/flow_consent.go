@@ -48,7 +48,7 @@ func (sso *SSOService) InitConsent(ctx context.Context, gen request.Request) (in
 	}
 
 	// 2. retrieve subject information to put it in ID tokens as claims
-	curIdentity, err := identity.Get(ctx, sso.sqlDB, consentCtx.OIDCContext.MID())
+	curIdentity, err := identity.Get(ctx, sso.ssoDB, consentCtx.OIDCContext.MID())
 	if err != nil {
 		// reset the flow if the identity id is not found for a better ux
 		if merr.IsANotFound(err) {
@@ -72,7 +72,7 @@ func (sso *SSOService) InitConsent(ctx context.Context, gen request.Request) (in
 
 	// 4. ask our consent service if the end-user manual consent can be skipped
 	skip, err := sso.authFlowService.ShouldSkipConsent(
-		ctx, sso.sqlDB,
+		ctx, sso.ssoDB,
 		consentCtx.RequestedScope, consentCtx.Client.ID, curIdentity.AccountID,
 	)
 	if err != nil {
@@ -176,7 +176,7 @@ func (sso *SSOService) AcceptConsent(ctx context.Context, gen request.Request) (
 	}
 
 	// 2. retrieve subject information to put it in ID tokens as claims
-	curIdentity, err := identity.Get(ctx, sso.sqlDB, consentCtx.OIDCContext.MID())
+	curIdentity, err := identity.Get(ctx, sso.ssoDB, consentCtx.OIDCContext.MID())
 	if err != nil {
 		return redirect, err
 	}

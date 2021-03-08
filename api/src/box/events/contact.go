@@ -97,7 +97,7 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 		return nil, merr.From(err).Desc("getting contacted identity")
 	}
 	// compute box for invitation and return
-	box, err := Compute(ctx, event.BoxID, exec, identityMapper, &event)
+	box, err := computeBox(ctx, event.BoxID, exec, identityMapper, &event)
 	if err != nil {
 		return nil, merr.From(err).Desc("computing box")
 	}

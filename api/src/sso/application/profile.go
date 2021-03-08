@@ -48,7 +48,7 @@ func (sso *SSOService) SetProfileConfig(ctx context.Context, gen request.Request
 	}
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (sso *SSOService) GetProfileConfig(ctx context.Context, gen request.Request
 		return nil, merr.Forbidden()
 	}
 
-	return identity.ProfileConfigGet(ctx, sso.sqlDB, query.identityID)
+	return identity.ProfileConfigGet(ctx, sso.ssoDB, query.identityID)
 }
 
 // ProfileQuery ...
@@ -107,5 +107,5 @@ func (query *ProfileQuery) BindAndValidate(eCtx echo.Context) error {
 // GetProfile ...
 func (sso *SSOService) GetProfile(ctx context.Context, gen request.Request) (interface{}, error) {
 	query := gen.(*ProfileQuery)
-	return identity.ProfileGet(ctx, sso.sqlDB, query.identityID)
+	return identity.ProfileGet(ctx, sso.ssoDB, query.identityID)
 }

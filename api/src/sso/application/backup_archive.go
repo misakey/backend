@@ -26,7 +26,7 @@ func (sso *SSOService) ListBackupArchives(ctx context.Context, _ request.Request
 		return nil, merr.Forbidden()
 	}
 
-	archives, err := crypto.ListBackupArchives(ctx, sso.sqlDB, acc.AccountID.String)
+	archives, err := crypto.ListBackupArchives(ctx, sso.ssoDB, acc.AccountID.String)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (sso *SSOService) GetBackupArchiveData(ctx context.Context, gen request.Req
 		return "", merr.Forbidden()
 	}
 
-	archive, err := crypto.GetBackupArchive(ctx, sso.sqlDB, query.archiveID)
+	archive, err := crypto.GetBackupArchive(ctx, sso.ssoDB, query.archiveID)
 	if err != nil {
 		return "", merr.From(err).Desc("retrieving archive")
 	}
@@ -107,7 +107,7 @@ func (sso *SSOService) DeleteBackupArchive(ctx context.Context, gen request.Requ
 	}
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

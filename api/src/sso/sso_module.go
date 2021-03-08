@@ -40,6 +40,16 @@ func InitModule(router *echo.Echo) Process {
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not connect to db")
 	}
+	// init db connections
+	boxDBConn, err := db.NewPSQLConn(
+		os.Getenv("DSN_BOX"),
+		viper.GetInt("sql.max_open_connections"),
+		viper.GetInt("sql.max_idle_connections"),
+		viper.GetDuration("sql.conn_max_lifetime"),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not connect to db")
+	}
 
 	// init redis connection
 	redConn := redis.NewClient(&redis.Options{
@@ -141,7 +151,7 @@ func InitModule(router *echo.Echo) Process {
 		viper.GetDuration("root_key_share.expiration"),
 		selfCliID,
 
-		dbConn,
+		boxDBConn, dbConn,
 		redConn,
 	)
 	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(

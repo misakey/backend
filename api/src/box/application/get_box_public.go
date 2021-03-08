@@ -10,7 +10,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/box/boxes"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
 )
@@ -57,7 +56,7 @@ func (app *BoxApplication) GetBoxPublic(ctx context.Context, genReq request.Requ
 	}
 
 	// get box title
-	box, err := boxes.Get(ctx, app.DB, identityMapper, req.boxID)
+	box, err := events.GetBox(ctx, app.DB, identityMapper, req.boxID, nil)
 	if err != nil {
 		return nil, err
 	}

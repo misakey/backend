@@ -136,7 +136,7 @@ class Session(requests.Session):
             call_request_fn_decorated(super().get, *args, **kwargs)
         )
 
-    # @init_default_headers
+    @init_default_headers
     def patch(self, *args, **kwargs):
         kwargs['csrf_token'] = self.csrf_token
         return self.update_csrf(

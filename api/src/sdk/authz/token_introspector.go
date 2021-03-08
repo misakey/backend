@@ -64,7 +64,6 @@ func NewTokenIntrospector(
 
 			// check the client id is authorized to perform this request
 			if err := manager.CheckClientID(ctx, acc); err != nil {
-				fmt.Println("error on client id check:", err)
 				return manager.HandleErr(eCtx, next, err)
 			}
 

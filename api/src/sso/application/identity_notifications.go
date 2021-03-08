@@ -43,7 +43,7 @@ func (sso *SSOService) CountIdentityNotification(ctx context.Context, gen reques
 		return -1, merr.Forbidden()
 	}
 
-	return identity.NotificationCount(ctx, sso.sqlDB, query.identityID)
+	return identity.NotificationCount(ctx, sso.ssoDB, query.identityID)
 }
 
 // IdentityNotifListQuery ...
@@ -80,7 +80,7 @@ func (sso *SSOService) ListIdentityNotification(ctx context.Context, gen request
 	}
 
 	// list notifs
-	notifs, err := identity.NotificationList(ctx, sso.sqlDB, query.identityID, query.Offset, query.Limit)
+	notifs, err := identity.NotificationList(ctx, sso.ssoDB, query.identityID, query.Offset, query.Limit)
 	if err != nil {
 		return nil, merr.From(err).Desc("listing identity notification")
 	}
@@ -130,7 +130,7 @@ func (sso *SSOService) AckIdentityNotification(ctx context.Context, gen request.
 	}
 
 	// start transaction since write actions will be performed
-	tr, err := sso.sqlDB.BeginTx(ctx, nil)
+	tr, err := sso.ssoDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

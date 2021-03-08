@@ -43,9 +43,9 @@ func DigestCountKeyAll() string {
 	return "digestCount:*"
 }
 
-// CleanUserBoxByUserOrg removes cache for a given user/org
-// if org id is an empty string, it would flush entirely the user box cache
-func CleanUserBoxByUserOrg(
+// CleanIdentityBoxByIdentityOrg removes cache for a given identity/org
+// if org id is an empty string, it would flush entirely the identity box cache
+func CleanIdentityBoxByIdentityOrg(
 	ctx context.Context, redConn *redis.Client,
 	senderID string, orgID string,
 ) error {

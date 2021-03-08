@@ -1,4 +1,4 @@
-package boxes
+package events
 
 import (
 	"context"
@@ -6,34 +6,36 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/slice"
 
-	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/cache"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
+	"gitlab.misakey.dev/misakey/backend/api/src/box/quota"
 )
 
-// Get ...
-func Get(ctx context.Context, exec boil.ContextExecutor, identities *events.IdentityMapper, boxID string) (events.Box, error) {
-	return events.Compute(ctx, boxID, exec, identities, nil)
+// GetBox ...
+func GetBox(ctx context.Context, exec boil.ContextExecutor, identities *IdentityMapper, boxID string, lastEvent *Event) (Box, error) {
+	return computeBox(ctx, boxID, exec, identities, lastEvent)
 }
 
-// GetWithSenderInfo ...
-func GetWithSenderInfo(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identities *events.IdentityMapper, boxID, identityID string) (*events.Box, error) {
-	box, err := events.Compute(ctx, boxID, exec, identities, nil)
+// GetBoxWithSenderInfo ...
+func GetBoxWithSenderInfo(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, boxID, identityID string) (*Box, error) {
+	box, err := computeBox(ctx, boxID, exec, identities, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	// fill the eventCounts attribute
-	eventsCount, err := events.GetCountForIdentity(ctx, redConn, identityID, boxID)
+	eventsCount, err := CountEventsBoxForIdentity(ctx, redConn, identityID, boxID)
 	if err != nil {
 		return nil, merr.From(err).Desc("counting new events")
 	}
 	box.EventsCount = null.IntFrom(eventsCount)
 
-	boxSetting, err := events.GetBoxSetting(ctx, exec, identityID, boxID)
+	boxSetting, err := GetBoxSetting(ctx, exec, identityID, boxID)
 	if err != nil {
 		return nil, merr.From(err).Desc("getting box setting")
 	}
@@ -42,8 +44,8 @@ func GetWithSenderInfo(ctx context.Context, exec boil.ContextExecutor, redConn *
 	return &box, nil
 }
 
-// CountForIdentity returns the number of boxes the identity is concerned by
-func CountForIdentity(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityID, ownerOrgID string) (int, error) {
+// CountBoxesForIdentity returns the number of boxes the identity is concerned by
+func CountBoxesForIdentity(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityID, ownerOrgID string) (int, error) {
 	boxIDs, err := listBoxIDsForIdentity(ctx, exec, redConn, identityID, ownerOrgID)
 	return len(boxIDs), err
 }
@@ -51,11 +53,11 @@ func CountForIdentity(ctx context.Context, exec boil.ContextExecutor, redConn *r
 // ListBoxesForIdentity ...
 func ListBoxesForIdentity(
 	ctx context.Context,
-	exec boil.ContextExecutor, redConn *redis.Client, identities *events.IdentityMapper,
+	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
 	identityID, ownerOrgID string,
 	limit, offset int,
-) ([]*events.Box, error) {
-	boxes := []*events.Box{}
+) ([]*Box, error) {
+	boxes := []*Box{}
 
 	// 0. list box ids the identity is concerned by
 	allBoxIDs, err := listBoxIDsForIdentity(ctx, exec, redConn, identityID, ownerOrgID)
@@ -64,7 +66,7 @@ func ListBoxesForIdentity(
 	}
 
 	// 1. retrieve lastest events concerning the boxes the identity has access to
-	list, err := events.ListLastestForEachBoxID(ctx, exec, allBoxIDs)
+	list, err := ListLastestForEachBoxID(ctx, exec, allBoxIDs)
 	if err != nil {
 		return boxes, merr.From(err).Desc("listing box ids")
 	}
@@ -83,10 +85,10 @@ func ListBoxesForIdentity(
 
 	// 3. compute all boxes
 	paginatedBoxIDs := make([]string, len(list))
-	boxes = make([]*events.Box, len(list))
+	boxes = make([]*Box, len(list))
 	for i, e := range list {
 		// TODO (perf): computation in redis
-		box, err := events.Compute(ctx, e.BoxID, exec, identities, &e)
+		box, err := computeBox(ctx, e.BoxID, exec, identities, &e)
 		if err != nil {
 			return boxes, merr.From(err).Descf("computing box %s", e.BoxID)
 		}
@@ -95,15 +97,15 @@ func ListBoxesForIdentity(
 	}
 
 	// 4. retrieve box settings
-	settingsFilters := events.BoxSettingFilters{
+	settingsFilters := BoxSettingFilters{
 		BoxIDs:     paginatedBoxIDs,
 		IdentityID: identityID,
 	}
-	boxSettings, err := events.ListBoxSettings(ctx, exec, settingsFilters)
+	boxSettings, err := ListBoxSettings(ctx, exec, settingsFilters)
 	if err != nil {
 		return boxes, merr.From(err).Desc("listing box settings")
 	}
-	indexedBoxSettings := make(map[string]events.BoxSetting, len(boxSettings))
+	indexedBoxSettings := make(map[string]BoxSetting, len(boxSettings))
 	for _, boxSetting := range boxSettings {
 		indexedBoxSettings[boxSetting.BoxID] = *boxSetting
 	}
@@ -113,12 +115,12 @@ func ListBoxesForIdentity(
 		// we won’t return an error since the list
 		// can still be returned
 		// with a wrong amount of event counts
-		box.EventsCount = null.IntFrom(events.ComputeCount(ctx, redConn, identityID, box.ID))
+		box.EventsCount = null.IntFrom(computeCount(ctx, redConn, identityID, box.ID))
 
 		// add box settings
 		boxSetting, ok := indexedBoxSettings[box.ID]
 		if !ok {
-			boxSetting = *events.GetDefaultBoxSetting(identityID, box.ID)
+			boxSetting = *GetDefaultBoxSetting(identityID, box.ID)
 		}
 		box.BoxSettings = &boxSetting
 	}
@@ -128,8 +130,7 @@ func ListBoxesForIdentity(
 
 func listBoxIDsForIdentity(
 	ctx context.Context,
-	exec boil.ContextExecutor,
-	redConn *redis.Client,
+	exec boil.ContextExecutor, redConn *redis.Client,
 	identityID, ownerOrgID string,
 ) ([]string, error) {
 	// 1. try to retrieve and use cache
@@ -140,7 +141,7 @@ func listBoxIDsForIdentity(
 	}
 
 	// otherwise, let's build the cache and use its computation
-	boxIDsbyOrgID, err := buildIdentityOrgBoxCache(ctx, exec, redConn, identityID)
+	boxIDsbyOrgID, err := BuildIdentityOrgBoxCache(ctx, exec, redConn, identityID)
 	if err != nil {
 		return nil, err
 	}
@@ -151,9 +152,9 @@ func listBoxIDsForIdentity(
 	return boxIDs, nil
 }
 
-// compute the full cache for the given identity: org_*:boxIDs
+// BuildIdentityOrgBoxCache computes the full cache for the given identity: org_*:boxIDs
 // return a map[orgID]boxIDs
-func buildIdentityOrgBoxCache(
+func BuildIdentityOrgBoxCache(
 	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	identityID string,
 ) (map[string][]string, error) {
@@ -164,12 +165,12 @@ func buildIdentityOrgBoxCache(
 	// - what they have joined (a)
 	// - what they have created (b)
 	// a.
-	activeJoins, err := events.ListIdentityActiveJoins(ctx, exec, identityID)
+	activeJoins, err := ListIdentityActiveJoins(ctx, exec, identityID)
 	if err != nil {
 		return boxIDsByOrgID, merr.From(err).Desc("listing joined box ids")
 	}
 	// b.
-	creates, err := events.ListCreateByCreatorID(ctx, exec, identityID)
+	creates, err := ListCreateByCreatorID(ctx, exec, identityID)
 	if err != nil {
 		return boxIDsByOrgID, merr.From(err).Desc("listing creator box ids")
 	}
@@ -189,7 +190,7 @@ func buildIdentityOrgBoxCache(
 		return boxIDsByOrgID, nil
 	}
 
-	contentByBoxID, err := events.MapCreationContentByBoxID(ctx, exec, boxIDs)
+	contentByBoxID, err := MapCreationContentByBoxID(ctx, exec, boxIDs)
 	if err != nil {
 		return boxIDsByOrgID, merr.From(err).Desc("listing creation contents")
 	}
@@ -208,4 +209,24 @@ func buildIdentityOrgBoxCache(
 
 	// return the cache
 	return boxIDsByOrgID, nil
+}
+
+// ClearBox ...
+func ClearBox(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
+	// 1. Delete all the events
+	if err := DeleteAllForBox(ctx, exec, boxID); err != nil {
+		return merr.From(err).Desc("deleting events")
+	}
+
+	// 2. Delete the key shares
+	if err := keyshares.EmptyAll(ctx, exec, boxID); err != nil {
+		return merr.From(err).Desc("emptying keyshares")
+	}
+
+	// 3. Delete the box used space
+	if err := quota.DeleteBoxUsedSpace(ctx, exec, boxID); err != nil {
+		return merr.From(err).Desc("emptying box used space")
+	}
+
+	return nil
 }

@@ -7,11 +7,10 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
-
-	"gitlab.misakey.dev/misakey/backend/api/src/box/boxes"
 )
 
 // CountBoxesRequest ...
@@ -44,7 +43,7 @@ func (app *BoxApplication) CountBoxes(ctx context.Context, genReq request.Reques
 		req.OwnerOrgID = &app.selfOrgID
 	}
 
-	count, err := boxes.CountForIdentity(ctx,
+	count, err := events.CountBoxesForIdentity(ctx,
 		app.DB, app.RedConn,
 		acc.IdentityID, *req.OwnerOrgID,
 	)

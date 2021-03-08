@@ -11,8 +11,6 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
-	"gitlab.misakey.dev/misakey/backend/api/src/box/keyshares"
-	"gitlab.misakey.dev/misakey/backend/api/src/box/quota"
 )
 
 // Box is a volatile object built based on events linked to its ID
@@ -50,10 +48,10 @@ type computer struct {
 	lastEvent *Event
 }
 
-// Compute box according to the received boxID.
+// computeBox box according to the received boxID.
 // The function retrieves events linked to the boxID using received db connector.
 // The function can takes optionally the last event which will be retrieve if nil
-func Compute(
+func computeBox(
 	ctx context.Context,
 	boxID string,
 	exec boil.ContextExecutor,
@@ -186,25 +184,5 @@ func (c *computer) playStateAccessMode(_ context.Context, e Event) error {
 		return err
 	}
 	c.box.AccessMode = accessModeContent.Value
-	return nil
-}
-
-// ClearBox ...
-func ClearBox(ctx context.Context, exec boil.ContextExecutor, boxID string) error {
-	// 1. Delete all the events
-	if err := DeleteAllForBox(ctx, exec, boxID); err != nil {
-		return merr.From(err).Desc("deleting events")
-	}
-
-	// 2. Delete the key shares
-	if err := keyshares.EmptyAll(ctx, exec, boxID); err != nil {
-		return merr.From(err).Desc("emptying keyshares")
-	}
-
-	// 3. Delete the box used space
-	if err := quota.DeleteBoxUsedSpace(ctx, exec, boxID); err != nil {
-		return merr.From(err).Desc("emptying box used space")
-	}
-
 	return nil
 }
