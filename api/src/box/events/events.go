@@ -131,7 +131,7 @@ func ListFilesForMembersByBoxID(ctx context.Context, exec boil.ContextExecutor, 
 		limit:  limit,
 		// exclude removed msg.file events for that box
 		excludeOnRef: &referentsFilters{
-			eTypes: []string{etype.Accessrm},
+			eTypes: []string{etype.Msgdelete},
 			boxID:  null.StringFrom(boxID),
 		},
 	})
