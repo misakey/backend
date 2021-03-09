@@ -18,7 +18,7 @@ module.exports = {
     {
       type: 'category',
       label: 'References',
-      items: ['references/overview', 'references/boxes', 'references/datatags', 'references/authorizations', 'references/errors-format'],
+      items: ['references/overview', 'references/boxes', 'references/datatags', 'references/authorizations', 'references/errors-format', 'references/aes-rsa-encryption'],
     },
     {
       type: 'category',
