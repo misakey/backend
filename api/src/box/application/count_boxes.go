@@ -11,11 +11,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/datatag"
 )
 
 // CountBoxesRequest ...
 type CountBoxesRequest struct {
 	OwnerOrgID *string `query:"owner_org_id" json:"-"`
+	DatatagID  *string `query:"datatag_id" json:"-"`
 }
 
 // BindAndValidate ...
@@ -25,6 +27,7 @@ func (req *CountBoxesRequest) BindAndValidate(eCtx echo.Context) error {
 	}
 	return v.ValidateStruct(req,
 		v.Field(&req.OwnerOrgID, is.UUIDv4),
+		v.Field(&req.DatatagID, is.UUIDv4),
 	)
 }
 
@@ -43,9 +46,19 @@ func (app *BoxApplication) CountBoxes(ctx context.Context, genReq request.Reques
 		req.OwnerOrgID = &app.selfOrgID
 	}
 
+	// check datatag existency and
+	// owner org id
+	// NOTE: empty datatag means "boxes with no datatag" so we don’t need
+	// to check the organization in this case
+	if req.DatatagID != nil && *req.DatatagID != "" {
+		if err := datatag.CheckExistencyAndOrg(ctx, app.SSODB, *req.DatatagID, *req.OwnerOrgID); err != nil {
+			return nil, err
+		}
+	}
+
 	count, err := events.CountBoxesForIdentity(ctx,
 		app.DB, app.RedConn,
-		acc.IdentityID, *req.OwnerOrgID,
+		acc.IdentityID, *req.OwnerOrgID, req.DatatagID,
 	)
 	if err != nil {
 		return nil, merr.From(err).Desc("counting sender boxes")

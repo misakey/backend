@@ -7,8 +7,8 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/box/events"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -99,18 +99,11 @@ func (sso *SSOService) ListDatatags(ctx context.Context, gen request.Request) (i
 	}
 
 	// list the datatags
-	mods := []qm.QueryMod{
-		sqlboiler.DatatagWhere.OrganizationID.EQ(query.organizationID),
-	}
-	datatags, err := sqlboiler.Datatags(mods...).All(ctx, sso.ssoDB)
-	if err != nil {
-		return nil, merr.From(err).Desc("list datatags")
-	}
-	if datatags == nil {
-		return []*sqlboiler.Datatag{}, nil
+	filters := datatag.Filters{
+		OrganizationID: query.organizationID,
 	}
 
-	return datatags, nil
+	return datatag.List(ctx, sso.ssoDB, filters)
 }
 
 // PatchDatatagCmd ...
@@ -164,4 +157,52 @@ func (sso *SSOService) PatchDatatag(ctx context.Context, gen request.Request) (i
 	}
 
 	return nil, nil
+}
+
+// ListDatatagsForIdentityCmd ...
+type ListDatatagsForIdentityCmd struct {
+	OrganizationID string `query:"organization_id"`
+	id             string
+}
+
+// BindAndValidate ...
+func (cmd *ListDatatagsForIdentityCmd) BindAndValidate(eCtx echo.Context) error {
+	if err := eCtx.Bind(cmd); err != nil {
+		return merr.From(err).Ori(merr.OriQuery)
+	}
+	cmd.id = eCtx.Param("id")
+
+	return v.ValidateStruct(cmd,
+		v.Field(&cmd.OrganizationID, v.Required, is.UUIDv4),
+		v.Field(&cmd.id, v.Required, is.UUIDv4),
+	)
+}
+
+// ListDatatagsForIdentity ...
+func (sso *SSOService) ListDatatagsForIdentity(ctx context.Context, gen request.Request) (interface{}, error) {
+	query := gen.(*ListDatatagsForIdentityCmd)
+
+	// check accesses
+	acc := oidc.GetAccesses(ctx)
+	if acc == nil || acc.IdentityID != query.id {
+		return nil, merr.Forbidden()
+	}
+
+	// retrieving datatags concerning the identity for the given organization
+	datatagIDs, err := events.ListDatatagIDsForIdentity(ctx, sso.boxDB, sso.redConn, query.id, query.OrganizationID)
+	if err != nil {
+		return nil, merr.Forbidden()
+	}
+
+	if len(datatagIDs) == 0 {
+		return []sqlboiler.Datatag{}, nil
+	}
+
+	// list the datatags
+	filters := datatag.Filters{
+		OrganizationID: query.OrganizationID,
+		IDs:            datatagIDs,
+	}
+
+	return datatag.List(ctx, sso.ssoDB, filters)
 }

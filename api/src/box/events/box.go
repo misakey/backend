@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
@@ -45,8 +46,8 @@ func GetBoxWithSenderInfo(ctx context.Context, exec boil.ContextExecutor, redCon
 }
 
 // CountBoxesForIdentity returns the number of boxes the identity is concerned by
-func CountBoxesForIdentity(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityID, ownerOrgID string) (int, error) {
-	boxIDs, err := listBoxIDsForIdentity(ctx, exec, redConn, identityID, ownerOrgID)
+func CountBoxesForIdentity(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityID, ownerOrgID string, datatagID *string) (int, error) {
+	boxIDs, err := listBoxIDsForIdentity(ctx, exec, redConn, identityID, ownerOrgID, datatagID)
 	return len(boxIDs), err
 }
 
@@ -54,13 +55,13 @@ func CountBoxesForIdentity(ctx context.Context, exec boil.ContextExecutor, redCo
 func ListBoxesForIdentity(
 	ctx context.Context,
 	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
-	identityID, ownerOrgID string,
+	identityID, ownerOrgID string, datatagID *string,
 	limit, offset int,
 ) ([]*Box, error) {
 	boxes := []*Box{}
 
 	// 0. list box ids the identity is concerned by
-	allBoxIDs, err := listBoxIDsForIdentity(ctx, exec, redConn, identityID, ownerOrgID)
+	allBoxIDs, err := listBoxIDsForIdentity(ctx, exec, redConn, identityID, ownerOrgID, datatagID)
 	if err != nil {
 		return boxes, err
 	}
@@ -131,25 +132,69 @@ func ListBoxesForIdentity(
 func listBoxIDsForIdentity(
 	ctx context.Context,
 	exec boil.ContextExecutor, redConn *redis.Client,
-	identityID, ownerOrgID string,
+	identityID, ownerOrgID string, datatagID *string,
 ) ([]string, error) {
-	// 1. try to retrieve and use cache
-	cacheKey := cache.BoxIDsKeyByUserOrg(identityID, ownerOrgID)
-	cacheBoxIDs, err := redConn.SMembers(cacheKey).Result()
-	if err == nil && len(cacheBoxIDs) != 0 {
-		return cacheBoxIDs, nil
+
+	// NOTE: this may be optimized by fetching only the right values from the cache
+	// but that would lead to several branches and be less readable
+	sortedIDs, err := listBoxIDsForIdentitySortedByOrgAndDatatag(ctx, exec, redConn, identityID)
+	if err != nil {
+		return []string{}, nil
 	}
 
-	// otherwise, let's build the cache and use its computation
-	boxIDsbyOrgID, err := BuildIdentityOrgBoxCache(ctx, exec, redConn, identityID)
-	if err != nil {
-		return nil, err
+	// if a datatagID was asked, we return directly the right box IDs
+	if datatagID != nil {
+		result, ok := sortedIDs[ownerOrgID][*datatagID]
+		if !ok {
+			return []string{}, nil
+		}
+		return result, nil
 	}
-	boxIDs, ok := boxIDsbyOrgID[ownerOrgID]
+
+	// else we merge results from all datatags
+	var boxIDs []string
+	boxIDsforOrg, ok := sortedIDs[ownerOrgID]
 	if !ok {
 		return []string{}, nil
 	}
+	for _, ids := range boxIDsforOrg {
+		boxIDs = append(boxIDs, ids...)
+	}
 	return boxIDs, nil
+}
+
+func listBoxIDsForIdentitySortedByOrgAndDatatag(
+	ctx context.Context,
+	exec boil.ContextExecutor,
+	redConn *redis.Client,
+	identityID string,
+) (map[string]map[string][]string, error) {
+	// 1. try to retrieve and use cache
+	cacheBoxIDs := make(map[string]map[string][]string)
+	cacheKey := cache.BoxIDsKeysByUser(identityID)
+	keys, err := redConn.Keys(cacheKey).Result()
+	if err != nil {
+		return cacheBoxIDs, nil
+	}
+	for _, key := range keys {
+		keyInfo := strings.Split(key, ":")
+		orgID := strings.TrimPrefix(keyInfo[2], "org_")
+		datatagID := strings.TrimPrefix(keyInfo[3], "datatag_")
+		temp, err := redConn.SMembers(key).Result()
+		if err != nil {
+			return cacheBoxIDs, nil
+		}
+		if _, ok := cacheBoxIDs[orgID]; !ok {
+			cacheBoxIDs[orgID] = make(map[string][]string)
+		}
+		cacheBoxIDs[orgID][datatagID] = append(cacheBoxIDs[orgID][datatagID], temp...)
+	}
+	if len(cacheBoxIDs) != 0 {
+		return cacheBoxIDs, nil
+	}
+
+	// 2. otherwise, let's build the cache and use its computation
+	return BuildIdentityOrgBoxCache(ctx, exec, redConn, identityID)
 }
 
 // BuildIdentityOrgBoxCache computes the full cache for the given identity: org_*:boxIDs
@@ -157,8 +202,8 @@ func listBoxIDsForIdentity(
 func BuildIdentityOrgBoxCache(
 	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	identityID string,
-) (map[string][]string, error) {
-	boxIDsByOrgID := make(map[string][]string)
+) (map[string]map[string][]string, error) {
+	boxIDsByOrgID := make(map[string]map[string][]string)
 	// let's build the cache which is organized this way: per user -> per org -> box ids
 	// 2. to build the cache means to build the list of user's boxes for all organizations
 	// the user's boxes are defined by:
@@ -194,16 +239,27 @@ func BuildIdentityOrgBoxCache(
 	if err != nil {
 		return boxIDsByOrgID, merr.From(err).Desc("listing creation contents")
 	}
-	// 1.b. sort the boxIDs by orgID
+	// 1.b. sort the boxIDs by orgID and datatagID
 	for boxID, createContent := range contentByBoxID {
-		boxIDsByOrgID[createContent.OwnerOrgID] = append(boxIDsByOrgID[createContent.OwnerOrgID], boxID)
+		if boxIDsByOrgID[createContent.OwnerOrgID] == nil {
+			boxIDsByOrgID[createContent.OwnerOrgID] = map[string][]string{}
+		}
+		// boxes without datatags are stored under the particular "" value
+		// because they can be requested
+		datatagID := ""
+		if createContent.DatatagID != nil {
+			datatagID = *createContent.DatatagID
+		}
+		boxIDsByOrgID[createContent.OwnerOrgID][datatagID] = append(boxIDsByOrgID[createContent.OwnerOrgID][datatagID], boxID)
 	}
 
 	// 2. update the cache
-	for ownerOrgID, boxIDs := range boxIDsByOrgID {
-		key := cache.BoxIDsKeyByUserOrg(identityID, ownerOrgID)
-		if _, err := redConn.SAdd(key, slice.StringSliceToInterfaceSlice(boxIDs)...).Result(); err != nil {
-			logger.FromCtx(ctx).Warn().Err(err).Msgf("could not add boxes cache for identity=%s org=%s", identityID, ownerOrgID)
+	for ownerOrgID, datatag := range boxIDsByOrgID {
+		for datatagID, boxIDs := range datatag {
+			key := cache.BoxIDsKeyByUserOrgDatatag(identityID, ownerOrgID, datatagID)
+			if _, err := redConn.SAdd(key, slice.StringSliceToInterfaceSlice(boxIDs)...).Result(); err != nil {
+				logger.FromCtx(ctx).Warn().Err(err).Msgf("could not add boxes cache for identity=%s org=%s", identityID, ownerOrgID)
+			}
 		}
 	}
 
@@ -229,4 +285,27 @@ func ClearBox(ctx context.Context, exec boil.ContextExecutor, boxID string) erro
 	}
 
 	return nil
+}
+
+// ListDatatagsForIdentity by getting boxes corresponding to organization
+// and extracting all the corresponding datatag
+func ListDatatagIDsForIdentity(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityID string, orgID string) ([]string, error) {
+	datatagIDs := []string{}
+	sortedIDs, err := listBoxIDsForIdentitySortedByOrgAndDatatag(ctx, exec, redConn, identityID)
+	if err != nil {
+		return datatagIDs, err
+	}
+	boxIDsforOrg, ok := sortedIDs[orgID]
+	if !ok {
+		return datatagIDs, nil
+	}
+
+	for datatagID := range boxIDsforOrg {
+		// we skip the particular datatag "" (no datatag)
+		if datatagID != "" {
+			datatagIDs = append(datatagIDs, datatagID)
+		}
+	}
+
+	return datatagIDs, nil
 }

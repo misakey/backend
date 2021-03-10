@@ -11,11 +11,13 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
+	"gitlab.misakey.dev/misakey/backend/api/src/sso/datatag"
 )
 
 // ListBoxesRequest ...
 type ListBoxesRequest struct {
 	OwnerOrgID *string `query:"owner_org_id" json:"-"`
+	DatatagID  *string `query:"datatag_id" json:"-"`
 	Offset     int     `query:"offset" json:"-"`
 	Limit      int     `query:"limit" json:"-"`
 }
@@ -27,6 +29,7 @@ func (req *ListBoxesRequest) BindAndValidate(eCtx echo.Context) error {
 	}
 	return v.ValidateStruct(req,
 		v.Field(&req.OwnerOrgID, is.UUIDv4),
+		v.Field(&req.DatatagID, is.UUIDv4),
 		v.Field(&req.Offset, v.Min(0)),
 		v.Field(&req.Limit, v.Min(0)),
 	)
@@ -54,10 +57,20 @@ func (app *BoxApplication) ListBoxes(ctx context.Context, genReq request.Request
 		req.OwnerOrgID = &app.selfOrgID
 	}
 
+	// check datatag existency and
+	// owner org id
+	// NOTE: empty datatag means "boxes with no datatag" so we don’t need
+	// to check the organization in this case
+	if req.DatatagID != nil && *req.DatatagID != "" {
+		if err := datatag.CheckExistencyAndOrg(ctx, app.SSODB, *req.DatatagID, *req.OwnerOrgID); err != nil {
+			return nil, err
+		}
+	}
+
 	boxes, err := events.ListBoxesForIdentity(
 		ctx,
 		app.DB, app.RedConn, identityMapper,
-		acc.IdentityID, *req.OwnerOrgID,
+		acc.IdentityID, *req.OwnerOrgID, req.DatatagID,
 		req.Limit, req.Offset,
 	)
 	if err != nil {

@@ -119,7 +119,7 @@ func (app *BoxApplication) DeleteBox(ctx context.Context, genReq request.Request
 	// invalidate cache for members
 	// to avoid having this box in user lists
 	for _, memberID := range memberIDs {
-		if err := cache.CleanIdentityBoxByIdentityOrg(ctx, app.RedConn, memberID, ownerOrgID); err != nil {
+		if err := cache.CleanUserBoxByIdentity(ctx, app.RedConn, memberID); err != nil {
 			logger.FromCtx(ctx).Error().Err(err).Msgf("cleaning boxes list for %s cache", memberID)
 		}
 	}

@@ -31,7 +31,7 @@ func InitModule(router *echo.Echo) Process {
 	initConfig()
 
 	// init db connections
-	dbConn, err := db.NewPSQLConn(
+	ssoDBConn, err := db.NewPSQLConn(
 		os.Getenv("DSN_SSO"),
 		viper.GetInt("sql.max_open_connections"),
 		viper.GetInt("sql.max_idle_connections"),
@@ -40,7 +40,6 @@ func InitModule(router *echo.Echo) Process {
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not connect to db")
 	}
-	// init db connections
 	boxDBConn, err := db.NewPSQLConn(
 		os.Getenv("DSN_BOX"),
 		viper.GetInt("sql.max_open_connections"),
@@ -129,7 +128,7 @@ func InitModule(router *echo.Echo) Process {
 	}
 
 	// init services
-	identityService := identity.NewService(avatarRepo, dbConn)
+	identityService := identity.NewService(avatarRepo, ssoDBConn)
 	authFlowService := authflow.NewService(
 		identityService, hydraRepo,
 		viper.GetString("authflow.home_page_url"),
@@ -151,7 +150,8 @@ func InitModule(router *echo.Echo) Process {
 		viper.GetDuration("root_key_share.expiration"),
 		selfCliID,
 
-		boxDBConn, dbConn,
+		ssoDBConn,
+		boxDBConn,
 		redConn,
 	)
 	oauthCodeFlow, err := oauth.NewAuthorizationCodeFlow(
@@ -196,8 +196,8 @@ func InitModule(router *echo.Echo) Process {
 	}
 
 	return Process{
-		IdentityIntraProcess:     identity.NewIntraprocessHelper(dbConn, redConn),
-		CryptoActionIntraProcess: crypto.NewIntraprocessHelper(dbConn, redConn),
+		IdentityIntraProcess:     identity.NewIntraprocessHelper(ssoDBConn, redConn),
+		CryptoActionIntraProcess: crypto.NewIntraprocessHelper(ssoDBConn, redConn),
 		SSOService:               &ssoService,
 	}
 }

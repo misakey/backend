@@ -70,7 +70,7 @@ func invalidateCaches(ctx context.Context, e *Event, exec boil.ContextExecutor, 
 	if err != nil {
 		logger.FromCtx(ctx).Warn().Msgf("could not clean box cache for box %s: %v", e.BoxID, err)
 	}
-	err = cache.CleanIdentityBoxByIdentityOrg(ctx, redConn, e.SenderID, e.ownerOrgID.String)
+	err = cache.CleanUserBoxByIdentity(ctx, redConn, e.SenderID)
 	if err != nil {
 		logger.FromCtx(ctx).Warn().Msgf("clean identity box cache %s: %v", e.SenderID, err)
 	}

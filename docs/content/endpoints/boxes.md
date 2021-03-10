@@ -331,6 +331,7 @@ _Headers:_
 
 _Query Parameters:_
 - `owner_org_id` (uuid) (default: hosting-org): the organization id owning the box.
+- `datatag_id` (uuid): the datatag id corresponding to the data type. `""` for boxes with no datatag. Empty parameter for all boxes.
 - Pagination ([more info](/concepts/pagination)) with default limit set to 10.
 
 ### 4.2.2. response
@@ -368,6 +369,7 @@ _Headers:_
 
 _Query Parameters:_
 - `owner_org_id` (uuid) (default: hosting-org): the organization id owning the box.
+- `datatag_id` (uuid): the datatag id corresponding to the data type. `""` for boxes with no datatag. Empty parameter for all boxes.
 
 ### 4.3.2. response
 

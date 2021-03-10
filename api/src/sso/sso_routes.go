@@ -237,6 +237,12 @@ func bindRoutes(
 		ss.DeleteSecret,
 		request.ResponseNoContent,
 	))
+	identityPath.GET(selfOIDCHandlers.NewACR2(
+		"/:id/datatags",
+		func() request.Request { return &application.ListDatatagsForIdentityCmd{} },
+		ss.ListDatatagsForIdentity,
+		request.ResponseOK,
+	))
 
 	// ORGANIZATIONS
 	orgPath := router.Group("/organizations")

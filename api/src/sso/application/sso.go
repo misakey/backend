@@ -36,7 +36,7 @@ func NewSSOService(
 	rootKeyShareExpirationTime time.Duration,
 	selfOrgID string,
 
-	boxDB *sql.DB, ssoDB *sql.DB,
+	ssoDB, boxDB *sql.DB,
 	redConn *redis.Client,
 ) SSOService {
 	return SSOService{

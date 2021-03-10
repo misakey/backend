@@ -13,9 +13,14 @@ import (
 // - store events counts per box ids
 // - store digest count per box ids
 
-// BoxIDsKeyByUserOrg ...
-func BoxIDsKeyByUserOrg(senderID string, orgID string) string {
-	return fmt.Sprintf("cache:user_%s:org_%s:boxIDs", senderID, orgID)
+// BoxIDsKeyByUserOrgDatatag ...
+func BoxIDsKeyByUserOrgDatatag(senderID, orgID, datatagID string) string {
+	return fmt.Sprintf("cache:user_%s:org_%s:datatag_%s:boxIDs", senderID, orgID, datatagID)
+}
+
+// BoxIDsKeysByUser ...
+func BoxIDsKeysByUser(senderID string) string {
+	return fmt.Sprintf("cache:user_%s:org_*:datatag_*:boxIDs", senderID)
 }
 
 // EventCountKeyByUserBox ...
@@ -43,21 +48,18 @@ func DigestCountKeyAll() string {
 	return "digestCount:*"
 }
 
-// CleanIdentityBoxByIdentityOrg removes cache for a given identity/org
-// if org id is an empty string, it would flush entirely the identity box cache
-func CleanIdentityBoxByIdentityOrg(
+// CleanUserBoxByUser removes cache for a given user
+func CleanUserBoxByIdentity(
 	ctx context.Context, redConn *redis.Client,
-	senderID string, orgID string,
+	senderID string,
 ) error {
-	// set default
-	if orgID == "" {
-		orgID = "*"
-	}
-
-	pattern := fmt.Sprintf("cache:user_%s:org_%s:boxIDs", senderID, orgID)
+	pattern := fmt.Sprintf("cache:user_%s:org_*:datatag_*:boxIDs", senderID)
 	keys, err := redConn.Keys(pattern).Result()
 	if err != nil {
 		return err
+	}
+	if len(keys) == 0 {
+		return nil
 	}
 
 	if _, err := redConn.Del(keys...).Result(); err != nil {
