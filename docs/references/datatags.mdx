@@ -177,3 +177,49 @@ An array of datatags. An empty array is returned if nothing has been found.
     }
 ]
 ```
+
+### List datatags concerning a given user for a given organization
+
+#### Request
+
+```bash
+GET https://api.misakey.com/identities/:id/datatags
+```
+
+##### Authorizations
+<Tabs groupId="requester-type" defaultValue="user" values={[{label: 'User', value: 'user'}]}>
+  <TabItem value="user">
+    Cookies:<ul>
+      <li><code>accesstoken</code> (opaque token) (ACR >= 2): mid claim as the requested identity id.</li>
+      <li><code>tokentype</code> (string): must be <b>bearer</b>.</li>
+    </ul>
+    Headers:<ul>
+      <li><code>X-CSRF-Token</code>: a token to prevent from CSRF attacks.</li>
+    </ul>
+  </TabItem>
+</Tabs>
+
+##### Path parameter
+- `id`: the unique id of your identity
+
+#### Success response
+
+##### Code
+```bash
+HTTP 200 OK
+```
+
+##### Response Body
+An array of datatags. An empty array is returned if nothing has been found.
+
+`Content-type: application/json`
+```json
+[
+    {
+        "id": "64c68e09-bb33-4d48-9b2c-a4a40e5054ce",
+        "organization_id": "0b8f65bb-de6d-4e4a-be5d-93a6eaaf4840",
+        "name": "Orders",
+        "created_at": "2020-08-05T16:02:22.104236Z"
+    }
+]
+```
