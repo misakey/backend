@@ -18,7 +18,14 @@ which path is given during at the beginning of the execution.
 ### Setup
 
 These Python scripts make use of the `misapy` Python package located in `misapy/misapy`,
-so you will have to install this package if you want to run the tests:
+so you will have to install this package if you want to run the tests.
+
+First you will need to make sure Python has the required libraries installed:
+```
+pip install -r misapy/requirements.txt
+```
+
+Then you can install Misapy (note the recommended `-e` flag):
 
 ```
 # pip will need to be pointed at the directory that contains the "setup.py" file

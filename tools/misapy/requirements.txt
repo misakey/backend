@@ -1,0 +1,4 @@
+requests
+argon2-cffi
+cryptography
+msgpack

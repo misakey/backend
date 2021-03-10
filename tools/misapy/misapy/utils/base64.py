@@ -12,3 +12,7 @@ def urlsafe_b64encode(data):
     and returns a string without padding
     (stdlib version returns bytes with padding)'''
     return stdlib_base64.urlsafe_b64encode(data).rstrip(b'=').decode()
+
+def urlsafe_b64decode(s: str):
+    padding_length = -len(s)%4
+    return stdlib_base64.urlsafe_b64decode(s + '='*padding_length)
