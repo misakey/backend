@@ -175,7 +175,7 @@ func (sso *SSOService) RequireIdentity(ctx context.Context, gen request.Request)
 	currentACR := oidc.ACR0
 	step, err := sso.AuthenticationService.PrepareNextStep(
 		ctx, tr, sso.redConn,
-		*curIdentity, currentACR, expectedACR,
+		curIdentity, currentACR, expectedACR,
 		cmd.PasswordReset,
 	)
 	if err != nil {

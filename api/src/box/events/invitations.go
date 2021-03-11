@@ -23,7 +23,6 @@ func InviteIdentityIfPossible(
 	}
 
 	guestView := senderViewFrom(guest)
-
 	return CreateInvitationActions(ctx, cryptoRepo, identityMapper, box, guestView, senderID, actionsDataJSON, false)
 }
 

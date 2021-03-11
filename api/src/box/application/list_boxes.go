@@ -76,6 +76,5 @@ func (app *BoxApplication) ListBoxes(ctx context.Context, genReq request.Request
 	if err != nil {
 		return nil, merr.From(err).Desc("getting sender boxes")
 	}
-
 	return boxes, nil
 }

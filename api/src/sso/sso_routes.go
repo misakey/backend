@@ -195,7 +195,7 @@ func bindRoutes(
 		ss.GetProfileConfig,
 		request.ResponseOK,
 	))
-	identityPath.GET(selfOIDCHandlers.NewACR2(
+	identityPath.GET(anyOIDCHandlers.NewACR2(
 		"/pubkey",
 		func() request.Request { return &application.IdentityPubkeyByIdentifierQuery{} },
 		ss.GetIdentityPubkeyByIdentifier,

@@ -8,7 +8,7 @@ from time import sleep
 
 from misapy import (AUTH_URL_PREFIX, HYDRA_ADMIN_URL_PREFIX, SELF_CLIENT_ID,
                     URL_PREFIX, http)
-from misapy.box_helpers import create_box_and_post_some_events_to_it, create_box_with_data_subject_and_datatag
+from misapy.box_helpers import create_box_and_post_some_events_to_it, create_org_box
 from misapy.org_helpers import create_datatag, create_org
 from misapy.check_response import assert_fn, check_response
 from misapy.container_access import list_encrypted_files
@@ -118,31 +118,34 @@ with prettyErrorContext():
     ])
 
     print(f'- user can list datatags corresponding to them')
-    test_org_id = create_org(admin_session)
-    test_datatag_id = create_datatag(admin_session, test_org_id)
+    org_session1 = get_org_session(admin_session)
+    org_id1 = org_session1.org_id
+    did_org1 = create_datatag(admin_session, org_id1)
     r = admin_session.get(
         f'{URL_PREFIX}/identities/pubkey?identifier_value={user_session.email}',
         expected_status_code=200,
     )
     pubkey = r.json()[0]
 
-    box_id = create_box_with_data_subject_and_datatag(admin_session, data_subject=user_session.email, org_id=test_org_id, datatag_id=test_datatag_id, public_key=pubkey)
+    box = create_org_box(org_session1, data_subject=user_session.email, org_id=org_id1, datatag_id=did_org1, public_key=pubkey)
+    box_id = box['id']
 
     user_session.join_box(box_id)
 
     r = user_session.get(
-            f'{URL_PREFIX}/identities/{user_session.identity_id}/datatags?organization_id={test_org_id}',
+            f'{URL_PREFIX}/identities/{user_session.identity_id}/datatags?organization_id={org_id1}',
             expected_status_code=200,
     )
     check_response(r, [
         lambda r: assert_fn(len(r.json()) == 1),
-        lambda r: assert_fn(r.json()[0]['id'] == test_datatag_id),
-        lambda r: assert_fn(r.json()[0]['organization_id'] == test_org_id),
+        lambda r: assert_fn(r.json()[0]['id'] == did_org1),
+        lambda r: assert_fn(r.json()[0]['organization_id'] == org_id1),
     ])
 
     print(f'- user have no datatags for organization with no boxes')
+    no_box_org_id = create_org(admin_session)
     r = user_session.get(
-            f'{URL_PREFIX}/identities/{user_session.identity_id}/datatags?organization_id={org_id}',
+            f'{URL_PREFIX}/identities/{user_session.identity_id}/datatags?organization_id={no_box_org_id}',
             expected_status_code=200,
     )
     check_response(r, [
@@ -150,8 +153,9 @@ with prettyErrorContext():
     ])
 
     print(f'- user do not retrieve datatags from other orgs')
-    test_org_id = create_org(admin_session)
-    test_datatag_id = create_datatag(admin_session, test_org_id)
+    org_session2 = get_org_session(admin_session)
+    org_id2 = org_session2.org_id
+    did_org2 = create_datatag(admin_session, org_id2)
     r = admin_session.get(
         f'{URL_PREFIX}/identities/pubkey?identifier_value={user_session.email}',
         expected_status_code=200,
@@ -159,34 +163,34 @@ with prettyErrorContext():
     pubkey = r.json()[0]
 
     datatag_id = create_datatag(admin_session, org_id)
-    box_id1 = create_box_with_data_subject_and_datatag(admin_session, data_subject=user_session.email, org_id=test_org_id, datatag_id=test_datatag_id, public_key=pubkey)
-    box_id2 = create_box_with_data_subject_and_datatag(admin_session, data_subject=user_session.email, org_id=org_id, datatag_id=datatag_id, public_key=pubkey)
+    box_org1 = create_org_box(org_session1, data_subject=user_session.email, org_id=org_id1, datatag_id=did_org1, public_key=pubkey)
+    box_org2 = create_org_box(org_session2, data_subject=user_session.email, org_id=org_id2, datatag_id=did_org2, public_key=pubkey)
 
-    user_session.join_box(box_id1)
-    user_session.join_box(box_id2)
+    user_session.join_box(box_org1['id'])
+    user_session.join_box(box_org2['id'])
 
     r = user_session.get(
-            f'{URL_PREFIX}/identities/{user_session.identity_id}/datatags?organization_id={test_org_id}',
+            f'{URL_PREFIX}/identities/{user_session.identity_id}/datatags?organization_id={org_id1}',
             expected_status_code=200,
     )
     check_response(r, [
         lambda r: assert_fn(len(r.json()) == 1),
-        lambda r: assert_fn(r.json()[0]['id'] == test_datatag_id),
-        lambda r: assert_fn(r.json()[0]['organization_id'] == test_org_id),
+        lambda r: assert_fn(r.json()[0]['id'] == did_org1),
+        lambda r: assert_fn(r.json()[0]['organization_id'] == org_id1),
     ])
 
     r = user_session.get(
-            f'{URL_PREFIX}/identities/{user_session.identity_id}/datatags?organization_id={org_id}',
+            f'{URL_PREFIX}/identities/{user_session.identity_id}/datatags?organization_id={org_id2}',
             expected_status_code=200,
     )
     check_response(r, [
         lambda r: assert_fn(len(r.json()) == 1),
-        lambda r: assert_fn(r.json()[0]['id'] == datatag_id),
-        lambda r: assert_fn(r.json()[0]['organization_id'] == org_id),
+        lambda r: assert_fn(r.json()[0]['id'] == did_org2),
+        lambda r: assert_fn(r.json()[0]['organization_id'] == org_id2),
     ])
 
     print(f'- user can’t list datatags of another user')
     r = user_session.get(
-            f'{URL_PREFIX}/identities/{admin_session.identity_id}/datatags?organization_id={org_id}',
+            f'{URL_PREFIX}/identities/{admin_session.identity_id}/datatags?organization_id={org_id1}',
             expected_status_code=403,
     )

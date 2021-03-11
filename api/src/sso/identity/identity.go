@@ -224,7 +224,7 @@ func Update(ctx context.Context, exec boil.ContextExecutor, identity *Identity) 
 }
 
 // Require identity, create it if not existing
-func Require(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identifierValue string) (*Identity, error) {
+func Require(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identifierValue string) (Identity, error) {
 	// lowcase the email
 	identifierValue = strings.ToLower(identifierValue)
 
@@ -232,7 +232,7 @@ func Require(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Clie
 	// NOTE: to_change_on_more_identifier_kind
 	curIdentity, err := GetByIdentifier(ctx, exec, identifierValue, IdentifierKindEmail)
 	if err != nil && !merr.IsANotFound(err) {
-		return nil, err
+		return curIdentity, err
 	}
 
 	// 2. create an identity if nothing was found
@@ -246,9 +246,9 @@ func Require(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Clie
 		}
 		err = Create(ctx, exec, redConn, &curIdentity)
 		if err != nil {
-			return nil, err
+			return curIdentity, err
 		}
 	}
 
-	return &curIdentity, nil
+	return curIdentity, nil
 }

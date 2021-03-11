@@ -33,8 +33,8 @@ func UpdateBoxSetting(ctx context.Context, exec boil.ContextExecutor, boxSetting
 	return toUpsert.Upsert(ctx, exec, true, []string{sqlboiler.BoxSettingColumns.BoxID, sqlboiler.BoxSettingColumns.IdentityID}, boil.Infer(), boil.Infer())
 }
 
-// GetBoxSetting ...
-func GetBoxSetting(ctx context.Context, exec boil.ContextExecutor, identityID, boxID string) (*BoxSetting, error) {
+// GetBoxSettings
+func GetBoxSettings(ctx context.Context, exec boil.ContextExecutor, identityID, boxID string) (*BoxSetting, error) {
 	mods := []qm.QueryMod{
 		sqlboiler.BoxSettingWhere.BoxID.EQ(boxID),
 		sqlboiler.BoxSettingWhere.IdentityID.EQ(identityID),
@@ -56,7 +56,8 @@ func GetBoxSetting(ctx context.Context, exec boil.ContextExecutor, identityID, b
 	}, nil
 }
 
-// GetDefaultBoxSetting ...
+// GetDefaultBoxSetting return a default box settings value
+// it is used while the identity has not configured one already for a box
 func GetDefaultBoxSetting(identityID, boxID string) *BoxSetting {
 	return &BoxSetting{
 		IdentityID: identityID,
@@ -65,7 +66,7 @@ func GetDefaultBoxSetting(identityID, boxID string) *BoxSetting {
 	}
 }
 
-// ListBoxSettings ...
+// ListBoxSettings...
 func ListBoxSettings(ctx context.Context, exec boil.ContextExecutor, filters BoxSettingFilters) ([]*BoxSetting, error) {
 	mods := []qm.QueryMod{}
 
@@ -90,7 +91,5 @@ func ListBoxSettings(ctx context.Context, exec boil.ContextExecutor, filters Box
 			Muted:      boxSetting.Muted,
 		}
 	}
-
 	return boxSettings, nil
-
 }

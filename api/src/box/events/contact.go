@@ -35,7 +35,7 @@ type ContactBox struct {
 }
 
 // CreateContactBox creates the box, sets the access mode to public and invite the contacted user
-func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, _ files.FileStorageRepo, cryptoRepo external.CryptoRepo, contact ContactBox) (*Box, error) {
+func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identityMapper *IdentityMapper, _ files.FileStorageRepo, cryptoRepo external.CryptoRepo, contact ContactBox) (*BoxView, error) {
 
 	// get contacted user identity
 	contactedUser, err := identityMapper.querier.Get(ctx, contact.ContactedIdentityID)
@@ -96,16 +96,16 @@ func CreateContactBox(ctx context.Context, exec boil.ContextExecutor, redConn *r
 	if err != nil {
 		return nil, merr.From(err).Desc("getting contacted identity")
 	}
-	// compute box for invitation and return
-	box, err := computeBox(ctx, event.BoxID, exec, identityMapper, &event)
+	// compute box view for invitation and return
+	view, err := computeBoxView(ctx, exec, identityMapper, redConn, event.BoxID, SetLastEvent(&event))
 	if err != nil {
 		return nil, merr.From(err).Desc("computing box")
 	}
-	if err := CreateInvitationActions(ctx, cryptoRepo, identityMapper, box, guest, event.SenderID, null.JSONFrom(decodedInvitationDataJSON), true); err != nil {
+	if err := CreateInvitationActions(ctx, cryptoRepo, identityMapper, view.Box, guest, event.SenderID, null.JSONFrom(decodedInvitationDataJSON), true); err != nil {
 		return nil, merr.From(err).Desc("creating invitation action")
 	}
 
-	// return the box
-	return &box, nil
+	// return the box view
+	return &view, nil
 
 }

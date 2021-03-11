@@ -50,7 +50,7 @@ func (v *View) ToJSON() ([]byte, error) {
 }
 
 // Format event into its JSON view.
-func (e Event) Format(ctx context.Context, identities *IdentityMapper, transparent bool) (View, error) {
+func (e Event) Format(ctx context.Context, identityMapper *IdentityMapper, transparent bool) (View, error) {
 	view := View{
 		Type:       e.Type,
 		Content:    &e.JSONContent,
@@ -61,7 +61,7 @@ func (e Event) Format(ctx context.Context, identities *IdentityMapper, transpare
 	}
 	// map the sender
 	var err error
-	view.Sender, err = identities.Get(ctx, e.SenderID, transparent)
+	view.Sender, err = identityMapper.Get(ctx, e.SenderID, transparent)
 	if err != nil {
 		return view, merr.From(err).Desc("getting sender")
 	}
@@ -75,8 +75,8 @@ func (e Event) Format(ctx context.Context, identities *IdentityMapper, transpare
 			return view, merr.From(err).Descf("unmarshaling %s json", e.Type)
 		}
 
-		if content.Deleted.ByIdentityID != "" {
-			deletor, err := identities.Get(ctx, content.Deleted.ByIdentityID, transparent)
+		if content.Deleted.ByIdentityID != "" { // only if identityMapper is set then bind deletor
+			deletor, err := identityMapper.Get(ctx, content.Deleted.ByIdentityID, transparent)
 			if err != nil {
 				return view, merr.From(err).Desc("getting delelor")
 			}
@@ -96,13 +96,14 @@ func (e Event) Format(ctx context.Context, identities *IdentityMapper, transpare
 		}
 
 		if content.KickerID != "" {
-			kicker, err := identities.Get(ctx, content.KickerID, transparent)
+			kicker, err := identityMapper.Get(ctx, content.KickerID, transparent)
 			if err != nil {
 				return view, merr.From(err).Desc("getting kicker")
 			}
 			content.Kicker = &kicker
+			content.KickerID = ""
 		}
-		content.KickerID = ""
+
 		if err := view.Content.Marshal(content); err != nil {
 			return view, merr.From(err).Desc("marshalling event content")
 		}

@@ -16,6 +16,7 @@ with prettyErrorContext():
 
     # Message Edition & Deletion
     box1_id, _ = create_box_and_post_some_events_to_it(session=s1)
+    print('- send data as plain text to the box')
     r = s1.post(
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={
@@ -29,6 +30,7 @@ with prettyErrorContext():
     )
     text_msg_id = r.json()['id']
 
+    print('- send data as a file to the box')
     r = s1.post(
         f'{URL_PREFIX}/boxes/{box1_id}/encrypted-files',
         files={
@@ -36,11 +38,13 @@ with prettyErrorContext():
             'msg_encrypted_content': (None, b64encode(os.urandom(32)).decode()),
             'msg_public_key': (None, b64encode(os.urandom(32)).decode()),
         },
+        expected_status_code=201,
     )
+    print(r.json())
     file_msg_id = r.json()['id']
     encrypted_file_id = r.json()['content']['encrypted_file_id']
 
-    print('- message edition')
+    print('- edit plain text data')
     s1.post(
         f'{URL_PREFIX}/boxes/{box1_id}/events',
         json={

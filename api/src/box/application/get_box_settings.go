@@ -47,6 +47,9 @@ func (app *BoxApplication) GetBoxSettings(ctx context.Context, genReq request.Re
 		return nil, err
 	}
 
-	return events.GetBoxSetting(ctx, app.DB, req.identityID, req.boxID)
-
+	settings, err := events.GetBoxSettings(ctx, app.DB, req.identityID, req.boxID)
+	if merr.IsANotFound(err) { // default value on not found
+		return events.GetDefaultBoxSetting(req.identityID, req.boxID), nil
+	}
+	return settings, err
 }

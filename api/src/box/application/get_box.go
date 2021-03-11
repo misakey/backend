@@ -55,5 +55,45 @@ func (app *BoxApplication) GetBox(ctx context.Context, genReq request.Request) (
 		return nil, err
 	}
 
-	return events.GetBoxWithSenderInfo(ctx, app.DB, app.RedConn, identityMapper, req.boxID, acc.IdentityID)
+	// get the box view
+	return events.GetBoxView(ctx, app.DB, identityMapper, app.RedConn, req.boxID)
+}
+
+type GetOrgBoxRequest struct {
+	orgID string
+	boxID string
+}
+
+// BindAndValidate ...
+func (req *GetOrgBoxRequest) BindAndValidate(eCtx echo.Context) error {
+	req.orgID = eCtx.Param("oid")
+	req.boxID = eCtx.Param("id")
+
+	return v.ValidateStruct(req,
+		v.Field(&req.orgID, v.Required, is.UUIDv4),
+		v.Field(&req.boxID, v.Required, is.UUIDv4),
+	)
+}
+
+func (app *BoxApplication) GetOrgBox(ctx context.Context, genReq request.Request) (interface{}, error) {
+	req := genReq.(*GetOrgBoxRequest)
+	// init an identity mapper for the operation
+	identityMapper := app.NewIM()
+
+	// check the box exists
+	if err := events.MustBoxExists(ctx, app.DB, req.boxID); err != nil {
+		return nil, merr.Forbidden()
+	}
+
+	// check accesses
+	acc := oidc.GetAccesses(ctx)
+	if acc == nil {
+		return nil, merr.Unauthorized()
+	}
+	// authencated identity must be the organization
+	if acc.IdentityID != req.orgID {
+		return nil, merr.Forbidden()
+	}
+
+	return events.GetSimpleBox(ctx, app.DB, identityMapper, req.boxID)
 }

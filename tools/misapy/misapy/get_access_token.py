@@ -234,7 +234,7 @@ def get_user_credentials(email=None, require_account=False, acr_values=None, res
 
 def get_authenticated_session(email=None, require_account=False, acr_values=None, reset_password=False, use_secret_backup=False, get_secret_storage=False):
     creds = get_user_credentials(email, require_account, acr_values, reset_password, use_secret_backup, get_secret_storage)
-    print(f'Tok - {creds.identity_id}: {creds.access_token}')
+    print(f'\tTok - {creds.identity_id}: {creds.access_token}')
     return creds.session
 
 
@@ -256,7 +256,7 @@ def perform_org_auth_flow(org_id, org_secret):
 
 
 def get_org_session(user_session):
-    print('- user creates an organization')
+    print('\t- user creates an organization')
     name = hexlify(os.urandom(3)).decode() + '-org'
     r = user_session.post(
         f'{URL_PREFIX}/organizations',
@@ -272,14 +272,14 @@ def get_org_session(user_session):
     )
     org_id = r.json()['id']
 
-    print(f'- user generates secret for the org {org_id}')
+    print(f'\t- user generates secret for the org {org_id}')
     r = user_session.put(
         f'{URL_PREFIX}/organizations/{org_id}/secret',
         expected_status_code=http.STATUS_OK
     )
 
-    print(f'- generate the auth session for the org {org_id}')
+    print(f'\t- generate the auth session for the org {org_id}')
     s = perform_org_auth_flow(org_id, r.json()['secret'])
-    print(f'Org Tok - {s.org_id}: {s.org_access_token}')
+    print(f'\tOrg Tok - {s.org_id}: {s.org_access_token}')
     s.org_name = name
     return s

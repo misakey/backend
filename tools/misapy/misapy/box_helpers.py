@@ -13,15 +13,13 @@ from .get_access_token import get_authenticated_session
 from .utils.base64 import b64encode, urlsafe_b64encode
 
 
-def create_box_with_data_subject_and_datatag(session, org_id=None, data_subject=None, public_key=None, datatag_id=None, expected_status_code=201):
-    s = session
-
+def create_org_box(org_session, org_id=None, data_subject=None, public_key=None, datatag_id=None, expected_status_code=201):
     request = {
         'public_key': 'ShouldBeUnpaddedUrlSafeBase64',
         'title': 'Test Box',
     }
-    if org_id is not None:
-        request['owner_org_id'] = org_id
+    final_org_id = org_session.org_id if org_id is None else org_id
+    request['owner_org_id'] = final_org_id
     if data_subject is not None:
         request['data_subject'] = data_subject
     if datatag_id is not None:
@@ -31,14 +29,12 @@ def create_box_with_data_subject_and_datatag(session, org_id=None, data_subject=
             public_key: 'fakeCryptoAction',
         }
 
-    r = s.post(
-        f'{URL_PREFIX}/boxes',
+    r = org_session.post(
+        f'{URL_PREFIX}/organizations/{final_org_id}/boxes',
         json=request,
         expected_status_code=expected_status_code,
     )
-
-    return r.json().get('id', None)
-
+    return r.json()
 
 def create_box_and_post_some_events_to_it(session, public=True):
     s = session

@@ -20,13 +20,13 @@ func bindRoutes(
 	// ----------------------
 	// Boxes related routes
 	boxPath := router.Group("/boxes")
-	boxPath.POST(anyOIDCHandlerFactory.NewACR2(
+	boxPath.POST(selfOIDCHandlerFactory.NewACR2(
 		"",
 		func() request.Request { return &application.CreateBoxRequest{} },
 		app.CreateBox,
 		request.ResponseCreated,
 	))
-	boxPath.GET(anyOIDCHandlerFactory.NewACR1(
+	boxPath.GET(selfOIDCHandlerFactory.NewACR1(
 		"/:id",
 		func() request.Request { return &application.GetBoxRequest{} },
 		app.GetBox,
@@ -65,6 +65,21 @@ func bindRoutes(
 		func() request.Request { return &application.DeleteBoxRequest{} },
 		app.DeleteBox,
 		request.ResponseNoContent,
+	))
+
+	// organizations routes
+	orgPath := router.Group("/organizations")
+	orgPath.POST(anyOIDCHandlerFactory.NewACR2(
+		"/:oid/boxes",
+		func() request.Request { return &application.CreateOrgBoxRequest{} },
+		app.CreateOrgBox,
+		request.ResponseCreated,
+	))
+	orgPath.GET(anyOIDCHandlerFactory.NewACR2(
+		"/:oid/boxes/:id",
+		func() request.Request { return &application.GetOrgBoxRequest{} },
+		app.GetOrgBox,
+		request.ResponseOK,
 	))
 
 	// ----------------------

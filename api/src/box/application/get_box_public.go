@@ -55,16 +55,14 @@ func (app *BoxApplication) GetBoxPublic(ctx context.Context, genReq request.Requ
 		return nil, merr.Forbidden().Desc("wrong other share hash").Add("other_share_hash", merr.DVInvalid)
 	}
 
-	// get box title
-	box, err := events.GetBox(ctx, app.DB, identityMapper, req.boxID, nil)
+	boxView, err := events.GetBoxView(ctx, app.DB, identityMapper, app.RedConn, req.boxID)
 	if err != nil {
 		return nil, err
 	}
-
 	view := PublicBoxView{
-		Title:      box.Title,
-		Creator:    box.Creator,
-		OwnerOrgID: box.OwnerOrgID,
+		Title:      boxView.Title,
+		Creator:    boxView.Creator,
+		OwnerOrgID: boxView.OwnerOrgID,
 	}
 	return view, nil
 }

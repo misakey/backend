@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/go-redis/redis/v7"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/logger"
@@ -17,32 +16,14 @@ import (
 	"gitlab.misakey.dev/misakey/backend/api/src/box/quota"
 )
 
-// GetBox ...
-func GetBox(ctx context.Context, exec boil.ContextExecutor, identities *IdentityMapper, boxID string, lastEvent *Event) (Box, error) {
-	return computeBox(ctx, boxID, exec, identities, lastEvent)
+// GetBoxView ...
+func GetBoxView(ctx context.Context, exec boil.ContextExecutor, identityMapper *IdentityMapper, redConn *redis.Client, boxID string, options ...func(*BoxView)) (BoxView, error) {
+	return computeBoxView(ctx, exec, identityMapper, redConn, boxID, options...)
 }
 
-// GetBoxWithSenderInfo ...
-func GetBoxWithSenderInfo(ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper, boxID, identityID string) (*Box, error) {
-	box, err := computeBox(ctx, boxID, exec, identities, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// fill the eventCounts attribute
-	eventsCount, err := CountEventsBoxForIdentity(ctx, redConn, identityID, boxID)
-	if err != nil {
-		return nil, merr.From(err).Desc("counting new events")
-	}
-	box.EventsCount = null.IntFrom(eventsCount)
-
-	boxSetting, err := GetBoxSetting(ctx, exec, identityID, boxID)
-	if err != nil {
-		return nil, merr.From(err).Desc("getting box setting")
-	}
-	box.BoxSettings = boxSetting
-
-	return &box, nil
+// GetSimpleBox by computing the box with simple mode activated
+func GetSimpleBox(ctx context.Context, exec boil.ContextExecutor, identityMapper *IdentityMapper, boxID string) (Box, error) {
+	return computeBox(ctx, boxID, exec, identityMapper)
 }
 
 // CountBoxesForIdentity returns the number of boxes the identity is concerned by
@@ -57,25 +38,25 @@ func ListBoxesForIdentity(
 	exec boil.ContextExecutor, redConn *redis.Client, identities *IdentityMapper,
 	identityID, ownerOrgID string, datatagID *string,
 	limit, offset int,
-) ([]*Box, error) {
-	boxes := []*Box{}
+) ([]*BoxView, error) {
+	boxViews := []*BoxView{}
 
 	// 0. list box ids the identity is concerned by
 	allBoxIDs, err := listBoxIDsForIdentity(ctx, exec, redConn, identityID, ownerOrgID, datatagID)
 	if err != nil {
-		return boxes, err
+		return boxViews, err
 	}
 
 	// 1. retrieve lastest events concerning the boxes the identity has access to
 	list, err := ListLastestForEachBoxID(ctx, exec, allBoxIDs)
 	if err != nil {
-		return boxes, merr.From(err).Desc("listing box ids")
+		return boxViews, merr.From(err).Desc("listing box ids")
 	}
 
 	// 2. put pagination in place
 	// if the offset is higher than the total size, we return an empty list
 	if offset >= len(list) {
-		return boxes, nil
+		return boxViews, nil
 	}
 	// cut the slice using the offset
 	list = list[offset:]
@@ -84,49 +65,19 @@ func ListBoxesForIdentity(
 		list = list[:limit]
 	}
 
-	// 3. compute all boxes
+	// 3. compute all boxes view
 	paginatedBoxIDs := make([]string, len(list))
-	boxes = make([]*Box, len(list))
+	boxViews = make([]*BoxView, len(list))
 	for i, e := range list {
 		// TODO (perf): computation in redis
-		box, err := computeBox(ctx, e.BoxID, exec, identities, &e)
+		boxView, err := computeBoxView(ctx, exec, identities, redConn, e.BoxID, SetLastEvent(&e))
 		if err != nil {
-			return boxes, merr.From(err).Descf("computing box %s", e.BoxID)
+			return boxViews, merr.From(err).Descf("computing box %s", e.BoxID)
 		}
-		boxes[i] = &box
-		paginatedBoxIDs[i] = box.ID
+		boxViews[i] = &boxView
+		paginatedBoxIDs[i] = boxView.ID
 	}
-
-	// 4. retrieve box settings
-	settingsFilters := BoxSettingFilters{
-		BoxIDs:     paginatedBoxIDs,
-		IdentityID: identityID,
-	}
-	boxSettings, err := ListBoxSettings(ctx, exec, settingsFilters)
-	if err != nil {
-		return boxes, merr.From(err).Desc("listing box settings")
-	}
-	indexedBoxSettings := make(map[string]BoxSetting, len(boxSettings))
-	for _, boxSetting := range boxSettings {
-		indexedBoxSettings[boxSetting.BoxID] = *boxSetting
-	}
-
-	// 5. add events count and box settings data to boxes
-	for _, box := range boxes {
-		// we won’t return an error since the list
-		// can still be returned
-		// with a wrong amount of event counts
-		box.EventsCount = null.IntFrom(computeCount(ctx, redConn, identityID, box.ID))
-
-		// add box settings
-		boxSetting, ok := indexedBoxSettings[box.ID]
-		if !ok {
-			boxSetting = *GetDefaultBoxSetting(identityID, box.ID)
-		}
-		box.BoxSettings = &boxSetting
-	}
-
-	return boxes, nil
+	return boxViews, nil
 }
 
 func listBoxIDsForIdentity(

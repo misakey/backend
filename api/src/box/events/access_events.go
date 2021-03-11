@@ -92,7 +92,7 @@ func doAddAccess(
 		// (auto invitation)
 		if access.AutoInvite {
 			if extraJSON.Valid {
-				box, err := computeBox(ctx, e.BoxID, exec, identityMapper, nil)
+				box, err := computeBox(ctx, e.BoxID, exec, identityMapper)
 				if err != nil {
 					return nil, merr.From(err).Desc("computing the box (to get title for notif)")
 				}
