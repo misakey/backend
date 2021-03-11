@@ -196,10 +196,6 @@ func (app *BoxApplication) CreateOrgBox(ctx context.Context, genReq request.Requ
 	if err != nil {
 		return nil, merr.From(err).Desc("requiring identity")
 	}
-	// if data subject has an account, invitation data is required for auto-invitation
-	if subject.AccountID.Valid && req.InvitationData.IsZero() {
-		return nil, merr.BadRequest().Add("invitation_data", merr.DVRequired)
-	}
 
 	event, err := events.CreateCreateEvent(
 		ctx,
@@ -231,9 +227,11 @@ func (app *BoxApplication) CreateOrgBox(ctx context.Context, genReq request.Requ
 		}
 	}
 
-	// auto invite subject if linked to an account
-	if err := events.InviteIdentityIfPossible(ctx, app.cryptoRepo, identityMapper, box, subject, acc.IdentityID, req.InvitationData); err != nil {
-		return nil, merr.From(err).Desc("creating crypto actions")
+	// auto invite subject if invitation data have been set
+	if req.InvitationData.Valid {
+		if err := events.InviteIdentityIfPossible(ctx, app.cryptoRepo, identityMapper, box, subject, acc.IdentityID, req.InvitationData); err != nil {
+			return nil, merr.From(err).Desc("creating crypto actions")
+		}
 	}
 	return box, nil
 }
