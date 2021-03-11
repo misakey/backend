@@ -51,6 +51,11 @@ _JSON Body:_
       "datatag_id": "b7073bc5-b2e8-4a22-9717-8418de13bfa5",
       "data_subject": "michel@misakey.com",
       "public_key": "SXvalkvhuhcj2UiaS4d0Q3OeuHOhMVeQT7ZGfCH2YCw",
+      "key_share": {
+        "misakey_share": "lBHT1vfwFAIBig5Nj+sD+w==",
+        "other_share_hash": "Nz4nJMj5DOd4UGXXOlH8Ww",
+        "encrypted_invitation_key_share": "cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
+      },
       "invitation_data": {
         "<public key>": "encrypted crypto action"
        }
@@ -61,8 +66,18 @@ _JSON Body:_
 - `owner_org_id`: (string) your organization id
 - `datatag_id`: (string) the datatag id
 - `datatag_subject`: (string) email of the person concerned by the data
-- `public_key`: (string, unpadded url-safe base64): the public key of the box. If it is for `com.misakey.aes-rsa-enc` algorithm, it must be prefixed with `com.misakey.aes-rsa-enc:`.
-- `invitation_data`: (string): contains the encrypted crypto action to directly invite the user (see the `extra` field in the [access events section](../../concepts/box-events/#2511-to-a-specific-identifier-value))
+- `public_key`: (string, unpadded url-safe base64): the public key of the box. If it is for `com.misakey.aes-rsa-enc` algorithm, it must be prefixed with `com.misakey.aes-rsa-enc:`
+- `key_share`: (object) (optionnal) the key share allows the build of an invitation link that you can send to the user. Invitation link is a way to share crypto materials. See [box key shares doc](https://backend.docs.misakey.dev/endpoints/box_key_shares)
+  - `misakey_share`: (string, base64) the misakey share
+  - `other_share_hash`: (string, unpadded URL-safe base64) a hash of the other share (invitation share)
+  - `encrypted_invitation_key_share`: (string) the encrypted invitation key share
+- `invitation_data`: (object) (optional) to set only if [a datatag subject pubkey key has been found](https://backend.docs.misakey.dev/endpoints/identities/#27-getting-all-identity-public-keys-associated-to-an-identifier). Contains the encrypted crypto action to directly invite the user in the application
+  - Key must be [the retrieved data subject public key](https://backend.docs.misakey.dev/endpoints/identities/#27-getting-all-identity-public-keys-associated-to-an-identifier)
+  - Value must be the crypto action encrypted using this same public key. See crypto action model [here](https://backend.docs.misakey.dev/endpoints/crypto_actions)
+
+:::tip
+It is recommended to use at least `key_share` (or `invitation_data` field when possible) to have a way to share the crypto materials to the data subject.
+:::
 
 Note that the access mode of a box is limited by default. A `state.access_mode` event must be created to switch it to `public`, see the related event type documentation.
 

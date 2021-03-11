@@ -191,6 +191,9 @@ GET https://api.misakey.com/identities/:id/datatags
 
 ##### Authorizations
 <Tabs groupId="requester-type" defaultValue="user" values={[{label: 'User', value: 'user'}]}>
+  <TabItem value="org">
+    Not available for organizations.
+  </TabItem>
   <TabItem value="user">
     Cookies:<ul>
       <li><code>accesstoken</code> (opaque token) (ACR >= 2): mid claim as the requested identity id.</li>
