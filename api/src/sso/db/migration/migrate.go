@@ -36,6 +36,7 @@ func Launch() {
 	initCreateOrganizationTable()
 	initCreateDatatagTable()
 	initAddIdentityRsaPubkeys()
+	initResizeCryptoColumns()
 
 	db.StartMigration(os.Getenv("DSN_SSO"), os.Getenv("MIGRATION_DIR_SSO"))
 }

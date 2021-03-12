@@ -45,10 +45,6 @@ with prettyErrorContext():
         expected_status_code=200,
     )
     assert r.json() == []
-
-    print('- bad request if create box with data subject with account but missing invitation data')
-    error = create_org_box(sorg1, datatag_id=did, data_subject=s1.email, expected_status_code=400)
-    check_response(error, [lambda r: assert_fn(error['details']['invitation_data'] == 'required')])
     
     print('- create box with data subject with account')
     r = sorg1.get(

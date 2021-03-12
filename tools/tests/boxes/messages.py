@@ -9,6 +9,7 @@ from misapy.box_members import join_box
 from misapy.container_access import list_encrypted_files
 from misapy.pretty_error import prettyErrorContext
 from misapy.get_access_token import get_authenticated_session
+from misapy.utils.base64 import urlsafe_b64encode
 
 with prettyErrorContext(): 
     s1 = get_authenticated_session(acr_values=2)
@@ -22,8 +23,8 @@ with prettyErrorContext():
         json={
             'type': 'msg.text',
             'content': {
-                'encrypted': b64encode(os.urandom(32)).decode(),
-                'public_key': b64encode(os.urandom(32)).decode()
+                'encrypted': urlsafe_b64encode(os.urandom(32)),
+                'public_key': urlsafe_b64encode(os.urandom(32)),
             }
         },
         expected_status_code=201
@@ -35,8 +36,8 @@ with prettyErrorContext():
         f'{URL_PREFIX}/boxes/{box1_id}/encrypted-files',
         files={
             'encrypted_file': os.urandom(64),
-            'msg_encrypted_content': (None, b64encode(os.urandom(32)).decode()),
-            'msg_public_key': (None, b64encode(os.urandom(32)).decode()),
+            'msg_encrypted_content': (None, urlsafe_b64encode(os.urandom(32))),
+            'msg_public_key': (None, urlsafe_b64encode(os.urandom(32))),
         },
         expected_status_code=201,
     )
@@ -51,8 +52,8 @@ with prettyErrorContext():
             'type': 'msg.edit',
             'referrer_id': text_msg_id,
             'content': {
-                'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
-                'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
+                'new_encrypted': urlsafe_b64encode(b64decode('EditedXX') + os.urandom(32)),
+                'new_public_key': urlsafe_b64encode(b64decode('EditedXX') + os.urandom(32)),
             }
         },
         expected_status_code=201,
@@ -72,8 +73,8 @@ with prettyErrorContext():
             # Oldest event (last in the list) is the box creation event
             'referrer_id': box5_events[-1]['id'],
             'content': {
-                'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
-                'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
+                'new_encrypted': urlsafe_b64encode(b64decode('EditedXX') + os.urandom(32)),
+                'new_public_key': urlsafe_b64encode(b64decode('EditedXX') + os.urandom(32)),
             }
         },
         expected_status_code=403,
@@ -86,8 +87,8 @@ with prettyErrorContext():
             'type': 'msg.edit',
             'referrer_id': file_msg_id,
             'content': {
-                'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
-                'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
+                'new_encrypted': urlsafe_b64encode(b64decode('EditedXX') + os.urandom(32)),
+                'new_public_key': urlsafe_b64encode(b64decode('EditedXX') + os.urandom(32)),
             }
         },
         expected_status_code=403,
@@ -100,8 +101,8 @@ with prettyErrorContext():
             'type': 'msg.edit',
             'referrer_id': text_msg_id,
             'content': {
-                'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
-                'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
+                'new_encrypted': urlsafe_b64encode(b64decode('EditedXX') + os.urandom(32)),
+                'new_public_key': urlsafe_b64encode(b64decode('EditedXX') + os.urandom(32)),
             }
         },
         expected_status_code=403,
@@ -175,8 +176,8 @@ with prettyErrorContext():
             'type': 'msg.edit',
             'referrer_id': text_msg_id,
             'content': {
-                'new_encrypted': b64encode(b64decode('EditedXX') + os.urandom(32)).decode(),
-                'new_public_key': b64encode(b64decode('EditedXX') + os.urandom(32)).decode()
+                'new_encrypted': urlsafe_b64encode(b64decode('EditedXX') + os.urandom(32)),
+                'new_public_key': urlsafe_b64encode(b64decode('EditedXX') + os.urandom(32)),
             }
         },
         expected_status_code=410,
@@ -190,8 +191,8 @@ with prettyErrorContext():
         json={
             'type': 'msg.text',
             'content': {
-                'encrypted': b64encode(os.urandom(32)).decode(),
-                'public_key': b64encode(os.urandom(32)).decode()
+                'encrypted': urlsafe_b64encode(os.urandom(32)),
+                'public_key': urlsafe_b64encode(os.urandom(32)),
             }
         },
     )

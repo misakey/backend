@@ -27,7 +27,7 @@ func (req *CreateKeyShareRequest) BindAndValidate(eCtx echo.Context) error {
 	}
 	return v.ValidateStruct(req,
 		v.Field(&req.OtherShareHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
-		v.Field(&req.Share, v.Required, is.Base64),
+		v.Field(&req.Share, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 		v.Field(&req.BoxID, v.Required, is.UUIDv4),
 	)
 }

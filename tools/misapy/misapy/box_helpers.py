@@ -72,8 +72,8 @@ def create_box_and_post_some_events_to_it(session, public=True):
         json={
             'type': 'msg.text',
             'content': {
-                'encrypted': b64encode(os.urandom(32)),
-                'public_key': b64encode(os.urandom(32)),
+                'encrypted': urlsafe_b64encode(os.urandom(32)),
+                'public_key': urlsafe_b64encode(os.urandom(32)),
             }
         },
         expected_status_code=201

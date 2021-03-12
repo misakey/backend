@@ -77,6 +77,7 @@ with prettyErrorContext():
     )
     check_response(r, [lambda r: assert_fn(len(r.json())==1)])  # 1 because machine-org has already created one
 
+
     print(f'- admin can create datatags')
     r = admin_session.post(
         f'{URL_PREFIX}/organizations/{org_id}/datatags',
@@ -97,7 +98,7 @@ with prettyErrorContext():
     )
     check_response(r, [
         lambda r: assert_fn(len(r.json())==2), # 2 because machine-org has already created one
-        lambda r: assert_fn(r.json()[1]['id'] == datatag_id),
+        lambda r: assert_fn(r.json()[0]['id'] == datatag_id),
     ])
 
     print(f'- admin can edit an existing datatag')
@@ -113,8 +114,8 @@ with prettyErrorContext():
         expected_status_code=http.STATUS_OK
     )
     check_response(r, [
-        lambda r: assert_fn(r.json()[1]['id'] == datatag_id),
-        lambda r: assert_fn(r.json()[1]['name'] == "donation"),
+        lambda r: assert_fn(r.json()[0]['id'] == datatag_id),
+        lambda r: assert_fn(r.json()[0]['name'] == "donation"),
     ])
 
     print(f'- user can list datatags corresponding to them')

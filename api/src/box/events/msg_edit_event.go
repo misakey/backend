@@ -4,12 +4,12 @@ import (
 	"context"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/go-redis/redis/v7"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
 
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 
 	"gitlab.misakey.dev/misakey/backend/api/src/box/events/etype"
@@ -32,7 +32,7 @@ func (c *MsgEditContent) Unmarshal(content types.JSON) error {
 // Validate a msg.edit content structure
 func (c MsgEditContent) Validate() error {
 	return v.ValidateStruct(&c,
-		v.Field(&c.NewEncrypted, v.Required, is.Base64),
+		v.Field(&c.NewEncrypted, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 		v.Field(&c.NewEncrypted, v.Required), // URL-safe base64
 	)
 }

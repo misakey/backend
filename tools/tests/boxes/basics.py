@@ -10,6 +10,7 @@ from misapy.box_members import join_box
 from misapy.check_response import check_response, assert_fn
 from misapy.get_access_token import get_authenticated_session
 from misapy.pretty_error import prettyErrorContext
+from misapy.utils.base64 import urlsafe_b64encode
 
 with prettyErrorContext():
     s1 = get_authenticated_session(acr_values=2)
@@ -54,8 +55,8 @@ with prettyErrorContext():
         f'{URL_PREFIX}/boxes/{box1_id}/encrypted-files',
         files={
             'encrypted_file': os.urandom(64),
-            'msg_encrypted_content': (None, b64encode(os.urandom(32)).decode()),
-            'msg_public_key': (None, b64encode(os.urandom(32)).decode()),
+            'msg_encrypted_content': (None, urlsafe_b64encode(os.urandom(32))),
+            'msg_public_key': (None, urlsafe_b64encode(os.urandom(32))),
         },
         expected_status_code=201,
     )
@@ -66,8 +67,8 @@ with prettyErrorContext():
         json={
             'type': 'msg.text',
             'content': {
-                'encrypted': b64encode(os.urandom(32)).decode(),
-                'public_key': b64encode(os.urandom(32)).decode()
+                'encrypted': urlsafe_b64encode(os.urandom(32)),
+                'public_key': urlsafe_b64encode(os.urandom(32)),
             }
         },
         expected_status_code=403
@@ -85,8 +86,8 @@ with prettyErrorContext():
         json={
             'type': 'msg.text',
             'content': {
-                'encrypted': b64encode(os.urandom(32)).decode(),
-                'public_key': b64encode(os.urandom(32)).decode()
+                'encrypted': urlsafe_b64encode(os.urandom(32)),
+                'public_key': urlsafe_b64encode(os.urandom(32)),
             }
         },
         expected_status_code=400

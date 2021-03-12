@@ -7,6 +7,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/labstack/echo/v4"
+	"gitlab.misakey.dev/misakey/backend/api/src/sdk/format"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/merr"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/oidc"
 	"gitlab.misakey.dev/misakey/backend/api/src/sdk/request"
@@ -41,7 +42,7 @@ func (req *UploadEncryptedFileRequest) BindAndValidate(eCtx echo.Context) error 
 	req.size = file.Size
 	return v.ValidateStruct(req,
 		v.Field(&req.boxID, v.Required, is.UUIDv4),
-		v.Field(&req.MsgEncContent, v.Required, is.Base64),
+		v.Field(&req.MsgEncContent, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 		v.Field(&req.MsgPubKey, v.Required),
 		v.Field(&req.size, v.Required, v.Max(126*1024*1024).Error("the maximum file size is 126MB")), // @FIXME put the max file size in a configuration
 	)

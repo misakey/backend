@@ -10,6 +10,7 @@ from misapy.check_response import check_response, assert_fn
 from misapy.container_access import list_encrypted_files
 from misapy.get_access_token import get_authenticated_session
 from misapy.pretty_error import prettyErrorContext
+from misapy.utils.base64 import urlsafe_b64encode
 
 
 with prettyErrorContext():
@@ -163,8 +164,8 @@ with prettyErrorContext():
         json={
             'type': 'msg.text',
             'content': {
-                'encrypted': b64encode(os.urandom(32)).decode(),
-                'public_key': b64encode(os.urandom(32)).decode()
+                'encrypted': urlsafe_b64encode(os.urandom(32)),
+                'public_key': urlsafe_b64encode(os.urandom(32)),
             }
         }
     )

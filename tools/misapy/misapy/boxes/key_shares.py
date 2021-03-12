@@ -1,11 +1,11 @@
 import os
 
-from ..utils.base64 import b64encode, urlsafe_b64encode
+from ..utils.base64 import urlsafe_b64encode
 
 def new_key_share_event():
     other_share_hash = urlsafe_b64encode(os.urandom(16))
-    misakey_share = b64encode(os.urandom(16))
-    encrypted_invitation_key_share = b64encode(os.urandom(32))
+    misakey_share = urlsafe_b64encode(os.urandom(16))
+    encrypted_invitation_key_share = urlsafe_b64encode(os.urandom(32))
 
     return {
         'type': 'state.key_share',

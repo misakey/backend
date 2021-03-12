@@ -56,8 +56,8 @@ func (req *BoxUserContactRequest) BindAndValidate(eCtx echo.Context) error {
 
 	if err := v.ValidateStruct(&req.KeyShareData,
 		v.Field(&req.KeyShareData.OtherShareHash, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
-		v.Field(&req.KeyShareData.Share, v.Required, is.Base64),
-		v.Field(&req.KeyShareData.EncryptedInvitationKeyShare, v.Required, is.Base64),
+		v.Field(&req.KeyShareData.Share, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
+		v.Field(&req.KeyShareData.EncryptedInvitationKeyShare, v.Required, v.Match(format.UnpaddedURLSafeBase64)),
 	); err != nil {
 		return err
 	}
