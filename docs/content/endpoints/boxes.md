@@ -38,9 +38,9 @@ _JSON Body:_
       "data_subject": "michel@misakey.com",
       "public_key": "SXvalkvhuhcj2UiaS4d0Q3OeuHOhMVeQT7ZGfCH2YCw",
       "key_share": {
-        "misakey_share": "lBHT1vfwFAIBig5Nj+sD+w==",
+        "misakey_share": "lBHT1vfwFAIBig5Nj_sD_w",
         "other_share_hash": "Nz4nJMj5DOd4UGXXOlH8Ww",
-        "encrypted_invitation_key_share": "cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
+        "encrypted_invitation_key_share": "cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ"
       }
       "invitation_data": {
         "<public key>": "encrypted crypto action"

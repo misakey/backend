@@ -83,5 +83,5 @@ _JSON Body:_
 ```
 
 - `account_id` (string) (uuid): the account for which the shares has been created.
-- `share` (string) (base64): one of the shares.
+- `share` (string) (unpadded url-safe base64): one of the shares.
 - `other-share-hash` (string) (unpadded url-safe base64): a hash of the other share.

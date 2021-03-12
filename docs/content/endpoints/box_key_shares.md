@@ -53,7 +53,7 @@ _JSON Body:_
 {{% include "include/box-key-share.json" %}}
 ```
 
-- `share` (string) (base64): one of the shares.
+- `share` (string) (unpadded url-safe base64): one of the shares.
 - `other_share_hash` (string) (unpadded url-safe base64): a hash of the other share.
 - `box_id` (string) (uuid): the box id linked to the key shares.
 
@@ -99,7 +99,7 @@ _JSON Body:_
 {{% include "include/box-key-share.json" %}}
 ```
 
-- `share` (string) (base64): the misakey share.
+- `share` (string) (unpadded url-safe base64): the misakey share.
 - `other-share-hash` (string) (unpadded url-safe base64): a hash of the other share (invitation share).
 - `box_id` (string) (uuid): the box id linked to the key shares.
 
@@ -122,9 +122,9 @@ Access control:
 
 Response:
 ```json
-"cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
+"cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ"
 ```
 
 Not that the result is not a JSON literal object but it is still valid JSON
 (a JSON string is a valid JSON object).
-The encoding is standard base64.
+The encoding is unpadded URL-safe base64.

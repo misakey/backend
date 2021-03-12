@@ -35,9 +35,9 @@ _JSON Body:_
             "public_key": "<string> SXvalkvhuhcj2UiaS4d0Q3OeuHOhMVeQT7ZGfCH2YCw",
         }
         "key_share": {
-            "misakey_share": "<string> lBHT1vfwFAIBig5Nj+sD+w==",
+            "misakey_share": "<string> lBHT1vfwFAIBig5Nj_sD_w",
             "other_share_hash": "<string> Nz4nJMj5DOd4UGXXOlH8Ww",
-            "encrypted_invitation_key_share": "<string> cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
+            "encrypted_invitation_key_share": "<string> cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ"
         },
         "invitation_data": {
             "<string> non identified public key": "<string> encrypted crypto action"

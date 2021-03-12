@@ -139,7 +139,7 @@ Messages of type `msg.txt` allow the transfer of message text.
 {
   "type": "msg.txt",
   "content": {
-    "encrypted": "(string) (base64): the encrypted message. Recall that files are sent separately from the message, so the size of a message event stays rather small.",
+    "encrypted": "(string) (unpadded URL-safe base64): the encrypted message. Recall that files are sent separately from the message, so the size of a message event stays rather small.",
     "deleted": { // nullable, indicates the message have been removed
       "at_time": "indicates the deletion time of the message",
       "by_identity": "indicates who has deleted the message",
@@ -158,7 +158,7 @@ Messages of type `msg.file` allow the transfer of blob data.
   "type": "msg.file",
   "content": {
     "is_saved": "(bool): is the file in user My Documents",
-    "encrypted": "(string) (base64): information about file encryption.",
+    "encrypted": "(string) (unpadded URL-safe base64): information about file encryption.",
     "encrypted_file_id": "(string) (uuid format): a unique uuid used to store and download the file",
     "deleted": { // nullable, indicates the message have been removed
       "at_time": "indicates the deletion time of the message",

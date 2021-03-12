@@ -52,7 +52,7 @@ _JSON Body:_
 {
 	"old_prehashed_password": {{% include "include/passwordHash.json" 4 %}},
 	"new_prehashed_password": {{% include "include/passwordHash.json" 4 %}},
-	"encrypted_account_root_key": "(URL-safe base64)",
+	"encrypted_account_root_key": "(unpadded URL-safe base64)",
 }
 ```
 
