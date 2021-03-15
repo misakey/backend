@@ -1,0 +1,328 @@
+---
+title: Boxes
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+The box concept is described [here](/concepts/boxes.mdx).
+
+:::tip
+Need some changes ? More endpoints ? Please open a [github issue](https://github.com/misakey/backend) or contact us at [love@misakey.com](mailto:love@misakey.com).
+:::
+
+____
+### Creation of a box for your organization
+
+A box should be created with a datatag and a data subject.
+
+The data subject is supposed to be the email of the person concerned by the data.
+After being connected on Misakey using this email, data subjects can see boxes you have created and linked to their email. They have access to the box and its data.
+
+:::info
+Do not forget to save the id of the created box to later send data to it.
+:::
+
+#### Request
+
+```bash
+POST https://api.misakey.com/organizations/:oid/boxes
+```
+
+##### Authorizations
+<Tabs groupId="requester-type" defaultValue="org" values={[{label: 'Organization', value: 'org'}, {label: 'User', value: 'user'}]}>
+  <TabItem value="org">    
+    Headers:<ul>
+      <li><code>Authorization</code>: a bearer access token for your organization. Example: <i>Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA</i></li>
+    </ul>
+  </TabItem>
+  <TabItem value="user">
+      Not available for users
+  </TabItem>
+</Tabs>
+
+_Path Parameters:_
+- `oid` (uuid string): your organization id.
+
+_JSON Body:_
+```json
+    {
+      "title": "Requête RGPD",
+      "owner_org_id": "d1e9bfa6-e931-46b1-b73c-77cb3530aadb",
+      "datatag_id": "b7073bc5-b2e8-4a22-9717-8418de13bfa5",
+      "data_subject": "michel@misakey.com",
+      "public_key": "SXvalkvhuhcj2UiaS4d0Q3OeuHOhMVeQT7ZGfCH2YCw",
+      "key_share": {
+        "misakey_share": "lBHT1vfwFAIBig5Nj+sD+w==",
+        "other_share_hash": "Nz4nJMj5DOd4UGXXOlH8Ww",
+        "encrypted_invitation_key_share": "cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
+      },
+      "key_share": {
+        "misakey_share": "lBHT1vfwFAIBig5Nj+sD+w==",
+        "other_share_hash": "Nz4nJMj5DOd4UGXXOlH8Ww",
+        "encrypted_invitation_key_share": "cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
+      }
+    }
+```
+
+<!-- "invitation_data": {
+  "<public key>": "encrypted crypto action"
+ }, -->
+
+
+- `title`: (string) a free text that is meant to describe the box purpose for the end-users
+- `owner_org_id`: (string) your organization id
+- `datatag_id`: (string) the datatag id
+- `datatag_subject`: (string) email of the person concerned by the data
+- `public_key`: (string, unpadded url-safe base64): the public key of the box. If it is for `com.misakey.aes-rsa-enc` algorithm, it must be prefixed with `com.misakey.aes-rsa-enc:`
+- `key_share`: (object) (optional) see [the key share guide](/guides/store-data-for-your-org.mdx#key-share) for more information
+<!-- - `invitation_data`: (object) (optional) only available using `com.misakey.nacl-enc` algorithm: see [the invitation data guide](/guides/store-data-for-your-org.mdx#invitation-data) for more information)  -->
+
+:::tip
+It is recommended to use `key_share` to have a way to share the crypto materials to the data subject.
+:::
+
+Note that the access mode of a box is limited by default. A `state.access_mode` event must be created to switch it to `public`, see the related event type documentation.
+
+#### Response
+
+```bash
+HTTP 201 Created
+```
+
+_JSON Body:_
+```json
+{
+    "id": "c3fde689-5d4e-4f1b-813f-f9cdb05547ce",
+    "title": "Test Box",
+    "owner_org_id": "642ef87f-2902-4316-9cd1-afa887824f53",
+    "datatag_id": "d5e1374f-e563-4322-b8e8-94bd12cd7a38",
+    "data_subject": "823a59-test@misakey.com",
+    "public_key": "ShouldBeUnpaddedUrlSafeBase64",
+    "access_mode": "limited",
+    "server_created_at": "2021-03-10T14:14:03.76932Z"
+}
+```
+
+The most important part is the `id` field
+which must be used to interact with the box.
+
+____
+### Retrieve an existing box as an organization
+
+A box can be retrieved using your organization token.
+
+#### Request
+
+```html
+GET https://api.misakey.com/organizations/:oid/boxes/:id
+```
+
+##### Authorizations
+<Tabs groupId="requester-type" defaultValue="org" values={[{label: 'Organization', value: 'org'}, {label: 'User', value: 'user'}]}>
+  <TabItem value="org">    
+    Headers:<ul>
+      <li><code>Authorization</code>: a bearer access token for your organization. Example: <i>Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA</i></li>
+    </ul>
+  </TabItem>
+  <TabItem value="user">
+      Not available for users
+  </TabItem>
+</Tabs>
+
+_Path Parameters:_
+- `oid` (uuid string): your organization id.
+- `id` (uuid string): the box id wished to be retrieved.
+
+#### Response
+
+_Code:_
+```bash
+HTTP 200 OK
+```
+
+_JSON Body:_
+```json
+{
+    "id": "7523588e-9c3d-4c9d-83b7-d98663bf1215",
+    "title": "Test Box",
+    "access_mode": "limited",
+    "datatag_id": "d9c01c3e-955a-4e98-b9f7-2610cc857108",
+    "data_subject": "data-subject@email.com",
+    "owner_org_id": "7dc50120-c840-4941-90cf-35c240646dd8",
+    "public_key": "anUnpaddedUrlSafeBase64",
+    "server_created_at": "2021-03-10T09:15:26.562703Z"
+}
+```
+
+____
+### Send data as a plain text to a box
+
+#### Request
+
+```html
+  POST https://api.misakey.com/boxes/:id/events
+```
+
+##### Authorizations
+<Tabs groupId="requester-type" defaultValue="org" values={[{label: 'Organization', value: 'org'}, {label: 'User', value: 'user'}]}>
+  <TabItem value="org">    
+    Headers:<ul>
+      <li><code>Authorization</code>: a bearer access token for your organization. Example: <i>Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA</i></li>
+    </ul>
+  </TabItem>
+  <TabItem value="user">
+    Cookies:<ul>
+      <li><code>accesstoken</code> (opaque token) (ACR >= 2): mid claim as a member of the box.</li>
+      <li><code>tokentype</code> (string): must be <b>bearer</b>.</li>
+    </ul>
+    Headers:<ul>
+      <li><code>X-CSRF-Token</code>: a token to prevent from CSRF attacks.</li>
+    </ul>
+  </TabItem>
+</Tabs>
+
+_Path Parameters:_
+- `id`: (string, uuid) id of the box
+
+_JSON Body:_
+```json
+{
+  "type": "msg.txt",
+  "content": {
+    "encrypted": "dGhpcyBpcyBhbiBlbmNvZGUgYmFzZTY0IHN0cmluZw=="
+  }
+}
+```
+
+- `type`: (string) must be `msg.txt`
+- `content`:
+  - `encrypted`: (string, unpadded url-safe base64) the encrypted message. Recall that files are sent separately in another way, so the size of a text message event should stay rather small.
+
+#### Response
+
+```html
+HTTP 201 Created
+```
+
+```json
+{
+  "id": "f17169e0-61d8-4211-bb9f-bac29fe46d2d",
+  "type": "msg.txt",
+  "box_id": "74ee16b5-89be-44f7-bcdd-117f496a90a7",
+  "server_event_created_at": "2038-11-05T00:00:00.000Z",
+  "sender": {
+    "id": "fcfacf74-b15e-4583-bb71-55eb42cf2758",
+    "display_name": "Jean-Michel User",
+    "avatar_url": null,
+    "identifier_value": "jean-michel@misakey.com",
+    "identifier_kind": "email"
+  },
+  "content": {
+    "encrypted": "dGhpcyBpcyBhbiBlbmNvZGUgYmFzZTY0IHN0cmluZw=="
+  },
+  "referrer_id": null
+}
+```
+
+- `id`: (string, uuid) unique id the of message event
+- `type`: (string): `msg.txt`
+- `box_id`: (string, uuid) id of the box
+- `server_event_created_at`: (date) server date creation
+- `sender`: (object) contains event sender information
+- `content`: (object) the content of the `msg.txt` event
+- `referrer_id`: (string, nullable): will be null in this case
+
+____
+### Send data as a file to a box
+
+The upload of an encrypted file triggers the creation of a `msg.file` event on the box then returns it.
+
+#### Request
+
+```html
+  POST https://api.misakey.com/boxes/:id/encrypted-files
+```
+
+##### Authorizations
+<Tabs groupId="requester-type" defaultValue="org" values={[{label: 'Organization', value: 'org'}, {label: 'User', value: 'user'}]}>
+  <TabItem value="org">    
+    Headers:<ul>
+      <li><code>Authorization</code>: a bearer access token for your organization. Example: <i>Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA</i></li>
+    </ul>
+  </TabItem>
+  <TabItem value="user">
+    Cookies:<ul>
+      <li><code>accesstoken</code> (opaque token) (ACR >= 2): mid claim as a member of the box.</li>
+      <li><code>tokentype</code> (string): must be <b>bearer</b>.</li>
+    </ul>
+    Headers:<ul>
+      <li><code>X-CSRF-Token</code>: a token to prevent from CSRF attacks.</li>
+    </ul>
+  </TabItem>
+</Tabs>
+
+_Path Parameters:_
+- `id` (uuid string): the box unique id the file is uploaded in.
+
+_Multipart Form Data Body:_
+- `encrypted_file` (binary): the encrypted data
+- `msg_encrypted_content` (string, unpadded url-safe base64): encrypted content that will be store in the created `msg.file` event
+
+#### Response
+
+```html
+HTTP 201 Created
+```
+
+_JSON Body_:
+```json
+{
+    "id": "cac1f19f-46eb-4be9-ba21-8346f1fd3838",
+    "type": "msg.file",
+    "content": {
+        "encrypted": "dGhpcyBpcyBhbiBlbmNvZGUgYmFzZTY0IHN0cmluZw==",
+        "encrypted_file_id": "9b2c3cdc-d768-43ef-ba23-350b56b3d8ed"
+    },
+    "server_event_created_at": "2020-06-19T15:36:28.092359097Z",
+    "sender": {
+        "id": "fcfacf74-b15e-4583-bb71-55eb42cf2758",
+        "display_name": "Jean-Michel User",
+        "avatar_url": null,
+        "identifier_value": "jean-michel@misakey.com",
+        "identifier_kind": "email"
+    },
+    "referrer_id": null
+}
+```
+
+- `id`: (string, uuid) unique id the of message event
+- `type`: (string): "msg.file"
+- `box_id`: (string, uuid) id of the box
+- `server_event_created_at`: (date) server date creation
+- `sender`: (object) contains event sender information
+- `content`:
+  - `encrypted`: (binary) the encrypted data
+  - `encrypted_file_id`: (string, uuid) the generated unique id representing the file
+- `referrer_id`: (string, nullable): will be null in this case
+
+
+#### Notable Error Responses
+
+**1 - The file is too big:**
+
+_Code:_
+```html
+HTTP 400 BAD REQUEST
+```
+
+```json
+{
+    "code": "bad_request",
+    "origin": "not_defined",
+    "desc": "size: the maximum file size is XMB.",
+    "details": {
+        "size": "invalid"
+    }
+}
+```

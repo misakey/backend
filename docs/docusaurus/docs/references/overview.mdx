@@ -1,0 +1,62 @@
+---
+title: Overview
+---
+
+:::tip
+Need some changes ? More endpoints ? Please open a [github issue](https://github.com/misakey/backend) or contact us at [love@misakey.com](mailto:love@misakey.com).
+:::
+
+Our API documentation is currently available on https://backend.docs.misakey.dev.
+
+We aim to move it completely here: the work is in progress :hammer_and_wrench:...
+
+### Global Documentation Rules
+
+In the following specifications:
+- All parameters are **required** or **always returned**, unless other rules are locally specified. This is applied for both requests and responses.
+
+### Global Formats
+
+- Date and Time strings are represented following the RFC 3339, ex `2038-11-05T00:00:00.000Z`.
+- Query Parameter Lists are comma separated lists of words: ex `lists=one,two,three`
+- [Errors format have a dedicated page](/docs/references/errors-format).
+
+### Pagination
+
+#### Parameters
+
+Pagination is currently handled using an `limit` and an `offset` integers.
+
+In case of HTTP calls, these command information is received using query parameters.
+
+On endpoint offering pagination, it is usual to have a default value for both of these parameters:
+- `offset` default value is always 0.
+- `limit` default value depends on the endpoint.
+
+The `limit` parameter sets the maximum number of entities contained by the returned list. It is the size of the page.
+
+The `offset` parameter sets the cursor in the total list of stored entities. It is kind of the page number.
+
+##### Example:
+
+Considering the list of numbers: **[10, 32, 554, 6, 0.1]**.
+
+- `limit = 0 & offset = 0` --> `[10, 32, 554, 6, 0.1]`
+- `limit = 2 & offset = 0` --> `[10, 32]`
+- `limit = 2 & offset = 1` --> `[32, 554]`
+- `limit = 2 & offset = 3` --> `[6, 0.1]`
+- `limit = 2 & offset = 3` --> `[6, 0.1]`
+- `limit = 2 & offset = 4` --> `[0.1]` _we have only one record to return_
+- `limit = 2 & offset = 5` --> `[]` _no record to return_
+- `limit = 10 & offset = 1` --> `[32, 554, 6, 0.1]`
+
+#### How to know the total count ?
+
+The total count of existing entities is usually available as on the same route using the HEAD verb instead of the GET.
+A Response Header `X-Total-Count` is then returned as an integer.
+
+It might exist some listing endpoints not having its HEAD equivalent implemented, please contact us if you wish it.
+
+#### When to stop calling the endpoint if I want to retrieve all the existing entities ?
+
+The consumer should stop calling the list when the number of returned entities is lower than the received limit.

@@ -1,0 +1,60 @@
+---
+title: Manage your organization
+---
+
+In this guide, we explain how to create an [organization](/concepts/organizations.mdx) and manage it.
+
+### Create your organization
+
+Creation of an organization allows you to create [boxes](/concepts/boxes.mdx) linked to it and manage them.
+
+In other terms, you can:
+- push your data securely to Misakey vault and keep control over it.
+
+Steps:
+1. Go on https://app.misakey.com.
+2. If not done yet, connect your identity on the platform.
+3. You should be able to create an organization on the switch organization menu.
+
+As the creator, you are now admin of the organization.
+
+### Generate a secret for your organization
+
+:::warning
+This action must be done carefully. The loss of your secret is irreversible.
+When you generate a secret while one already exists, the previous one is completely removed from the system.
+This makes all current services using this secret break in real-time.
+:::
+
+Actions restricted to organization admins.
+
+:::info
+You can see your organization ID on this page, it is useful in many situations later.
+:::
+
+The creation of a secret for your organization is a mandatory step to authenticate your machine as your organization.
+
+Once you have your secret, you can push data as an organization using the HTTP API (see the [store data for your organization guide](store-data-for-your-org.mdx) guide).
+
+Steps: 
+1. Go on https://app.misakey.com and ensure the selected organization is the one requiring new datatags. By default, you are in your "Personal Space", click on it to change it.
+2. Access the options panel by clicking on the button on the left of "Discussions".
+3. If you are admin of the organization, you should see a Secret Generation options.
+4. Generate a new secret only if you are sure you can override the potentially existing one. A secure secret is generated for you. You can copy it to a secure vault on your side. :warning: Misakey does not have any readable record of this secret so keep it safe, it is the only time we can display it to you in clear.
+
+You have now a way to authenticate a service/machine as an organization, using client credentials flow explained in the next section.
+
+### Get an access token for your organization
+
+In order to perform requests to our HTTP API, your calls must be authorized.
+
+Our auth system implements [OpenID Connect protocol](https://openid.net/specs/openid-connect-core-1_0.html) and the flow to retrieve an access token as an organization is the `client credential` flow using ` client_secret_post` method:
+
+Steps:
+1. You should have [created an organization](#create-your-organization) and have [generated a secret](#generate-a-secret-for-your-organization) for that same organization.
+2. See the [**reference endpoint here**](/references/authorizations.mdx#client-credentials-flow) to see how to perform this flow in one HTTP request.
+
+____
+You have now an organization and a way to be authorized in the name of this organization using Bearer token on our API calls.
+
+In the next guides, we describe you how to start storing data for your organization and users.

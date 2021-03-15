@@ -1,0 +1,88 @@
+---
+title: Store data for your organization
+---
+
+In order to store data for your organization on Misakey, you must first follow [this guide](/guides/your-org.mdx), after which you should:
+- have created an organization.
+- have generated a secret for your organization.
+- have generated an access token for your organization.
+
+
+### Create datatags
+
+[Datatags](/concepts/datatags.mdx) are really important to identify what the data is about: for your organization, your users, and other organizations. We advise you to create at least one datatag corresponding to the kind of data you are storing, even if the term is non-specialist: _all_, _{name_of_your_org_}_data_, _purchases_, _contracts_...
+
+:information_source: A lot of features will come with datatags, so it can be important to set them up correctly from the beginning.
+
+[See the datatag reference](references/datatags.mdx).
+
+### Create a box for a data subject and datatag
+
+You can create a box and then send data to it.
+
+The endpoint to create a box is [documented here](references/boxes.mdx#creation-of-a-box-for-your-organizations).
+
+Since the data inside a box is end-to-end encrypted, there is several ways in order to share cryptographic materials to other actors.
+
+Boxes have both a public (for writing) and a secret key (for reading).
+The public key is stored in Misakey database but it does not store 
+the secret directly (for end-to-end encryption purpose).
+It means the secret key must be kept on client side.
+
+This being said, note you can use optionally the `key_share` field, on the box creation endpoint, as a way to transmit securely the secret key to the data subject of a box:
+
+<!-- 
+#### Invitation Data
+
+:::info
+To use invitation data you need to use the `com.misakey.nacl-enc` algorithm. If you use `com.misakey.aes-rsa-enc` algorithm you just cannot fill the field correctly for now.
+:::
+
+Invitation data is a way to store the secret of the box on Misakey side, but encrypted with the data subject public key so nobody cannot read it apart from the data subject.
+
+Using this, the data subject receives at least in-app notifications about the box existence. Making `invitation_data` great for a smooth user experience.
+
+Only data subjects already registered to Misakey with an account can take advantage of `invitation_data`.
+In order to know if you can use `invitation_data` field on box creation endpoint, you should check for public keys existency for the data subject using [this endpoint](/references/identities#list-identities-public-keys).
+
+:information_source: Build invitation_data:
+
+```json
+{
+  "<data subject public key>": "crypto action encrypted using data subject public key",
+}
+```
+
+Invitation data is an object containing pairs of <identities public keys, encrypted crypto action>.
+
+It is possible to pass many pairs as you can invite many identities to the box. For the context of data subject, this possibility does not make sense.
+
+`Pair keys` must be [the retrieved data subject public key](/references/identities#list-identities-public-keys).
+`Pair values` must be a crypto action encrypted using this same public key. The crypto action model for invitation is:
+
+```json
+{
+    "type": "invitation",
+    "encryption_public_key": "(URL-safe unpadded base64)",
+    "encrypted": "(encrypted data)"
+}
+```
+
+- `type`: (string) should be _invitation_.
+- `encryption_public_key`: (string) (URL-safe unpadded base64)
+- `encrypted`: (string)
+
+
+#### Key Share
+
+Key share is the most common way for sharing the box secret to the data subject.
+
+The key share allows the build of an invitation link that you can send to the user. Invitation link is a way to share crypto materials. See [box key shares doc](https://backend.docs.misakey.dev/endpoints/box_key_shares)
+  - `misakey_share`: (string, unpadded url-safe base64) the misakey share
+  - `other_share_hash`: (string, unpadded URL-safe base64) a hash of the other share (invitation share)
+  - `encrypted_invitation_key_share`: (string) the encrypted invitation key share
+
+### Send data to the box
+
+* [As plain text](references/boxes.mdx#send-data-as-a-plain-text-to-a-box).
+* [As a file](references/boxes.mdx#send-data-as-a-file-to-a-box).

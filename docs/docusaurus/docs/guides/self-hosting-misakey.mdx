@@ -1,0 +1,115 @@
+---
+title: Self-hosting Misakey
+---
+
+Maybe you want to run Misakey yourself in order to test it:
+- [locally](self-hosting-misakey.mdx#running-on-your-local-environment)
+- or even in a [production environment](self-hosting-misakey.mdx#running-on-your-production-environment) :warning: :arrow_down:.
+
+:::warning
+:warning: The system is considered **not ready for self-hosting production yet. Some breaking changes may apply** since the system is still a work in progress. For our SAAS solution https://app.misakey.com we mitigate the breaking changes. But we cannot handle it if you have installed Misakey on your infrastructure. Updates are quite important when it concerns security, so feel free to contact us to inform us you are using it, so we can communicate with you.
+::: 
+
+## Running on your local environment
+
+In this tutorial, you will get to run the Misakey's stack locally in 5 min. After that you will be able to start hacking around. 
+
+### Install the Stack
+
+#### Prerequisites
+
+- Python3 (with Pip)
+- Docker
+- Docker compose
+- Git
+
+#### Misakey's “Test & Run” Project
+
+We grouped all the tools required to run the app locally in a project called [test and run](https://github.com/misakey/test-and-run).
+
+Clone the repository with `git clone git@github.com:misakey/test-and-run.git`.
+
+Install the CLI:
+- Go to the `misacli` directory
+- Make sure you have `pip` for Python 3
+- Run `pip install -e .`
+
+:warning: The `misacli` CLI must be used in the root directory of the project.
+
+Run the command `misacli init` and follow the instructions.
+
+The others commands are described in the CLI help (`misacli --help`).
+
+**Example:** To run the whole application, run `misacli run app`.
+
+### Using the Application
+
+Open your web browser and go to [https://app.misakey.com.local](https://app.misakey.com.local).
+
+:::tip
+You will have to accept self-signed certificates (3 times): we decided to use SSL even in local development environement to be closer to a real-world environment.
+:::
+
+Then you can play with the demo application: using the auth, creating data channels and chatting through them…
+
+### Hacking Around
+
+From there, you can create your own app using the SSO and the other bricks of the system. 
+
+You can find a more complete [references of the APIs](https://backend.docs.misakey.dev/) and the usage of the stack in dedicated guides.
+
+
+## Running on your production environment
+
+Misakey tech is distributed as a set of Docker images. This makes it easy to deploy it in various environments.
+
+### Prerequisites[^1]
+
+- A PostgreSQL Database.
+- A Redis database.
+- An Amazon S3 storage.
+- An Amazon SES service for sending emails.
+
+#### Optional
+
+- A Datadog account and agents to monitor your infrastructure
+
+### Deploy with `docker-compose`
+
+Running on docker-compose is quite easy. The recommended architecture is the same as the one described in [guide for running locally the solution](/guides/self-hosting-misakey.mdx).
+
+You can take inspiration from the `docker-compose.yml` file in the guide and adjust it to your needs:
+- Using your DB, Cache, S3 and email providers instead of local ones
+- Managing your configuration files
+- Using a `docker-compose` file version 3 to have something more production oriented (and being able to manage redundancy for instance)
+
+### Deploy on Kubernetes
+
+:::info
+
+This section is a work in progress. We know we should add information about deployment and provide helm repos.
+:::
+
+If you want to deploy on Kubernetes, we provide some helm charts alongside our Docker images to make it easy to deploy on your cluster.
+
+You can check on every code repository to get the dedicated helm chart to be able to deploy all services. The complementary information (config, secrets, ...) are available on each repository(frontend, backend/api, backend/gateway).
+
+## Create an auth client
+
+Before you can interact with Misakey tech, you have to create an authentication client to authenticate your users or give access to another service to your user data.
+
+Misakey uses [ORY Hydra](https://www.ory.sh/docs/hydra) as an OpenID server. To create a client, you have to send a `POST` request to `http://your-hydra-admin-url:4445/clients` with the following body:
+
+```json
+{
+        "client_id": "DEFINE A UUIDv4",
+        "client_name": "NAME OF YOUR CLIENT",
+        "redirect_uris": ["https://MISAKEY_URL.your-org.tld/login/callback"],
+        "grant_types": ["authorization_code", "client_credentials"],
+        "response_types": ["id_token", "token", "code"],
+        "scope": "openid email",
+        "subject_type": "pairwise",
+        "token_endpoint_auth_method": "client_secret_post",
+        "userinfo_signed_response_alg": "none",
+}
+```

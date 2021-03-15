@@ -1,0 +1,102 @@
+---
+title: The "com.misakey.aes-rsa-enc" Encryption Algorithm
+---
+
+`com.misakey.aes-rsa-enc` is an asymmetric (a.k.a “public-key”) authenticated encryption algorithm based on [RSA-OAEP][], [AES-CTR][] and [HMAC][]. It has been designed for the needs of an organization that only had access to *“RSA, AES and SHA-256“* as cryptographic primitives.
+
+**Warning: use `com.misakey.nacl-enc` instead if possible.** `com.misakey.aes-rsa-enc` was designed for the needs of an organization that could not use the main encryption algorithm of Misakey, `com.misakey.nacl-enc`, based on [NaCl][]. Organizations that have access to an implementation of NaCl (for instance [libsodium](https://doc.libsodium.org/), [TweetNaCl.js](https://github.com/dchest/tweetnacl-js), [golang.org/x/crypto/nacl](https://pkg.go.dev/golang.org/x/crypto/nacl)...) should use `com.misaky.nacl-enc` instead.
+
+**Note on the terms “secret key”, “private key” and “symmetric key”:** the usage of terms “secret key” and “private key” is not consistent across the literature on cryptography. Most authors use “secret key” exclusively for symmetric keys and “private key” exclusively for the private part of an asymmetric key pair, but since the initials of “private key” are the same as these of “public key”, the term “secret key” is sometimes used as a synonym of “private key” as well (so that one can write `pk, sk`). In this document, and across all of Misakey documentation, we use “secret key” as a synonym of “private key”, referring to the private/secret part of an asymmetric key pair. Keys of symmetric cryptographic schemes are always called “symmetric keys”.
+
+## API
+
+`com.misakey.aes-rsa-enc` provides the same 5 functions as `com.misakey.nacl-enc`:
+
+- `generateAsymmetricKeyPair() -> (secretKey, publicKey)`
+- `encryptMessage(plaintext, publicKey) -> cryptogram `
+- `decryptMessage(cryptogram, secretKey) -> plaintext`
+- `encryptFile(file) -> (encryptedFile, fileEncryptionMetadata)`
+- `decryptFile(encryptedFile, fileEncryptionMetadata) -> file` 
+
+## Overview
+
+**Note:** Several design decisions come from the fact that `com.misakey.aes-rsa-enc` is implemented on top of [the WebCrypto API][WebCrypto] on Misakey's side.
+
+### Key Generation
+
+Asymmetric keys are [RSA keys](https://tools.ietf.org/html/rfc8017#section-3) with a key size (bit length of the RSA modulus) of 3072 (following recommendations from [NIST SP 800-57](https://csrc.nist.gov/publications/detail/sp/800-57-part-1/rev-5/final)).
+
+We always use 65537 as the public RSA exponent (this is the usual recommended value since it makes operations quite fast and avoids the security issues of low public exponents like 3). As a result, a `com.misakey.aes-rsa-enc` public key only consists in the RSA modulus.
+
+Secret keys, on the other hand, contain a lot of different values. This is because [the WebCrypto API][WebCrypto] expects them during key import, even though most of them could be computed from the private exponent and the modulus, or better, the prime factors of the modulus. We use [PKCS#8][] format (and DER encoding) because it is the standard way of representing such keys, and it is supported by WebCrypto (another option could have been [JWK][]).
+
+### Symmetric Encryption
+
+Although `com.misakey.aes-rsa-enc` is an asymmetric encryption algorithm, the data itself is encrypted with a symmetric cipher. During encryption, a fresh symmetric key is generated to encrypt the data, and it is this key which is encrypted with the asymmetric cipher. This is called [*hybrid encryption*](https://tools.ietf.org/html/draft-irtf-cfrg-hpke-07).
+
+The symmetric cipher is an [*authenticated encryption*][Bellare and Namprempre 2000] algorithm, meaning that it provides both confidentiality *and* protection against tampering. This does not make the message “signed”, it only protects against a family of attacks where an attacker intercepts an encrypted message, modifies it, and infer information about the plaintext by observing the behavior of the recipient. Every modern encryption is authenticated, 
+
+Symmetric authenticated encryption is achieved by combining an encryption algorithm with a Message Authentication Code (MAC) algorithm, using the *“encrypt-then-mac”* composition method, meaning that the authentication tag is computed by the MAC over the *ciphertext*, not the plaintext. See [this paper][Bellare and Namprempre 2000] for details about this technique (called *“generic composition”*).
+
+The encryption algorithm is [AES][] (using the AES-256 “flavor” which uses 256-bit keys) in [CTR mode][NIST SP 800-38a]. The MAC algorithm is [HMAC][] using hash function [SHA-256][]. For the initial block value of the CTR mode, we follow the recommendation of Appendices B.1 and B.2 of [NIST SP 800-38a][] by concatenating a 64-bits nonce with 64 zeros.
+
+The key used for encryption with AES and the one used for HMAC are both derived from a single symmetric key: this is called *key derivation*. The standard way of doing key derivation is [HKDF][] which is actually based on HMAC, and in the conditions in which we use HKDF, it simply boils down to running HMAC on a “label” (a short string identifying the key we want to derive, doesn't need to be secret or random) using the base key as the HMAC key.
+
+### Asymmetric Key Wrapping
+
+The symmetric key is encrypted in an asymmetric way using [RSA-OAEP][] (that is RSA encryption using the OAEP padding scheme) with SHA-256 as the underlying hash function. The process of encrypting a cryptographic key is called *key wrapping*, so the result is called a *wrapped key*. OAEP has a few “options” in its specification: we use the usual mask generation function MGF1, the default “label” and SHA-256 as the hash function.
+
+### `encryptMessage` and `decryptMessage` Functions
+
+The *cryptogram* which function `encryptMessage` outputs is then composed of the ciphertext (the message encrypted with AES-CTR), the nonce (a random but not secret value generated as part of the CTR mode of encryption), the authentication tag (computed by applying HMAC on the ciphertext), and the wrapped key (the symmetric key encrypted using RSA-OAEP).
+
+Function `decryptMessage` unwraps the wrapped key using RSA-OAEP and the secret key, uses the resulting symmetric key to derive the encryption key and the MAC key, checks that the authentication tag corresponds to the ciphertext using HMAC, then decrypts the ciphertext using AES-CTR and returns the result.
+
+### File Encryption
+
+Files are encrypted using a dedicated function `encryptFile` which simply generates a symmetric key, encrypts the file with it, and returns the encrypted file along with metadata containing both information about the original file (name, type and size) as well as the cryptographic values required to decrypt the file (symmetric key, nonce and authentication tag). This is because encrypted files in Misakey are uploaded to a dedicated storage, different from the “boxes“ which can only receive short messages. To upload a file to a box, the encryption metadata is converted to a string (via base64 encoding then JSON formating) and encrypted with `encryptMessage`, which result can be sent to a Misakey box (in a message with dedicated `msg.file` type).
+
+## Encoding and Serialization
+
+Strings are encoded with UTF-8.
+
+Unless explicitly stated otherwise, binary values that must be transfered over a text-based protocol (typically, JSON over HTTP) must be serialized using [unpadded URL-safe base64](https://tools.ietf.org/html/rfc4648).
+
+**Cryptograms** (the output of function `encryptMessage`), which consists of *several* binary values, are first encoded using [MessagePack][] as a map with keys `ciphertext`, `nonce`, `auth_tag` and `wrapped_key`. Since MessagePack is a binary format, the result is base64 encoded (unpadded and URL-safe) when it must be included in a JSON payload.
+
+**Public keys** (which, recall, consist in the RSA modulus) are converted from an integer to bytes (in big-endian form) then converted to base64. A prefix `com.misakey.aes-rsa-enc:` must be prepended to indicate which algorithm they correspond to. Public keys without a prefix are assumed to correspond to `com.misakey.nacl-enc`.
+
+**Secret Keys** are represented using [PKCS#8][] (see mainly Section 5) and [PKCS#1 v2.2](https://tools.ietf.org/html/rfc8017) (see mainly Appendix A) (the latter defines the parts that are left undefined by the former). Encoding must follow DER encoding (without encryption) for which the official specification does not seem to be freely available, but a good description can be found [here](https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der/).
+
+## Generation of Random Bytes
+
+Whenever “random bytes” are needed (for keys, nonces...), a source of randomness must be used that is suitable for cryptographic usage. For instance, in Python, one must use [`os.urandom`](https://docs.python.org/3/library/os.html#os.urandom) ; functions from [the `random` module](https://docs.python.org/3/library/random.html) **must not be used**. In Go, use [package `crypto/rand`](https://golang.org/pkg/crypto/rand/) but **do not use** [package `math/rand`](https://golang.org/pkg/math/rand/). In JavaScript, use [`Crypto.getRandomValues()`](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues) but **do not use** [`Math.random()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random), etc...
+
+## Reference Implementation
+
+See https://gitlab.misakey.dev/misakey/pocs/epi-use-labs-encryption/-/blob/master/public/com.misakey.aes-rsa-enc.js . The implementation is extensively documented and it should be easy to map it to this documentation (tell us if it's not).
+
+This code will soon be moved to inside [the Misakey frontend](https://github.com/misakey/frontend). We will update this documentation with the new address when the move is done.
+
+## Testing Your Implementation With the Test-Bed
+
+The test-bed is available at https://misakey.pages.misakey.dev/pocs/epi-use-labs-encryption . It lets you test both text message encryption as well as file encryption.
+
+
+
+[RSA-OAEP]: https://tools.ietf.org/html/rfc8017#section-7.1.1 "Section 7.1.1 of RFC 8017"
+[AES-CTR]: https://csrc.nist.gov/publications/detail/sp/800-38a/final "NIST SP 800-38a"
+[HMAC]: https://tools.ietf.org/html/rfc2104.html "RFC 2104"
+[NaCl]: https://nacl.cr.yp.to/
+[WebCrypto]: https://www.w3.org/TR/WebCryptoAPI/
+[PKCS#8]: https://tools.ietf.org/html/rfc5208 "RFC 5208"
+[Bellare and Namprempre 2000]: https://eprint.iacr.org/2000/025 "Authenticated Encryption - Relations among Notions and Analysis of the Generic Composition Paradigm."
+[AES]: https://csrc.nist.gov/publications/detail/fips/197/final	"FIPS 197"
+[NIST SP 800-38a]: https://csrc.nist.gov/publications/detail/sp/800-38a/final
+[HMAC]: https://tools.ietf.org/html/rfc2104.html
+[HKDF]: https://tools.ietf.org/html/rfc5869
+[RSA-OAEP]: https://tools.ietf.org/html/rfc8017#section-7.1.1
+[JWK]: https://tools.ietf.org/html/rfc7517
+[MessagePack]: https://msgpack.org/
+[SHA-256]: https://csrc.nist.gov/publications/detail/fips/180/4/final
+
