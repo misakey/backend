@@ -28,7 +28,7 @@ pages:
     - cd docs
     - npm install
     - npm run build
-    - cp -r build ../../public
+    - cp -r build ../public
   artifacts:
     paths:
       - public
