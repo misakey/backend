@@ -1,14 +1,14 @@
-.only-docs-docusaurus:
+.only-docs:
   only:
     changes:
       - ".gitlab-ci.yml"
-      - "docs/docusaurus/**/*"
+      - "docs/**/*"
 
 docusaurus:build:
   stage: build
   extends:
     - .only-branches
-    - .only-docs-docusaurus
+    - .only-docs
     - .except-wip-or-non-api-tags
   tags:
     - misakey_js
@@ -20,11 +20,11 @@ pages:
   stage: deploy
   extends:
     - .only-tags
-    - .only-docs-docusaurus
+    - .only-docs
   tags:
     - misakey_js
   script:
-    - cd docs/docusaurus
+    - cd docs
     - npm install
     - npm run build
     - cp -r build ../../public
