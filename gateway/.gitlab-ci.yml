@@ -11,7 +11,7 @@
       - $CI_COMMIT_MESSAGE && $CI_COMMIT_MESSAGE =~ /^wip:/
 
 # a gateway image is deployed on all branches
-deploy_gateway_branch:
+gateway-branch:build:
   stage: build
   extends:
     - .only-gateway
@@ -29,7 +29,7 @@ deploy_gateway_branch:
     - docker push $CI_REGISTRY_IMAGE/gateway:preprod-`if echo "$CI_COMMIT_REF_NAME" | grep -q "/"; then echo $CI_COMMIT_REF_NAME | sed -n "s/^.*\/\(.*\)$/\1/p"; else echo $CI_COMMIT_REF_NAME; fi`
 
 
-deploy_gateway_preprod:
+gateway-preprod:build:
   stage: build
   extends:
     - .only-gateway
@@ -44,7 +44,7 @@ deploy_gateway_preprod:
     - docker build -f gateway/Dockerfile.preprod -t $CI_REGISTRY_IMAGE/gateway:preprod ./gateway
     - docker push $CI_REGISTRY_IMAGE/gateway:preprod
 
-deploy_gateway_production:
+gateway-production:build:
   stage: build
   extends:
     - .only-tags

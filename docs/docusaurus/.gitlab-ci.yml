@@ -24,9 +24,10 @@ docusaurus:deploy:
   tags:
     - misakey_js
   script:
+    - cd docs/docusaurus
     - npm install
     - npm run build
-    - cp -r build public
+    - cp -r build ../../public
   artifacts:
     paths:
       - public
