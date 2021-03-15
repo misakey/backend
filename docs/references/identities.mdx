@@ -1,0 +1,61 @@
+---
+title: Identities
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+The identity concept is described [here](/concepts/overview.mdx).
+
+:::tip
+Need some changes ? More endpoints ? Please open a [github issue](https://github.com/misakey/backend) or contact us at [love@misakey.com](mailto:love@misakey.com).
+:::
+
+_____
+### List identities public keys
+
+Retrieve the public keys of an identity using its [identifier value](/concepts/overview.mdx) (a.k.a. `email`).
+
+### Request
+
+##### Authorizations
+<Tabs groupId="requester-type" defaultValue="org" values={[{label: 'Organization', value: 'org'}, {label: 'User', value: 'user'}]}>
+  <TabItem value="org">    
+    Headers:<ul>
+      <li><code>Authorization</code>: a bearer access token for your organization. Example: <i>Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA</i></li>
+    </ul>
+  </TabItem>
+  <TabItem value="user">
+    Cookies:<ul>
+      <li><code>accesstoken</code> (opaque token) (ACR >= 2): just a valid token.</li>
+      <li><code>tokentype</code> (string): must be <b>bearer</b>.</li>
+    </ul>
+    Headers:<ul>
+      <li><code>X-CSRF-Token</code>: a token to prevent from CSRF attacks.</li>
+    </ul>
+  </TabItem>
+</Tabs>
+
+
+```html
+GET /identities/pubkey?identifier_value={identifier_value}
+```
+
+_Query Parameters:_
+- `identifier_value`: (string) the identifier value of the identity. _Example: data.subject@email.com_
+
+### Response
+
+An array of public keys.
+Return an empty arry if no public keys exist for this identifier value.
+
+_Code:_
+```html
+HTTP 200 OK
+```
+
+```json
+[
+  "urlSafeBase64PubKey"
+]
+```

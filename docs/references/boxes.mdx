@@ -5,6 +5,7 @@ title: Boxes
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+The box concept is described [here](/concepts/boxes.mdx).
 
 :::tip
 Need some changes ? More endpoints ? Please open a [github issue](https://github.com/misakey/backend) or contact us at [love@misakey.com](mailto:love@misakey.com).
@@ -25,7 +26,7 @@ Do not forget to save the id of the created box to later send data to it.
 #### Request
 
 ```bash
-  POST https://api.misakey.com/organizations/:oid/boxes
+POST https://api.misakey.com/organizations/:oid/boxes
 ```
 
 ##### Authorizations
@@ -56,27 +57,29 @@ _JSON Body:_
         "other_share_hash": "Nz4nJMj5DOd4UGXXOlH8Ww",
         "encrypted_invitation_key_share": "cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
       },
-      "invitation_data": {
-        "<public key>": "encrypted crypto action"
-       }
+      "key_share": {
+        "misakey_share": "lBHT1vfwFAIBig5Nj+sD+w==",
+        "other_share_hash": "Nz4nJMj5DOd4UGXXOlH8Ww",
+        "encrypted_invitation_key_share": "cGYMzgIO9rc03WoSLAyoiQdLu7he5VbMRImLhRPmwTQ="
+      }
     }
 ```
+
+<!-- "invitation_data": {
+  "<public key>": "encrypted crypto action"
+ }, -->
+
 
 - `title`: (string) a free text that is meant to describe the box purpose for the end-users
 - `owner_org_id`: (string) your organization id
 - `datatag_id`: (string) the datatag id
 - `datatag_subject`: (string) email of the person concerned by the data
 - `public_key`: (string, unpadded url-safe base64): the public key of the box. If it is for `com.misakey.aes-rsa-enc` algorithm, it must be prefixed with `com.misakey.aes-rsa-enc:`
-- `key_share`: (object) (optionnal) the key share allows the build of an invitation link that you can send to the user. Invitation link is a way to share crypto materials. See [box key shares doc](https://backend.docs.misakey.dev/endpoints/box_key_shares)
-  - `misakey_share`: (string, base64) the misakey share
-  - `other_share_hash`: (string, unpadded URL-safe base64) a hash of the other share (invitation share)
-  - `encrypted_invitation_key_share`: (string) the encrypted invitation key share
-- `invitation_data`: (object) (optional) to set only if [a datatag subject pubkey key has been found](https://backend.docs.misakey.dev/endpoints/identities/#27-getting-all-identity-public-keys-associated-to-an-identifier). Contains the encrypted crypto action to directly invite the user in the application
-  - Key must be [the retrieved data subject public key](https://backend.docs.misakey.dev/endpoints/identities/#27-getting-all-identity-public-keys-associated-to-an-identifier)
-  - Value must be the crypto action encrypted using this same public key. See crypto action model [here](https://backend.docs.misakey.dev/endpoints/crypto_actions)
+- `key_share`: (object) (optional) see [the key share guide](/guides/store-data-for-your-org.mdx#key-share) for more information
+<!-- - `invitation_data`: (object) (optional) only available using `com.misakey.nacl-enc` algorithm: see [the invitation data guide](/guides/store-data-for-your-org.mdx#invitation-data) for more information)  -->
 
 :::tip
-It is recommended to use at least `key_share` (or `invitation_data` field when possible) to have a way to share the crypto materials to the data subject.
+It is recommended to use `key_share` to have a way to share the crypto materials to the data subject.
 :::
 
 Note that the access mode of a box is limited by default. A `state.access_mode` event must be created to switch it to `public`, see the related event type documentation.
@@ -194,7 +197,7 @@ _JSON Body:_
 
 - `type`: (string) must be `msg.txt`
 - `content`:
-  - `encrypted`: (string, base64) the encrypted message. Recall that files are sent separately in another way, so the size of a text message event should stay rather small.
+  - `encrypted`: (string, unpadded url-safe base64) the encrypted message. Recall that files are sent separately in another way, so the size of a text message event should stay rather small.
 
 #### Response
 
@@ -264,7 +267,7 @@ _Path Parameters:_
 
 _Multipart Form Data Body:_
 - `encrypted_file` (binary): the encrypted data
-- `msg_encrypted_content` (string, base64): encrypted content that will be store in the created `msg.file` event
+- `msg_encrypted_content` (string, unpadded url-safe base64): encrypted content that will be store in the created `msg.file` event
 
 #### Response
 
