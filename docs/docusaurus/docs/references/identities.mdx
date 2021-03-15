@@ -16,7 +16,7 @@ _____
 
 Retrieve the public keys of an identity using its [identifier value](/concepts/overview.mdx) (a.k.a. `email`).
 
-### Request
+#### Request
 
 ##### Authorizations
 <Tabs groupId="requester-type" defaultValue="org" values={[{label: 'Organization', value: 'org'}, {label: 'User', value: 'user'}]}>
@@ -44,7 +44,7 @@ GET /identities/pubkey?identifier_value={identifier_value}
 _Query Parameters:_
 - `identifier_value`: (string) the identifier value of the identity. _Example: data.subject@email.com_
 
-### Response
+#### Response
 
 An array of public keys.
 Return an empty arry if no public keys exist for this identifier value.

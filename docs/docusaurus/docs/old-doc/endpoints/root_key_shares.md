@@ -1,0 +1,94 @@
+---
+title: Backup Key Shares
+---
+
+## Introduction
+
+Key Splitting consists in splitting a secret key in several (currently, always two) *key shares*.
+One share alone is completely useless, but by combining two shares of a key one can recover the secret key.
+
+A key share has another attribute than its value,
+it has an `other_share_hash` which is used for the guest frontend to identify which share it wants to retrieve.
+Technically speaking, the hash is the SHA-512 hash of the other share.
+
+## Creating a root key share
+
+#### Request
+
+```bash
+POST https://api.misakey.com/root-key-shares
+```
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the identity must be linked to an account and this account must fit the one given in the body
+- `tokentype`: must be `bearer`
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
+
+_JSON Body:_
+```json
+{
+    "share": "o0hYlc2RurzJTiXldnnOMw",
+    "other_share_hash": "axoGoSxJDiVWru3Sm-vdYQ"
+}
+```
+
+- `account_id` (string) (uuid): the account for which the shares has been created.
+- `share` (string) (base64): one of the shares.
+- `other_share_hash` (string) (unpadded url-safe base64): a hash of the other share.
+
+#### Response
+
+_Code:_
+```bash
+HTTP 201 CREATED
+```
+
+_JSON Body:_
+```json
+{
+  "account_id": "b2dc8b7e-44e6-4510-b222-c914876fad1c",
+  "share": "o0hYlc2RurzJTiXldnnOMw",
+  "other_share_hash": "axoGoSxJDiVWru3Sm-vdYQ"
+}
+```
+
+## Getting a Root Key Share
+
+#### Request
+
+```bash
+GET https://api.misakey.com/root-key-shares/:other-share-hash
+```
+
+_Cookies:_
+- `accesstoken` (opaque token) (ACR >= 2): the identity must be linked to an account and this account must fit the one for which the key has been created.
+- `tokentype`: must be `bearer`
+
+_Headers:_
+- `X-CSRF-Token`: a token to prevent from CSRF attacks.
+
+_Path Parameters:_
+- `other-share-hash` (string): the hash of the key share.
+
+
+#### Response
+
+_Code:_
+```bash
+HTTP 200 OK
+```
+
+_JSON Body:_
+```json
+{
+  "account_id": "b2dc8b7e-44e6-4510-b222-c914876fad1c",
+  "share": "o0hYlc2RurzJTiXldnnOMw",
+  "other_share_hash": "axoGoSxJDiVWru3Sm-vdYQ"
+}
+```
+
+- `account_id` (string) (uuid): the account for which the shares has been created.
+- `share` (string) (unpadded url-safe base64): one of the shares.
+- `other-share-hash` (string) (unpadded url-safe base64): a hash of the other share.
