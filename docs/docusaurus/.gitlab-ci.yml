@@ -1,10 +1,17 @@
+.only-docs-docusaurus:
+  only:
+    changes:
+      - ".gitlab-ci.yml"
+      - "docs/docusaurus/**/*"
+
 stages:
   - deploy
 
 pages:
-  only:
-    - master
   stage: deploy
+  extends:
+    - .only-tags
+    - .only-docs-docusaurus
   tags:
     - misakey_js
   script:

@@ -3,6 +3,7 @@ stages:
   - dep
   - test
   - docs-hugo
+  - docs-docusaurus
   - build
 
 variables:
@@ -53,4 +54,5 @@ after_script:
 include:
     - api/.gitlab-ci.yml
     - docs/hugo/.gitlab-ci.yml
+    - docs/docusaurus/.gitlab-ci.yml
     - gateway/.gitlab-ci.yml
