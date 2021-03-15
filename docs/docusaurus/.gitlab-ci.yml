@@ -16,7 +16,7 @@ docusaurus:build:
     - npm install
     - npm run build
 
-docusaurus:deploy:
+pages:
   stage: deploy
   extends:
     - .only-tags

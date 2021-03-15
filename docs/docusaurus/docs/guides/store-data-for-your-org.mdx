@@ -31,48 +31,6 @@ It means the secret key must be kept on client side.
 
 This being said, note you can use optionally the `key_share` field, on the box creation endpoint, as a way to transmit securely the secret key to the data subject of a box:
 
-<!-- 
-#### Invitation Data
-
-:::info
-To use invitation data you need to use the `com.misakey.nacl-enc` algorithm. If you use `com.misakey.aes-rsa-enc` algorithm you just cannot fill the field correctly for now.
-:::
-
-Invitation data is a way to store the secret of the box on Misakey side, but encrypted with the data subject public key so nobody cannot read it apart from the data subject.
-
-Using this, the data subject receives at least in-app notifications about the box existence. Making `invitation_data` great for a smooth user experience.
-
-Only data subjects already registered to Misakey with an account can take advantage of `invitation_data`.
-In order to know if you can use `invitation_data` field on box creation endpoint, you should check for public keys existency for the data subject using [this endpoint](/references/identities#list-identities-public-keys).
-
-:information_source: Build invitation_data:
-
-```json
-{
-  "<data subject public key>": "crypto action encrypted using data subject public key",
-}
-```
-
-Invitation data is an object containing pairs of <identities public keys, encrypted crypto action>.
-
-It is possible to pass many pairs as you can invite many identities to the box. For the context of data subject, this possibility does not make sense.
-
-`Pair keys` must be [the retrieved data subject public key](/references/identities#list-identities-public-keys).
-`Pair values` must be a crypto action encrypted using this same public key. The crypto action model for invitation is:
-
-```json
-{
-    "type": "invitation",
-    "encryption_public_key": "(URL-safe unpadded base64)",
-    "encrypted": "(encrypted data)"
-}
-```
-
-- `type`: (string) should be _invitation_.
-- `encryption_public_key`: (string) (URL-safe unpadded base64)
-- `encrypted`: (string)
-
-
 #### Key Share
 
 Key share is the most common way for sharing the box secret to the data subject.
