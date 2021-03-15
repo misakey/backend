@@ -1,8 +1,8 @@
-.only-docs:
+.only-docs-hugo:
   only:
     changes:
       - ".gitlab-ci.yml"
-      - "docs/**/*"
+      - "docs/hugo/**/*"
 
 variables:
   DOCUMENTATION_URL: "https://misakey.pages.misakey.dev/backend/"
@@ -12,18 +12,18 @@ build-index:
     name: node:latest
   extends:
     - .only-master-and-manual
-    - .only-docs
-  stage: docs
+    - .only-docs-hugo
+  stage: docs-hugo
   tags:
     - misakey_docker
   script:
     - npm install grunt string toml
     - npm install -g grunt
-    - cd docs && grunt lunr-index
+    - cd docs/hugo && grunt lunr-index
   artifacts:
-    name: "docs:index-$CI_PIPELINE_ID"
+    name: "docs-hugo:index-$CI_PIPELINE_ID"
     paths:
-      - docs/static/js/lunr
+      - docs/hugo/static/js/lunr
     expire_in: 1 hour
 
 pages:
@@ -34,14 +34,14 @@ pages:
    - build-index
   extends:
     - .only-master-and-manual
-    - .only-docs
+    - .only-docs-hugo
   stage: build
   tags:
     - misakey_docker
   script:
     - echo "Will deploy documentation on $DOCUMENTATION_URL"
-    - hugo -s docs --baseURL "$DOCUMENTATION_URL"
-    - cp -r docs/public public
+    - hugo -s docs/hugo --baseURL "$DOCUMENTATION_URL"
+    - cp -r docs/hugo/public public
   artifacts:
     paths:
       - public
