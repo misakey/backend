@@ -4,10 +4,19 @@
       - ".gitlab-ci.yml"
       - "docs/docusaurus/**/*"
 
-stages:
-  - deploy
+docusaurus:build:
+  stage: build
+  extends:
+    - .only-branches
+    - .only-docs-docusaurus
+    - .except-wip-or-non-api-tags
+  tags:
+    - misakey_js
+  script:
+    - npm install
+    - npm run build
 
-pages:
+docusaurus:deploy:
   stage: deploy
   extends:
     - .only-tags

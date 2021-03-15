@@ -2,9 +2,8 @@ stages:
   - init
   - dep
   - test
-  - docs-hugo
-  - docs-docusaurus
   - build
+  - deploy
 
 variables:
 

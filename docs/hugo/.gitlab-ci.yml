@@ -7,13 +7,13 @@
 variables:
   DOCUMENTATION_URL: "https://misakey.pages.misakey.dev/backend/"
 
-build-index:
+hugo:build-index:
+  stage: build
   image:
     name: node:latest
   extends:
-    - .only-master-and-manual
+    - .only-tags
     - .only-docs-hugo
-  stage: docs-hugo
   tags:
     - misakey_docker
   script:
@@ -26,16 +26,16 @@ build-index:
       - docs/hugo/static/js/lunr
     expire_in: 1 hour
 
-pages:
+hugo:deploy:
+  stage: deploy
   image:
     name: klakegg/hugo:latest
     entrypoint: [""]
   dependencies:
-   - build-index
+   - hugo:build-index
   extends:
-    - .only-master-and-manual
+    - .only-tags
     - .only-docs-hugo
-  stage: build
   tags:
     - misakey_docker
   script:
