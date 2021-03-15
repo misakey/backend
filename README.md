@@ -4,7 +4,7 @@
 # The Misakey Backend Project.
 
 [![pipeline](https://gitlab.misakey.dev/misakey/backend/badges/master/pipeline.svg)](https://gitlab.misakey.dev/misakey/backend/-/pipelines)
-[![api doc](https://img.shields.io/badge/doc-api-blue)](https://backend.docs.misakey.dev)
+[![api doc](https://img.shields.io/badge/doc-api-blue)](https://docs.misakey.com/references/overview)
 [![License AGPLv3](https://img.shields.io/static/v1?label=License&message=AGPLv3&color=e32e72)](./LICENSE)
 
 </td></tr></table>
@@ -12,7 +12,7 @@
 ## What is Misakey ?
 
 - The project documentation is available [here](https://docs.misakey.com/docs/).
-- The REST API documentation is available [here](https://backend.docs.misakey.dev/).
+- The REST API documentation is available [here](https://docs.misakey.com/references/overview).
 ## License
 
 Most of the code is released under the AGPLv3. 

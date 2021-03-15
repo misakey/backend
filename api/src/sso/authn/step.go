@@ -92,7 +92,7 @@ var prepareStepFunc = map[oidc.MethodRef]authnMethodHandler{
 // the current ACR, expected ACR, and the identity state
 // it return a nil step when no step are required anymore
 //
-// see https://backend.docs.misakey.dev/concepts/authorization-and-authentication/#43-methods for more details about ruling
+// see Authorization and Authencation method documentation for more details about ruling
 func (as *Service) PrepareNextStep(
 	ctx context.Context, exec boil.ContextExecutor, redConn *redis.Client,
 	identity identity.Identity, currentACR oidc.ClassRef, expectedACR oidc.ClassRef,
