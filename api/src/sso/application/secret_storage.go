@@ -61,32 +61,36 @@ func (sso *SSOService) MigrateToSecretStorage(ctx context.Context, gen request.R
 		return nil, merr.From(err).Desc("retrieving identity")
 	}
 
-	// NaCl identity keys were introduced before the “secret storage” mechanism
-	// so NaCl identity keys must only be provided
-	// if the identity still does not have them.
-	// AES-RSA keys are optional so it's always OK not to provide them,
-	// and there is no risk that the identity we are migrating already has AES-RSA pubkeys.
+	// NaCl identity public keys may or may not be required
+	// depending if identity already had them
 
-	if curIdentity.Pubkey.String == "" || curIdentity.NonIdentifiedPubkey.String == "" {
-		err = curIdentity.SetAllIdentityKeys(query.IdentityPublicKeys)
-		if err != nil {
-			return nil, merr.BadRequest().Ori(merr.OriBody).Desc(err.Error())
+	if curIdentity.Pubkey.IsZero() {
+		if query.IdentityPublicKeys.Pubkey.IsZero() {
+			return nil, merr.BadRequest().Ori(merr.OriBody).Desc("missing identity public key")
 		}
-
-		err = identity.Update(ctx, tr, &curIdentity)
-		if err != nil {
-			return nil, merr.From(err).Desc("updating identity")
-		}
+		curIdentity.Pubkey = query.IdentityPublicKeys.Pubkey
 	} else {
-		// identity already had public keys for NaCl-based encryption
-		if query.IdentityPublicKeys.Pubkey.String != "" || query.IdentityPublicKeys.NonIdentifiedPubkey.String != "" {
-			return nil, merr.BadRequest().Ori(merr.OriBody).
-				Desc("unexpected identity keys (for algo \"com.misakey.nacl-enc\"): identity already has identity keys")
+		if !query.IdentityPublicKeys.Pubkey.IsZero() {
+			return nil, merr.BadRequest().Ori(merr.OriBody).Desc("unexpected identity public key (identity already has one)")
 		}
-
-		curIdentity.PubkeyAesRsa = query.PubkeyAesRsa
-		curIdentity.NonIdentifiedPubkeyAesRsa = query.NonIdentifiedPubkeyAesRsa
 	}
+
+	if curIdentity.NonIdentifiedPubkey.IsZero() {
+		if query.IdentityPublicKeys.NonIdentifiedPubkey.IsZero() {
+			return nil, merr.BadRequest().Ori(merr.OriBody).Desc("missing non identified identity public key")
+		}
+		curIdentity.NonIdentifiedPubkey = query.IdentityPublicKeys.NonIdentifiedPubkey
+	} else {
+		if !query.IdentityPublicKeys.NonIdentifiedPubkey.IsZero() {
+			return nil, merr.BadRequest().Ori(merr.OriBody).Desc("unexpected non identified identity public key (identity already has one)")
+		}
+	}
+
+	// accounts being migrated cannot possibly have AES-RSA keys
+	// so it's always OK to provide them,
+	// but they are not mandatory
+	curIdentity.PubkeyAesRsa = query.PubkeyAesRsa
+	curIdentity.NonIdentifiedPubkeyAesRsa = query.NonIdentifiedPubkeyAesRsa
 
 	if cErr := tr.Commit(); cErr != nil {
 		return nil, merr.From(cErr).Desc("committing transaction")
